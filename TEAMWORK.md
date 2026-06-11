@@ -33,8 +33,16 @@ sphere/ball definitions.
   chain-map property `bdry_Kmap` (∂∘K=K∘∂), norm accounting
   `nrm_Kmap_add_killed_le`, triviality `eq_zero_of_supp_card_lt` /
   `eq_zero_of_closed_supp_card_eq`. Axioms: standard three.
-- Next: `Taut/Theorem1.lean` — kill lemma (every generator dies on a
-  side), recovery, Zvol additivity, taut splitting (n ≥ 2).
+- `Taut/Theorem1.lean` — COMPLETE and building: dimPart + grading
+  (`dimPart_bdry`), purity of taut chains (`IsTaut.dim_pure`),
+  `IsTaut.vert_subset`, `Kmap_eq_self`, recovery
+  (`Kmap_eq_zero_of_closed`), kill lemma (`Kkills_or_Kkills`, general n),
+  and THEOREM 1 PART 1: `Zvol_add_of_almost_disjoint` (general n ≥ 1,
+  under p ≠ q ∈ A∩B; the |A∩B| ≤ 1 cases are open targets, NOT assumed).
+  Axioms: standard three.
+- Next: `Taut/Splitting.lean` — Theorem 1 part 2 (taut fillings split,
+  n ≥ 2): no-double-kill, hybrid elimination, the complete-cone step
+  (per the G1 auditor: coefficient-level vanishing, not closedness).
 
 ## Design decisions of record (G1-audited)
 
