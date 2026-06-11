@@ -1,0 +1,31 @@
+\providecommand{\bysame}{\leavevmode\hbox to3em{\hrulefill}\thinspace}
+\providecommand{\MR}{\relax\ifhmode\unskip\space\fi MR }
+% \MRhref is called by the amsart/book/proc definition of \MR.
+\providecommand{\MRhref}[2]{%
+  \href{http://www.ams.org/mathscinet-getitem?mr=#1}{#2}
+}
+\providecommand{\href}[2]{#2}
+\begin{thebibliography}{1}
+
+\bibitem{dew:filling}
+Peter Doyle, Matthew Ellison, and Zili Wang, \emph{Filling a triangulation of
+  the 2-sphere}, 2024, \url{https://doi.org/10.48550/arXiv.2303.10773}.
+
+\bibitem{ellison:gap}
+Matthew Ellison, \emph{Lower bounds and integrality gaps in simplicial
+  decomposition}, 2024, \url{https://doi.org/10.48550/arXiv.2404.01279}.
+
+\bibitem{mt}
+Claire Mathieu and William Thurston, \emph{Rotation distance using flows},
+  1992, \url{https://doi.org/10.48550/arXiv.2409.17905}.
+
+\bibitem{pw:flip}
+Lionel Pournin and Zili Wang, \emph{Strong convexity in flip-graphs}, 2021,
+  \url{https://doi.org/10.48550/arXiv.2106.08012}.
+
+\bibitem{stt:jams}
+Daniel~D. Sleator, Robert~E. Tarjan, and William~P. Thurston, \emph{Rotation
+  distance, triangulations, and hyperbolic geometry}, J. Amer. Math. Soc.
+  \textbf{1} (1988), 647--681, \url{https://doi.org/10.2307/1990951}.
+
+\end{thebibliography}

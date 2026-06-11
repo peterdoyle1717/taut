@@ -1,0 +1,1 @@
+tar -cvzf taut.tar.gz *.tex taut.bbl taut.bib taut.pdf zzz
