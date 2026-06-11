@@ -1,0 +1,1204 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019eb8d8-8926-75c2-b3cd-608c743bd5a4
+--------
+user
+G1 design audit (pre-code). You are auditing the foundational encoding for a Lean 4 formalization of the paper 'Taut fillings' (Doyle-Ellison-Wang). Read the spec at notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md and the paper source at taut/taut.tex (sections through Theorem 1 matter most). Audit: (1) the sign conventions and the four parity identities; (2) the augmented-complex choice; (3) the K_{A,p} definition and whether the chain-map property as specified is provable as stated; (4) the SubChain primitive; (5) any convention that will bite when Theorem 1's splitting proof (types analysis, complete-cone argument) is built on top. Answer Q1-Q4 in the spec. Verdict line at end: APPROVED or BLOCKED: <reason>.
+codex
+I’ll read the spec and the relevant paper sections first, then trace the algebra against the proposed Lean primitives. I’ll keep this as a design audit only and won’t edit files.
+exec
+/bin/zsh -lc "sed -n '1,240p' notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+# G1 design spec: chain encoding for the taut-fillings formalization
+
+Target: formalize Doyle–Ellison–Wang "Taut fillings" (taut/taut.tex) in Lean 4
+(Mathlib v4.29.1). This spec fixes the foundational encoding and sign
+conventions for simplicial chains on a full simplex. Everything downstream
+(Props 1–4, Theorem 1 additivity+splitting, later the S²/B³ combinatorics)
+builds on these.
+
+## 1. Exact formulas
+
+Vertex type `V` with `[LinearOrder V]`. **Chains are dimension-mixed**:
+
+    Chain V := Finset V →₀ ℤ
+
+A generator is an *unoriented* simplex `s : Finset V` (sorted by the order =
+canonical orientation; `s.card = n+1` means dimension n; `∅` is the
+(−1)-simplex, i.e. this is the AUGMENTED chain complex of the full simplex
+on V). Dimension homogeneity, where needed, is a hypothesis
+`∀ s ∈ M.support, s.card = k`, not part of the type.
+
+Sign bookkeeping via "count below":
+
+    cnt x s := (s.filter (· < x)).card
+    sgn x s := (-1 : ℤ) ^ (cnt x s)
+
+Operators (each ℤ-linear, defined on generators, extended by Finsupp.lsum):
+
+  - boundary:  ∂s := ∑_{x ∈ s} sgn x s • [s.erase x]
+  - cone:      cone x s := if x ∈ s then 0 else sgn x s • [insert x s]
+  - link/strip: lk x M := ∑_{s ∈ supp M, x ∈ s} (sgn x s * M s) • [s.erase x]
+  - neighborhood: nbhd x M := M.filter (x ∈ ·)   (restriction, not linear-extended)
+  - projection (A : Finset V, p ∈ A), the chain map induced by
+    π(v) = if v ∈ A then v else p:
+      K_{A,p} s :=
+        if s ⊆ A then [s]
+        else if (s \ A).card = 1 ∧ p ∉ s then
+          (let z := the element of s \ A;  (-1)^(cnt z s) • cone p (s.erase z))
+        else 0
+  - norm: nrm M := ∑_s |M s|  ∈ ℕ;  vert M := ⋃_{s ∈ supp M} s;
+    deg x M := nrm (nbhd x M).
+  - SubChain U M := ∀ s, (U s).natAbs + (M s − U s).natAbs = (M s).natAbs
+    (the multiset-containment of the paper).
+  - Zvol X := sInf { nrm M | ∂M = X };  Taut M := nrm M = Zvol (∂M).
+
+## 2. Orientation conventions
+
+Canonical orientation of a simplex = its vertices in increasing order. The
+i-th vertex (0-indexed) of sorted s has exactly i smaller elements, so the
+classical (−1)^i face sign is (−1)^(cnt x s). Coning prepends x then sorts:
+moving x from front to its sorted position costs (cnt x s) transpositions,
+giving the same sgn x s. The vertex-replacement sign in K (replace z ∉ A by
+p) is (−1)^(cnt z s + cnt p (s.erase z)), realized as the stated composite
+with cone, keeping one sign primitive.
+
+Key parity identities driving all proofs (x ≠ z):
+  cnt z (s.erase x) = cnt z s − [x < z],
+  cnt z (insert x s) = cnt z s + [x < z]  (x ∉ s),
+  [x < z] + [z < x] = 1.
+
+## 3. Strongest validation invariants (build-checked theorems, not tests)
+
+  (a) ∂ ∘ ∂ = 0 on all of Chain V.
+  (b) Contracting homotopy, exact and global (the augmentation makes it
+      correction-free): ∀ x M, ∂(cone x M) + cone x (∂M) = M.
+  (c) cone x (lk x M) = nbhd x M.
+  (d) Chain-map property: ∂ ∘ K_{A,p} = K_{A,p} ∘ ∂.
+  (e) Norm accounting: nrm (cone x M) = nrm M − deg x M (no cancellation:
+      t ↦ insert x t is injective on {t | x ∉ t});
+      nrm (K_{A,p} M) ≤ nrm M − (mass of K-killed generators).
+
+(b) on the augmented complex was hand-checked on generators including the
+degenerate cases (x ∈ s; 0-simplices, where ∂{y} = [∅] is essential).
+(a),(b),(d) jointly pin the sign convention up to a global unit.
+
+## 4. Failure modes caught
+
+Any sign error in ∂, cone, lk, or K breaks (a), (b), or (d) — these are
+identities over ℤ, not parities, so they catch magnitude errors too (e.g.
+double-counting in lsum extension). (c) catches mismatch between the
+restriction and the cone/strip signs. (e) catches silent cancellation, which
+would corrupt every Zvol argument (Props 2–4, Th1 norm bookkeeping).
+Omitting the augmentation would silently break (b) for 0-chains and with it
+filling-existence (∂(cone x X) = X for closed X), which Zvol's
+well-definedness needs.
+
+## 5. Files and commands
+
+  lean/Taut/Chains.lean   — cnt/sgn lemmas, ∂, cone, lk, nbhd, vert, nrm,
+                            invariants (a)–(c), (e)-cone
+  lean/Taut/Zvol.lean     — SubChain, Zvol, Taut, Props 1–4 of the paper
+  lean/Taut/Projection.lean — K_{A,p}, (d), (e)-K, kill lemmas,
+                            small-support triviality (C_n(W)=0 for |W| ≤ n,
+                            Z_n(W)=0 for |W| ≤ n+1)
+  lean/Taut/Additivity.lean, lean/Taut/Splitting.lean — Theorem 1.
+
+Build: `cd ~/Dropbox/taut/lean && lake build` after each lemma cluster.
+Greps before each commit: `grep -rn "sorry\|admit\|axiom\|native_decide" lean/Taut/`.
+`#print axioms` for the exported theorems at each milestone.
+
+## Specific questions for the auditor
+
+  Q1. Augmented complex (∅ as generator) vs truncated: any downstream trap?
+      (Augmented chosen to make invariant (b) exact and global.)
+  Q2. Dimension-mixed Finsupp with card-hypotheses vs dimension-indexed
+      family of types: agree mixed is right for this paper's multiset-heavy
+      arguments?
+  Q3. The K_{A,p} three-case definition with the composite sign via cone:
+      sound, or is there a cleaner equivalent that makes (d) easier?
+  Q4. SubChain as the pointwise natAbs equation: right primitive?
+
+exec
+/bin/zsh -lc "sed -n '1,260p' taut/taut.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+\documentclass[12pt]{article}
+\usepackage{graphicx,amssymb,amsmath,amsthm}
+\usepackage{hyperref,url}
+\usepackage{verbatim}
+\usepackage[labelfont=bf]{caption}
+\newcommand{\nocopyright}{
+No Copyright\thanks{
+The authors hereby waive all copyright
+and related or neighboring rights to this work,
+and dedicate it to the public domain.
+This applies worldwide.
+}}
+\title{Taut fillings}
+\author{Peter Doyle \and Matthew Ellison \and Zili Wang\thanks{
+Zili Wang is supported by
+the National Natural Science Foundation of China (Grant No. 12301432)
+}}
+\date{Version dated 2026-03-20
+}
+\newtheorem{theorem}{Theorem}
+\newtheorem{prop}{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem*{hypo}{Hypothesis}
+\newtheorem*{question}{Question}
+\newtheorem{corollary}{Corollary}
+\newtheorem*{conjecture}{Conjecture}
+
+\def\startproof{{\bf {\medskip}{\noindent}Proof: }}
+\def\definition{{\bf {\bigskip}{\noindent}Definition: }}
+\def\endproof{$\spadesuit$  \newline}
+
+\newcommand{\proofstart}{{\noindent \bf Proof.\ }}
+\newcommand{\note}{{\noindent \bf Note.\ }}
+\newcommand{\pfend}{\spadesuit}
+\newcommand{\mathproofend}{\quad \qed}
+\newcommand{\proofend}{$\quad \qed$}
+\newcommand{\goesto}{\rightarrow}
+\newcommand{\p}{\;\;\;}
+\newcommand{\comma}{\p,}
+\newcommand{\pd}{\p.}
+\newcommand{\semi}{\p;}
+\newcommand{\Rplus}{{\RR_{\geq 0}}}
+
+
+
+\newcommand{\beginfigurepos}{\begin{figure}[htbp]}
+%
+% \fig
+% followed by {filename}{label}{caption}
+%
+\newcommand{\fig}[3]{
+\beginfigurepos
+\includegraphics[width=370pt]{figures/#1.pdf}
+\caption{#3}
+\label{#2}
+\end{figure}
+}
+%
+% \figsize
+% followed by {size}{filename}{label}{caption}
+%
+\newcommand{\figsize}[4]{
+\beginfigurepos
+\centerline{
+\includegraphics[width=#1]{figures/#2.pdf}
+}
+\caption{#4}
+\label{#3}
+\end{figure}
+}
+
+
+\def\ZZ{\mathbf{Z}}
+\def\QQ{\mathbf{Q}}
+\def\RR{\mathbf{R}}
+\def\heartsuit{\mbox{\boldmath{$Z$}}}% 
+\def\del{\partial}
+\def\dist{\mathrm{dist}}
+\def\eps{\epsilon}
+
+
+\newcommand{\parsec}{\subsection*}
+\newcommand{\sect}[1]{\S\ #1}
+
+%\newcommand{\gversus}[2]{\braket{#1\,|\,#2}}
+\newcommand{\pair}[1]{\braket{#1}}
+\newcommand{\sub}[1]{\braket{#1}}
+\newcommand{\nnn}{\mathbf{NSet}}
+\newcommand{\zzz}{\mathbf{ZSet}}
+\newcommand{\nn}{\mathbf{N}}
+\newcommand{\zz}{\mathbf{Z}}
+
+\newcommand{\versus}[2]{\left(#1\,|\,#2\right)}
+\newcommand{\gversus}[2]{\left[#1\,|\,#2\right]}
+\newcommand{\poly}[1]{\left[#1\right]}
+
+\newcommand{\rising}[1]{\overline{#1}}
+\newcommand{\floor}[1]{\left \lfloor #1 \right \rfloor}
+\newcommand{\ceiling}[1]{\left \lceil #1 \right \rceil}
+\newcommand{\gbinom}{\genfrac{[}{]}{0pt}{}}
+
+\makeatletter
+\newcommand{\xRrightarrow}[2][]{\ext@arrow 0359\Rrightarrowfill@{#1}{#2}}
+\newcommand{\Rrightarrowfill@}{\arrowfill@\equiv\equiv\Rrightarrow}
+\newcommand{\xLleftarrow}[2][]{\ext@arrow 3095\Lleftarrowfill@{#1}{#2}}
+\newcommand{\Lleftarrowfill@}{\arrowfill@\Lleftarrow\equiv\equiv}
+\newcommand{\xLleftRrightarrow}[2][]{\ext@arrow 3399\LleftRrightarrowfill@{#1}{#2}}
+\newcommand{\LleftRrightarrowfill@}{\arrowfill@\Lleftarrow\equiv\Rrightarrow}
+\makeatother
+
+\newcommand{\eq}{\Rrightarrow}
+\newcommand{\funeq}[1]{\stackrel{#1}\eq}
+\newcommand{\funequiv}[1]{\stackrel{#1}\equiv}
+\newcommand{\funto}[1]{\stackrel{#1}\to}
+\newcommand{\union}{\cup}
+\newcommand{\cross}{\times}
+\newcommand{\op}{\operatorname}
+\newcommand{\kw}{\mathrm}
+\newcommand{\escape}{\op{escape}}
+\newcommand{\cancel}{\op{cancel}}
+\newcommand{\nestuntil}{\operatorname{nestuntil}}
+\newcommand{\size}{\operatorname{size}}
+\newcommand{\id}{\operatorname{id}}
+\newcommand{\create}{\operatorname{create}}
+\newcommand{\destroy}{\operatorname{destroy}}
+\newcommand{\then}{\triangleleft}
+\newcommand{\lp}{\kw{LP}}
+\newcommand{\LPvol}{\kw{LPvol}}
+\newcommand{\vol}{\kw{vol}}
+\newcommand{\flipdist}{\kw{flipdist}}
+\newcommand{\tetbar}{\kw{homvol}}
+\newcommand{\vsa}{\kw{vsa}}
+\newcommand{\cone}{\kw{cone}}
+\newcommand{\link}{\kw{link}}
+\newcommand{\maxdeg}{\kw{maxdeg}}
+\newcommand{\mindeg}{\kw{mindeg}}
+\newcommand{\vertices}{\kw{Vert}}
+\newcommand{\carrier}{\kw{carrier}}
+\newcommand{\nbhd}{\kw{nbhd}}
+\newcommand{\adj}{\kw{adj}}
+\newcommand{\taut}{\kw{taut}}
+\newcommand{\net}{\kw{net}}
+
+\newcommand{\Zvol}{\kw{Zvol}}
+\newcommand{\Qvol}{\kw{Qvol}}
+\newcommand{\Rvol}{\kw{Rvol}}
+\newcommand{\tetvol}{\kw{tetvol}}
+\newcommand{\hash}{\#}
+\newcommand{\ms}{[}
+\newcommand{\msend}{]}
+
+\newcommand{\kwstyle}{\bf}
+\newcommand{\IF}{{\ \kwstyle{if}\ }}
+\newcommand{\ELSE}{{\ \kwstyle{else}\ }}
+\newcommand{\WHILE}{{\kwstyle{while}\ }}
+\newcommand{\DO}{{\ \kwstyle{do}\ }}
+\newcommand{\RETURN}{{\kwstyle{return}\ }}
+\newcommand{\direct}{\oplus}
+\newcommand{\pls}{\mathord{+}}
+\newcommand{\mns}{\mathord{-}}
+
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Sleator, Tarjan, and Thurston asked:
+Given a triangulation $\sigma$ of the 2-sphere,
+what is the minimum number of tetrahedra needed to 
+extend $\sigma$ to a triangulation of the ball?
+Call this minimum $\mathrm{tetvol}(\sigma)$.
+Let $X$ be the integral 2-cycle associated to an orientation of $\sigma$,
+and let $\mathrm{Zvol}(\sigma)$ be the minimum $L_1$-norm
+of an integral 3-chain $M$
+with $\del M = X$.
+We show that $\mathrm{Zvol}(\sigma) = \mathrm{tetvol}(\sigma)$,
+and any optimal $M$ 
+arises from an extension of $\sigma$ to
+a simplicial complex homeomorphic to the 3-ball.
+This complex is shellable, and `flag':
+Every clique in its 1-skeleton occurs as a simplex.
+The key to the proof is the general
+fact that any optimal filling of an integral $n$-cycle
+splits under disjoint union, connected sum, and more generally
+what we call almost disjoint union,
+where summands are supported on sets that overlap in at most $n+1$ vertices.
+\end{abstract}
+
+\section{Overview}
+Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+with vertices $\Omega$,
+viewed as the abstract simplicial complex consisting of all subsets of
+$\Omega$.
+Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+be its integral $n$-chains and $n$-cycles.
+A \emph{filling} of an $n$-cycle $X \in Z_n$ is any
+$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
+(Here and throughout we'll assume $n\geq 1$.)
+Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+Call $M \in C_{n+1}$ \emph{taut} if it is an optimal filling
+of its boundary, i.e., if $|M|=\Zvol(\del M)$,
+
+For $X \in C_n$ let
+$\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+to which $X$ assigns non-$0$ weight.
+For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+(Cf.\ Proposition \ref{nointernal} below.)
+This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+
+Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+\[
+|\vertices(X) \cap \vertices(Y)| \leq n+1
+.
+\]
+This notion generalizes both disjoint union and connected sum
+along an $n$-simplex.
+Ellison \cite{ellison:gap}
+showed the $\Zvol$ adds under almost disjoint union:
+$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+This means that \emph{some} taut filling $M$ of $X$ splits into a sum
+$M=M_X+M_Y$ of taut fillings of $X,Y$.
+Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+that when $n \geq 2$, \emph{any} taut filling of $X+Y$ splits.
+
+In place of integral chains we can use chains with
+coefficients in $\QQ$ or $\RR$.
+Evidently $\Rvol \leq \Qvol$.
+But computing $\Rvol$ is
+a linear programming problem with rational coefficients,
+so in fact $\Qvol = \Rvol$.
+Ellison used LP duality to prove that
+$\Qvol$ adds under almost
+disjoint union.
+Now for $n \geq 2$ we get the stronger result
+(Corollary \ref{cor1})
+that taut $\QQ$-fillings split:
+Multiplying a taut
+$\QQ$-filling $M$ of $X$ by a common denominator $q$
+yields a taut $\ZZ$-filling $qM$ of $qX$:
+Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
+of the $\QQ$-filling $M$.
+
+Now let $\sigma$ be a simplicial triangulation of $S^2$;
+let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
+be either one of the 2-cycles
+that arises from $\sigma$ by orienting its $2$-simplices;
+and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+We will show that
+\[
+\Zvol(\sigma) = \tetvol(\sigma)
+.
+\]
+Certainly $\Zvol \leq \tetvol$,
+because any extension $\tau$ induces a filling
+of $X(\sigma)$.
+
+exec
+/bin/zsh -lc "rg -n \"Theorem 1|Taut fillings|chain|boundary|parity|sign|cone|splitting|augmented|K_|K_\\{|SubChain|complete\" taut/taut.tex notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:1:# G1 design spec: chain encoding for the taut-fillings formalization
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:3:Target: formalize Doyle–Ellison–Wang "Taut fillings" (taut/taut.tex) in Lean 4
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:4:(Mathlib v4.29.1). This spec fixes the foundational encoding and sign
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:5:conventions for simplicial chains on a full simplex. Everything downstream
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:6:(Props 1–4, Theorem 1 additivity+splitting, later the S²/B³ combinatorics)
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:17:(−1)-simplex, i.e. this is the AUGMENTED chain complex of the full simplex
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:28:  - boundary:  ∂s := ∑_{x ∈ s} sgn x s • [s.erase x]
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:29:  - cone:      cone x s := if x ∈ s then 0 else sgn x s • [insert x s]
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:32:  - projection (A : Finset V, p ∈ A), the chain map induced by
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:34:      K_{A,p} s :=
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:37:          (let z := the element of s \ A;  (-1)^(cnt z s) • cone p (s.erase z))
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:41:  - SubChain U M := ∀ s, (U s).natAbs + (M s − U s).natAbs = (M s).natAbs
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:49:classical (−1)^i face sign is (−1)^(cnt x s). Coning prepends x then sorts:
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:51:giving the same sgn x s. The vertex-replacement sign in K (replace z ∉ A by
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:53:with cone, keeping one sign primitive.
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:55:Key parity identities driving all proofs (x ≠ z):
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:64:      correction-free): ∀ x M, ∂(cone x M) + cone x (∂M) = M.
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:65:  (c) cone x (lk x M) = nbhd x M.
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:66:  (d) Chain-map property: ∂ ∘ K_{A,p} = K_{A,p} ∘ ∂.
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:67:  (e) Norm accounting: nrm (cone x M) = nrm M − deg x M (no cancellation:
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:69:      nrm (K_{A,p} M) ≤ nrm M − (mass of K-killed generators).
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:71:(b) on the augmented complex was hand-checked on generators including the
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:73:(a),(b),(d) jointly pin the sign convention up to a global unit.
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:77:Any sign error in ∂, cone, lk, or K breaks (a), (b), or (d) — these are
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:80:restriction and the cone/strip signs. (e) catches silent cancellation, which
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:82:Omitting the augmentation would silently break (b) for 0-chains and with it
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:83:filling-existence (∂(cone x X) = X for closed X), which Zvol's
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:88:  lean/Taut/Chains.lean   — cnt/sgn lemmas, ∂, cone, lk, nbhd, vert, nrm,
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:89:                            invariants (a)–(c), (e)-cone
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:90:  lean/Taut/Zvol.lean     — SubChain, Zvol, Taut, Props 1–4 of the paper
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:91:  lean/Taut/Projection.lean — K_{A,p}, (d), (e)-K, kill lemmas,
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:94:  lean/Taut/Additivity.lean, lean/Taut/Splitting.lean — Theorem 1.
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:107:  Q3. The K_{A,p} three-case definition with the composite sign via cone:
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:109:  Q4. SubChain as the pointwise natAbs equation: right primitive?
+taut/taut.tex:13:\title{Taut fillings}
+taut/taut.tex:133:\newcommand{\cone}{\kw{cone}}
+taut/taut.tex:176:of an integral 3-chain $M$
+taut/taut.tex:198:be its integral $n$-chains and $n$-cycles.
+taut/taut.tex:200:$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
+taut/taut.tex:204:of its boundary, i.e., if $|M|=\Zvol(\del M)$,
+taut/taut.tex:208:to which $X$ assigns non-$0$ weight.
+taut/taut.tex:228:In place of integral chains we can use chains with
+taut/taut.tex:243:Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
+taut/taut.tex:325:\section{Taut fillings}
+taut/taut.tex:327:We can think of an $n$-chain $X \in C_n$ as a multiset of
+taut/taut.tex:386:The \emph{cone from $x$ to $U$}
+taut/taut.tex:387:is the $(n+1)$-chain
+taut/taut.tex:389:\cone(x,U) = 
+taut/taut.tex:397:so $|\cone(x,U)| = |U| - \deg(x,U)$.
+taut/taut.tex:400:$\del\, \cone(x,U) = U$, so
+taut/taut.tex:412:$|\cone(x,U)| = |U|$.
+taut/taut.tex:413:In this case we call $\cone(x,U)$ a \emph{complete cone}.
+taut/taut.tex:414:By Proposition \ref{maxdeg} a non-trivial complete cone is not taut.
+taut/taut.tex:416:$x \notin U$, we could have coned from some $x \in U$.)
+taut/taut.tex:418:\begin{prop}\label{nocone}
+taut/taut.tex:419:If $M$ is taut it contains no non-trivial complete cone.
+taut/taut.tex:425:If $x$ is internal to $M$ then $\nbhd(x,M)$ is a complete cone, so:
+taut/taut.tex:469:K_*(A,p): C_*(\Omega) \to C_*(A)
+taut/taut.tex:471:be the induced chain map.
+taut/taut.tex:481:with nothing to cancel its boundary.
+taut/taut.tex:490:g_*(p,q) = K_*(A,p) \direct K_*(B,q):
+taut/taut.tex:515:K_n(A,p)(X+Y) = X + K_n(A,p)(Y)
+taut/taut.tex:541:What's new here is the splitting of taut fillings when $n\geq 2$.
+taut/taut.tex:568:Because $g_*(p,q)$ is a chain map we have
+taut/taut.tex:608:$K_3(B,q)(t)=[c_1c_2c_3q]$,
+taut/taut.tex:654:Because $\del M = 0$ the signed multiplicity of $s$
+taut/taut.tex:659:making $U$ a complete cone on $y_0$,
+taut/taut.tex:660:contradicting \ref{nocone}.
+taut/taut.tex:667:The splitting of taut fillings depends on the assumption $n\geq 2$.
+taut/taut.tex:671:Failing that, the $XXy_0$ tets needn't form a complete cone,
+taut/taut.tex:733:(in which case $s \in \del \sigma$ is a \emph{boundary simplex}),
+taut/taut.tex:752:The boundary $\del \sigma$ of $\sigma$ is clean,
+taut/taut.tex:782:We continue to think of a chain $M \in C_n$ as a multiset of
+taut/taut.tex:827:on the boundary,
+taut/taut.tex:830:meaning eligible tets  whose pairs of boundary faces
+taut/taut.tex:834:Consider an eligible tet $t$ with boundary faces
+taut/taut.tex:859:whose boundary faces are disjoint from $t$.
+taut/taut.tex:861:one of its boundary faces in common with $t$.)
+taut/taut.tex:913:Let $t_1 \in \tau$ be the designated intial tet of the shelling.
+taut/taut.tex:951:and not the boundary of a tetrahedron.
+taut/taut.tex:977:The six edges of the $K_4$ $\{A,B,C,D\}$ without the 3-simplex $ABCD$.
+taut/taut.tex:979:The ten edges of the $K_5$ $\{A,B,C,D,E\}$.
+taut/taut.tex:983:along with the $K_5$ we would have the five associated 3-simplices:
+taut/taut.tex:998:Removing any one of these tets performs an `edge flip' on the boundary
+taut/taut.tex:1006:In case (b) the key is that if a $K_3$ or $K_4$ occurs
+taut/taut.tex:1014:avoid flipping to preserve the taboo $K_3$.
+taut/taut.tex:1022:At most two of these can be boundary faces, because
+taut/taut.tex:1024:So at most five of the $K_5$ edges are on the boundary.
+taut/taut.tex:1027:so we have at least five boundary edges we can flip.
+taut/taut.tex:1028:The only potential problem is if five of the six $K_4$ edges are
+taut/taut.tex:1029:on the boundary.
+taut/taut.tex:1031:so that the $K_4$ includes the faces $ABC,BCD$.
+taut/taut.tex:1032:If an eligible tet contains neither of these as one of its two boundary faces,
+
+codex
+The first pass shows the spec is targeting exactly the paper’s chain-map and splitting infrastructure around Props 1-4 and Theorem 1. I’m narrowing now to the formal definitions in the paper and the proof steps where conventions can leak.
+exec
+/bin/zsh -lc "sed -n '325,690p' taut/taut.tex" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '450,620p' taut/taut.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+and
+\[
+\Zvol(X+Y) = (p+q-2)-2 = \Zvol(X)+\Zvol(Y)
+.
+\]
+But not every filling of $X+Y$ splits, because a taut filling
+may contain any 2-simplex with vertices in $\vertices(X+Y)$.
+
+We want to show that fillings do split when $n \geq 2$.
+
+For $A \subset \Omega$, $p \in A$ define
+\[
+\pi_{A,p}: \Omega \to A
+\]
+\[
+\pi_{A,p}(x) = x \IF x \in A \ELSE p
+\]
+and let
+\[
+K_*(A,p): C_*(\Omega) \to C_*(A)
+\]
+be the induced chain map.
+This is a projection of $C_*(\Omega)$ onto $C_*(A)$.
+
+Let $A,B$ be finite vertex sets sharing the vertices
+$C = A \cap B$,
+and let $c=|C|$.
+Observe that
+$C_c(C)$ and $Z_{c-1}(C)$ are trivial,
+because $\Delta(C)$ contains no $c$-simplex,
+and (up to orientation) only one $c\mns 1$-simplex,
+with nothing to cancel its boundary.
+
+Let
+\[
+C_*(A,B) = C_*(A) \direct C_*(B)
+.
+\]
+For $p,q \in C$ define the mapping
+\[
+g_*(p,q) = K_*(A,p) \direct K_*(B,q):
+C_*(A \cup B) \to C_*(A,B)
+.
+\]
+
+\begin{prop} \label{recover}
+Let $(X,Y) \in C_n(A,B)$.
+If $|A \cap B| \leq n$
+we can recover $(X,Y)$ from $X+Y$.
+If $(X,Y) \in Z_n(A,B)$ this holds also when $|A \cap B|  = n+1$.
+\end{prop}
+
+\proofstart
+Let $C=A \cap B$.
+We can assume $|C| \geq 1$.
+(Add a brand new point to $C$ if necessary.)
+We claim that
+for any $p,q \in C$
+(not necessarily distinct) we have
+\[
+g_n(p,q)(X+Y)=(X,Y)
+.
+\]
+Indeed,
+\[
+K_n(A,p)(X+Y) = X + K_n(A,p)(Y)
+.
+\]
+The second term belongs to $C_n(C)$,
+which is trivial when $|C| \leq n$.
+If $Y \in Z_n(B)$ the second term belongs to $Z_n(C)$,
+which is trivial when $|C| \leq n+1$.
+\proofend
+
+
+\begin{theorem} \label{th1}
+If $|A \cap B| \leq n+1$,
+for all $(X,Y) \in Z_n(A,B)$ we have
+\[
+\Zvol(X+Y) = \Zvol(X)+\Zvol(Y)
+.
+\]
+And as long as $n \geq 2$,
+for any $M \in \taut(X+Y)$ 
+we have $M = M_X + M_Y$
+with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+\end{theorem}
+
+\note
+Ellison \cite{ellison:gap}
+proved the additivity of $\Zvol$.
+What's new here is the splitting of taut fillings when $n\geq 2$.
+This result resembles Theorem 6.2 of
+Pournin and Wang
+\cite{pw:flip}
+about flip paths.
+Like theirs, our proof uses a variation on the normalization technique
+of Sleator, Tarjan, and Thurston
+\cite[Lemma 7]{stt:jams}.
+It would be nice to fit these results under one roof.
+\medskip
+
+\proofstart
+Again let $C = A \cap B$.
+We can assume $|C| = n+1$,
+as this is the hardest case.
+And we might as well go ahead and take $n=2$, $|C|=3$,
+as this case illustrates all the issues.
+
+Take any $M \in \taut(X+Y) \subset C_3(A \union B)$.
+Pick distinct points $p,q \in C$,
+and let
+\[
+(M_X,M_Y) = g_{3}(p,q)(M)
+.
+\]
+(For now we'll suppress the dependence of $M_X,M_Y$ on $p,q$.)
+
+Because $g_*(p,q)$ is a chain map we have
+$\del_{3} M_X = X$, $\del_{3} M_Y = Y$:
+\[
+(\del_{3} M_X, \del_{3} M_Y)
+=
+\del_{3} (g_{3}(p,q)(M))
+=
+g_2(p, q)(\del_{3} M)
+=
+g_2(p,q)(X+Y)
+=
+(X,Y)
+.
+\]
+
+We want to show that under the map $g_3(p,q)$ any $t \in M$
+dies either in $M_X$ or $M_Y$,
+because then we'll get additivity of $\Zvol$ from
+\[
+\Zvol(X+Y) = |M|
+\geq |M_X| + |M_Y|
+\geq \Zvol(X) + \Zvol(Y)
+\geq \Zvol(X+Y)
+.
+\]
+
+Let's call a $3$-simplex a `tet' for short.
+Say that a tet $t \in M$ has type $CCXY$ if $t= \pm[c_1c_2x_1y_1]$
+for $c_1,c_2 \in C$, $x_1 \in A \setminus C$, $y_1 \in B \setminus C$.
+Similarly for types $XXXX$, $CXXX$, $CXXY$, $XXXY$, etc.
+The first two are pure $X$ cases, meaning that they live in $C_3(A)$;
+the last two are hybrid cases.
+
+Any $XX..$ tet dies in $M_Y$;
+any $YY..$ tet dies in $M_X$.
+
+The remaining cases to check are
+are the pure cases $CCCX$, $CCCY$,
+and the hybrid case $CCXY$.
+A $CCCX$ tet $t=\pm[c_1c_2c_3x_1]$ dies in $M_Y$ because
+$K_3(B,q)(t)=[c_1c_2c_3q]$,
+which vanishes because $q \in C = \{c_1,c_2,c_3\}$ produces a repeated vertex.
+Likewise a $CCCY$ tet dies in $M_X$.
+The more interesting case is $CCXY$:
+The key is that since $|C|=3$, $\{c_1,c_2\}$ cannot be disjoint from $\{p,q\}$,
+so it dies on one side or the other.
+
+So 
+\[
+|M| = |M_X(p,q)| + |M_Y(p,q)|,
+\]
+and $\Zvol$ adds.
+Note how we're now emphasizing the possible dependence of $M_X,M_Y$ on $p,q$.
+
+ succeeded in 0ms:
+\section{Taut fillings}
+
+We can think of an $n$-chain $X \in C_n$ as a multiset of
+non-cancelling oriented simplices:
+\[
+X = \sum_{t \in X} t
+.
+\]
+In this sum $t$ denotes an oriented simplex
+\[
+t=[x_0,\ldots,x_n]
+= [x_{\pi(0)},\ldots,x_{\pi(n)}]
+,\;\;\mbox{$\pi$ an even permutation}
+,
+\]
+and each unoriented simplex contributes a number of terms corresponding
+to its multiplicity.
+
+The size of $M$ as a multiset is its $L_1$-norm $|M|$.
+Write $U \subset M$
+if $U$ is a sub-multiset of $M$.
+This happens just when
+$|M| = |U| + |M-U|$.
+
+\begin{prop} \label{subtaut}
+If $M$ is taut and $U \subset M$ then $U$ is taut.
+\end{prop}
+
+\proofstart
+This is clear, but let's drag it out.
+If $U$ is not taut, there is a smaller filling $V$ of $\del U$.
+Take $M^\prime = M-U+V$.
+In terms of multisets, this means that we substitute $V$ for $U$,
+and then do any required cancellation of oppositely oriented simplices
+of $M-U$ and $V$.
+We have
+\[
+\del M^\prime = \del M - \del U + \del V = \del M
+\]
+and
+\[
+|M^\prime| \leq |M-U| + |V| = |M| - |U| + |V| < |M|
+,
+\]
+contradiction.
+\proofend
+
+\section{Coning}
+For $x \in \Omega$, $U \in C_n$ let
+\[
+\nbhd(x,U) = \sum_{ t \in U: x \in \vertices(t) } t
+,
+\]
+\[
+\deg(x,U) = |\nbhd(x,U)|
+,
+\]
+\[
+\maxdeg(U) = \max_x \deg(x,U)
+.
+\]
+The \emph{cone from $x$ to $U$}
+is the $(n+1)$-chain
+\[
+\cone(x,U) = 
+\sum_{t \in U} \adj(x,t)
+,
+\]
+consisting of all the non-trivial oriented
+$(n+1)$-simplices $\adj(x,t)=[x x_0\ldots x_n]$ obtained
+by adjoining $x$ to  $t = [x_0\ldots x_n] \in U$.
+If $x \in \vertices(t)$ then $t$ doesn't contribute to the sum,
+so $|\cone(x,U)| = |U| - \deg(x,U)$.
+
+If $U$ is closed then
+$\del\, \cone(x,U) = U$, so
+
+\begin{prop} \label{maxdeg}
+For any $X \in Z_n$
+\[
+\Zvol(X) \leq |X| - \maxdeg(X)
+\mathproofend
+\]
+\end{prop}
+
+If $U \in Z_n$ and $x \notin \vertices(U)$ then
+$\deg(x,U)=0$ and
+$|\cone(x,U)| = |U|$.
+In this case we call $\cone(x,U)$ a \emph{complete cone}.
+By Proposition \ref{maxdeg} a non-trivial complete cone is not taut.
+(This is a long-winded way of saying that instead of coning from
+$x \notin U$, we could have coned from some $x \in U$.)
+Thus:
+\begin{prop}\label{nocone}
+If $M$ is taut it contains no non-trivial complete cone.
+\proofend
+\end{prop}
+
+Call $x \in \vertices(M) \setminus \vertices(\del M)$ an
+\emph{internal vertex} of $M$.
+If $x$ is internal to $M$ then $\nbhd(x,M)$ is a complete cone, so:
+\begin{prop} \label{nointernal}
+If $M$ is taut then
+it has no internal vertices.
+\proofend
+\end{prop}
+
+\section{Almost disjoint unions}
+
+Recall that if $X,Y \in Z_n$ we call $X+Y$ an almost disjoint union
+if
+\[
+|\vertices(X) \cap \vertices(Y)| \leq n+1
+.\]
+The most interesting special case is a connected sum,
+where $t=[c_0,c_1,\ldots,c_n]$ occurs once in $X$ and
+$-t=[c_1,c_0,\ldots,c_n]$ occurs once in $Y$.
+For example, if $n=1$ with $X$ a cycle of length $p$
+and $Y$ a cycle of length $q$
+the connected sum $X+Y$ is
+a cycle of length $p+q-2$.
+Here
+$\Zvol$ adds, because
+$\Zvol(X)=p-2$,
+$\Zvol(Y) = q-2$,
+and
+\[
+\Zvol(X+Y) = (p+q-2)-2 = \Zvol(X)+\Zvol(Y)
+.
+\]
+But not every filling of $X+Y$ splits, because a taut filling
+may contain any 2-simplex with vertices in $\vertices(X+Y)$.
+
+We want to show that fillings do split when $n \geq 2$.
+
+For $A \subset \Omega$, $p \in A$ define
+\[
+\pi_{A,p}: \Omega \to A
+\]
+\[
+\pi_{A,p}(x) = x \IF x \in A \ELSE p
+\]
+and let
+\[
+K_*(A,p): C_*(\Omega) \to C_*(A)
+\]
+be the induced chain map.
+This is a projection of $C_*(\Omega)$ onto $C_*(A)$.
+
+Let $A,B$ be finite vertex sets sharing the vertices
+$C = A \cap B$,
+and let $c=|C|$.
+Observe that
+$C_c(C)$ and $Z_{c-1}(C)$ are trivial,
+because $\Delta(C)$ contains no $c$-simplex,
+and (up to orientation) only one $c\mns 1$-simplex,
+with nothing to cancel its boundary.
+
+Let
+\[
+C_*(A,B) = C_*(A) \direct C_*(B)
+.
+\]
+For $p,q \in C$ define the mapping
+\[
+g_*(p,q) = K_*(A,p) \direct K_*(B,q):
+C_*(A \cup B) \to C_*(A,B)
+.
+\]
+
+\begin{prop} \label{recover}
+Let $(X,Y) \in C_n(A,B)$.
+If $|A \cap B| \leq n$
+we can recover $(X,Y)$ from $X+Y$.
+If $(X,Y) \in Z_n(A,B)$ this holds also when $|A \cap B|  = n+1$.
+\end{prop}
+
+\proofstart
+Let $C=A \cap B$.
+We can assume $|C| \geq 1$.
+(Add a brand new point to $C$ if necessary.)
+We claim that
+for any $p,q \in C$
+(not necessarily distinct) we have
+\[
+g_n(p,q)(X+Y)=(X,Y)
+.
+\]
+Indeed,
+\[
+K_n(A,p)(X+Y) = X + K_n(A,p)(Y)
+.
+\]
+The second term belongs to $C_n(C)$,
+which is trivial when $|C| \leq n$.
+If $Y \in Z_n(B)$ the second term belongs to $Z_n(C)$,
+which is trivial when $|C| \leq n+1$.
+\proofend
+
+
+\begin{theorem} \label{th1}
+If $|A \cap B| \leq n+1$,
+for all $(X,Y) \in Z_n(A,B)$ we have
+\[
+\Zvol(X+Y) = \Zvol(X)+\Zvol(Y)
+.
+\]
+And as long as $n \geq 2$,
+for any $M \in \taut(X+Y)$ 
+we have $M = M_X + M_Y$
+with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+\end{theorem}
+
+\note
+Ellison \cite{ellison:gap}
+proved the additivity of $\Zvol$.
+What's new here is the splitting of taut fillings when $n\geq 2$.
+This result resembles Theorem 6.2 of
+Pournin and Wang
+\cite{pw:flip}
+about flip paths.
+Like theirs, our proof uses a variation on the normalization technique
+of Sleator, Tarjan, and Thurston
+\cite[Lemma 7]{stt:jams}.
+It would be nice to fit these results under one roof.
+\medskip
+
+\proofstart
+Again let $C = A \cap B$.
+We can assume $|C| = n+1$,
+as this is the hardest case.
+And we might as well go ahead and take $n=2$, $|C|=3$,
+as this case illustrates all the issues.
+
+Take any $M \in \taut(X+Y) \subset C_3(A \union B)$.
+Pick distinct points $p,q \in C$,
+and let
+\[
+(M_X,M_Y) = g_{3}(p,q)(M)
+.
+\]
+(For now we'll suppress the dependence of $M_X,M_Y$ on $p,q$.)
+
+Because $g_*(p,q)$ is a chain map we have
+$\del_{3} M_X = X$, $\del_{3} M_Y = Y$:
+\[
+(\del_{3} M_X, \del_{3} M_Y)
+=
+\del_{3} (g_{3}(p,q)(M))
+=
+g_2(p, q)(\del_{3} M)
+=
+g_2(p,q)(X+Y)
+=
+(X,Y)
+.
+\]
+
+We want to show that under the map $g_3(p,q)$ any $t \in M$
+dies either in $M_X$ or $M_Y$,
+because then we'll get additivity of $\Zvol$ from
+\[
+\Zvol(X+Y) = |M|
+\geq |M_X| + |M_Y|
+\geq \Zvol(X) + \Zvol(Y)
+\geq \Zvol(X+Y)
+.
+\]
+
+Let's call a $3$-simplex a `tet' for short.
+Say that a tet $t \in M$ has type $CCXY$ if $t= \pm[c_1c_2x_1y_1]$
+for $c_1,c_2 \in C$, $x_1 \in A \setminus C$, $y_1 \in B \setminus C$.
+Similarly for types $XXXX$, $CXXX$, $CXXY$, $XXXY$, etc.
+The first two are pure $X$ cases, meaning that they live in $C_3(A)$;
+the last two are hybrid cases.
+
+Any $XX..$ tet dies in $M_Y$;
+any $YY..$ tet dies in $M_X$.
+
+The remaining cases to check are
+are the pure cases $CCCX$, $CCCY$,
+and the hybrid case $CCXY$.
+A $CCCX$ tet $t=\pm[c_1c_2c_3x_1]$ dies in $M_Y$ because
+$K_3(B,q)(t)=[c_1c_2c_3q]$,
+which vanishes because $q \in C = \{c_1,c_2,c_3\}$ produces a repeated vertex.
+Likewise a $CCCY$ tet dies in $M_X$.
+The more interesting case is $CCXY$:
+The key is that since $|C|=3$, $\{c_1,c_2\}$ cannot be disjoint from $\{p,q\}$,
+so it dies on one side or the other.
+
+So 
+\[
+|M| = |M_X(p,q)| + |M_Y(p,q)|,
+\]
+and $\Zvol$ adds.
+Note how we're now emphasizing the possible dependence of $M_X,M_Y$ on $p,q$.
+When $n=1$ the choice of $p,q$ can indeed make a difference:
+We can get a different pair $(M_X,M_Y)$ if we switch
+$p$ and $q$.
+(Think about the connected sum of two cycle graphs.)
+
+But when $n \geq 2$ we will now show that all tets are pure $X$ or pure $Y$,
+so $M_X$ consists of all the pure $X$ tets, and ditto for $M_Y$.
+This will make
+$M = M_X + M_Y$ with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+
+Again our test case is $n=2$.
+
+The key observation is that, now that we know that every tet dies on
+one side or the other, we know that no tet can die on both sides,
+because that would make $|M| > \Zvol(X) + \Zvol(Y)$.
+
+An $XXYY$ tet would die on both sides, so there can be none of these.
+
+Any $pqXY$, $pXXY$, or $qXYY$ would die on both sides, and $p,q$ are arbitrary,
+so this rules out all $CCXY,CXXY,CXYY$.
+
+The only remaining hybrids are $XXXY$ and $XYYY$.
+Let's rule out $XXXY$, leaving $XYYY$ to symmetry.
+
+Fix any $y_0 \in B \setminus C$, and suppose there is
+some $XXXy_0$ tet in $M$.
+Let $U \subset M$ consist of all such $XXXy_0$ tets.
+We claim that $y_0 \notin \vertices(\del U)$.
+For let $s$ be any 2-simplex of the form $XXy_0$,
+the only kind of 2-simplex containing $y_0$ that could belong
+to $\del U$.
+Any $t \in M$ of which $s$ or $-s$ is a face must be a hybrid tet,
+and the only possibility is $XXXy_0$, so $t \in U$.
+Because $\del M = 0$ the signed multiplicity of $s$
+vanishes in $\del M$,
+hence also in $\del U$,
+because the tets of $M$ with $\pm s$ as a face all belong to $U$.
+So $y_0 \notin \vertices(\del U)$,
+making $U$ a complete cone on $y_0$,
+contradicting \ref{nocone}.
+So there is no such $XXXy_0$ tet, ruling out $XXXY$,
+and with it $XYYY$.
+
+So there are no hybrid tets, meaning that $M$ splits, as claimed.
+\proofend
+
+The splitting of taut fillings depends on the assumption $n\geq 2$.
+Let's consider what goes wrong when $n=1$.
+Here the hybrid types are $CXY$, $XXY$, $XYY$.
+Neither $pXY$ nor $qXY$ dies on both sides, so we can't rule out $CXY$.
+Failing that, the $XXy_0$ tets needn't form a complete cone,
+because $[x_0x_1y_0)$ can continue across $[x_1 y_0]$ to $-[p x_1 y_0]$,
+so we can't rule out $XXY$ either.
+
+The foregoing proof works equally well over $\QQ$, providing we
+permit ourselves to work with fractional multisets.
+Alternatively, we can clear denominators as in the introduction
+above.
+Either way, we have:
+
+\begin{corollary} \label{cor1}
+$\Qvol$ adds under almost disjoint union,
+and for $n \geq 2$
+taut $\QQ$-fillings split.
+\proofend
+\end{corollary}
+
+\begin{comment}
+\section{Triangulations}
+
+
+exec
+/bin/zsh -lc 'rg -n "multiset|submultiset|Sub|degree|deg|support|carrier|complete cone|internal|nointernal|maxdeg|Zvol|projection|almost disjoint|type|Type" taut/taut.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+15:Zili Wang is supported by
+53:\includegraphics[width=370pt]{figures/#1.pdf}
+65:\includegraphics[width=#1]{figures/#2.pdf}
+135:\newcommand{\maxdeg}{\kw{maxdeg}}
+136:\newcommand{\mindeg}{\kw{mindeg}}
+138:\newcommand{\carrier}{\kw{carrier}}
+144:\newcommand{\Zvol}{\kw{Zvol}}
+175:and let $\mathrm{Zvol}(\sigma)$ be the minimum $L_1$-norm
+178:We show that $\mathrm{Zvol}(\sigma) = \mathrm{tetvol}(\sigma)$,
+187:what we call almost disjoint union,
+188:where summands are supported on sets that overlap in at most $n+1$ vertices.
+202:Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+204:of its boundary, i.e., if $|M|=\Zvol(\del M)$,
+210:(Cf.\ Proposition \ref{nointernal} below.)
+213:Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+221:showed the $\Zvol$ adds under almost disjoint union:
+222:$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+250:and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+255:\Zvol(\sigma) = \tetvol(\sigma)
+258:Certainly $\Zvol \leq \tetvol$,
+271:Our interest in $\Zvol$ stems from the work
+274:They observed that coning from a vertex of maximal degree
+277:of $S^2$ has $\tetvol \leq 2v-4-\maxdeg(\sigma)$.
+278:If $v\geq13$ $\maxdeg(\sigma) \geq 6$, so $\tetvol \leq 2v-10$.
+306:or just $\Zvol=2v-10$, any taut filling
+309:About $\Qvol$ versus $\Zvol$.
+311:we described triangulations of $S^2$ with $\Qvol < \Zvol$.
+313:with $\maxdeg \leq 6$, the gap between $\Qvol$ and $\Zvol$ is $<1$,
+315:$\lceil \Qvol \rceil = \Zvol$.
+316:Since $\Qvol$ and $\Zvol$
+321:but taking the connected sum pushes $\maxdeg$ above $6$.
+327:We can think of an $n$-chain $X \in C_n$ as a multiset of
+343:The size of $M$ as a multiset is its $L_1$-norm $|M|$.
+345:if $U$ is a sub-multiset of $M$.
+357:In terms of multisets, this means that we substitute $V$ for $U$,
+379:\deg(x,U) = |\nbhd(x,U)|
+383:\maxdeg(U) = \max_x \deg(x,U)
+397:so $|\cone(x,U)| = |U| - \deg(x,U)$.
+402:\begin{prop} \label{maxdeg}
+405:\Zvol(X) \leq |X| - \maxdeg(X)
+411:$\deg(x,U)=0$ and
+413:In this case we call $\cone(x,U)$ a \emph{complete cone}.
+414:By Proposition \ref{maxdeg} a non-trivial complete cone is not taut.
+419:If $M$ is taut it contains no non-trivial complete cone.
+424:\emph{internal vertex} of $M$.
+425:If $x$ is internal to $M$ then $\nbhd(x,M)$ is a complete cone, so:
+426:\begin{prop} \label{nointernal}
+428:it has no internal vertices.
+434:Recall that if $X,Y \in Z_n$ we call $X+Y$ an almost disjoint union
+447:$\Zvol$ adds, because
+448:$\Zvol(X)=p-2$,
+449:$\Zvol(Y) = q-2$,
+452:\Zvol(X+Y) = (p+q-2)-2 = \Zvol(X)+\Zvol(Y)
+472:This is a projection of $C_*(\Omega)$ onto $C_*(A)$.
+529:\Zvol(X+Y) = \Zvol(X)+\Zvol(Y)
+540:proved the additivity of $\Zvol$.
+585:because then we'll get additivity of $\Zvol$ from
+587:\Zvol(X+Y) = |M|
+589:\geq \Zvol(X) + \Zvol(Y)
+590:\geq \Zvol(X+Y)
+595:Say that a tet $t \in M$ has type $CCXY$ if $t= \pm[c_1c_2x_1y_1]$
+597:Similarly for types $XXXX$, $CXXX$, $CXXY$, $XXXY$, etc.
+619:and $\Zvol$ adds.
+635:because that would make $|M| > \Zvol(X) + \Zvol(Y)$.
+659:making $U$ a complete cone on $y_0$,
+669:Here the hybrid types are $CXY$, $XXY$, $XYY$.
+671:Failing that, the $XXy_0$ tets needn't form a complete cone,
+676:permit ourselves to work with fractional multisets.
+682:$\Qvol$ adds under almost disjoint union,
+759:if the geometric carrier of $\sigma$ is homeomorphic to $S^2$.
+782:We continue to think of a chain $M \in C_n$ as a multiset of
+784:If this is only nominally a multiset (all multiplicites are $1$)
+813:vertex of degree $3$.
+818:degree $3$.)
+819:By Proposition \ref{maxdeg}
+821:|M| = \Zvol(\sigma) \leq f-\maxdeg(\sigma) 
+824:Regarding $M$ as a multiset of tets, associate to every 2-simplex $\alpha$ of
+828:so there must be at least $\maxdeg$ elements of $M$ where this map is 2-to-1,
+829:giving us at least $\maxdeg$ disjointly eligible tets,
+846:$\sigma_t$ is the almost disjoint union of two triangulations
+895:For $k>1$ we distinguish the type of $t_k$ according to the number of
+897:In general the type can be any of $1,2,3$, but in our application
+898:type $3$ is ruled out because it would produce an interior vertex.
+920:If $\tau$ has a vertex of degree 3 that belongs to a tet $t$
+923:If $\tau$ has a vertex of degree 3 that belongs to $t_1$,
+928:If there is no vertex of degree 3,
+929:we have at least $\maxdeg \geq 4$ disjointly eligible tets.
+934:into the almost disjoint union of $\tau_1$ and $\tau_2$,
+991:If $\sigma$ has a vertex of degree 3,
+996:If $\sigma$ has no vertex of degree 3.
+997:there are at least $\maxdeg \geq 4$ disjointly eligible tet.
+1001:or (b) becomes an almost disjoint union where
+1007:in the almost disjoint union, it occurs on one side or the other,
+1023:$\sigma$ has no vertex of degree 3.
+1026:we can assume $\maxdeg \geq 5$,
+1036:leaving us at least $\maxdeg-2$ other flipping options.
+
+codex
+**Q1.** Augmented complex is the right choice. It makes `∂ (cone x M) + cone x (∂ M) = M` literally true, including `∅` and 0-simplices, and avoids special cases in filling existence. The main downstream trap is semantic: paper-style `Z_0` is not the augmented `Z_0`, but Theorem 1 is for `n ≥ 2`, so this should not bite if dimension hypotheses are explicit.
+
+**Q2.** Dimension-mixed `Finset V →₀ ℤ` is the right primitive for this paper. The proofs are multiset and support driven; dimension-indexed chain types would add coercion friction around `∂`, cone, subchains, restrictions, projections, and splitting. Just make homogeneity predicates first-class and use them aggressively.
+
+**Q3.** `K_{A,p}` is sound and the chain-map property is provable as stated. The three cases match the induced map of `π(v)=v` in `A`, otherwise `p`: identity on simplices in `A`, replacement when exactly one outside vertex remains injective, zero when replacement creates a duplicate.
+
+The composite sign `(-1)^(cnt z s) • cone p (s.erase z)` gives exponent
+`cnt z s + cnt p (s.erase z)`, which is the parity needed to sort the simplex after replacing `z` by `p`.
+
+I would add one missing parity lemma explicitly. The listed identities are not quite “four”; the face-face cancellation proof wants:
+
+```text
+cnt x s + cnt z (s.erase x)
+  ≡ cnt z s + cnt x (s.erase z) + 1  mod 2
+```
+
+for `x ≠ z`, `x,z ∈ s`.
+
+For cone-boundary cancellation, also package the analogous lemma:
+
+```text
+cnt x s + cnt y (insert x s)
+  ≡ cnt y s + cnt x (s.erase y) + 1  mod 2
+```
+
+for `y ∈ s`, `x ∉ s`.
+
+**Q4.** `SubChain U M := ∀ s, (U s).natAbs + (M s − U s).natAbs = (M s).natAbs` is the right primitive. It exactly captures “submultiset with orientation,” including negative coefficients, and gives the norm split needed for Proposition 1. Add derived lemmas for sign compatibility, support inclusion, `nrm M = nrm U + nrm (M-U)`, transitivity, and filtered subchains by simplex-type predicates.
+
+One convention to watch for Theorem 1: in the complete-cone step, the paper says “because `∂M = 0`,” but formally `∂M = X+Y`. What is used is that the coefficient of a hybrid face such as `XXy₀` in `∂M` is zero because that face is not in `X` or `Y`. Encode that coefficient-level vanishing, not global closedness.
+
+Verdict: APPROVED.
+tokens used
+23,100
+**Q1.** Augmented complex is the right choice. It makes `∂ (cone x M) + cone x (∂ M) = M` literally true, including `∅` and 0-simplices, and avoids special cases in filling existence. The main downstream trap is semantic: paper-style `Z_0` is not the augmented `Z_0`, but Theorem 1 is for `n ≥ 2`, so this should not bite if dimension hypotheses are explicit.
+
+**Q2.** Dimension-mixed `Finset V →₀ ℤ` is the right primitive for this paper. The proofs are multiset and support driven; dimension-indexed chain types would add coercion friction around `∂`, cone, subchains, restrictions, projections, and splitting. Just make homogeneity predicates first-class and use them aggressively.
+
+**Q3.** `K_{A,p}` is sound and the chain-map property is provable as stated. The three cases match the induced map of `π(v)=v` in `A`, otherwise `p`: identity on simplices in `A`, replacement when exactly one outside vertex remains injective, zero when replacement creates a duplicate.
+
+The composite sign `(-1)^(cnt z s) • cone p (s.erase z)` gives exponent
+`cnt z s + cnt p (s.erase z)`, which is the parity needed to sort the simplex after replacing `z` by `p`.
+
+I would add one missing parity lemma explicitly. The listed identities are not quite “four”; the face-face cancellation proof wants:
+
+```text
+cnt x s + cnt z (s.erase x)
+  ≡ cnt z s + cnt x (s.erase z) + 1  mod 2
+```
+
+for `x ≠ z`, `x,z ∈ s`.
+
+For cone-boundary cancellation, also package the analogous lemma:
+
+```text
+cnt x s + cnt y (insert x s)
+  ≡ cnt y s + cnt x (s.erase y) + 1  mod 2
+```
+
+for `y ∈ s`, `x ∉ s`.
+
+**Q4.** `SubChain U M := ∀ s, (U s).natAbs + (M s − U s).natAbs = (M s).natAbs` is the right primitive. It exactly captures “submultiset with orientation,” including negative coefficients, and gives the norm split needed for Proposition 1. Add derived lemmas for sign compatibility, support inclusion, `nrm M = nrm U + nrm (M-U)`, transitivity, and filtered subchains by simplex-type predicates.
+
+One convention to watch for Theorem 1: in the complete-cone step, the paper says “because `∂M = 0`,” but formally `∂M = X+Y`. What is used is that the coefficient of a hybrid face such as `XXy₀` in `∂M` is zero because that face is not in `X` or `Y`. Encode that coefficient-level vanishing, not global closedness.
+
+Verdict: APPROVED.
