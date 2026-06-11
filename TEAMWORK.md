@@ -29,8 +29,12 @@ sphere/ball definitions.
   `Zvol_add_deg_le`, `not_taut_complete_cone`,
   `IsTaut.no_internal_vertex` (with the 2 ≤ card dimension guard).
   Axioms: standard three.
-- Next: `Taut/Projection.lean` — K_{A,p}, chain-map property, kill lemmas,
-  small-support triviality; then Theorem 1.
+- `Taut/Projection.lean` — COMPLETE and building: Kkills/KGen/Kmap,
+  chain-map property `bdry_Kmap` (∂∘K=K∘∂), norm accounting
+  `nrm_Kmap_add_killed_le`, triviality `eq_zero_of_supp_card_lt` /
+  `eq_zero_of_closed_supp_card_eq`. Axioms: standard three.
+- Next: `Taut/Theorem1.lean` — kill lemma (every generator dies on a
+  side), recovery, Zvol additivity, taut splitting (n ≥ 2).
 
 ## Design decisions of record (G1-audited)
 
