@@ -24,7 +24,13 @@ sphere/ball definitions.
   `cone_lk`, localization (`nbhd_bdry_nbhd`), cone injectivity
   (`eq_nbhd_of_cone_eq_zero`), norm accounting (`nrm_cone_add_deg`).
   Axioms of all of the above: propext, Classical.choice, Quot.sound.
-- Next: `Taut/Zvol.lean` — SubChain, Zvol, IsTaut, Props 1–4 of the paper.
+- `Taut/Zvol.lean` — COMPLETE and building: SubChain (+ support/norm-split
+  lemmas), Zvol, IsTaut; Props 1–4 proven: `IsTaut.subChain`,
+  `Zvol_add_deg_le`, `not_taut_complete_cone`,
+  `IsTaut.no_internal_vertex` (with the 2 ≤ card dimension guard).
+  Axioms: standard three.
+- Next: `Taut/Projection.lean` — K_{A,p}, chain-map property, kill lemmas,
+  small-support triviality; then Theorem 1.
 
 ## Design decisions of record (G1-audited)
 
