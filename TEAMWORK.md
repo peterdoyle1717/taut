@@ -59,9 +59,14 @@ sphere/ball definitions.
   skel, linkGraph, linkVerts, ConnOn, IsSphere2; Euler counting
   (3f = 2e, 3v = e+6, 2v = f+4); validation instance isSphere2_tetraBdry
   (generic 4 vertices). Axioms: standard three.
-- Next: link 2-regularity + links-are-cycles + mindeg ≥ 3 (auditor's
-  requested lemmas); then Taut/Ball.lean (List shelling certificates);
-  then flip dichotomy + χ ≤ 2.
+- Sphere local structure (M8) — COMPLETE: exists_third,
+  exists_two_faces, inter_eq_edge_of_two_faces, mem_linkVerts(_iff_edge),
+  link_two_regular, three_le_card_linkVerts, Decidable adjacencies.
+- Next: links-are-cycles packaging (2-regular + connected ⟹ cycle
+  traversal, in whatever form the χ ≤ 2 parity argument needs);
+  Taut/Ball.lean (List shelling certificates per audit); flip dichotomy;
+  χ ≤ 2 via tree-cotree (even-boundary-in-tree + dual connectivity are
+  the flagged first-class risks).
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 

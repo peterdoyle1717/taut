@@ -73,6 +73,12 @@ def linkGraph (σ : Finset (Finset V)) (v : V) : SimpleGraph V where
     exact h.2
   loopless := ⟨fun a h => h.1 rfl⟩
 
+instance (σ : Finset (Finset V)) (v : V) : DecidableRel (linkGraph σ v).Adj :=
+  fun a b => decidable_of_iff (a ≠ b ∧ {v, a, b} ∈ σ) Iff.rfl
+
+instance (σ : Finset (Finset V)) : DecidableRel (skel σ).Adj :=
+  fun a b => decidable_of_iff (a ≠ b ∧ {a, b} ∈ edgesOf σ) Iff.rfl
+
 /-- The neighbors of `v`: vertices of the faces at `v`, except `v`. -/
 def linkVerts (σ : Finset (Finset V)) (v : V) : Finset V :=
   (vertsOf (σ.filter (fun f => v ∈ f))).erase v
@@ -141,6 +147,209 @@ theorem two_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
   have h1 := three_mul_card_faces h
   have h2 := h.euler
   omega
+
+/-! ## Local structure: edges and links -/
+
+/-- The third vertex of a triangle over an edge. -/
+lemma exists_third {e f : Finset V} (hef : e ⊆ f) (he : e.card = 2)
+    (hf : f.card = 3) : ∃ z, z ∉ e ∧ f = insert z e := by
+  have hd : (f \ e).card = 1 := by
+    rw [Finset.card_sdiff_of_subset hef, hf, he]
+  obtain ⟨z, hz⟩ := Finset.card_eq_one.mp hd
+  have hzf : z ∈ f \ e := hz ▸ Finset.mem_singleton_self z
+  obtain ⟨hzf', hze⟩ := Finset.mem_sdiff.mp hzf
+  refine ⟨z, hze, ?_⟩
+  ext x
+  simp only [Finset.mem_insert]
+  constructor
+  · intro hx
+    by_cases hxe : x ∈ e
+    · exact Or.inr hxe
+    · left
+      have hxd : x ∈ f \ e := Finset.mem_sdiff.mpr ⟨hx, hxe⟩
+      rw [hz, Finset.mem_singleton] at hxd
+      exact hxd
+  · rintro (rfl | hx)
+    · exact hzf'
+    · exact hef hx
+
+/-- The two faces over an edge of a sphere, by name. -/
+lemma exists_two_faces {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {e : Finset V} (he : e ∈ edgesOf σ) :
+    ∃ f₁ ∈ σ, ∃ f₂ ∈ σ, f₁ ≠ f₂ ∧ e ⊆ f₁ ∧ e ⊆ f₂ ∧
+      ∀ f ∈ σ, e ⊆ f → f = f₁ ∨ f = f₂ := by
+  have h2 := h.closed e he
+  rw [edgeDeg] at h2
+  obtain ⟨f₁, f₂, hne, hpair⟩ := Finset.card_eq_two.mp h2
+  have hf₁ : f₁ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+  have hf₂ : f₂ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+  obtain ⟨hf₁σ, hef₁⟩ := Finset.mem_filter.mp hf₁
+  obtain ⟨hf₂σ, hef₂⟩ := Finset.mem_filter.mp hf₂
+  refine ⟨f₁, hf₁σ, f₂, hf₂σ, hne, hef₁, hef₂, fun f hf hef => ?_⟩
+  have hmem : f ∈ σ.filter (fun f => e ⊆ f) := Finset.mem_filter.mpr ⟨hf, hef⟩
+  rw [hpair] at hmem
+  simpa using hmem
+
+/-- Two distinct triangles over a common edge meet exactly in it. -/
+lemma inter_eq_edge_of_two_faces {f₁ f₂ e : Finset V}
+    (h3₁ : f₁.card = 3) (h3₂ : f₂.card = 3) (hne : f₁ ≠ f₂)
+    (he : e.card = 2) (h1 : e ⊆ f₁) (h2 : e ⊆ f₂) : f₁ ∩ f₂ = e := by
+  have hsub : e ⊆ f₁ ∩ f₂ := Finset.subset_inter h1 h2
+  have hcap : (f₁ ∩ f₂).card ≤ 3 :=
+    h3₁ ▸ Finset.card_le_card Finset.inter_subset_left
+  have hne3 : (f₁ ∩ f₂).card ≠ 3 := by
+    intro h3
+    have hi : f₁ ∩ f₂ = f₁ :=
+      Finset.eq_of_subset_of_card_le Finset.inter_subset_left (by omega)
+    have hsub12 : f₁ ⊆ f₂ := hi ▸ Finset.inter_subset_right
+    exact hne (Finset.eq_of_subset_of_card_le hsub12 (by omega))
+  have h2le := Finset.card_le_card hsub
+  exact (Finset.eq_of_subset_of_card_le hsub (by omega)).symm
+
+/-- Membership in the link of a vertex. -/
+lemma mem_linkVerts {σ : Finset (Finset V)} {v x : V} :
+    x ∈ linkVerts σ v ↔ x ≠ v ∧ ∃ f ∈ σ, v ∈ f ∧ x ∈ f := by
+  rw [linkVerts, Finset.mem_erase, mem_vertsOf]
+  constructor
+  · rintro ⟨hxv, f, hf, hxf⟩
+    exact ⟨hxv, f, Finset.mem_of_mem_filter f hf,
+      (Finset.mem_filter.mp hf).2, hxf⟩
+  · rintro ⟨hxv, f, hf, hvf, hxf⟩
+    exact ⟨hxv, f, Finset.mem_filter.mpr ⟨hf, hvf⟩, hxf⟩
+
+/-- In a sphere, link membership is edge membership. -/
+lemma mem_linkVerts_iff_edge {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {v x : V} (hxv : x ≠ v) :
+    x ∈ linkVerts σ v ↔ {v, x} ∈ edgesOf σ := by
+  constructor
+  · intro hx
+    obtain ⟨_, f, hf, hvf, hxf⟩ := mem_linkVerts.mp hx
+    refine mem_edgesOf.mpr ⟨f, hf, ?_, Finset.card_pair (Ne.symm hxv)⟩
+    intro u hu
+    rcases Finset.mem_insert.mp hu with rfl | hu
+    · exact hvf
+    · rw [Finset.mem_singleton] at hu
+      exact hu ▸ hxf
+  · intro hx
+    obtain ⟨f, hf, hef, _⟩ := mem_edgesOf.mp hx
+    exact mem_linkVerts.mpr ⟨hxv, f, hf,
+      hef (Finset.mem_insert_self v _),
+      hef (by simp)⟩
+
+/-- In a sphere, every link vertex has exactly two neighbors in the
+link: the links are 2-regular. -/
+theorem link_two_regular {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {v x : V} (hx : x ∈ linkVerts σ v) :
+    ((linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y)).card = 2 := by
+  classical
+  have hxv : x ≠ v := (Finset.mem_erase.mp hx).1
+  have hedge : {v, x} ∈ edgesOf σ := (mem_linkVerts_iff_edge h hxv).mp hx
+  have himg : ((linkVerts σ v).filter
+        (fun y => (linkGraph σ v).Adj x y)).image (fun y => {v, x, y})
+      = σ.filter (fun f => {v, x} ⊆ f) := by
+    ext f
+    rw [Finset.mem_image, Finset.mem_filter]
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      obtain ⟨hyL, hxy, hface⟩ := Finset.mem_filter.mp hy
+      refine ⟨hface, ?_⟩
+      intro u hu
+      rcases Finset.mem_insert.mp hu with rfl | hu
+      · exact Finset.mem_insert_self _ _
+      · rw [Finset.mem_singleton] at hu
+        subst hu
+        exact Finset.mem_insert_of_mem (Finset.mem_insert_self _ _)
+    · rintro ⟨hf, hef⟩
+      obtain ⟨z, hze, hfz⟩ := exists_third hef
+        (Finset.card_pair (Ne.symm hxv)) (h.pure f hf)
+      have hzv : z ≠ v := fun hzv => hze (by rw [hzv]; simp)
+      have hzx : z ≠ x := fun hzx => hze (by simp [hzx])
+      have hfz' : f = {v, x, z} := by
+        rw [hfz]
+        ext u
+        simp only [Finset.mem_insert, Finset.mem_singleton]
+        tauto
+      refine ⟨z, Finset.mem_filter.mpr ⟨?_, ?_⟩, hfz'.symm⟩
+      · exact mem_linkVerts.mpr ⟨hzv, f, hf,
+          hef (Finset.mem_insert_self v _), hfz' ▸ (by simp)⟩
+      · exact ⟨Ne.symm hzx, hfz' ▸ hf⟩
+  have hinj : ∀ y₁ ∈ (linkVerts σ v).filter
+        (fun y => (linkGraph σ v).Adj x y),
+      ∀ y₂ ∈ (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y),
+      (fun y => ({v, x, y} : Finset V)) y₁
+        = (fun y => ({v, x, y} : Finset V)) y₂ → y₁ = y₂ := by
+    intro y₁ h₁ y₂ h₂ heq
+    have hy₁v : y₁ ≠ v := (Finset.mem_erase.mp (Finset.mem_filter.mp h₁).1).1
+    have hy₁x : y₁ ≠ x := Ne.symm (Finset.mem_filter.mp h₁).2.1
+    have heq' : ({v, x, y₁} : Finset V) = {v, x, y₂} := heq
+    have hy₁ : y₁ ∈ ({v, x, y₂} : Finset V) := heq' ▸ (by simp)
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hy₁
+    rcases hy₁ with rfl | rfl | hy
+    · exact absurd rfl hy₁v
+    · exact absurd rfl hy₁x
+    · exact hy
+  have hcard := Finset.card_image_of_injOn hinj
+  rw [himg] at hcard
+  rw [← hcard]
+  exact h.closed _ hedge
+
+/-- Minimum degree three: every vertex of a sphere has at least three
+neighbors. -/
+theorem three_le_card_linkVerts {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {v : V} (hv : v ∈ vertsOf σ) : 3 ≤ (linkVerts σ v).card := by
+  obtain ⟨f, hf, hvf⟩ := mem_vertsOf.mp hv
+  have hf3 := h.pure f hf
+  have he2 : (f.erase v).card = 2 := by
+    rw [Finset.card_erase_of_mem hvf, hf3]
+  obtain ⟨x, y, hxy, hpair⟩ := Finset.card_eq_two.mp he2
+  have hxe : x ∈ f.erase v := by rw [hpair]; simp
+  have hye : y ∈ f.erase v := by rw [hpair]; simp
+  have hxf : x ∈ f := Finset.mem_of_mem_erase hxe
+  have hyf : y ∈ f := Finset.mem_of_mem_erase hye
+  have hxv : x ≠ v := Finset.ne_of_mem_erase hxe
+  have hyv : y ≠ v := Finset.ne_of_mem_erase hye
+  have hvx_sub : ({v, x} : Finset V) ⊆ f := by
+    intro u hu
+    rcases Finset.mem_insert.mp hu with rfl | hu
+    · exact hvf
+    · rw [Finset.mem_singleton] at hu
+      exact hu ▸ hxf
+  have hedge : {v, x} ∈ edgesOf σ :=
+    mem_edgesOf.mpr ⟨f, hf, hvx_sub, Finset.card_pair (Ne.symm hxv)⟩
+  obtain ⟨f₁, hf₁, f₂, hf₂, hne, he₁, he₂, huniq⟩ := exists_two_faces h hedge
+  obtain ⟨f', hf', hef', hff'⟩ : ∃ f' ∈ σ, {v, x} ⊆ f' ∧ f' ≠ f := by
+    rcases huniq f hf hvx_sub with rfl | rfl
+    · exact ⟨f₂, hf₂, he₂, hne.symm⟩
+    · exact ⟨f₁, hf₁, he₁, hne⟩
+  obtain ⟨z, hze, hfz⟩ := exists_third hef'
+    (Finset.card_pair (Ne.symm hxv)) (h.pure f' hf')
+  have hzv : z ≠ v := fun hzv => hze (by rw [hzv]; simp)
+  have hzx : z ≠ x := fun hzx => hze (by simp [hzx])
+  have hzy : z ≠ y := by
+    intro hzy
+    apply hff'
+    have hfeq : f = insert v {x, y} := by
+      rw [← hpair, Finset.insert_erase hvf]
+    rw [hfz, hzy, hfeq]
+    ext u
+    simp only [Finset.mem_insert, Finset.mem_singleton]
+    tauto
+  have hxL : x ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hxv, f, hf, hvf, hxf⟩
+  have hyL : y ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hyv, f, hf, hvf, hyf⟩
+  have hzL : z ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hzv, f', hf',
+    hef' (Finset.mem_insert_self v _), by rw [hfz]; exact Finset.mem_insert_self z _⟩
+  calc 3 = ({x, y, z} : Finset V).card :=
+        (Finset.card_eq_three.mpr ⟨x, y, z, hxy, Ne.symm hzx, Ne.symm hzy,
+          rfl⟩).symm
+    _ ≤ (linkVerts σ v).card := by
+        refine Finset.card_le_card ?_
+        intro u hu
+        rcases Finset.mem_insert.mp hu with rfl | hu
+        · exact hxL
+        · rcases Finset.mem_insert.mp hu with rfl | hu
+          · exact hyL
+          · rw [Finset.mem_singleton] at hu
+            exact hu ▸ hzL
 
 /-! ## The boundary of the tetrahedron -/
 
