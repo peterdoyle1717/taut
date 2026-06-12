@@ -40,9 +40,15 @@ sphere/ball definitions.
   and THEOREM 1 PART 1: `Zvol_add_of_almost_disjoint` (general n ≥ 1,
   under p ≠ q ∈ A∩B; the |A∩B| ≤ 1 cases are open targets, NOT assumed).
   Axioms: standard three.
-- Next: `Taut/Splitting.lean` — Theorem 1 part 2 (taut fillings split,
-  n ≥ 2): no-double-kill, hybrid elimination, the complete-cone step
-  (per the G1 auditor: coefficient-level vanishing, not closedness).
+- `Taut/Splitting.lean` — COMPLETE and building: kill certificates,
+  strengthened mass bound, `no_double_kill`, `hybrid_structure`,
+  `no_extreme_hybrid` (the complete-cone argument, coefficient-level),
+  and THEOREM 1 PART 2: `IsTaut.splits` (n ≥ 2, general dimension,
+  constructive split by filtering along `· ⊆ A`). Axioms: standard three.
+  PAPER STATUS: Props 1-4 and Theorem 1 (both parts) fully formalized.
+- Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
+  clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 (S²/B³
+  combinatorics — needs comb-sphere/ball definitions per the assessment).
 
 ## Design decisions of record (G1-audited)
 
