@@ -46,9 +46,24 @@ sphere/ball definitions.
   and THEOREM 1 PART 2: `IsTaut.splits` (n ≥ 2, general dimension,
   constructive split by filtering along `· ⊆ A`). Axioms: standard three.
   PAPER STATUS: Props 1-4 and Theorem 1 (both parts) fully formalized.
+- G1 audit #2 (sphere/ball layer for Th2-Th4): spec
+  notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md — APPROVED.
+  Notes of record: keep `conn` in IsSphere2 (χ alone admits torus
+  components); balls = List shelling certificates, documented as
+  "shelling-certified balls"; free shellability = ∀ t, ∃ shelling with t
+  first; χ ≤ 2 via tree-cotree (even-boundary-in-tree + dual-graph
+  connectedness are first-class milestones); after any split, repackage
+  component boundaries as closed ±1-support sphere cycles before
+  recursing; Th4's S³⊄B³ replacement = first-class chain obligation.
+- `Taut/Complex2.lean` — COMPLETE and building: edgesOf/vertsOf/edgeDeg,
+  skel, linkGraph, linkVerts, ConnOn, IsSphere2; Euler counting
+  (3f = 2e, 3v = e+6, 2v = f+4); validation instance isSphere2_tetraBdry
+  (generic 4 vertices). Axioms: standard three.
+- Next: link 2-regularity + links-are-cycles + mindeg ≥ 3 (auditor's
+  requested lemmas); then Taut/Ball.lean (List shelling certificates);
+  then flip dichotomy + χ ≤ 2.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
-  clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 (S²/B³
-  combinatorics — needs comb-sphere/ball definitions per the assessment).
+  clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
 ## Design decisions of record (G1-audited)
 
