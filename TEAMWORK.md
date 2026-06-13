@@ -108,9 +108,15 @@ sphere/ball definitions.
   two faces' W-values sum to [e⊆γ] — the geometric cut), and **`closed_cut`**
   (each capped side `insert γ σ₁` is a closed pseudomanifold — the second
   IsSphere2 field). Axioms: standard three.
+- M13 (in Separation.lean, building): `bd1_eval_two` (∂₁ at a vertex on
+  exactly two support-edges = their coefficient sum) and **`gammaCycle_dichotomy`**
+  (a 1-cycle supported on γ's edges is 0 or vγ — the load-bearing fact for
+  both `conn` and the final piece-decomposition; ∂₁=0 forces the three
+  triangle-edge coefficients equal). Axioms: standard three.
 - Next, to finish `separates`: `conn` for the pieces (σ₁ is dual-connected
   — dual-component argument: any component's boundary is a 1-cycle on γ's
-  edges ∈ {0,vγ}, and ker ∂₂={0,𝟙} forces it whole); then **`linkConn`**
+  edges ∈ {0,vγ} via gammaCycle_dichotomy, and ker ∂₂={0,𝟙} forces it
+  whole; then dual-conn ⟹ skeleton-conn); then **`linkConn`**
   for the pieces (the genuinely hard field — at a γ-vertex the σ₁-faces
   form a connected arc of the link cycle, closed by γ; a subgraph-of-a-
   cycle-with-2-odd-vertices-is-an-arc argument); then `euler` (χ-additivity

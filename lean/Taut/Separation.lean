@@ -150,4 +150,120 @@ lemma closed_cut (h : IsSphere2 σ) (hγ3 : γ.card = 3)
     obtain h1' | h1' := hzo (W ⟨f₁, h1⟩) <;> obtain h2' | h2' := hzo (W ⟨f₂, h2⟩) <;>
       rw [h1', h2'] at hpar hone ⊢ <;> simp_all
 
+/-! ## The pieces are connected -/
+
+/-- `∂₁c` at a vertex `x` lying on exactly the two support-edges `e₁, e₂` equals
+`c e₁ + c e₂`. -/
+lemma bd1_eval_two {σ : Finset (Finset V)} {c : C1 σ} {x : V} (hx : x ∈ vertsOf σ)
+    {e₁ e₂ : edgesOf σ} (hne : e₁ ≠ e₂) (hx1 : x ∈ (e₁ : Finset V)) (hx2 : x ∈ (e₂ : Finset V))
+    (honly : ∀ e : edgesOf σ, x ∈ (e : Finset V) → c e ≠ 0 → e = e₁ ∨ e = e₂) :
+    bd1 σ c ⟨x, hx⟩ = c e₁ + c e₂ := by
+  classical
+  rw [bd1_apply]
+  rw [← Finset.sum_subset (Finset.subset_univ {e₁, e₂}) (fun e _ hes => ?_)]
+  · rw [Finset.sum_pair hne, if_pos hx1, if_pos hx2, one_mul, one_mul]
+  · -- terms off {e₁,e₂} vanish
+    by_cases hxe : x ∈ (e : Finset V)
+    · by_cases hce : c e = 0
+      · rw [hce, mul_zero]
+      · rcases honly e hxe hce with rfl | rfl <;> simp_all
+    · rw [if_neg hxe, zero_mul]
+
+/-- A 1-cycle supported on the edges of `γ` (a triangle whose 2-subsets are
+edges) is `0` or the whole γ-cycle: `∂₁ = 0` forces the three coefficients
+equal. -/
+lemma gammaCycle_dichotomy {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) {c : C1 σ} (hc : bd1 σ c = 0)
+    (hsupp : ∀ e : edgesOf σ, c e ≠ 0 → (e : Finset V) ⊆ γ) :
+    c = 0 ∨ c = gammaChain σ γ := by
+  classical
+  obtain ⟨a, b, d, hab, had, hbd, hγ⟩ := Finset.card_eq_three.mp hγ3
+  have mk : ∀ {p q : V}, p ≠ q → ({p, q} : Finset V) ⊆ γ → ({p, q} : Finset V) ∈ edgesOf σ :=
+    fun hpq hsub => hγe (Finset.mem_powersetCard.mpr ⟨hsub, Finset.card_pair hpq⟩)
+  have sab : ({a, b} : Finset V) ⊆ γ := by
+    rw [hγ]; intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+  have sad : ({a, d} : Finset V) ⊆ γ := by
+    rw [hγ]; intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+  have sbd : ({b, d} : Finset V) ⊆ γ := by
+    rw [hγ]; intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+  set eab : edgesOf σ := ⟨{a, b}, mk hab sab⟩ with heab
+  set ead : edgesOf σ := ⟨{a, d}, mk had sad⟩ with head
+  set ebd : edgesOf σ := ⟨{b, d}, mk hbd sbd⟩ with hebd
+  -- every γ-edge is one of the three
+  have tri : ∀ e : edgesOf σ, (e : Finset V) ⊆ γ → e = eab ∨ e = ead ∨ e = ebd := by
+    intro e hsub
+    obtain ⟨p, q, hpq, hpqe⟩ := Finset.card_eq_two.mp (card_of_mem_edgesOf e.2)
+    rw [hγ] at hsub
+    have hp : p ∈ ({a, b, d} : Finset V) := hsub (hpqe ▸ by simp)
+    have hq : q ∈ ({a, b, d} : Finset V) := hsub (hpqe ▸ by simp)
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hp hq
+    have key : (e : Finset V) = {a, b} ∨ (e : Finset V) = {a, d} ∨ (e : Finset V) = {b, d} := by
+      rw [hpqe]
+      rcases hp with rfl | rfl | rfl <;> rcases hq with rfl | rfl | rfl <;>
+        first
+          | exact absurd rfl hpq
+          | exact Or.inl rfl
+          | exact Or.inl (Finset.pair_comm _ _)
+          | exact Or.inr (Or.inl rfl)
+          | exact Or.inr (Or.inl (Finset.pair_comm _ _))
+          | exact Or.inr (Or.inr rfl)
+          | exact Or.inr (Or.inr (Finset.pair_comm _ _))
+    rcases key with h | h | h
+    · exact Or.inl (Subtype.ext h)
+    · exact Or.inr (Or.inl (Subtype.ext h))
+    · exact Or.inr (Or.inr (Subtype.ext h))
+  have ha : a ∈ vertsOf σ := edge_mem_vertsOf (mk hab sab) (by simp)
+  have hb : b ∈ vertsOf σ := edge_mem_vertsOf (mk hab sab) (by simp)
+  have hd : d ∈ vertsOf σ := edge_mem_vertsOf (mk had sad) (by simp)
+  have ne_ab_ad : eab ≠ ead := by
+    rw [heab, head, ne_eq, Subtype.mk.injEq]; intro h
+    have : b ∈ ({a, d} : Finset V) := h ▸ by simp
+    simp only [Finset.mem_insert, Finset.mem_singleton] at this; tauto
+  have ne_ab_bd : eab ≠ ebd := by
+    rw [heab, hebd, ne_eq, Subtype.mk.injEq]; intro h
+    have : a ∈ ({b, d} : Finset V) := h ▸ by simp
+    simp only [Finset.mem_insert, Finset.mem_singleton] at this; tauto
+  have ne_ad_bd : ead ≠ ebd := by
+    rw [head, hebd, ne_eq, Subtype.mk.injEq]; intro h
+    have : a ∈ ({b, d} : Finset V) := h ▸ by simp
+    simp only [Finset.mem_insert, Finset.mem_singleton] at this; tauto
+  -- the three vertex equations
+  have hva : c eab + c ead = 0 := by
+    have honly : ∀ e : edgesOf σ, a ∈ (e : Finset V) → c e ≠ 0 → e = eab ∨ e = ead := by
+      intro e hxe hce
+      rcases hone : tri e (hsupp e hce) with h | h | h
+      · exact Or.inl h
+      · exact Or.inr h
+      · exact absurd (h ▸ hxe) (by rw [hebd]; simp only [Finset.mem_insert, Finset.mem_singleton]; tauto)
+    rw [← bd1_eval_two ha ne_ab_ad (by rw [heab]; simp) (by rw [head]; simp) honly, hc]; rfl
+  have hvb : c eab + c ebd = 0 := by
+    have honly : ∀ e : edgesOf σ, b ∈ (e : Finset V) → c e ≠ 0 → e = eab ∨ e = ebd := by
+      intro e hxe hce
+      rcases tri e (hsupp e hce) with h | h | h
+      · exact Or.inl h
+      · exact absurd (h ▸ hxe) (by rw [head]; simp only [Finset.mem_insert, Finset.mem_singleton]; tauto)
+      · exact Or.inr h
+    rw [← bd1_eval_two hb ne_ab_bd (by rw [heab]; simp) (by rw [hebd]; simp) honly, hc]; rfl
+  -- so the three coefficients are equal
+  have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
+  have e1 : c ead = c eab := (c2 _ _ hva).symm
+  have e2 : c ebd = c eab := (c2 _ _ hvb).symm
+  -- c = (c eab) • gammaChain
+  have hrep : c = (c eab) • gammaChain σ γ := by
+    funext e
+    simp only [Pi.smul_apply, gammaChain, smul_eq_mul]
+    by_cases hsub : (e : Finset V) ⊆ γ
+    · rw [if_pos hsub, mul_one]
+      rcases tri e hsub with h | h | h
+      · rw [h]
+      · rw [h, e1]
+      · rw [h, e2]
+    · rw [if_neg hsub, mul_zero]
+      by_contra hce
+      exact hsub (hsupp e hce)
+  -- conclude on the value c eab ∈ {0,1}
+  rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (c eab) with h0 | h1
+  · left; rw [hrep, h0, zero_smul]
+  · right; rw [hrep, h1, one_smul]
+
 end Taut
