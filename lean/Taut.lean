@@ -7,3 +7,4 @@ import Taut.Complex2
 import Taut.Ball
 import Taut.Homology2
 import Taut.Separation
+import Taut.Theorem2

@@ -1,0 +1,2911 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019ec265-480d-7ce0-841b-a0f0c80595b3
+--------
+user
+G1 design audit (pre-code) for the CENTRAL theorem of the taut-fillings Lean formalization: Theorem 2 (any taut filling of a triangulated S² arises from a simplicial triangulation of B³) merged with Theorem 3 (freely shellable). Read notes/codex-consults/2026-06-13-g1-theorem2-spec.md in full, and cross-check against the paper proof in taut/taut.tex lines 789-908 (the minimal-counterexample induction: eligible tets sharing 2 oriented faces, the edge flip ab→cd on removing a tet, case 1 = new sphere + multiplicity-2 argument via a disjoint eligible tet, case 2 = split into two spheres via separation + Theorem 1, then glue balls + tet). Cross-check the existing Lean: lean/Taut/Separation.lean (just-finished `separates`: a non-face triangle splits a 2-sphere into two 2-spheres, 𝔽₂-level), lean/Taut/Ball.lean (IsShelling/IsBall/FreelyShellable List certificates, GlueStep, IsBall.isSphere2), lean/Taut/Splitting.lean (IsTaut.splits — the Theorem 1 chain split), lean/Taut/Zvol.lean (Zvol, nrm, deg, Prop 2 Zvol_add_deg_le), lean/Taut/Theorem1.lean. This is the largest remaining packet; I have NOT written code for it. Audit the DESIGN and answer Q1-Q6 in the spec. Especially: Q1 (how to formalize "arises from a B³ triangulation"/"good" given the induction reassembles shellings — Prop-∃-shelling vs List-certificate-as-data), Q2 (can the existing Chains/bdry API express the eligible-tet/edge-flip cleanly or is a tet+flip primitive needed), Q4 (does `separates` (𝔽₂, on σ) need an integral/oriented strengthening to deliver the case-2 split M−t = M₁+M₂ with ∂Mᵢ = X(σᵢ), or does IsTaut.splits already give it — name the precise bridge lemma), and Q5/Q6 (the biggest ballooning risk, and the recommended ordered milestone decomposition). Be concrete about Lean identifiers and which existing lemmas suffice vs. need building. Flag any place where the paper proof hides a hard combinatorial fact that will be expensive to formalize. End with a line that is exactly APPROVED or BLOCKED: <one-line reason> (APPROVED meaning the design/decomposition is sound to start building; BLOCKED meaning a design fork must be resolved first).
+codex
+I’ll audit the spec against the paper and the existing Lean files first, then answer the six design questions with exact identifiers and gaps. I’m using the local repo as source of truth.
+exec
+/bin/zsh -lc "sed -n '1,260p' notes/codex-consults/2026-06-13-g1-theorem2-spec.md" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '789,908p' taut/taut.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+\section{Filling a triangulation of the 2-sphere}
+
+\begin{theorem} \label{th2}
+Let $\sigma$ be a simplicial triangulation of $S^2$.
+Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$.
+\end{theorem}
+
+\proofstart
+
+Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial triangulation
+of $S^2$ with $M$ a taut filling of $\sigma$.
+Call a filling pair \emph{good}
+if $X$ arises from a simplicial triangulation of $B^3$.
+We aim to show that all filling pairs are good.
+
+We will argue by contradiction.
+Let $(\sigma,M)$ be a bad filling pair for which
+$|M|$ is minimal over all filling pairs.
+Let $v,e=3v-6,f=2v-4$ count vertices, edges, and faces of $\sigma$.
+Obviously $v>4$.
+Because taut fillings split under connected sum,
+we can assume that $\sigma$ is prime
+(not a connected sum along a triangle),
+and in particular (this is all we will need) that there is no
+vertex of degree $3$.
+
+Call a tet $t \in M$ \emph{eligible} if it shares two of its oriented faces
+with $\sigma$. (It can't share more that 2 faces,
+since $\sigma$ has no vertex of
+degree $3$.)
+By Proposition \ref{maxdeg}
+\[
+|M| = \Zvol(\sigma) \leq f-\maxdeg(\sigma)
+.
+\]
+Regarding $M$ as a multiset of tets, associate to every 2-simplex $\alpha$ of
+$\sigma$ some element of $M$ of which $\alpha$ is a properly oriented face.
+This map is at most 2-to-1, because no tet of $M$ has more than two faces
+on the boundary,
+so there must be at least $\maxdeg$ elements of $M$ where this map is 2-to-1,
+giving us at least $\maxdeg$ disjointly eligible tets,
+meaning eligible tets  whose pairs of boundary faces
+are mutually disjoint.
+For the nonce we will only need two such tets.
+
+Consider an eligible tet $t$ with boundary faces
+$s_1=[a,b,c],s_2=[b,a,d]$.
+Removing $t$ from $M$ produces a filling $M-t$
+of a 2-complex $\sigma_t$, where the faces $s_1,s_2$ have been replaced
+by faces $[c,d,b],[d,c,a]$,
+with the unoriented edge $ab$ having been `flipped' to become edge $cd$.
+There are two possibilities for the simplicial complex $\sigma_t$:
+
+(1) Edge $cd$ was not an edge of $\sigma$;
+$\sigma_t$ is a triangulation of $S^2$.
+
+(2) Edge $cd$ was an edge of $\sigma$;
+$\sigma_t$ is the almost disjoint union of two triangulations
+$\sigma_1,\sigma_2$ of $S^2$, conjoined along the edge $cd$.
+
+
+In case (1), by minimality of $|M|$
+$(\sigma_t,M-t)$ is a good filling pair,
+so $M-t$ arises from a triangulation of $B^3$.
+The same will be true of $M = (M-t) + t$,
+providing that adding the tet $t$ back in
+doesn't produce a non-simplicial triangulation.
+That would happen just if $t$ occurs in $M-t$, which is to say that
+$t$ occurs with multiplicity 2 in $M$.
+Here's where we use the fact that we can choose an eligible tet $u$
+whose boundary faces are disjoint from $t$.
+(Really we only need that it not be a clone of $t$, it could have
+one of its boundary faces in common with $t$.)
+In this case $(\sigma_u, M-u)$ is bad filling pair,
+because the presence of $2t$ in $M-u$ means that $M-u$ does not
+arise from a simplicial triangulation, whether of $B^3$ of anything else.
+So $2t$ doesn't belong to $M$; $M=(M-t)+t$ arises from a triangulation of $B^3$;
+$(\sigma,M)$ is a good filling pair; and we have a contradiction.
+
+Case (2) is simpler.
+$M-t$ splits into $M_1+M_2$, with the filling pairs $(\sigma_1,M_1)$ and
+both good by minimality of $|M|$.
+So both $M_1$ and $M_2$ arise from simplicial triangulations of $B^3$,
+and $M$ arises from the complex obtained by gluing these triangulations
+together with $t$ between them.
+This is a simplicial triangulation of $B^3$,
+contradiction.
+\proofend
+
+Thanks to this theorem, we may take the liberty of saying that
+a taut filling of $\sigma$ `is' a simplicial triangulation
+$\tau$ of $B^3$.
+
+\section{Shelling}
+
+We want to show that any taut filling $\tau$ of a triangulation $\sigma$
+of $S^2$ is \emph{shellable}.
+
+A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+is an ordering
+$(t_1,\ldots,t_{|\tau|})$
+of its tets such that
+gluing on one at a time maintains a triangulation of $B^3$,
+i.e.,
+so that for $k=1,\ldots,|\tau|$ the subcomplex $\tau_k$ generated
+by $\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B_3$.
+For $k>1$ we distinguish the type of $t_k$ according to the number of
+faces it shares with $\tau_{k-1}$.
+In general the type can be any of $1,2,3$, but in our application
+type $3$ is ruled out because it would produce an interior vertex.
+
+Call $\tau$ \emph{freely shellable} if any $t \in \tau$
+can serve as the initial tet of a shelling.
+
+\begin{theorem} \label{th3}
+If $\sigma$ is a simplicial triangulation of $S^2$,
+any taut filling $\tau$ of $\sigma$
+is a freely shellable
+simplicial triangulation of $B^3$.
+\end{theorem}
+
+ succeeded in 0ms:
+# G1 design spec: the Theorem 2 + 3 induction (taut filling ⟹ freely shellable B³)
+
+Target: formalize Theorem 2 (any taut filling of a triangulated S² arises from a
+simplicial triangulation of B³) merged with Theorem 3 (it is freely shellable).
+This is the central remaining theorem and the largest packet. We have just
+finished the SEPARATION theorem `separates` (M19) and all of Theorem 1.
+
+## 0. The paper's proof (taut.tex §"Filling a triangulation of the 2-sphere")
+Minimal-counterexample induction on `|M|` (= `nrm M`):
+- A *filling pair* `(σ, M)`: σ a triangulated S², M a taut filling (`∂M = X(σ)`,
+  `nrm M = Zvol(σ)`). *Good* if M arises from a triangulation of B³.
+- Take a bad pair with `|M|` minimal. `v > 4`. Assume σ *prime* (no degree-3
+  vertex) — justified because taut fillings split under connected sum (Th1).
+- *Eligible* tet `t ∈ M`: shares 2 oriented faces with σ (≤2 since no deg-3
+  vertex). By Prop 2 (`Zvol ≤ f − maxdeg`) + a 2-to-1 counting map, there are
+  ≥ maxdeg *disjointly* eligible tets (pairwise-disjoint boundary-face pairs).
+  We need only TWO.
+- Eligible `t` with boundary faces `s₁=[a,b,c]`, `s₂=[b,a,d]`. Removing `t`:
+  `M−t` fills `σ_t`, where `s₁,s₂` are replaced by `[c,d,b],[d,c,a]` — edge `ab`
+  is *flipped* to `cd`. Two cases:
+  (1) `cd ∉ edges σ`: `σ_t` is a triangulation of S². By minimality `(σ_t,M−t)`
+      good ⟹ `M−t` arises from a B³-triangulation ⟹ `M=(M−t)+t` good UNLESS `t`
+      has multiplicity 2 in M; rule that out using a *disjoint* eligible tet `u`
+      (else `(σ_u, M−u)` would be a bad pair smaller, since `2t ⊆ M−u` is not
+      simplicial — contradiction with minimality the other way).
+  (2) `cd ∈ edges σ`: `σ_t` is the almost-disjoint union of two S²
+      triangulations `σ₁,σ₂` joined along `cd`. `M−t` splits as `M₁+M₂` (Th1
+      `IsTaut.splits`), both good by minimality ⟹ glue the two B³ balls + `t` ⟹
+      B³ triangulation. Contradiction.
+
+## 1. Existing Lean to build on
+- Theorem 1: `IsTaut`, `Zvol`, `nrm`, `deg`/`maxdeg`(?), `Zvol_add_deg_le`
+  (Prop 2: `Zvol X + deg x X ≤ nrm X`), `IsTaut.splits` (split a taut chain
+  along A∩B with `2 ≤ n`, `p≠q ∈ A∩B`), `Zvol_add_of_almost_disjoint`.
+  Chains: `Chain V := Finset V →₀ ℤ`, augmented, canonical orientation.
+- `separates` (M19): for `IsSphere2 σ` and a non-face triangle γ,
+  `∃ σ₁ σ₂, IsSphere2 (insert γ σ₁) ∧ IsSphere2 (insert γ σ₂)`. (𝔽₂-level, on σ.)
+- Ball.lean: `IsShelling`/`IsBall`/`FreelyShellable` as List shelling
+  certificates; `GlueStep` (type-1/2 glue, IsSphere2 baked in); `IsBall.isSphere2`;
+  `isBall_singleton`, `freelyShellable_singleton`.
+- `IsSphere2` and the whole Complex2/Homology2 layer.
+
+## 2. The load-bearing design decisions (what to audit)
+### (A) "M arises from a triangulation of B³" / "good"
+Candidate: M is *simplicial* (all coeffs ±1, `nrm M = M.support.card`) and
+`M.support` is `IsBall` (a shelling-certified ball) with the boundary chain
+`∂M = X(σ)`. For the merged Th3, target `FreelyShellable M.support` directly.
+Question: define `Good (σ) (M) : Prop := IsTautFilling σ M ∧ ∃ (shelling), …`?
+Or carry the shelling as data? The induction reassembles shellings (case 1: append
+`t`; case 2: concatenate two shellings through `t`), so a List-certificate
+(Ball.lean style) seems right, but the chain↔facet-set bridge must be pinned.
+
+### (B) The eligible-tet / flip mechanism (the integral-chain heart)
+`t` shares 2 ORIENTED faces with `∂M`. The flip replaces `s₁,s₂` by the other
+two faces of the tetrahedron `{a,b,c,d}`. This is oriented-chain bookkeeping on
+`∂(M − t) = ∂M − ∂t`. Need: a clean primitive for "tet `t={a,b,c,d}`, its 4
+oriented boundary faces, removing it flips edge ab↔cd". Is the current `bdry`/
+`cone` API enough, or do we add a `tet`/flip primitive?
+
+### (C) The induction
+Strong induction (well-founded) on `nrm M : ℕ`. Minimal-counterexample =
+`Nat.strong_induction` / `WellFoundedRecursion`. The "prime / no deg-3 vertex"
+reduction: is it necessary, or can we restructure to avoid the connected-sum
+preprocessing (which is itself a separate sub-induction via `separates`+Th1)?
+
+### (D) The bridge separates ↔ case (2)
+`separates` is 𝔽₂ and on σ; case (2) needs the INTEGRAL split `M−t = M₁+M₂`
+with `∂Mᵢ = X(σᵢ)`. The M10-M14 G1 verdict flagged an "orientation coherence"
+lemma (∂ of the split restricted to a side = ±the γ/cd-boundary). Does `separates`
+need an integral/oriented strengthening, or does `IsTaut.splits` already deliver
+the integral split given the 𝔽₂ separation as the support pattern?
+
+### (E) Reassembly
+Case 1: `IsBall (M−t).support` + adding back `t` (type-2 glue, two shared
+faces) ⟹ `IsBall M.support` — Ball.lean `GlueStep`. Case 2: glue two balls
+across the tet `t` ⟹ ball. Free shellability: any tet can start (Th3).
+
+## 3. Validation invariants / smoke tests
+- `∂Δ³` (tetrahedron boundary, `isSphere2_powersetCard3`) is the base case: its
+  unique taut filling is the single tet (`isBall_singleton`).
+- Euler/`maxdeg` counting cross-checks eligible-tet existence.
+
+## 4. Files / commands
+New `lean/Taut/Theorem2.lean` (+ maybe primitives into Chains/Ball). Build
+`cd lean && lake build`; greps + `#print axioms`.
+
+## Questions for the auditor
+Q1. The right formalization of "good" / "arises from a B³ triangulation" — a
+    `Prop` (∃ shelling) vs. carrying the List certificate as data — given the
+    induction reassembles shellings in both cases. Recommend the cleanest.
+Q2. The eligible-tet/flip: can the current Chains/`bdry` API express it cleanly,
+    or is a `tet`+`flip` primitive (with a build-checked ∂-flip identity)
+    warranted? Sketch the key lemma.
+Q3. The minimal-counterexample induction in Lean: strong induction on `nrm M`.
+    Is the "σ prime / no deg-3 vertex" preprocessing avoidable, or must it be a
+    first-class sub-induction (connected-sum reduction via separates+Th1)?
+Q4. The separates↔case-2 bridge: does `separates` (𝔽₂) need an integral/oriented
+    strengthening to produce `M−t = M₁+M₂` with `∂Mᵢ = X(σᵢ)`, or does
+    `IsTaut.splits` already give the integral split from the support pattern?
+    Name the precise extra lemma if one is needed.
+Q5. The single biggest risk: which sub-piece (eligible-tet existence via the
+    2-to-1/maxdeg count; the flip's sphere-preservation; the multiplicity-2
+    argument; the ball-gluing reassembly) is most likely to balloon, and is the
+    whole thing tractable, or should it be staged into named sub-theorems each
+    with its own milestone?
+Q6. Recommend the milestone decomposition (ordered sub-theorems) for this packet.
+
+exec
+/bin/zsh -lc 'rg -n "def |theorem |lemma |structure |inductive |class |IsTaut|separates|IsShelling|IsBall|FreelyShellable|GlueStep|Zvol|nrm|deg|splits|bdry|Chains" lean/Taut/Separation.lean lean/Taut/Ball.lean lean/Taut/Splitting.lean lean/Taut/Zvol.lean lean/Taut/Theorem1.lean' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Zvol.lean:1:import Taut.Chains
+lean/Taut/Zvol.lean:4:# Zvol, tautness, and Propositions 1–4 of "Taut fillings"
+lean/Taut/Zvol.lean:7:* `Zvol X` — minimum L¹ norm of a filling of `X`.
+lean/Taut/Zvol.lean:8:* `IsTaut M` — `M` is an optimal filling of its boundary.
+lean/Taut/Zvol.lean:9:* Proposition 1 (`IsTaut.subChain`): sub-chains of taut chains are taut.
+lean/Taut/Zvol.lean:10:* Proposition 2 (`Zvol_add_deg_le`): `Zvol X + deg x X ≤ nrm X` for closed
+lean/Taut/Zvol.lean:11:  `X` (the paper's `Zvol(X) ≤ |X| − maxdeg(X)`, per vertex).
+lean/Taut/Zvol.lean:14:* Proposition 4 (`IsTaut.no_internal_vertex`): a taut chain (in dimensions
+lean/Taut/Zvol.lean:27:def SubChain (U M : Chain V) : Prop :=
+lean/Taut/Zvol.lean:30:lemma SubChain.support_subset {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:40:lemma SubChain.sub_support_subset {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:52:/-- The norm splits along a sub-chain: `|U| + |M − U| = |M|`. -/
+lean/Taut/Zvol.lean:53:lemma SubChain.nrm_add_nrm_sub {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:54:    nrm U + nrm (M - U) = nrm M := by
+lean/Taut/Zvol.lean:55:  rw [nrm_eq_sum_subset h.support_subset,
+lean/Taut/Zvol.lean:56:    nrm_eq_sum_subset h.sub_support_subset, ← Finset.sum_add_distrib, nrm]
+lean/Taut/Zvol.lean:62:lemma subChain_filter (p : Finset V → Prop) [DecidablePred p] (M : Chain V) :
+lean/Taut/Zvol.lean:70:lemma subChain_nbhd (x : V) (M : Chain V) : SubChain (nbhd x M) M :=
+lean/Taut/Zvol.lean:73:/-! ## Zvol and tautness -/
+lean/Taut/Zvol.lean:76:noncomputable def Zvol (X : Chain V) : ℕ :=
+lean/Taut/Zvol.lean:77:  sInf {n | ∃ M : Chain V, bdry M = X ∧ nrm M = n}
+lean/Taut/Zvol.lean:80:def IsTaut (M : Chain V) : Prop := nrm M = Zvol (bdry M)
+lean/Taut/Zvol.lean:82:lemma Zvol_le {X M : Chain V} (h : bdry M = X) : Zvol X ≤ nrm M :=
+lean/Taut/Zvol.lean:86:lemma bdry_cone_of_closed {x : V} {X : Chain V} (hX : bdry X = 0) :
+lean/Taut/Zvol.lean:87:    bdry (cone x X) = X := by
+lean/Taut/Zvol.lean:88:  have h := bdry_cone_add_cone_bdry x X
+lean/Taut/Zvol.lean:94:lemma exists_optimal_fill (W : Chain V) :
+lean/Taut/Zvol.lean:95:    ∃ M : Chain V, bdry M = bdry W ∧ nrm M = Zvol (bdry W) := by
+lean/Taut/Zvol.lean:96:  have hne : {n | ∃ M : Chain V, bdry M = bdry W ∧ nrm M = n}.Nonempty :=
+lean/Taut/Zvol.lean:97:    ⟨nrm W, W, rfl, rfl⟩
+lean/Taut/Zvol.lean:102:theorem IsTaut.subChain {M U : Chain V} (hM : IsTaut M) (hU : SubChain U M) :
+lean/Taut/Zvol.lean:103:    IsTaut U := by
+lean/Taut/Zvol.lean:106:  have hbd : bdry (M - U + W) = bdry M := by
+lean/Taut/Zvol.lean:109:  have hle : Zvol (bdry M) ≤ nrm (M - U) + nrm W :=
+lean/Taut/Zvol.lean:110:    le_trans (Zvol_le hbd) (nrm_add_le _ _)
+lean/Taut/Zvol.lean:111:  have hsplit := hU.nrm_add_nrm_sub
+lean/Taut/Zvol.lean:112:  have h1 : Zvol (bdry U) ≤ nrm U := Zvol_le rfl
+lean/Taut/Zvol.lean:113:  rw [IsTaut] at hM ⊢
+lean/Taut/Zvol.lean:116:/-- Proposition 2 (maxdeg bound, per vertex): for closed `X`,
+lean/Taut/Zvol.lean:117:`Zvol X + deg x X ≤ nrm X`. -/
+lean/Taut/Zvol.lean:118:theorem Zvol_add_deg_le (x : V) {X : Chain V} (hX : bdry X = 0) :
+lean/Taut/Zvol.lean:119:    Zvol X + deg x X ≤ nrm X := by
+lean/Taut/Zvol.lean:120:  have h1 : Zvol X ≤ nrm (cone x X) := Zvol_le (bdry_cone_of_closed hX)
+lean/Taut/Zvol.lean:121:  have h2 := nrm_cone_add_deg x X
+lean/Taut/Zvol.lean:126:`deg x W = 0`), and nontriviality is witnessed by a vertex `x'` of `W`. -/
+lean/Taut/Zvol.lean:127:theorem not_taut_complete_cone {x x' : V} {W M : Chain V}
+lean/Taut/Zvol.lean:128:    (hM : IsTaut M) (hU : SubChain (cone x W) M) (hW : bdry W = 0)
+lean/Taut/Zvol.lean:129:    (hx : deg x W = 0) (hx' : deg x' W ≠ 0) : False := by
+lean/Taut/Zvol.lean:130:  have hUt : IsTaut (cone x W) := hM.subChain hU
+lean/Taut/Zvol.lean:131:  have hbd : bdry (cone x W) = W := bdry_cone_of_closed hW
+lean/Taut/Zvol.lean:132:  have h1 := nrm_cone_add_deg x W
+lean/Taut/Zvol.lean:133:  have h2 := Zvol_add_deg_le x' hW
+lean/Taut/Zvol.lean:134:  rw [IsTaut, hbd] at hUt
+lean/Taut/Zvol.lean:139:theorem IsTaut.no_internal_vertex {M : Chain V} (hM : IsTaut M) {x : V}
+lean/Taut/Zvol.lean:141:    (hxM : x ∈ vert M) (hxB : x ∉ vert (bdry M)) : False := by
+lean/Taut/Zvol.lean:145:  have hx : deg x W = 0 := by rw [deg, hWdef, nbhd_lk, nrm_zero]
+lean/Taut/Zvol.lean:148:  have hWb : nbhd x (bdry W) = 0 := nbhd_bdry_eq_zero hWfree
+lean/Taut/Zvol.lean:149:  have hcb : cone x (bdry W) = 0 := by
+lean/Taut/Zvol.lean:150:    have hhom := bdry_cone_add_cone_bdry x W
+lean/Taut/Zvol.lean:151:    -- nbhd x of both sides; nbhd x (bdry (cone x W)) = nbhd x (bdry (nbhd x M)) = nbhd x (bdry M) = 0
+lean/Taut/Zvol.lean:152:    have h0 : nbhd x (bdry (cone x W)) = 0 := by
+lean/Taut/Zvol.lean:153:      rw [hUc, nbhd_bdry_nbhd, nbhd_eq_zero_iff.mpr hxB]
+lean/Taut/Zvol.lean:157:  have hWclosed : bdry W = 0 := by
+lean/Taut/Zvol.lean:178:  have hy' : deg y W ≠ 0 := fun h => (deg_eq_zero_iff.mp h) hyW
+lean/Taut/Theorem1.lean:4:# Theorem 1 of "Taut fillings": additivity of Zvol
+lean/Taut/Theorem1.lean:10:This file proves `Zvol (X + Y) = Zvol X + Zvol Y`
+lean/Taut/Theorem1.lean:11:(`Zvol_add_of_almost_disjoint`).  The splitting statement for `n ≥ 2`
+lean/Taut/Theorem1.lean:27:* `IsTaut.dim_pure` — a taut chain with pure-dimensional boundary is
+lean/Taut/Theorem1.lean:29:* `IsTaut.vert_subset` — a taut filling has no vertices beyond its
+lean/Taut/Theorem1.lean:39:lemma vert_add_subset (M N : Chain V) : vert (M + N) ⊆ vert M ∪ vert N := by
+lean/Taut/Theorem1.lean:48:lemma vert_subset_of_supp {M : Chain V} {W : Finset V}
+lean/Taut/Theorem1.lean:54:lemma supp_subset_vert {M : Chain V} {t : Finset V} (ht : t ∈ M.support) :
+lean/Taut/Theorem1.lean:60:noncomputable def dimPart (k : ℕ) (M : Chain V) : Chain V :=
+lean/Taut/Theorem1.lean:63:lemma dimPart_apply (k : ℕ) (M : Chain V) (s : Finset V) :
+lean/Taut/Theorem1.lean:67:lemma dimPart_add (k : ℕ) (M N : Chain V) :
+lean/Taut/Theorem1.lean:73:@[simp] lemma dimPart_zero (k : ℕ) : dimPart k (0 : Chain V) = 0 := by
+lean/Taut/Theorem1.lean:76:lemma dimPart_single_of_eq {k : ℕ} {s : Finset V} (h : s.card = k) (c : ℤ) :
+lean/Taut/Theorem1.lean:80:lemma dimPart_single_of_ne {k : ℕ} {s : Finset V} (h : ¬ s.card = k) (c : ℤ) :
+lean/Taut/Theorem1.lean:84:lemma dimPart_eq_self {k : ℕ} {M : Chain V}
+lean/Taut/Theorem1.lean:95:theorem dimPart_bdry (k : ℕ) (M : Chain V) :
+lean/Taut/Theorem1.lean:96:    dimPart k (bdry M) = bdry (dimPart (k + 1) M) := by
+lean/Taut/Theorem1.lean:102:    · rw [dimPart_single_of_eq hs, bdry_single]
+lean/Taut/Theorem1.lean:110:        have hgen : bdryGen s u = 0 := by
+lean/Taut/Theorem1.lean:111:          rw [bdryGen, Finset.sum_apply']
+lean/Taut/Theorem1.lean:119:    · rw [dimPart_single_of_ne hs, map_zero, bdry_single]
+lean/Taut/Theorem1.lean:126:        have hgen : bdryGen s u = 0 := by
+lean/Taut/Theorem1.lean:127:          rw [bdryGen, Finset.sum_apply']
+lean/Taut/Theorem1.lean:141:theorem IsTaut.dim_pure {M : Chain V} (hM : IsTaut M) {k : ℕ}
+lean/Taut/Theorem1.lean:142:    (hbd : ∀ s ∈ (bdry M).support, s.card = k) :
+lean/Taut/Theorem1.lean:146:  have hbdP : bdry P = bdry M := by
+lean/Taut/Theorem1.lean:147:    rw [hP, ← dimPart_bdry, dimPart_eq_self hbd]
+lean/Taut/Theorem1.lean:148:  have h1 : Zvol (bdry M) ≤ nrm P := Zvol_le hbdP
+lean/Taut/Theorem1.lean:149:  have h2 := hPM.nrm_add_nrm_sub
+lean/Taut/Theorem1.lean:150:  rw [IsTaut] at hM
+lean/Taut/Theorem1.lean:151:  have h0 : nrm (M - P) = 0 := by omega
+lean/Taut/Theorem1.lean:152:  have hMP : M = P := sub_eq_zero.mp (nrm_eq_zero_iff.mp h0)
+lean/Taut/Theorem1.lean:159:theorem IsTaut.vert_subset {M : Chain V} (hM : IsTaut M)
+lean/Taut/Theorem1.lean:161:    vert M ⊆ vert (bdry M) := by
+lean/Taut/Theorem1.lean:169:lemma Kmap_eq_self {A : Finset V} {p : V} {M : Chain V}
+lean/Taut/Theorem1.lean:176:lemma inter_eq_erase_of_sdiff_singleton {A s : Finset V} {z : V}
+lean/Taut/Theorem1.lean:194:lemma KGen_support {A : Finset V} {p : V} {s t : Finset V}
+lean/Taut/Theorem1.lean:233:theorem Kmap_eq_zero_of_closed {A B : Finset V} {p : V} {n : ℕ} (hn : 1 ≤ n)
+lean/Taut/Theorem1.lean:235:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1) (hYc : bdry Y = 0) :
+lean/Taut/Theorem1.lean:256:    have hNc : bdry (Kmap A p Y) = 0 := by
+lean/Taut/Theorem1.lean:257:      rw [bdry_Kmap A (Finset.mem_inter.mp hp).1, hYc, map_zero]
+lean/Taut/Theorem1.lean:260:/-! ## The kill lemma (the types analysis, in general dimension) -/
+lean/Taut/Theorem1.lean:265:theorem Kkills_or_Kkills {A B : Finset V} {p q : V} {n : ℕ}
+lean/Taut/Theorem1.lean:330:/-! ## Theorem 1, part 1: additivity of Zvol -/
+lean/Taut/Theorem1.lean:332:lemma exists_fill_eq_Zvol {X : Chain V} (W : Chain V) (hW : bdry W = X) :
+lean/Taut/Theorem1.lean:333:    ∃ M : Chain V, bdry M = X ∧ nrm M = Zvol X := by
+lean/Taut/Theorem1.lean:335:    Nat.sInf_mem (⟨nrm W, W, hW, rfl⟩ :
+lean/Taut/Theorem1.lean:336:      {m | ∃ M : Chain V, bdry M = X ∧ nrm M = m}.Nonempty)
+lean/Taut/Theorem1.lean:341:lemma nrm_le_killed_add_killed {A B : Finset V} {p q : V} {M : Chain V}
+lean/Taut/Theorem1.lean:343:    nrm M ≤ nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) := by
+lean/Taut/Theorem1.lean:349:  rw [nrm_eq_sum_subset hsubA, nrm_eq_sum_subset hsubB,
+lean/Taut/Theorem1.lean:350:    ← Finset.sum_add_distrib, nrm]
+lean/Taut/Theorem1.lean:363:`Zvol (X + Y) = Zvol X + Zvol Y`. -/
+lean/Taut/Theorem1.lean:364:theorem Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n : ℕ}
+lean/Taut/Theorem1.lean:370:    (hXc : bdry X = 0) (hYc : bdry Y = 0) :
+lean/Taut/Theorem1.lean:371:    Zvol (X + Y) = Zvol X + Zvol Y := by
+lean/Taut/Theorem1.lean:374:  have hXYc : bdry (X + Y) = 0 := by rw [map_add, hXc, hYc, add_zero]
+lean/Taut/Theorem1.lean:375:  obtain ⟨Mx, hMx, hMxn⟩ := exists_fill_eq_Zvol (cone p X) (bdry_cone_of_closed hXc)
+lean/Taut/Theorem1.lean:376:  obtain ⟨My, hMy, hMyn⟩ := exists_fill_eq_Zvol (cone p Y) (bdry_cone_of_closed hYc)
+lean/Taut/Theorem1.lean:378:    exists_fill_eq_Zvol (cone p (X + Y)) (bdry_cone_of_closed hXYc)
+lean/Taut/Theorem1.lean:381:    have hbd : bdry (Mx + My) = X + Y := by rw [map_add, hMx, hMy]
+lean/Taut/Theorem1.lean:382:    calc Zvol (X + Y) ≤ nrm (Mx + My) := Zvol_le hbd
+lean/Taut/Theorem1.lean:383:      _ ≤ nrm Mx + nrm My := nrm_add_le _ _
+lean/Taut/Theorem1.lean:384:      _ = Zvol X + Zvol Y := by rw [hMxn, hMyn]
+lean/Taut/Theorem1.lean:386:    have hMt : IsTaut M := by rw [IsTaut, hM1]; exact hM2
+lean/Taut/Theorem1.lean:387:    have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Theorem1.lean:409:    have hbx : bdry (Kmap A p M) = X := by
+lean/Taut/Theorem1.lean:410:      rw [bdry_Kmap A hpA, hM1, map_add,
+lean/Taut/Theorem1.lean:413:    have hby : bdry (Kmap B q M) = Y := by
+lean/Taut/Theorem1.lean:414:      rw [bdry_Kmap B hqB, hM1, map_add,
+lean/Taut/Theorem1.lean:419:    have h1 := nrm_Kmap_add_killed_le A p M
+lean/Taut/Theorem1.lean:420:    have h2 := nrm_Kmap_add_killed_le B q M
+lean/Taut/Theorem1.lean:421:    have h3 : nrm M ≤ nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) :=
+lean/Taut/Theorem1.lean:422:      nrm_le_killed_add_killed fun t ht =>
+lean/Taut/Theorem1.lean:424:    have h4 : Zvol X ≤ nrm (Kmap A p M) := Zvol_le hbx
+lean/Taut/Theorem1.lean:425:    have h5 : Zvol Y ≤ nrm (Kmap B q M) := Zvol_le hby
+lean/Taut/Splitting.lean:8:`n ≥ 2`: ANY taut filling `M` of `X + Y` splits as `M = M_X + M_Y` with
+lean/Taut/Splitting.lean:9:`M_X` a taut filling of `X` and `M_Y` of `Y` (`IsTaut.splits`).
+lean/Taut/Splitting.lean:13:   pair `(p', q')` — else `M` would beat `Zvol X + Zvol Y`
+lean/Taut/Splitting.lean:21:4. so generators are pure and the filter along `· ⊆ A` splits `M`.
+lean/Taut/Splitting.lean:31:lemma card_three_part {A B t : Finset V} (htAB : t ⊆ A ∪ B) :
+lean/Taut/Splitting.lean:48:lemma bdry_eq_sum (M : Chain V) :
+lean/Taut/Splitting.lean:49:    bdry M = ∑ t ∈ M.support, M t • bdryGen t := by
+lean/Taut/Splitting.lean:50:  rw [bdry, Finsupp.lsum_apply, Finsupp.sum]
+lean/Taut/Splitting.lean:53:/-- A simplex in the support of `bdryGen t` is a facet of `t`. -/
+lean/Taut/Splitting.lean:54:lemma exists_facet_of_bdryGen_ne_zero {t s : Finset V}
+lean/Taut/Splitting.lean:55:    (h : bdryGen t s ≠ 0) : ∃ w ∈ t, s = t.erase w := by
+lean/Taut/Splitting.lean:59:  rw [bdryGen, Finset.sum_apply']
+lean/Taut/Splitting.lean:65:lemma bdry_apply_eq_sum (M : Chain V) (s : Finset V) :
+lean/Taut/Splitting.lean:66:    bdry M s = ∑ t ∈ M.support, M t * bdryGen t s := by
+lean/Taut/Splitting.lean:67:  rw [bdry_eq_sum, Finset.sum_apply']
+lean/Taut/Splitting.lean:72:lemma bdry_supp_of_supp {B : Finset V} {k : ℕ} {M : Chain V}
+lean/Taut/Splitting.lean:74:    ∀ s ∈ (bdry M).support, s ⊆ B ∧ s.card = k := by
+lean/Taut/Splitting.lean:76:  rw [Finsupp.mem_support_iff, bdry_apply_eq_sum] at hs
+lean/Taut/Splitting.lean:78:  have hgen : bdryGen t s ≠ 0 := fun h0 => hne (by rw [h0, mul_zero])
+lean/Taut/Splitting.lean:79:  obtain ⟨w, hw, rfl⟩ := exists_facet_of_bdryGen_ne_zero hgen
+lean/Taut/Splitting.lean:87:lemma bdry_lk_eq_zero {x : V} {U : Chain V} (hU : nbhd x U = U)
+lean/Taut/Splitting.lean:88:    (hbU : nbhd x (bdry U) = 0) : bdry (lk x U) = 0 := by
+lean/Taut/Splitting.lean:90:  have hWb : nbhd x (bdry (lk x U)) = 0 := nbhd_bdry_eq_zero hWfree
+lean/Taut/Splitting.lean:92:  have hhom := bdry_cone_add_cone_bdry x (lk x U)
+lean/Taut/Splitting.lean:101:lemma exists_pair_of_one_lt_card {s : Finset V} (h : 2 ≤ s.card) :
+lean/Taut/Splitting.lean:107:lemma kills_of_two_sdiff {A : Finset V} (p : V) {t : Finset V}
+lean/Taut/Splitting.lean:116:lemma kills_of_mem {A : Finset V} {p : V} {t : Finset V}
+lean/Taut/Splitting.lean:128:lemma nrm_add_le_killed_add_killed {A B : Finset V} {p q : V} {M : Chain V}
+lean/Taut/Splitting.lean:132:    nrm M + (M t₀).natAbs ≤
+lean/Taut/Splitting.lean:133:      nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) := by
+lean/Taut/Splitting.lean:139:  rw [nrm_eq_sum_subset hsubA, nrm_eq_sum_subset hsubB,
+lean/Taut/Splitting.lean:140:    ← Finset.sum_add_distrib, nrm]
+lean/Taut/Splitting.lean:159:lemma no_double_kill {A B : Finset V} {n : ℕ}
+lean/Taut/Splitting.lean:165:    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+lean/Taut/Splitting.lean:166:    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+lean/Taut/Splitting.lean:170:  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Splitting.lean:187:  have hbx : bdry (Kmap A p' M) = X := by
+lean/Taut/Splitting.lean:188:    rw [bdry_Kmap A (Finset.mem_inter.mp hp').1, hM1, map_add,
+lean/Taut/Splitting.lean:191:  have hby : bdry (Kmap B q' M) = Y := by
+lean/Taut/Splitting.lean:192:    rw [bdry_Kmap B (Finset.mem_inter.mp hq').2, hM1, map_add,
+lean/Taut/Splitting.lean:196:  have h1 := nrm_Kmap_add_killed_le A p' M
+lean/Taut/Splitting.lean:197:  have h2 := nrm_Kmap_add_killed_le B q' M
+lean/Taut/Splitting.lean:198:  have h3 := nrm_add_le_killed_add_killed
+lean/Taut/Splitting.lean:201:  have h4 : Zvol X ≤ nrm (Kmap A p' M) := Zvol_le hbx
+lean/Taut/Splitting.lean:202:  have h5 : Zvol Y ≤ nrm (Kmap B q' M) := Zvol_le hby
+lean/Taut/Splitting.lean:203:  have hadd := Zvol_add_of_almost_disjoint hn hp hq hpq hC hX hY hXc hYc
+lean/Taut/Splitting.lean:204:  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+lean/Taut/Splitting.lean:214:lemma hybrid_structure {A B : Finset V} {n : ℕ}
+lean/Taut/Splitting.lean:220:    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+lean/Taut/Splitting.lean:221:    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+lean/Taut/Splitting.lean:305:lemma no_extreme_hybrid {A B : Finset V} {n : ℕ}
+lean/Taut/Splitting.lean:311:    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+lean/Taut/Splitting.lean:312:    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+lean/Taut/Splitting.lean:335:    rcases hybrid_structure hn hp hq hpq hC hX hY hXc hYc hM1 hMt hpure
+lean/Taut/Splitting.lean:361:  have hbU : nbhd y₀ (bdry U) = 0 := by
+lean/Taut/Splitting.lean:368:        have hMU : bdry (M - U) s = 0 := by
+lean/Taut/Splitting.lean:369:          rw [bdry_apply_eq_sum]
+lean/Taut/Splitting.lean:371:          by_cases hgen : bdryGen t s = 0
+lean/Taut/Splitting.lean:373:          · obtain ⟨w, hw, hsw⟩ := exists_facet_of_bdryGen_ne_zero hgen
+lean/Taut/Splitting.lean:392:        have hkey : bdry U s = bdry M s - bdry (M - U) s := by
+lean/Taut/Splitting.lean:397:        rw [bdry_apply_eq_sum]
+lean/Taut/Splitting.lean:399:        by_cases hgen : bdryGen t s = 0
+lean/Taut/Splitting.lean:401:        · obtain ⟨w, hw, hsw⟩ := exists_facet_of_bdryGen_ne_zero hgen
+lean/Taut/Splitting.lean:410:  have hWclosed := bdry_lk_eq_zero hUnbhd hbU
+lean/Taut/Splitting.lean:411:  have hdegy : deg y₀ (lk y₀ U) = 0 := by rw [deg, nbhd_lk, nrm_zero]
+lean/Taut/Splitting.lean:423:  have hdegx' : deg x' (lk y₀ U) ≠ 0 := by
+lean/Taut/Splitting.lean:425:    exact (deg_eq_zero_iff.mp h)
+lean/Taut/Splitting.lean:428:    hWclosed hdegy hdegx'
+lean/Taut/Splitting.lean:433:filling `M` of an almost disjoint union `X + Y` splits: filtering `M`
+lean/Taut/Splitting.lean:435:theorem IsTaut.splits {A B : Finset V} {n : ℕ}
+lean/Taut/Splitting.lean:441:    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+lean/Taut/Splitting.lean:442:    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+lean/Taut/Splitting.lean:443:    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+lean/Taut/Splitting.lean:444:    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+lean/Taut/Splitting.lean:445:    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+lean/Taut/Splitting.lean:446:    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+lean/Taut/Splitting.lean:451:  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Splitting.lean:471:    rcases hybrid_structure hn hp hq hpq hC hX hY hXc hYc hM1 hMt hpure
+lean/Taut/Splitting.lean:480:      have hM1' : bdry M = Y + X := by rw [hM1, add_comm]
+lean/Taut/Splitting.lean:502:  have hbsum : bdry Mx + bdry My = X + Y := by rw [← map_add, hsum, hM1]
+lean/Taut/Splitting.lean:503:  have hbx : bdry Mx = X := by
+lean/Taut/Splitting.lean:506:      Kmap_eq_self (fun s hs => (bdry_supp_of_supp hMxsupp s hs).1),
+lean/Taut/Splitting.lean:507:      Kmap_eq_zero_of_closed hn1 hp hC (bdry_supp_of_supp hMysupp)
+lean/Taut/Splitting.lean:508:        (bdry_bdry My),
+lean/Taut/Splitting.lean:512:  have hby : bdry My = Y := by
+lean/Taut/Splitting.lean:517:  have hnrm : nrm Mx + nrm My = nrm M := nrm_filter_add_nrm_filter_neg _ M
+lean/Taut/Splitting.lean:518:  have hadd := Zvol_add_of_almost_disjoint hn1 hp hq hpq hC hX hY hXc hYc
+lean/Taut/Splitting.lean:519:  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+lean/Taut/Splitting.lean:520:  have h4 : Zvol X ≤ nrm Mx := Zvol_le hbx
+lean/Taut/Splitting.lean:521:  have h5 : Zvol Y ≤ nrm My := Zvol_le hby
+lean/Taut/Splitting.lean:522:  have hMxt : IsTaut Mx := by rw [IsTaut, hbx]; omega
+lean/Taut/Splitting.lean:523:  have hMyt : IsTaut My := by rw [IsTaut, hby]; omega
+lean/Taut/Ball.lean:15:certificate** (a `List` of tets), not an inductive `Prop`: the Theorem 2
+lean/Taut/Ball.lean:21:`IsBall τ B` is, by design, a *shelling-certified* ball — not a general
+lean/Taut/Ball.lean:35:  (`IsBall.isSphere2`) — the structural invariant carried by the certificate.
+lean/Taut/Ball.lean:56:structure GlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop where
+lean/Taut/Ball.lean:64:def ShellFrom : Finset (Finset V) → List (Finset V) → Finset (Finset V) → Prop
+lean/Taut/Ball.lean:66:  | B₀, t :: l, B => ∃ B₁, GlueStep t B₀ B₁ ∧ ShellFrom B₁ l B
+lean/Taut/Ball.lean:71:def IsShelling : List (Finset V) → Finset (Finset V) → Prop
+lean/Taut/Ball.lean:77:def IsBall (τ B : Finset (Finset V)) : Prop :=
+lean/Taut/Ball.lean:78:  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+lean/Taut/Ball.lean:83:def FreelyShellable (τ B : Finset (Finset V)) : Prop :=
+lean/Taut/Ball.lean:85:    l.head? = some t ∧ l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+lean/Taut/Ball.lean:91:lemma ShellFrom.isSphere2 {l : List (Finset V)} :
+lean/Taut/Ball.lean:105:lemma IsShelling.isSphere2 {l : List (Finset V)} {B : Finset (Finset V)}
+lean/Taut/Ball.lean:106:    (h : IsShelling l B) : IsSphere2 B := by
+lean/Taut/Ball.lean:108:  | nil => simp only [IsShelling] at h
+lean/Taut/Ball.lean:110:      simp only [IsShelling] at h
+lean/Taut/Ball.lean:114:theorem IsBall.isSphere2 {τ B : Finset (Finset V)} (h : IsBall τ B) :
+lean/Taut/Ball.lean:123:theorem isBall_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Ball.lean:124:    IsBall {t} (tetFaces t) := by
+lean/Taut/Ball.lean:126:  simp only [IsShelling, ShellFrom]
+lean/Taut/Ball.lean:130:theorem freelyShellable_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Ball.lean:131:    FreelyShellable {t} (tetFaces t) := by
+lean/Taut/Ball.lean:136:  simp only [IsShelling, ShellFrom]
+lean/Taut/Separation.lean:24:def gammaChain (σ : Finset (Finset V)) (γ : Finset V) : C1 σ :=
+lean/Taut/Separation.lean:29:lemma bd1_gammaChain {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+lean/Taut/Separation.lean:50:theorem exists_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {γ : Finset V}
+lean/Taut/Separation.lean:61:noncomputable def cutSet (σ : Finset (Finset V)) (W : C2 σ) : Finset (Finset V) :=
+lean/Taut/Separation.lean:64:lemma mem_cutSet {σ : Finset (Finset V)} {W : C2 σ} {g : Finset V} :
+lean/Taut/Separation.lean:71:lemma cutSet_subset {σ : Finset (Finset V)} {W : C2 σ} : cutSet σ W ⊆ σ := by
+lean/Taut/Separation.lean:76:lemma edge_cut_parity {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:91:lemma edgesOf_cut_subset (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
+lean/Taut/Separation.lean:99:/-- The edge-degree in a capped side splits into the γ-contribution and the
+lean/Taut/Separation.lean:101:lemma edgeDeg_cut (hγσ : γ ∉ σ) (e : Finset V) :
+lean/Taut/Separation.lean:112:lemma closed_cut (h : IsSphere2 σ) (hγ3 : γ.card = 3)
+lean/Taut/Separation.lean:157:lemma bd1_eval_two {σ : Finset (Finset V)} {c : C1 σ} {x : V} (hx : x ∈ vertsOf σ)
+lean/Taut/Separation.lean:175:lemma gammaCycle_dichotomy {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+lean/Taut/Separation.lean:270:def dualOn (σ : Finset (Finset V)) (S : Finset (Finset V)) : SimpleGraph σ where
+lean/Taut/Separation.lean:275:@[simp] lemma dualOn_adj {σ S : Finset (Finset V)} {f g : σ} :
+lean/Taut/Separation.lean:281:noncomputable def reachChain (σ : Finset (Finset V)) (S : Finset (Finset V)) (f₀ : σ) : C2 σ :=
+lean/Taut/Separation.lean:284:lemma reachChain_self {σ : Finset (Finset V)} {S : Finset (Finset V)} {f₀ : σ} :
+lean/Taut/Separation.lean:291:lemma reachChain_closed {σ : Finset (Finset V)} {S : Finset (Finset V)} {f₀ : σ}
+lean/Taut/Separation.lean:304:lemma dualOn_walk_mem {σ S : Finset (Finset V)} :
+lean/Taut/Separation.lean:312:lemma reachChain_mem {σ S : Finset (Finset V)} {f₀ g : σ} (hf₀ : (f₀ : Finset V) ∈ S)
+lean/Taut/Separation.lean:320:lemma reachChain_zero {σ S : Finset (Finset V)} {f₀ g : σ} (hf₀ : (f₀ : Finset V) ∈ S)
+lean/Taut/Separation.lean:328:lemma bd2_reachChain_supp {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:369:theorem cutSet_dualConn {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:431:lemma skel_reach_within {τ : Finset (Finset V)} {f : τ} {u w : V}
+lean/Taut/Separation.lean:443:lemma dualwalk_skel {τ : Finset (Finset V)} :
+lean/Taut/Separation.lean:457:lemma skelConn_of_dualPreconn {τ : Finset (Finset V)} (hpre : (dualGraph τ).Preconnected) :
+lean/Taut/Separation.lean:467:lemma dualOn_skel_insert {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} :
+lean/Taut/Separation.lean:485:theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:555:lemma W_eq_of_share_edge {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:574:lemma W_eq_along_link {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:623:lemma W_const_at {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:643:lemma face_two_ne {σ : Finset (Finset V)} (h : IsSphere2 σ) {v x y : V}
+lean/Taut/Separation.lean:656:lemma gamma_endpoints_at {γ : Finset V} (hγ3 : γ.card = 3) {v : V} (hvγ : v ∈ γ) :
+lean/Taut/Separation.lean:667:lemma gamma_chord_adj {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} {v a b : V}
+lean/Taut/Separation.lean:677:lemma cut_link_closure_nonendpoint {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:707:lemma reroute_to_gamma_endpoint {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:738:lemma linkConn_cut_at_gamma {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:773:lemma linkGraph_le_cut_nonendpoint {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:786:lemma linkConn_cut_off_gamma {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:814:lemma linkConn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:828:lemma bd2_W_add_one {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:834:lemma mem_cutSet_add_one {σ : Finset (Finset V)} {W : C2 σ} {g : Finset V} (hg : g ∈ σ) :
+lean/Taut/Separation.lean:843:lemma cutSet_add_one_eq_sdiff {σ : Finset (Finset V)} (W : C2 σ) :
+lean/Taut/Separation.lean:861:lemma pure_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:870:lemma card_faces_cut_add {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} (hγσ : γ ∉ σ) :
+lean/Taut/Separation.lean:885:lemma gamma_vert_mem_verts {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+lean/Taut/Separation.lean:899:lemma vertsOf_cut_union {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:920:lemma vertsOf_cut_inter {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:945:lemma edgesOf_cut_union {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:962:lemma edgesOf_cut_inter {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:993:lemma euler_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:1025:theorem isSphere2_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:1031:/-- **The separation theorem (sphere halves).** A non-face triangle `γ` of a
+lean/Taut/Separation.lean:1032:combinatorial 2-sphere splits it into two sides, each capping with `γ` to a
+lean/Taut/Separation.lean:1034:theorem separates {σ : Finset (Finset V)} (h : IsSphere2 σ) {γ : Finset V}
+
+codex
+The spec matches the paper’s high-level proof. I’m now checking the exact shapes of `IsBall`, `tetFaces`, `bdry`, `ofComplex`, `IsTaut.splits`, and `separates`, because the design hinges on the chain-to-facet-set bridge and whether case 2 can reuse Theorem 1 directly.
+exec
+/bin/zsh -lc "sed -n '1,180p' lean/Taut/Ball.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Complex2
+
+/-!
+# Shelling-certified combinatorial 3-balls
+
+The combinatorial replacement for "simplicial triangulation of `B³`",
+following the paper's *Shelling* section.  A *shelling* of a ball is an
+ordering `(t₁, …, t_k)` of its tetrahedra such that gluing them on one at a
+time always maintains a ball; the type of a glued tet is the number of its
+faces shared with what is already built (type 1 or 2; type 3 — which would
+create an interior vertex — never occurs here).
+
+Following the G1 audit (Q2/Q3 APPROVED, `notes/codex-consults/
+2026-06-12-g1-sphere-ball-*`), a ball is encoded as an **explicit shelling
+certificate** (a `List` of tets), not an inductive `Prop`: the Theorem 2
+reassembly grafts shellings by list concatenation, and free shellability
+quantifies over the first element.  `IsSphere2` of every intermediate
+boundary is **baked into** the gluing step, so the induction has sphere-hood
+available at every stage.
+
+`IsBall τ B` is, by design, a *shelling-certified* ball — not a general
+combinatorial-ball definition.  It is exactly the object the merged
+Theorem 2+3 induction constructs.
+
+Faces of a tetrahedron `t` (a 4-element set) are its card-3 subsets,
+`t.powersetCard 3`.  When tet `t` is glued onto a ball whose boundary is the
+2-sphere `B`, the faces of `t` already present in `B` become interior and the
+new faces are exposed: the new boundary is the symmetric difference
+`(B \ t.powersetCard 3) ∪ (t.powersetCard 3 \ B)`.
+
+Validation (build-checked):
+* a single tet is a (freely shellable) ball with the tetrahedron-boundary
+  sphere as its boundary (`isBall_singleton`, `freelyShellable_singleton`);
+* the boundary of a shelling-certified ball is a combinatorial 2-sphere
+  (`IsBall.isSphere2`) — the structural invariant carried by the certificate.
+-/
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-- The four triangular faces of a tetrahedron `t` (the card-3 subsets). -/
+abbrev tetFaces (t : Finset V) : Finset (Finset V) := t.powersetCard 3
+
+/-- One gluing step of a shelling: tet `t` is glued onto a ball whose
+boundary 2-sphere is `B`, producing the ball with boundary `B'`.
+
+* `card4` — `t` is a tetrahedron (4 vertices);
+* `shared` — `t` meets the current boundary in **one or two** of its faces
+  (type 1 or 2; type 3 is excluded, as it would create an interior vertex);
+* `newBdry` — the new boundary is the symmetric difference of `B` and the
+  faces of `t`: shared faces become interior, the rest are exposed;
+* `sphere` — the new boundary is again a combinatorial 2-sphere (the
+  invariant baked into the certificate).
+-/
+structure GlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop where
+  card4 : t.card = 4
+  shared : (tetFaces t ∩ B).card = 1 ∨ (tetFaces t ∩ B).card = 2
+  newBdry : B' = (B \ tetFaces t) ∪ (tetFaces t \ B)
+  sphere : IsSphere2 B'
+
+/-- Starting from a ball with boundary `B₀`, gluing on the tets of `l` in
+order yields a ball with boundary `B`. -/
+def ShellFrom : Finset (Finset V) → List (Finset V) → Finset (Finset V) → Prop
+  | B₀, [],     B => B = B₀
+  | B₀, t :: l, B => ∃ B₁, GlueStep t B₀ B₁ ∧ ShellFrom B₁ l B
+
+/-- `l` is a shelling with final boundary `B`: the head tet is the initial
+tetrahedron (its boundary is the tetrahedron-boundary sphere) and the
+remaining tets are glued on in order. -/
+def IsShelling : List (Finset V) → Finset (Finset V) → Prop
+  | [],     _ => False
+  | t :: l, B => t.card = 4 ∧ ShellFrom (tetFaces t) l B
+
+/-- A *shelling-certified ball*: a facet set `τ` admitting a shelling (a
+nodup ordering of its tets gluing up to boundary `B`). -/
+def IsBall (τ B : Finset (Finset V)) : Prop :=
+  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+
+/-- `τ` is *freely shellable* with boundary `B` if **any** of its tets can
+serve as the initial tet of a shelling (the paper's "freely shellable":
+shucking in reverse can remove any prescribed tet last). -/
+def FreelyShellable (τ B : Finset (Finset V)) : Prop :=
+  ∀ t ∈ τ, ∃ l : List (Finset V),
+    l.head? = some t ∧ l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+
+/-! ## The boundary of a ball is a sphere -/
+
+/-- Gluing preserves sphere-hood of the boundary: if the starting boundary
+`B₀` is a sphere, so is the final boundary `B`. -/
+lemma ShellFrom.isSphere2 {l : List (Finset V)} :
+    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B → IsSphere2 B₀ → IsSphere2 B := by
+  induction l with
+  | nil =>
+      intro B₀ B h h0
+      simp only [ShellFrom] at h
+      exact h ▸ h0
+  | cons t l ih =>
+      intro B₀ B h _
+      simp only [ShellFrom] at h
+      obtain ⟨B₁, hg, hrest⟩ := h
+      exact ih hrest hg.sphere
+
+/-- The final boundary of a shelling is a combinatorial 2-sphere. -/
+lemma IsShelling.isSphere2 {l : List (Finset V)} {B : Finset (Finset V)}
+    (h : IsShelling l B) : IsSphere2 B := by
+  cases l with
+  | nil => simp only [IsShelling] at h
+  | cons t l =>
+      simp only [IsShelling] at h
+      exact h.2.isSphere2 (isSphere2_powersetCard3 h.1)
+
+/-- The boundary of a shelling-certified ball is a combinatorial 2-sphere. -/
+theorem IsBall.isSphere2 {τ B : Finset (Finset V)} (h : IsBall τ B) :
+    IsSphere2 B := by
+  obtain ⟨_, _, _, hsh⟩ := h
+  exact hsh.isSphere2
+
+/-! ## A single tetrahedron is a ball -/
+
+/-- A single tetrahedron `t` is a shelling-certified ball whose boundary is
+the tetrahedron-boundary sphere. -/
+theorem isBall_singleton {t : Finset V} (ht : t.card = 4) :
+    IsBall {t} (tetFaces t) := by
+  refine ⟨[t], by simp, by simp, ?_⟩
+  simp only [IsShelling, ShellFrom]
+  exact ⟨ht, trivial⟩
+
+/-- A single tetrahedron is freely shellable. -/
+theorem freelyShellable_singleton {t : Finset V} (ht : t.card = 4) :
+    FreelyShellable {t} (tetFaces t) := by
+  intro t' ht'
+  rw [Finset.mem_singleton] at ht'
+  subst t'
+  refine ⟨[t], by simp, by simp, by simp, ?_⟩
+  simp only [IsShelling, ShellFrom]
+  exact ⟨ht, trivial⟩
+
+end Taut
+
+exec
+/bin/zsh -lc "sed -n '1,260p' lean/Taut/Chains.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Mathlib
+
+/-!
+# Simplicial chains on a full simplex
+
+Foundation for formalizing Doyle–Ellison–Wang, "Taut fillings".
+
+We work with the AUGMENTED, dimension-mixed simplicial chain group of the
+full simplex on a linearly ordered vertex type `V`: a chain is a finitely
+supported function `Finset V →₀ ℤ`, a generator being an unoriented simplex
+`s : Finset V` carrying its canonical orientation (vertices in increasing
+order).  `∅` is the (−1)-simplex; its presence makes the contracting
+homotopy `∂ ∘ cone + cone ∘ ∂ = id` exact and global, which is what gives
+filling-existence for closed chains.
+
+Sign bookkeeping is via `cnt x s = #{y ∈ s | y < x}` and
+`sgn x s = (-1) ^ cnt x s`: the `i`-th vertex of a sorted simplex has
+exactly `i` smaller members, so `sgn` is the classical `(-1)^i`.
+
+Main definitions: `bdry` (boundary), `cone`, `lk` (link/strip), `nbhd`
+(restriction to simplices containing a vertex), `vert`, `nrm` (L¹ norm),
+`deg`, `SubChain`.
+
+Main results (the validation invariants of the G1 spec):
+* `bdry_bdry` : ∂∂ = 0;
+* `bdry_cone_add_cone_bdry` : ∂(cone x M) + cone x (∂M) = M;
+* `cone_lk` : cone x (lk x M) = nbhd x M;
+* `nrm_cone_add_deg` : nrm (cone x M) + deg x M = nrm M.
+-/
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-- Augmented, dimension-mixed simplicial chains on the full simplex with
+vertex type `V`. -/
+abbrev Chain (V : Type*) := Finset V →₀ ℤ
+
+/-! ## Counting below, and signs -/
+
+/-- The number of vertices of `s` strictly below `x`: the position `x` takes
+(or would take) in the sorted listing of `insert x s`. -/
+def cnt (x : V) (s : Finset V) : ℕ := (s.filter (· < x)).card
+
+/-- The sign `(-1) ^ cnt x s`: the sign of the permutation sorting `x`
+into `s`. -/
+def sgn (x : V) (s : Finset V) : ℤ := (-1) ^ cnt x s
+
+lemma sgn_mul_self (x : V) (s : Finset V) : sgn x s * sgn x s = 1 := by
+  simp only [sgn, ← pow_add]
+  exact Even.neg_one_pow ⟨_, rfl⟩
+
+lemma natAbs_sgn (x : V) (s : Finset V) : (sgn x s).natAbs = 1 := by
+  simp [sgn, Int.natAbs_pow]
+
+lemma sgn_smul_sgn_smul (x : V) (s : Finset V) (M : Chain V) :
+    sgn x s • sgn x s • M = M := by
+  rw [smul_smul, sgn_mul_self, one_smul]
+
+lemma cnt_insert (x z : V) (t : Finset V) (hz : z ∉ t) :
+    cnt x (insert z t) = cnt x t + if z < x then 1 else 0 := by
+  unfold cnt
+  rw [Finset.filter_insert]
+  split
+  · rw [Finset.card_insert_of_notMem (fun h => hz (Finset.mem_of_mem_filter z h))]
+  · rw [add_zero]
+
+lemma cnt_self_insert (x : V) (t : Finset V) (hx : x ∉ t) :
+    cnt x (insert x t) = cnt x t := by
+  rw [cnt_insert x x t hx, if_neg (lt_irrefl x), add_zero]
+
+lemma sgn_insert (x z : V) (t : Finset V) (hz : z ∉ t) :
+    sgn x (insert z t) = (if z < x then -1 else 1) * sgn x t := by
+  rw [sgn, sgn, cnt_insert x z t hz]
+  split <;> simp [pow_add]
+
+lemma sgn_self_insert (x : V) (t : Finset V) (hx : x ∉ t) :
+    sgn x (insert x t) = sgn x t := by
+  rw [sgn, sgn, cnt_self_insert x t hx]
+
+/-- Express the sign on `s` via the sign on `s.erase z`. -/
+lemma sgn_eq_erase (x z : V) (s : Finset V) (hz : z ∈ s) :
+    sgn x s = (if z < x then -1 else 1) * sgn x (s.erase z) := by
+  conv_lhs => rw [← Finset.insert_erase hz]
+  exact sgn_insert x z _ (Finset.notMem_erase z s)
+
+lemma sgn_erase_self (x : V) (s : Finset V) : sgn x (s.erase x) = sgn x s := by
+  by_cases hx : x ∈ s
+  · rw [sgn_eq_erase x x s hx, if_neg (lt_irrefl x), one_mul]
+  · rw [Finset.erase_eq_of_notMem hx]
+
+/-- The fundamental parity fact: for `x ≠ z` exactly one of the two
+order-comparisons fires. -/
+lemma if_lt_mul_if_lt {x z : V} (h : x ≠ z) :
+    (if z < x then (-1 : ℤ) else 1) * (if x < z then -1 else 1) = -1 := by
+  rcases h.lt_or_gt with h' | h'
+  · rw [if_neg (asymm h'), if_pos h', one_mul]
+  · rw [if_pos h', if_neg (asymm h'), mul_one]
+
+/-- Sign cancellation for `∂∂ = 0`: removing `x` then `z` versus removing
+`z` then `x`. -/
+lemma sgn_erase_cancel {x z : V} {s : Finset V} (hx : x ∈ s) (hz : z ∈ s)
+    (hne : x ≠ z) :
+    sgn x s * sgn z (s.erase x) = -(sgn z s * sgn x (s.erase z)) := by
+  rw [sgn_eq_erase x z s hz, sgn_eq_erase z x s hx]
+  rcases hne.lt_or_gt with h' | h'
+  · rw [if_neg (asymm h'), if_pos h']; ring
+  · rw [if_pos h', if_neg (asymm h')]; ring
+
+/-- Sign cancellation for the homotopy identity: adjoining `x` versus
+removing `z`, for `x ∉ s`, `z ∈ s`. -/
+lemma sgn_insert_cancel {x z : V} {s : Finset V} (hx : x ∉ s) (hz : z ∈ s) :
+    sgn x s * sgn z (insert x s) = -(sgn z s * sgn x (s.erase z)) := by
+  have hne : x ≠ z := fun h => hx (h ▸ hz)
+  rw [sgn_insert z x s hx, sgn_eq_erase x z s hz]
+  rcases hne.lt_or_gt with h' | h'
+  · rw [if_pos h', if_neg (asymm h')]; ring
+  · rw [if_neg (asymm h'), if_pos h']; ring
+
+/-! ## The operators -/
+
+/-- Boundary of one generator: the alternating sum of its facets. -/
+noncomputable def bdryGen (s : Finset V) : Chain V :=
+  ∑ x ∈ s, sgn x s • Finsupp.single (s.erase x) 1
+
+/-- The boundary operator. -/
+noncomputable def bdry : Chain V →ₗ[ℤ] Chain V :=
+  Finsupp.lsum ℤ fun s => LinearMap.toSpanSingleton ℤ (Chain V) (bdryGen s)
+
+@[simp] lemma bdry_single (s : Finset V) (c : ℤ) :
+    bdry (Finsupp.single s c) = c • bdryGen s := by
+  simp [bdry, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+
+/-- Cone of one generator: adjoin `x`, with the sign that sorts `x` into
+place; kill simplices already containing `x`. -/
+noncomputable def coneGen (x : V) (s : Finset V) : Chain V :=
+  if x ∈ s then 0 else sgn x s • Finsupp.single (insert x s) 1
+
+/-- The cone operator `M ↦ x ∗ M`. -/
+noncomputable def cone (x : V) : Chain V →ₗ[ℤ] Chain V :=
+  Finsupp.lsum ℤ fun s => LinearMap.toSpanSingleton ℤ (Chain V) (coneGen x s)
+
+@[simp] lemma cone_single (x : V) (s : Finset V) (c : ℤ) :
+    cone x (Finsupp.single s c) = c • coneGen x s := by
+  simp [cone, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+
+/-- Link (strip) of one generator: remove `x`, with the matching sign;
+kill simplices not containing `x`. -/
+noncomputable def lkGen (x : V) (s : Finset V) : Chain V :=
+  if x ∈ s then sgn x s • Finsupp.single (s.erase x) 1 else 0
+
+/-- The link/strip operator: inverse to `cone x` on simplices containing
+`x`. -/
+noncomputable def lk (x : V) : Chain V →ₗ[ℤ] Chain V :=
+  Finsupp.lsum ℤ fun s => LinearMap.toSpanSingleton ℤ (Chain V) (lkGen x s)
+
+@[simp] lemma lk_single (x : V) (s : Finset V) (c : ℤ) :
+    lk x (Finsupp.single s c) = c • lkGen x s := by
+  simp [lk, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+
+/-- Restriction of a chain to the simplices containing `x`
+(the paper's `nbhd`). -/
+noncomputable def nbhd (x : V) (M : Chain V) : Chain V :=
+  M.filter (fun s => x ∈ s)
+
+@[simp] lemma nbhd_apply (x : V) (M : Chain V) (s : Finset V) :
+    nbhd x M s = if x ∈ s then M s else 0 := by
+  simp [nbhd, Finsupp.filter_apply]
+
+lemma nbhd_add (x : V) (M N : Chain V) :
+    nbhd x (M + N) = nbhd x M + nbhd x N := by
+  ext s; simp only [nbhd_apply, Finsupp.add_apply]; split <;> simp
+
+lemma nbhd_single_of_mem {x : V} {s : Finset V} (h : x ∈ s) (c : ℤ) :
+    nbhd x (Finsupp.single s c) = Finsupp.single s c :=
+  Finsupp.filter_single_of_pos (p := fun u => x ∈ u) h
+
+lemma nbhd_single_of_notMem {x : V} {s : Finset V} (h : x ∉ s) (c : ℤ) :
+    nbhd x (Finsupp.single s c) = 0 :=
+  Finsupp.filter_single_of_neg (p := fun u => x ∈ u) h
+
+@[simp] lemma nbhd_zero (x : V) : nbhd x (0 : Chain V) = 0 := by
+  rw [nbhd, Finsupp.filter_zero]
+
+/-- The vertex set of a chain. -/
+noncomputable def vert (M : Chain V) : Finset V := M.support.biUnion id
+
+lemma mem_vert {x : V} {M : Chain V} :
+    x ∈ vert M ↔ ∃ s ∈ M.support, x ∈ s := by
+  simp [vert]
+
+lemma nbhd_eq_zero_iff {x : V} {M : Chain V} :
+    nbhd x M = 0 ↔ x ∉ vert M := by
+  constructor
+  · intro h hx
+    obtain ⟨s, hs, hxs⟩ := mem_vert.mp hx
+    have := DFunLike.congr_fun h s
+    rw [nbhd_apply, if_pos hxs] at this
+    exact Finsupp.mem_support_iff.mp hs (by simpa using this)
+  · intro h
+    ext s
+    rw [nbhd_apply]
+    split
+    · by_contra hMs
+      exact h (mem_vert.mpr ⟨s, Finsupp.mem_support_iff.mpr (by simpa using hMs), by assumption⟩)
+    · rfl
+
+/-- Pointwise formula for the cone. -/
+lemma cone_apply (x : V) (M : Chain V) (u : Finset V) :
+    cone x M u = if x ∈ u then sgn x (u.erase x) * M (u.erase x) else 0 := by
+  induction M using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg =>
+    rw [map_add, Finsupp.add_apply, hf, hg, Finsupp.add_apply]
+    split <;> ring
+  | single s c =>
+    rw [cone_single, coneGen]
+    split
+    · -- x ∈ s : cone kills it, and `u.erase x ≠ s` since `x ∉ u.erase x`
+      rename_i hxs
+      simp only [smul_zero, Finsupp.coe_zero, Pi.zero_apply, Finsupp.single_apply]
+      have hs : s ≠ u.erase x := fun h => (Finset.notMem_erase x u) (h ▸ hxs)
+      rw [if_neg hs]
+      split <;> simp
+    · rename_i hxs
+      simp only [Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul]
+      by_cases hxu : x ∈ u
+      · by_cases he : insert x s = u
+        · have hs : s = u.erase x := by rw [← he, Finset.erase_insert hxs]
+          rw [if_pos hxu, if_pos he, if_pos hs, ← hs]
+          ring
+        · have hs : s ≠ u.erase x := fun h => he (by rw [h, Finset.insert_erase hxu])
+          rw [if_pos hxu, if_neg he, if_neg hs]
+          ring
+      · have he : insert x s ≠ u := fun h => hxu (h ▸ Finset.mem_insert_self x s)
+        rw [if_neg hxu, if_neg he]
+        ring
+
+/-! ## The two fundamental identities -/
+
+lemma bdry_bdryGen (s : Finset V) : bdry (bdryGen s) = (0 : Chain V) := by
+  have step : ∀ x ∈ s, bdry (sgn x s • Finsupp.single (s.erase x) 1)
+      = ∑ z ∈ s, (if z = x then 0 else
+          (sgn x s * sgn z (s.erase x)) •
+            Finsupp.single ((s.erase x).erase z) (1 : ℤ)) := by
+    intro x hx
+    rw [map_smul, bdry_single, one_smul, bdryGen, Finset.smul_sum]
+    rw [← Finset.sum_erase (f := fun z => if z = x then 0 else
+        (sgn x s * sgn z (s.erase x)) •
+          Finsupp.single ((s.erase x).erase z) (1 : ℤ)) s (if_pos rfl)]
+    refine Finset.sum_congr rfl fun z hz => ?_
+    rw [if_neg (Finset.ne_of_mem_erase hz), smul_smul]
+  rw [bdryGen, map_sum, Finset.sum_congr rfl step, ← Finset.sum_product']
+  refine Finset.sum_involution (fun p _ => p.swap) ?_ ?_ ?_ ?_
+  · intro p hp
+    obtain ⟨h1, h2⟩ := Finset.mem_product.mp hp
+    simp only [Prod.fst_swap, Prod.snd_swap]
+    by_cases he : p.2 = p.1
+    · simp [he]
+    · have hne : ¬(p.1 = p.2) := fun h => he h.symm
+
+exec
+/bin/zsh -lc "sed -n '1020,1065p' lean/Taut/Separation.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '430,535p' lean/Taut/Splitting.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  have hFadd := card_faces_cut_add (W := W) hγσ
+  have he := h.euler
+  omega
+
+/-- **A capped side of the cut is a sphere.** All five `IsSphere2` fields. -/
+theorem isSphere2_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ)
+    (hW : bd2 σ W = gammaChain σ γ) : IsSphere2 (insert γ (cutSet σ W)) :=
+  ⟨pure_cut h hγ3, closed_cut h hγ3 hγe hγσ hW, linkConn_cut h hγ3 hγe hW,
+    conn_cut h hγ3 hγe hW, euler_cut h hγ3 hγe hγσ hW⟩
+
+/-- **The separation theorem (sphere halves).** A non-face triangle `γ` of a
+combinatorial 2-sphere splits it into two sides, each capping with `γ` to a
+combinatorial 2-sphere. -/
+theorem separates {σ : Finset (Finset V)} (h : IsSphere2 σ) {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ) :
+    ∃ σ₁ σ₂ : Finset (Finset V),
+      IsSphere2 (insert γ σ₁) ∧ IsSphere2 (insert γ σ₂) := by
+  obtain ⟨W, hW⟩ := exists_cut h hγ3 hγe
+  exact ⟨cutSet σ W, cutSet σ (W + fun _ => 1),
+    isSphere2_cut h hγ3 hγe hγσ hW,
+    isSphere2_cut h hγ3 hγe hγσ (bd2_W_add_one h hW)⟩
+
+end Taut
+
+ succeeded in 0ms:
+/-! ## Theorem 1, part 2: taut fillings split -/
+
+/-- **Theorem 1, splitting** (Doyle–Ellison–Wang): for `n ≥ 2`, ANY taut
+filling `M` of an almost disjoint union `X + Y` splits: filtering `M`
+along `· ⊆ A` yields taut fillings of `X` and of `Y` summing to `M`. -/
+theorem IsTaut.splits {A B : Finset V} {n : ℕ}
+    (hn : 2 ≤ n) {p q : V} (hp : p ∈ A ∩ B) (hq : q ∈ A ∩ B) (hpq : p ≠ q)
+    (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+  classical
+  have hn1 : 1 ≤ n := by omega
+  -- context facts
+  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+    intro s hs
+    rw [hM1] at hs
+    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+    · exact (hX s h).2
+    · exact (hY s h).2
+  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+    fun s hs => hMt.dim_pure hbdsupp s hs
+  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+    intro s hs; rw [hpure s hs]; omega
+  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+    intro t ht
+    refine (supp_subset_vert ht).trans ((hMt.vert_subset hdim2).trans ?_)
+    rw [hM1]
+    exact (vert_add_subset X Y).trans (Finset.union_subset_union
+      (vert_subset_of_supp fun s hs => (hX s hs).1)
+      (vert_subset_of_supp fun s hs => (hY s hs).1))
+  -- every generator is pure
+  have hdich : ∀ t ∈ M.support, t ⊆ A ∨ t ⊆ B := by
+    intro t ht
+    rcases hybrid_structure hn hp hq hpq hC hX hY hXc hYc hM1 hMt hpure
+      hsuppAB ht with h | h | ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · exact Or.inl h
+    · exact Or.inr h
+    · obtain ⟨y₀, hy⟩ := Finset.card_eq_one.mp h1
+      exact (no_extreme_hybrid hn hp hq hpq hC hX hY hXc hYc hM1 hMt hpure
+        hsuppAB ht hy h2).elim
+    · -- symmetric configuration, roles of A and B exchanged
+      obtain ⟨x₀, hx⟩ := Finset.card_eq_one.mp h1
+      have hM1' : bdry M = Y + X := by rw [hM1, add_comm]
+      have hsuppBA : ∀ t' ∈ M.support, t' ⊆ B ∪ A := by
+        intro t' ht'
+        rw [Finset.union_comm]
+        exact hsuppAB t' ht'
+      exact (no_extreme_hybrid hn (Finset.inter_comm A B ▸ hq)
+        (Finset.inter_comm A B ▸ hp) hpq.symm (Finset.inter_comm A B ▸ hC)
+        hY hX hYc hXc hM1' hMt hpure hsuppBA ht hx
+        (Finset.inter_comm A B ▸ h2)).elim
+  -- the split along `· ⊆ A`
+  set Mx := M.filter (fun t => t ⊆ A) with hMx
+  set My := M.filter (fun t => ¬ t ⊆ A) with hMy
+  have hsum : Mx + My = M := Finsupp.filter_pos_add_filter_neg M _
+  have hMxsupp : ∀ t ∈ Mx.support, t ⊆ A ∧ t.card = n + 2 := by
+    intro t ht
+    rw [hMx, Finsupp.support_filter, Finset.mem_filter] at ht
+    exact ⟨ht.2, hpure t ht.1⟩
+  have hMysupp : ∀ t ∈ My.support, t ⊆ B ∧ t.card = n + 2 := by
+    intro t ht
+    rw [hMy, Finsupp.support_filter, Finset.mem_filter] at ht
+    exact ⟨(hdich t ht.1).resolve_left ht.2, hpure t ht.1⟩
+  -- identify the boundaries by projecting
+  have hbsum : bdry Mx + bdry My = X + Y := by rw [← map_add, hsum, hM1]
+  have hbx : bdry Mx = X := by
+    have happly := congrArg (Kmap A p) hbsum
+    rw [map_add, map_add,
+      Kmap_eq_self (fun s hs => (bdry_supp_of_supp hMxsupp s hs).1),
+      Kmap_eq_zero_of_closed hn1 hp hC (bdry_supp_of_supp hMysupp)
+        (bdry_bdry My),
+      Kmap_eq_self (fun s hs => (hX s hs).1),
+      Kmap_eq_zero_of_closed hn1 hp hC hY hYc, add_zero, add_zero] at happly
+    exact happly
+  have hby : bdry My = Y := by
+    have h := hbsum
+    rw [hbx] at h
+    exact add_left_cancel h
+  -- tautness of the parts
+  have hnrm : nrm Mx + nrm My = nrm M := nrm_filter_add_nrm_filter_neg _ M
+  have hadd := Zvol_add_of_almost_disjoint hn1 hp hq hpq hC hX hY hXc hYc
+  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+  have h4 : Zvol X ≤ nrm Mx := Zvol_le hbx
+  have h5 : Zvol Y ≤ nrm My := Zvol_le hby
+  have hMxt : IsTaut Mx := by rw [IsTaut, hbx]; omega
+  have hMyt : IsTaut My := by rw [IsTaut, hby]; omega
+  exact ⟨hbx, hby, hMxt, hMyt, hsum⟩
+
+end Taut
+
+exec
+/bin/zsh -lc "sed -n '260,620p' lean/Taut/Chains.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    · have hne : ¬(p.1 = p.2) := fun h => he h.symm
+      rw [if_neg he, if_neg hne, Finset.erase_right_comm,
+        sgn_erase_cancel h1 h2 hne, neg_smul, neg_add_cancel]
+  · intro p _ hF hswap
+    apply hF
+    have h : p.2 = p.1 := by
+      have h1 := congrArg Prod.fst hswap
+      simpa using h1
+    rw [if_pos h]
+  · intro p hp
+    obtain ⟨h1, h2⟩ := Finset.mem_product.mp hp
+    exact Finset.mem_product.mpr ⟨h2, h1⟩
+  · intro p _
+    exact Prod.swap_swap p
+
+/-- ∂∂ = 0. -/
+theorem bdry_bdry (M : Chain V) : bdry (bdry M) = 0 := by
+  induction M using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg => rw [map_add, map_add, hf, hg, add_zero]
+  | single s c => rw [bdry_single, map_smul, bdry_bdryGen, smul_zero]
+
+/-- The contracting homotopy of the (augmented) full simplex:
+`∂(x ∗ M) + x ∗ (∂M) = M`, exactly and globally. -/
+theorem bdry_cone_add_cone_bdry (x : V) (M : Chain V) :
+    bdry (cone x M) + cone x (bdry M) = M := by
+  induction M using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg =>
+    rw [map_add, map_add, map_add, map_add, add_add_add_comm, hf, hg]
+  | single s c =>
+    by_cases hx : x ∈ s
+    · -- cone kills the generator; the cone of the boundary restores it.
+      have key : cone x (bdryGen s) = Finsupp.single s 1 := by
+        rw [bdryGen, map_sum]
+        rw [Finset.sum_eq_single_of_mem x hx]
+        · rw [map_smul, cone_single, one_smul, coneGen,
+            if_neg (Finset.notMem_erase x s), sgn_erase_self,
+            Finset.insert_erase hx, sgn_smul_sgn_smul]
+        · intro z hz hzx
+          rw [map_smul, cone_single, one_smul, coneGen,
+            if_pos (Finset.mem_erase_of_ne_of_mem (Ne.symm hzx) hx), smul_zero]
+      rw [cone_single, coneGen, if_pos hx, smul_zero, map_zero, zero_add,
+        bdry_single, map_smul, key, Finsupp.smul_single, smul_eq_mul, mul_one]
+    · -- the generic case: the two sums cancel termwise.
+      have h1 : bdry (sgn x s • Finsupp.single (insert x s) (1 : ℤ))
+          = Finsupp.single s 1 + ∑ z ∈ s,
+              (sgn x s * sgn z (insert x s)) •
+                Finsupp.single (insert x (s.erase z)) (1 : ℤ) := by
+        rw [map_smul, bdry_single, one_smul, bdryGen, Finset.sum_insert hx,
+          smul_add, Finset.smul_sum]
+        congr 1
+        · rw [Finset.erase_insert hx, sgn_self_insert x s hx, sgn_smul_sgn_smul]
+        · refine Finset.sum_congr rfl fun z hz => ?_
+          rw [smul_smul,
+            Finset.erase_insert_of_ne (fun h => hx (by rw [h]; exact hz))]
+      have h2 : cone x (bdryGen s) = ∑ z ∈ s,
+          (sgn z s * sgn x (s.erase z)) •
+            Finsupp.single (insert x (s.erase z)) (1 : ℤ) := by
+        rw [bdryGen, map_sum]
+        refine Finset.sum_congr rfl fun z hz => ?_
+        rw [map_smul, cone_single, one_smul, coneGen,
+          if_neg (fun h => hx (Finset.mem_of_mem_erase h)), smul_smul]
+      rw [cone_single, coneGen, if_neg hx, map_smul, h1, bdry_single, map_smul,
+        h2, ← smul_add, add_assoc, ← Finset.sum_add_distrib]
+      have hzero : ∀ z ∈ s,
+          (sgn x s * sgn z (insert x s)) •
+              Finsupp.single (insert x (s.erase z)) (1 : ℤ)
+            + (sgn z s * sgn x (s.erase z)) •
+              Finsupp.single (insert x (s.erase z)) (1 : ℤ) = 0 := by
+        intro z hz
+        rw [← add_smul, sgn_insert_cancel hx hz, neg_add_cancel, zero_smul]
+      rw [Finset.sum_congr rfl hzero, Finset.sum_const_zero, add_zero,
+        Finsupp.smul_single, smul_eq_mul, mul_one]
+
+/-! ## Cone, link, neighborhood -/
+
+lemma sgn_ne_zero (x : V) (s : Finset V) : sgn x s ≠ 0 := by
+  simp [sgn]
+
+/-- Coning the link recovers the neighborhood. -/
+theorem cone_lk (x : V) (M : Chain V) : cone x (lk x M) = nbhd x M := by
+  induction M using Finsupp.induction_linear with
+  | zero => rw [map_zero, map_zero, nbhd, Finsupp.filter_zero]
+  | add f g hf hg => rw [map_add, map_add, hf, hg, nbhd_add]
+  | single s c =>
+    rw [lk_single, lkGen]
+    by_cases hxs : x ∈ s
+    · rw [if_pos hxs, map_smul, map_smul, cone_single, one_smul, coneGen,
+        if_neg (Finset.notMem_erase x s), sgn_erase_self,
+        Finset.insert_erase hxs, sgn_smul_sgn_smul,
+        nbhd_single_of_mem hxs, Finsupp.smul_single, smul_eq_mul, mul_one]
+    · rw [if_neg hxs, smul_zero, map_zero, nbhd_single_of_notMem hxs]
+
+/-- The neighborhood of `x` in `∂M` only depends on the neighborhood of `x`
+in `M`: tets without `x` contribute no faces with `x`. -/
+theorem nbhd_bdry_nbhd (x : V) (M : Chain V) :
+    nbhd x (bdry (nbhd x M)) = nbhd x (bdry M) := by
+  induction M using Finsupp.induction_linear with
+  | zero => rw [nbhd_zero, map_zero, nbhd_zero]
+  | add f g hf hg => rw [nbhd_add, map_add, nbhd_add, map_add, nbhd_add, hf, hg]
+  | single s c =>
+    by_cases hxs : x ∈ s
+    · rw [nbhd_single_of_mem hxs]
+    · have hz : nbhd x (bdry (Finsupp.single s c)) = 0 := by
+        ext u
+        rw [nbhd_apply, Finsupp.coe_zero, Pi.zero_apply]
+        split
+        · rename_i hxu
+          rw [bdry_single, Finsupp.smul_apply]
+          have hgen : bdryGen s u = 0 := by
+            rw [bdryGen, Finset.sum_apply']
+            refine Finset.sum_eq_zero fun z hz => ?_
+            rw [Finsupp.smul_apply, Finsupp.single_apply, if_neg, smul_zero]
+            intro h
+            exact hxs (Finset.mem_of_mem_erase (h ▸ hxu))
+          rw [hgen, smul_zero]
+        · rfl
+      rw [nbhd_single_of_notMem hxs, map_zero, nbhd_zero, hz]
+
+/-- A chain supported away from `x` has boundary supported away from `x`. -/
+theorem nbhd_bdry_eq_zero {x : V} {N : Chain V} (h : nbhd x N = 0) :
+    nbhd x (bdry N) = 0 := by
+  rw [← nbhd_bdry_nbhd, h, map_zero, nbhd_zero]
+
+/-- The cone from `x` lands in simplices containing `x`. -/
+theorem nbhd_cone (x : V) (N : Chain V) : nbhd x (cone x N) = cone x N := by
+  ext u
+  rw [nbhd_apply]
+  split
+  · rfl
+  · rename_i hxu
+    rw [cone_apply, if_neg hxu]
+
+/-- The link of `x` lives away from `x`. -/
+theorem nbhd_lk (x : V) (M : Chain V) : nbhd x (lk x M) = 0 := by
+  induction M using Finsupp.induction_linear with
+  | zero => rw [map_zero, nbhd_zero]
+  | add f g hf hg => rw [map_add, nbhd_add, hf, hg, add_zero]
+  | single s c =>
+    rw [lk_single, lkGen]
+    split
+    · ext u
+      rw [nbhd_apply, Finsupp.coe_zero, Pi.zero_apply]
+      split
+      · rename_i hxu
+        rw [Finsupp.smul_apply, Finsupp.smul_apply, Finsupp.single_apply,
+          if_neg, smul_zero, smul_zero]
+        intro h
+        exact (Finset.notMem_erase x s) (h ▸ hxu)
+      · rfl
+    · rw [smul_zero, nbhd_zero]
+
+/-- Cone injectivity: if the cone of `N` vanishes, `N` was supported on
+simplices containing `x`. -/
+theorem eq_nbhd_of_cone_eq_zero {x : V} {N : Chain V} (h : cone x N = 0) :
+    N = nbhd x N := by
+  ext t
+  rw [nbhd_apply]
+  split
+  · rfl
+  · rename_i hxt
+    have hc := DFunLike.congr_fun h (insert x t)
+    rw [cone_apply, if_pos (Finset.mem_insert_self x t),
+      Finset.erase_insert hxt, Finsupp.coe_zero, Pi.zero_apply] at hc
+    exact (mul_eq_zero.mp hc).resolve_left (sgn_ne_zero x t)
+
+/-! ## The L¹ norm -/
+
+/-- The L¹ norm of a chain: its size as a multiset of oriented simplices. -/
+noncomputable def nrm (M : Chain V) : ℕ := ∑ s ∈ M.support, (M s).natAbs
+
+lemma nrm_eq_sum_subset {M : Chain V} {t : Finset (Finset V)}
+    (h : M.support ⊆ t) : nrm M = ∑ s ∈ t, (M s).natAbs := by
+  refine Finset.sum_subset h fun s _ hs => ?_
+  rw [Finsupp.notMem_support_iff.mp hs, Int.natAbs_zero]
+
+@[simp] lemma nrm_zero : nrm (0 : Chain V) = 0 := by simp [nrm]
+
+lemma nrm_eq_zero_iff {M : Chain V} : nrm M = 0 ↔ M = 0 := by
+  constructor
+  · intro h
+    ext s
+    by_cases hs : s ∈ M.support
+    · have := Finset.sum_eq_zero_iff.mp h s hs
+      simpa using this
+    · simpa using Finsupp.notMem_support_iff.mp hs
+  · intro h; rw [h, nrm_zero]
+
+@[simp] lemma nrm_single (s : Finset V) (c : ℤ) :
+    nrm (Finsupp.single s c) = c.natAbs := by
+  by_cases hc : c = 0
+  · simp [hc]
+  · rw [nrm, Finsupp.support_single_ne_zero s hc, Finset.sum_singleton,
+      Finsupp.single_eq_same]
+
+@[simp] lemma nrm_neg (M : Chain V) : nrm (-M) = nrm M := by
+  rw [nrm, nrm, Finsupp.support_neg]
+  exact Finset.sum_congr rfl fun s _ => by simp
+
+lemma nrm_add_le (M N : Chain V) : nrm (M + N) ≤ nrm M + nrm N := by
+  rw [nrm_eq_sum_subset (Finsupp.support_add),
+    nrm_eq_sum_subset (M := M) (t := M.support ∪ N.support)
+      Finset.subset_union_left,
+    nrm_eq_sum_subset (M := N) (t := M.support ∪ N.support)
+      Finset.subset_union_right,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_le_sum fun s _ => ?_
+  rw [Finsupp.add_apply]
+  exact Int.natAbs_add_le _ _
+
+lemma nrm_filter_add_nrm_filter_neg (p : Finset V → Prop) [DecidablePred p]
+    (M : Chain V) :
+    nrm (M.filter p) + nrm (M.filter fun s => ¬ p s) = nrm M := by
+  have h1 : (M.filter p).support ⊆ M.support := by
+    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+  have h2 : (M.filter fun s => ¬ p s).support ⊆ M.support := by
+    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+  rw [nrm_eq_sum_subset h1, nrm_eq_sum_subset h2, ← Finset.sum_add_distrib, nrm]
+  refine Finset.sum_congr rfl fun s _ => ?_
+  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+  by_cases hp : p s
+  · rw [if_pos hp, if_neg (not_not_intro hp), Int.natAbs_zero, add_zero]
+  · rw [if_neg hp, if_pos hp, Int.natAbs_zero, zero_add]
+
+/-- The degree of a vertex in a chain: the mass of its neighborhood. -/
+noncomputable def deg (x : V) (M : Chain V) : ℕ := nrm (nbhd x M)
+
+lemma deg_eq_zero_iff {x : V} {M : Chain V} : deg x M = 0 ↔ x ∉ vert M := by
+  rw [deg, nrm_eq_zero_iff, nbhd_eq_zero_iff]
+
+/-- Norm accounting for the cone: no cancellation happens, so coning loses
+exactly the mass at `x`. -/
+theorem nrm_cone_add_deg (x : V) (M : Chain V) :
+    nrm (cone x M) + deg x M = nrm M := by
+  classical
+  set F := M.filter (fun s => ¬ x ∈ s) with hF
+  have hkill : cone x (nbhd x M) = 0 := by
+    ext u
+    rw [cone_apply, Finsupp.coe_zero, Pi.zero_apply]
+    split
+    · rw [nbhd_apply, if_neg (Finset.notMem_erase x u), mul_zero]
+    · rfl
+  -- the cone only sees the part away from `x`
+  have hcone : cone x M = cone x F := by
+    conv_lhs => rw [← Finsupp.filter_pos_add_filter_neg M (fun s => x ∈ s)]
+    rw [map_add, ← nbhd, hkill, zero_add, hF]
+  have hfree : ∀ t ∈ F.support, x ∉ t := by
+    intro t ht
+    rw [hF, Finsupp.support_filter, Finset.mem_filter] at ht
+    exact ht.2
+  have himg : (cone x F).support ⊆ F.support.image (insert x) := by
+    intro u hu
+    rw [Finsupp.mem_support_iff, cone_apply] at hu
+    by_cases hxu : x ∈ u
+    · rw [if_pos hxu] at hu
+      have hFu : F (u.erase x) ≠ 0 := fun h => hu (by rw [h, mul_zero])
+      exact Finset.mem_image.mpr ⟨u.erase x, Finsupp.mem_support_iff.mpr hFu,
+        Finset.insert_erase hxu⟩
+    · exact absurd (if_neg hxu) (fun h => hu h)
+  have hinj : ∀ t₁ ∈ F.support, ∀ t₂ ∈ F.support,
+      insert x t₁ = insert x t₂ → t₁ = t₂ := by
+    intro t₁ h₁ t₂ h₂ h
+    rw [← Finset.erase_insert (hfree t₁ h₁), h, Finset.erase_insert (hfree t₂ h₂)]
+  have hnrmF : nrm (cone x F) = nrm F := by
+    rw [nrm_eq_sum_subset himg, Finset.sum_image hinj, nrm]
+    refine Finset.sum_congr rfl fun t ht => ?_
+    rw [cone_apply, if_pos (Finset.mem_insert_self x t),
+      Finset.erase_insert (hfree t ht), Int.natAbs_mul, natAbs_sgn, one_mul]
+  have hsplit := nrm_filter_add_nrm_filter_neg (fun s => x ∈ s) M
+  rw [hcone, hnrmF, deg, nbhd, hF, add_comm]
+  exact hsplit
+
+end Taut
+
+exec
+/bin/zsh -lc "rg -n \"ofComplex|X\\(|toChain|support|simplicial|coeff|nrm_eq|natAbs|support\" lean/Taut/*.lean lean/Taut/**/*.lean 2>/dev/null" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Projection.lean:20:* small-support triviality: `eq_zero_of_supp_card_lt`,
+lean/Taut/Projection.lean:327:lemma nrm_smul (c : ℤ) (M : Chain V) : nrm (c • M) = c.natAbs * nrm M := by
+lean/Taut/Projection.lean:330:  · rw [nrm, nrm, Finsupp.support_smul_eq hc, Finset.mul_sum]
+lean/Taut/Projection.lean:332:      rw [Finsupp.smul_apply, smul_eq_mul, Int.natAbs_mul]
+lean/Taut/Projection.lean:338:  · rw [nrm_smul, nrm_single, natAbs_sgn, Int.natAbs_one, mul_one]
+lean/Taut/Projection.lean:344:  · rw [nrm_single, Int.natAbs_one]
+lean/Taut/Projection.lean:348:      rw [hz, Finset.sum_singleton, nrm_smul, natAbs_sgn, one_mul]
+lean/Taut/Projection.lean:352:/-- `Kmap` as a sum over the support. -/
+lean/Taut/Projection.lean:354:    Kmap A p M = ∑ s ∈ M.support, M s • KGen A p s := by
+lean/Taut/Projection.lean:364:      ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:365:    calc nrm (Kmap A p M) ≤ ∑ s ∈ M.support, nrm (M s • KGen A p s) := by
+lean/Taut/Projection.lean:367:      _ = ∑ s ∈ M.support, (M s).natAbs * nrm (KGen A p s) := by
+lean/Taut/Projection.lean:369:      _ = (∑ s ∈ M.support.filter (fun s => Kkills A p s),
+lean/Taut/Projection.lean:370:            (M s).natAbs * nrm (KGen A p s))
+lean/Taut/Projection.lean:371:          + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s),
+lean/Taut/Projection.lean:372:            (M s).natAbs * nrm (KGen A p s) := by
+lean/Taut/Projection.lean:374:      _ = ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s),
+lean/Taut/Projection.lean:375:            (M s).natAbs * nrm (KGen A p s) := by
+lean/Taut/Projection.lean:378:      _ ≤ ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:380:          calc (M s).natAbs * nrm (KGen A p s)
+lean/Taut/Projection.lean:381:              ≤ (M s).natAbs * 1 :=
+lean/Taut/Projection.lean:383:            _ = (M s).natAbs := Nat.mul_one _
+lean/Taut/Projection.lean:385:      ∑ s ∈ M.support.filter (fun s => Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:386:    rw [nrm, Finsupp.support_filter]
+lean/Taut/Projection.lean:389:  have h3 : nrm M = (∑ s ∈ M.support.filter (fun s => Kkills A p s),
+lean/Taut/Projection.lean:390:      (M s).natAbs)
+lean/Taut/Projection.lean:391:      + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:395:/-! ## Small-support triviality -/
+lean/Taut/Projection.lean:398:supported on simplices of size exceeding its vertex pool is zero. -/
+lean/Taut/Projection.lean:400:    (hsupp : ∀ s ∈ M.support, s ⊆ W ∧ s.card = k) (hk : W.card < k) :
+lean/Taut/Projection.lean:402:  rw [← Finsupp.support_eq_empty]
+lean/Taut/Projection.lean:410:dimension `k−1` supported in a `k`-element vertex set vanishes. -/
+lean/Taut/Projection.lean:412:    {M : Chain V} (hsupp : ∀ s ∈ M.support, s ⊆ W ∧ s.card = k)
+lean/Taut/Projection.lean:414:  have hsub : M.support ⊆ {W} := by
+lean/Taut/Projection.lean:420:    Finsupp.support_subset_singleton.mp hsub
+lean/Taut/Separation.lean:11:H₁ = 0 it bounds a face-set `W`; `σ₁ := W.support`, `σ₂ := σ \ σ₁`. The defining
+lean/Taut/Separation.lean:23:/-- The 1-chain supported on the edges of `γ`. -/
+lean/Taut/Separation.lean:155:/-- `∂₁c` at a vertex `x` lying on exactly the two support-edges `e₁, e₂` equals
+lean/Taut/Separation.lean:172:/-- A 1-cycle supported on the edges of `γ` (a triangle whose 2-subsets are
+lean/Taut/Separation.lean:173:edges) is `0` or the whole γ-cycle: `∂₁ = 0` forces the three coefficients
+lean/Taut/Separation.lean:247:  -- so the three coefficients are equal
+lean/Taut/Theorem1.lean:7:`X` a closed chain of pure dimension `n` (card `n+1`) supported in `A`,
+lean/Taut/Theorem1.lean:26:  argument, via small-support triviality);
+lean/Taut/Theorem1.lean:42:  have := Finsupp.support_add hs
+lean/Taut/Theorem1.lean:49:    (h : ∀ s ∈ M.support, s ⊆ W) : vert M ⊆ W := by
+lean/Taut/Theorem1.lean:54:lemma supp_subset_vert {M : Chain V} {t : Finset V} (ht : t ∈ M.support) :
+lean/Taut/Theorem1.lean:85:    (h : ∀ s ∈ M.support, s.card = k) : dimPart k M = M := by
+lean/Taut/Theorem1.lean:92:    exact hs (h s (Finsupp.mem_support_iff.mpr (fun h0 => hMs h0.symm)))
+lean/Taut/Theorem1.lean:142:    (hbd : ∀ s ∈ (bdry M).support, s.card = k) :
+lean/Taut/Theorem1.lean:143:    ∀ s ∈ M.support, s.card = k + 1 := by
+lean/Taut/Theorem1.lean:152:  have hMP : M = P := sub_eq_zero.mp (nrm_eq_zero_iff.mp h0)
+lean/Taut/Theorem1.lean:155:  rw [dimPart, Finsupp.support_filter, Finset.mem_filter] at hs
+lean/Taut/Theorem1.lean:160:    (hdim : ∀ s ∈ M.support, 2 ≤ s.card) :
+lean/Taut/Theorem1.lean:166:/-! ## K on supported chains, and recovery -/
+lean/Taut/Theorem1.lean:168:/-- `K_{A,p}` is the identity on chains supported in `A`. -/
+lean/Taut/Theorem1.lean:170:    (h : ∀ s ∈ M.support, s ⊆ A) : Kmap A p M = M := by
+lean/Taut/Theorem1.lean:194:lemma KGen_support {A : Finset V} {p : V} {s t : Finset V}
+lean/Taut/Theorem1.lean:195:    (ht : t ∈ (KGen A p s).support) :
+lean/Taut/Theorem1.lean:200:    rw [Finsupp.support_single_ne_zero _ one_ne_zero,
+lean/Taut/Theorem1.lean:213:        Finsupp.support_smul_eq
+lean/Taut/Theorem1.lean:215:        Finsupp.support_single_ne_zero _ one_ne_zero,
+lean/Taut/Theorem1.lean:235:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1) (hYc : bdry Y = 0) :
+lean/Taut/Theorem1.lean:237:  have hsupp : ∀ t ∈ (Kmap A p Y).support, t ⊆ A ∩ B ∧ t.card = n + 1 := by
+lean/Taut/Theorem1.lean:240:    obtain ⟨s, hs, hts⟩ := Finset.mem_biUnion.mp (Finsupp.support_finset_sum ht)
+lean/Taut/Theorem1.lean:241:    have hts' : t ∈ (KGen A p s).support :=
+lean/Taut/Theorem1.lean:242:      Finsupp.support_smul hts
+lean/Taut/Theorem1.lean:243:    obtain ⟨hsub, hcard⟩ := KGen_support hts'
+lean/Taut/Theorem1.lean:342:    (hkill : ∀ t ∈ M.support, Kkills A p t ∨ Kkills B q t) :
+lean/Taut/Theorem1.lean:345:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Theorem1.lean:346:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:347:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Theorem1.lean:348:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:349:  rw [nrm_eq_sum_subset hsubA, nrm_eq_sum_subset hsubB,
+lean/Taut/Theorem1.lean:368:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Theorem1.lean:369:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Theorem1.lean:387:    have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Theorem1.lean:390:      rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Theorem1.lean:393:    have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Theorem1.lean:395:    have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Theorem1.lean:406:    have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B :=
+lean/Taut/Complex2.lean:10:`IsSphere2 σ` is the combinatorial replacement for "simplicial
+lean/Taut/Complex2.lean:86:/-- Connectivity of a graph on a prescribed finite support. -/
+lean/Taut/Complex2.lean:104:`χ = 2`, replacing "simplicial triangulation of S²". -/
+lean/Taut/Zvol.lean:25:/-- `U` is a sub-multiset of `M`: at every simplex the coefficient of `U`
+lean/Taut/Zvol.lean:28:  ∀ s, (U s).natAbs + (M s - U s).natAbs = (M s).natAbs
+lean/Taut/Zvol.lean:30:lemma SubChain.support_subset {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:31:    U.support ⊆ M.support := by
+lean/Taut/Zvol.lean:33:  rw [Finsupp.mem_support_iff] at hs ⊢
+lean/Taut/Zvol.lean:37:  simp only [Int.natAbs_zero, zero_sub, Int.natAbs_neg] at hh
+lean/Taut/Zvol.lean:38:  exact hs (Int.natAbs_eq_zero.mp (by omega))
+lean/Taut/Zvol.lean:40:lemma SubChain.sub_support_subset {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:41:    (M - U).support ⊆ M.support := by
+lean/Taut/Zvol.lean:43:  rw [Finsupp.mem_support_iff] at hs ⊢
+lean/Taut/Zvol.lean:47:  simp only [Int.natAbs_zero, zero_sub, Int.natAbs_neg] at hh
+lean/Taut/Zvol.lean:48:  have : U s = 0 := Int.natAbs_eq_zero.mp (by omega)
+lean/Taut/Zvol.lean:55:  rw [nrm_eq_sum_subset h.support_subset,
+lean/Taut/Zvol.lean:56:    nrm_eq_sum_subset h.sub_support_subset, ← Finset.sum_add_distrib, nrm]
+lean/Taut/Zvol.lean:67:  · rw [if_pos hp, sub_self, Int.natAbs_zero, add_zero]
+lean/Taut/Zvol.lean:68:  · rw [if_neg hp, Int.natAbs_zero, sub_zero, zero_add]
+lean/Taut/Zvol.lean:140:    (hdim : ∀ s ∈ M.support, 2 ≤ s.card)
+lean/Taut/Zvol.lean:172:    have hMs : M s ≠ 0 := Finsupp.mem_support_iff.mp hs
+lean/Taut/Zvol.lean:177:    exact mem_vert.mpr ⟨s.erase x, Finsupp.mem_support_iff.mpr hWne, hy⟩
+lean/Taut/Complex2.lean:10:`IsSphere2 σ` is the combinatorial replacement for "simplicial
+lean/Taut/Complex2.lean:86:/-- Connectivity of a graph on a prescribed finite support. -/
+lean/Taut/Complex2.lean:104:`χ = 2`, replacing "simplicial triangulation of S²". -/
+lean/Taut/Ball.lean:6:The combinatorial replacement for "simplicial triangulation of `B³`",
+lean/Taut/Splitting.lean:19:   taut chain cannot contain — the coefficient-level vanishing argument
+lean/Taut/Splitting.lean:47:/-- The boundary as a sum over the support. -/
+lean/Taut/Splitting.lean:49:    bdry M = ∑ t ∈ M.support, M t • bdryGen t := by
+lean/Taut/Splitting.lean:53:/-- A simplex in the support of `bdryGen t` is a facet of `t`. -/
+lean/Taut/Splitting.lean:64:/-- Pointwise boundary formula over the support. -/
+lean/Taut/Splitting.lean:66:    bdry M s = ∑ t ∈ M.support, M t * bdryGen t s := by
+lean/Taut/Splitting.lean:73:    (h : ∀ t ∈ M.support, t ⊆ B ∧ t.card = k + 1) :
+lean/Taut/Splitting.lean:74:    ∀ s ∈ (bdry M).support, s ⊆ B ∧ s.card = k := by
+lean/Taut/Splitting.lean:76:  rw [Finsupp.mem_support_iff, bdry_apply_eq_sum] at hs
+lean/Taut/Splitting.lean:85:argument: if `U` is supported on simplices containing `x` and its
+lean/Taut/Splitting.lean:129:    (hkill : ∀ t ∈ M.support, Kkills A p t ∨ Kkills B q t)
+lean/Taut/Splitting.lean:130:    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support)
+lean/Taut/Splitting.lean:132:    nrm M + (M t₀).natAbs ≤
+lean/Taut/Splitting.lean:135:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:136:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:137:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:138:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:139:  rw [nrm_eq_sum_subset hsubA, nrm_eq_sum_subset hsubB,
+lean/Taut/Splitting.lean:141:  have hsplit : (M t₀).natAbs
+lean/Taut/Splitting.lean:142:      = ∑ s ∈ M.support, if s = t₀ then (M t₀).natAbs else 0 := by
+lean/Taut/Splitting.lean:143:    rw [Finset.sum_ite_eq' M.support t₀ fun _ => (M t₀).natAbs, if_pos ht₀]
+lean/Taut/Splitting.lean:163:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:164:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:168:    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support)
+lean/Taut/Splitting.lean:170:  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Splitting.lean:173:    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Splitting.lean:176:  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Splitting.lean:178:  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Splitting.lean:180:  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+lean/Taut/Splitting.lean:205:  have ht0ne : (M t₀).natAbs ≠ 0 :=
+lean/Taut/Splitting.lean:206:    Int.natAbs_ne_zero.mpr (Finsupp.mem_support_iff.mp ht₀)
+lean/Taut/Splitting.lean:218:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:219:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:222:    (hpure : ∀ s ∈ M.support, s.card = n + 2)
+lean/Taut/Splitting.lean:223:    (hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B)
+lean/Taut/Splitting.lean:224:    {t : Finset V} (ht : t ∈ M.support) :
+lean/Taut/Splitting.lean:303:the coefficient-level vanishing argument: hybrid faces `X^n y₀` are
+lean/Taut/Splitting.lean:309:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:310:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:313:    (hpure : ∀ s ∈ M.support, s.card = n + 2)
+lean/Taut/Splitting.lean:314:    (hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B)
+lean/Taut/Splitting.lean:315:    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support) {y₀ : V}
+lean/Taut/Splitting.lean:330:  have hUstruct : ∀ t ∈ U.support,
+lean/Taut/Splitting.lean:333:    rw [hU, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:357:  have ht₀U : t₀ ∈ U.support := by
+lean/Taut/Splitting.lean:358:    rw [Finsupp.mem_support_iff, hUt₀]
+lean/Taut/Splitting.lean:359:    exact Finsupp.mem_support_iff.mp ht₀
+lean/Taut/Splitting.lean:385:            exact hy₀A ((hX s (Finsupp.mem_support_iff.mpr h)).1 hys)
+lean/Taut/Splitting.lean:388:            have hsB := (hY s (Finsupp.mem_support_iff.mpr h)).1
+lean/Taut/Splitting.lean:418:    exact Finsupp.mem_support_iff.mp ht₀U happ.symm
+lean/Taut/Splitting.lean:426:      (mem_vert.mpr ⟨t₀.erase y₀, Finsupp.mem_support_iff.mpr hWne, hx'⟩)
+lean/Taut/Splitting.lean:439:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:440:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:451:  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Splitting.lean:454:    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Splitting.lean:457:  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Splitting.lean:459:  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Splitting.lean:461:  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+lean/Taut/Splitting.lean:469:  have hdich : ∀ t ∈ M.support, t ⊆ A ∨ t ⊆ B := by
+lean/Taut/Splitting.lean:481:      have hsuppBA : ∀ t' ∈ M.support, t' ⊆ B ∪ A := by
+lean/Taut/Splitting.lean:493:  have hMxsupp : ∀ t ∈ Mx.support, t ⊆ A ∧ t.card = n + 2 := by
+lean/Taut/Splitting.lean:495:    rw [hMx, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:497:  have hMysupp : ∀ t ∈ My.support, t ⊆ B ∧ t.card = n + 2 := by
+lean/Taut/Splitting.lean:499:    rw [hMy, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Chains.lean:8:We work with the AUGMENTED, dimension-mixed simplicial chain group of the
+lean/Taut/Chains.lean:10:supported function `Finset V →₀ ℤ`, a generator being an unoriented simplex
+lean/Taut/Chains.lean:35:/-- Augmented, dimension-mixed simplicial chains on the full simplex with
+lean/Taut/Chains.lean:53:lemma natAbs_sgn (x : V) (s : Finset V) : (sgn x s).natAbs = 1 := by
+lean/Taut/Chains.lean:54:  simp [sgn, Int.natAbs_pow]
+lean/Taut/Chains.lean:186:noncomputable def vert (M : Chain V) : Finset V := M.support.biUnion id
+lean/Taut/Chains.lean:189:    x ∈ vert M ↔ ∃ s ∈ M.support, x ∈ s := by
+lean/Taut/Chains.lean:199:    exact Finsupp.mem_support_iff.mp hs (by simpa using this)
+lean/Taut/Chains.lean:205:      exact h (mem_vert.mpr ⟨s, Finsupp.mem_support_iff.mpr (by simpa using hMs), by assumption⟩)
+lean/Taut/Chains.lean:380:/-- A chain supported away from `x` has boundary supported away from `x`. -/
+lean/Taut/Chains.lean:413:/-- Cone injectivity: if the cone of `N` vanishes, `N` was supported on
+lean/Taut/Chains.lean:430:noncomputable def nrm (M : Chain V) : ℕ := ∑ s ∈ M.support, (M s).natAbs
+lean/Taut/Chains.lean:432:lemma nrm_eq_sum_subset {M : Chain V} {t : Finset (Finset V)}
+lean/Taut/Chains.lean:433:    (h : M.support ⊆ t) : nrm M = ∑ s ∈ t, (M s).natAbs := by
+lean/Taut/Chains.lean:435:  rw [Finsupp.notMem_support_iff.mp hs, Int.natAbs_zero]
+lean/Taut/Chains.lean:439:lemma nrm_eq_zero_iff {M : Chain V} : nrm M = 0 ↔ M = 0 := by
+lean/Taut/Chains.lean:443:    by_cases hs : s ∈ M.support
+lean/Taut/Chains.lean:446:    · simpa using Finsupp.notMem_support_iff.mp hs
+lean/Taut/Chains.lean:450:    nrm (Finsupp.single s c) = c.natAbs := by
+lean/Taut/Chains.lean:453:  · rw [nrm, Finsupp.support_single_ne_zero s hc, Finset.sum_singleton,
+lean/Taut/Chains.lean:457:  rw [nrm, nrm, Finsupp.support_neg]
+lean/Taut/Chains.lean:461:  rw [nrm_eq_sum_subset (Finsupp.support_add),
+lean/Taut/Chains.lean:462:    nrm_eq_sum_subset (M := M) (t := M.support ∪ N.support)
+lean/Taut/Chains.lean:464:    nrm_eq_sum_subset (M := N) (t := M.support ∪ N.support)
+lean/Taut/Chains.lean:469:  exact Int.natAbs_add_le _ _
+lean/Taut/Chains.lean:474:  have h1 : (M.filter p).support ⊆ M.support := by
+lean/Taut/Chains.lean:475:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:476:  have h2 : (M.filter fun s => ¬ p s).support ⊆ M.support := by
+lean/Taut/Chains.lean:477:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:478:  rw [nrm_eq_sum_subset h1, nrm_eq_sum_subset h2, ← Finset.sum_add_distrib, nrm]
+lean/Taut/Chains.lean:482:  · rw [if_pos hp, if_neg (not_not_intro hp), Int.natAbs_zero, add_zero]
+lean/Taut/Chains.lean:483:  · rw [if_neg hp, if_pos hp, Int.natAbs_zero, zero_add]
+lean/Taut/Chains.lean:489:  rw [deg, nrm_eq_zero_iff, nbhd_eq_zero_iff]
+lean/Taut/Chains.lean:507:  have hfree : ∀ t ∈ F.support, x ∉ t := by
+lean/Taut/Chains.lean:509:    rw [hF, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Chains.lean:511:  have himg : (cone x F).support ⊆ F.support.image (insert x) := by
+lean/Taut/Chains.lean:513:    rw [Finsupp.mem_support_iff, cone_apply] at hu
+lean/Taut/Chains.lean:517:      exact Finset.mem_image.mpr ⟨u.erase x, Finsupp.mem_support_iff.mpr hFu,
+lean/Taut/Chains.lean:520:  have hinj : ∀ t₁ ∈ F.support, ∀ t₂ ∈ F.support,
+lean/Taut/Chains.lean:525:    rw [nrm_eq_sum_subset himg, Finset.sum_image hinj, nrm]
+lean/Taut/Chains.lean:528:      Finset.erase_insert (hfree t ht), Int.natAbs_mul, natAbs_sgn, one_mul]
+lean/Taut/Theorem1.lean:7:`X` a closed chain of pure dimension `n` (card `n+1`) supported in `A`,
+lean/Taut/Theorem1.lean:26:  argument, via small-support triviality);
+lean/Taut/Theorem1.lean:42:  have := Finsupp.support_add hs
+lean/Taut/Theorem1.lean:49:    (h : ∀ s ∈ M.support, s ⊆ W) : vert M ⊆ W := by
+lean/Taut/Theorem1.lean:54:lemma supp_subset_vert {M : Chain V} {t : Finset V} (ht : t ∈ M.support) :
+lean/Taut/Theorem1.lean:85:    (h : ∀ s ∈ M.support, s.card = k) : dimPart k M = M := by
+lean/Taut/Theorem1.lean:92:    exact hs (h s (Finsupp.mem_support_iff.mpr (fun h0 => hMs h0.symm)))
+lean/Taut/Theorem1.lean:142:    (hbd : ∀ s ∈ (bdry M).support, s.card = k) :
+lean/Taut/Theorem1.lean:143:    ∀ s ∈ M.support, s.card = k + 1 := by
+lean/Taut/Theorem1.lean:152:  have hMP : M = P := sub_eq_zero.mp (nrm_eq_zero_iff.mp h0)
+lean/Taut/Theorem1.lean:155:  rw [dimPart, Finsupp.support_filter, Finset.mem_filter] at hs
+lean/Taut/Theorem1.lean:160:    (hdim : ∀ s ∈ M.support, 2 ≤ s.card) :
+lean/Taut/Theorem1.lean:166:/-! ## K on supported chains, and recovery -/
+lean/Taut/Theorem1.lean:168:/-- `K_{A,p}` is the identity on chains supported in `A`. -/
+lean/Taut/Theorem1.lean:170:    (h : ∀ s ∈ M.support, s ⊆ A) : Kmap A p M = M := by
+lean/Taut/Theorem1.lean:194:lemma KGen_support {A : Finset V} {p : V} {s t : Finset V}
+lean/Taut/Theorem1.lean:195:    (ht : t ∈ (KGen A p s).support) :
+lean/Taut/Theorem1.lean:200:    rw [Finsupp.support_single_ne_zero _ one_ne_zero,
+lean/Taut/Theorem1.lean:213:        Finsupp.support_smul_eq
+lean/Taut/Theorem1.lean:215:        Finsupp.support_single_ne_zero _ one_ne_zero,
+lean/Taut/Theorem1.lean:235:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1) (hYc : bdry Y = 0) :
+lean/Taut/Theorem1.lean:237:  have hsupp : ∀ t ∈ (Kmap A p Y).support, t ⊆ A ∩ B ∧ t.card = n + 1 := by
+lean/Taut/Theorem1.lean:240:    obtain ⟨s, hs, hts⟩ := Finset.mem_biUnion.mp (Finsupp.support_finset_sum ht)
+lean/Taut/Theorem1.lean:241:    have hts' : t ∈ (KGen A p s).support :=
+lean/Taut/Theorem1.lean:242:      Finsupp.support_smul hts
+lean/Taut/Theorem1.lean:243:    obtain ⟨hsub, hcard⟩ := KGen_support hts'
+lean/Taut/Theorem1.lean:342:    (hkill : ∀ t ∈ M.support, Kkills A p t ∨ Kkills B q t) :
+lean/Taut/Theorem1.lean:345:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Theorem1.lean:346:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:347:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Theorem1.lean:348:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:349:  rw [nrm_eq_sum_subset hsubA, nrm_eq_sum_subset hsubB,
+lean/Taut/Theorem1.lean:368:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Theorem1.lean:369:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Theorem1.lean:387:    have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Theorem1.lean:390:      rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Theorem1.lean:393:    have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Theorem1.lean:395:    have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Theorem1.lean:406:    have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B :=
+lean/Taut/Chains.lean:8:We work with the AUGMENTED, dimension-mixed simplicial chain group of the
+lean/Taut/Chains.lean:10:supported function `Finset V →₀ ℤ`, a generator being an unoriented simplex
+lean/Taut/Chains.lean:35:/-- Augmented, dimension-mixed simplicial chains on the full simplex with
+lean/Taut/Chains.lean:53:lemma natAbs_sgn (x : V) (s : Finset V) : (sgn x s).natAbs = 1 := by
+lean/Taut/Chains.lean:54:  simp [sgn, Int.natAbs_pow]
+lean/Taut/Chains.lean:186:noncomputable def vert (M : Chain V) : Finset V := M.support.biUnion id
+lean/Taut/Chains.lean:189:    x ∈ vert M ↔ ∃ s ∈ M.support, x ∈ s := by
+lean/Taut/Chains.lean:199:    exact Finsupp.mem_support_iff.mp hs (by simpa using this)
+lean/Taut/Chains.lean:205:      exact h (mem_vert.mpr ⟨s, Finsupp.mem_support_iff.mpr (by simpa using hMs), by assumption⟩)
+lean/Taut/Chains.lean:380:/-- A chain supported away from `x` has boundary supported away from `x`. -/
+lean/Taut/Chains.lean:413:/-- Cone injectivity: if the cone of `N` vanishes, `N` was supported on
+lean/Taut/Chains.lean:430:noncomputable def nrm (M : Chain V) : ℕ := ∑ s ∈ M.support, (M s).natAbs
+lean/Taut/Chains.lean:432:lemma nrm_eq_sum_subset {M : Chain V} {t : Finset (Finset V)}
+lean/Taut/Chains.lean:433:    (h : M.support ⊆ t) : nrm M = ∑ s ∈ t, (M s).natAbs := by
+lean/Taut/Chains.lean:435:  rw [Finsupp.notMem_support_iff.mp hs, Int.natAbs_zero]
+lean/Taut/Chains.lean:439:lemma nrm_eq_zero_iff {M : Chain V} : nrm M = 0 ↔ M = 0 := by
+lean/Taut/Chains.lean:443:    by_cases hs : s ∈ M.support
+lean/Taut/Chains.lean:446:    · simpa using Finsupp.notMem_support_iff.mp hs
+lean/Taut/Chains.lean:450:    nrm (Finsupp.single s c) = c.natAbs := by
+lean/Taut/Chains.lean:453:  · rw [nrm, Finsupp.support_single_ne_zero s hc, Finset.sum_singleton,
+lean/Taut/Chains.lean:457:  rw [nrm, nrm, Finsupp.support_neg]
+lean/Taut/Chains.lean:461:  rw [nrm_eq_sum_subset (Finsupp.support_add),
+lean/Taut/Chains.lean:462:    nrm_eq_sum_subset (M := M) (t := M.support ∪ N.support)
+lean/Taut/Chains.lean:464:    nrm_eq_sum_subset (M := N) (t := M.support ∪ N.support)
+lean/Taut/Chains.lean:469:  exact Int.natAbs_add_le _ _
+lean/Taut/Chains.lean:474:  have h1 : (M.filter p).support ⊆ M.support := by
+lean/Taut/Chains.lean:475:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:476:  have h2 : (M.filter fun s => ¬ p s).support ⊆ M.support := by
+lean/Taut/Chains.lean:477:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:478:  rw [nrm_eq_sum_subset h1, nrm_eq_sum_subset h2, ← Finset.sum_add_distrib, nrm]
+lean/Taut/Chains.lean:482:  · rw [if_pos hp, if_neg (not_not_intro hp), Int.natAbs_zero, add_zero]
+lean/Taut/Chains.lean:483:  · rw [if_neg hp, if_pos hp, Int.natAbs_zero, zero_add]
+lean/Taut/Chains.lean:489:  rw [deg, nrm_eq_zero_iff, nbhd_eq_zero_iff]
+lean/Taut/Chains.lean:507:  have hfree : ∀ t ∈ F.support, x ∉ t := by
+lean/Taut/Chains.lean:509:    rw [hF, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Chains.lean:511:  have himg : (cone x F).support ⊆ F.support.image (insert x) := by
+lean/Taut/Chains.lean:513:    rw [Finsupp.mem_support_iff, cone_apply] at hu
+lean/Taut/Chains.lean:517:      exact Finset.mem_image.mpr ⟨u.erase x, Finsupp.mem_support_iff.mpr hFu,
+lean/Taut/Chains.lean:520:  have hinj : ∀ t₁ ∈ F.support, ∀ t₂ ∈ F.support,
+lean/Taut/Chains.lean:525:    rw [nrm_eq_sum_subset himg, Finset.sum_image hinj, nrm]
+lean/Taut/Chains.lean:528:      Finset.erase_insert (hfree t ht), Int.natAbs_mul, natAbs_sgn, one_mul]
+lean/Taut/Zvol.lean:25:/-- `U` is a sub-multiset of `M`: at every simplex the coefficient of `U`
+lean/Taut/Zvol.lean:28:  ∀ s, (U s).natAbs + (M s - U s).natAbs = (M s).natAbs
+lean/Taut/Zvol.lean:30:lemma SubChain.support_subset {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:31:    U.support ⊆ M.support := by
+lean/Taut/Zvol.lean:33:  rw [Finsupp.mem_support_iff] at hs ⊢
+lean/Taut/Zvol.lean:37:  simp only [Int.natAbs_zero, zero_sub, Int.natAbs_neg] at hh
+lean/Taut/Zvol.lean:38:  exact hs (Int.natAbs_eq_zero.mp (by omega))
+lean/Taut/Zvol.lean:40:lemma SubChain.sub_support_subset {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:41:    (M - U).support ⊆ M.support := by
+lean/Taut/Zvol.lean:43:  rw [Finsupp.mem_support_iff] at hs ⊢
+lean/Taut/Zvol.lean:47:  simp only [Int.natAbs_zero, zero_sub, Int.natAbs_neg] at hh
+lean/Taut/Zvol.lean:48:  have : U s = 0 := Int.natAbs_eq_zero.mp (by omega)
+lean/Taut/Zvol.lean:55:  rw [nrm_eq_sum_subset h.support_subset,
+lean/Taut/Zvol.lean:56:    nrm_eq_sum_subset h.sub_support_subset, ← Finset.sum_add_distrib, nrm]
+lean/Taut/Zvol.lean:67:  · rw [if_pos hp, sub_self, Int.natAbs_zero, add_zero]
+lean/Taut/Zvol.lean:68:  · rw [if_neg hp, Int.natAbs_zero, sub_zero, zero_add]
+lean/Taut/Zvol.lean:140:    (hdim : ∀ s ∈ M.support, 2 ≤ s.card)
+lean/Taut/Zvol.lean:172:    have hMs : M s ≠ 0 := Finsupp.mem_support_iff.mp hs
+lean/Taut/Zvol.lean:177:    exact mem_vert.mpr ⟨s.erase x, Finsupp.mem_support_iff.mpr hWne, hy⟩
+lean/Taut/Ball.lean:6:The combinatorial replacement for "simplicial triangulation of `B³`",
+lean/Taut/Splitting.lean:19:   taut chain cannot contain — the coefficient-level vanishing argument
+lean/Taut/Splitting.lean:47:/-- The boundary as a sum over the support. -/
+lean/Taut/Splitting.lean:49:    bdry M = ∑ t ∈ M.support, M t • bdryGen t := by
+lean/Taut/Splitting.lean:53:/-- A simplex in the support of `bdryGen t` is a facet of `t`. -/
+lean/Taut/Splitting.lean:64:/-- Pointwise boundary formula over the support. -/
+lean/Taut/Splitting.lean:66:    bdry M s = ∑ t ∈ M.support, M t * bdryGen t s := by
+lean/Taut/Splitting.lean:73:    (h : ∀ t ∈ M.support, t ⊆ B ∧ t.card = k + 1) :
+lean/Taut/Splitting.lean:74:    ∀ s ∈ (bdry M).support, s ⊆ B ∧ s.card = k := by
+lean/Taut/Splitting.lean:76:  rw [Finsupp.mem_support_iff, bdry_apply_eq_sum] at hs
+lean/Taut/Splitting.lean:85:argument: if `U` is supported on simplices containing `x` and its
+lean/Taut/Splitting.lean:129:    (hkill : ∀ t ∈ M.support, Kkills A p t ∨ Kkills B q t)
+lean/Taut/Splitting.lean:130:    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support)
+lean/Taut/Splitting.lean:132:    nrm M + (M t₀).natAbs ≤
+lean/Taut/Splitting.lean:135:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:136:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:137:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:138:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:139:  rw [nrm_eq_sum_subset hsubA, nrm_eq_sum_subset hsubB,
+lean/Taut/Splitting.lean:141:  have hsplit : (M t₀).natAbs
+lean/Taut/Splitting.lean:142:      = ∑ s ∈ M.support, if s = t₀ then (M t₀).natAbs else 0 := by
+lean/Taut/Splitting.lean:143:    rw [Finset.sum_ite_eq' M.support t₀ fun _ => (M t₀).natAbs, if_pos ht₀]
+lean/Taut/Splitting.lean:163:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:164:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:168:    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support)
+lean/Taut/Splitting.lean:170:  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Splitting.lean:173:    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Splitting.lean:176:  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Splitting.lean:178:  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Splitting.lean:180:  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+lean/Taut/Splitting.lean:205:  have ht0ne : (M t₀).natAbs ≠ 0 :=
+lean/Taut/Splitting.lean:206:    Int.natAbs_ne_zero.mpr (Finsupp.mem_support_iff.mp ht₀)
+lean/Taut/Splitting.lean:218:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:219:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:222:    (hpure : ∀ s ∈ M.support, s.card = n + 2)
+lean/Taut/Splitting.lean:223:    (hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B)
+lean/Taut/Splitting.lean:224:    {t : Finset V} (ht : t ∈ M.support) :
+lean/Taut/Splitting.lean:303:the coefficient-level vanishing argument: hybrid faces `X^n y₀` are
+lean/Taut/Splitting.lean:309:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:310:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:313:    (hpure : ∀ s ∈ M.support, s.card = n + 2)
+lean/Taut/Splitting.lean:314:    (hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B)
+lean/Taut/Splitting.lean:315:    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support) {y₀ : V}
+lean/Taut/Splitting.lean:330:  have hUstruct : ∀ t ∈ U.support,
+lean/Taut/Splitting.lean:333:    rw [hU, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:357:  have ht₀U : t₀ ∈ U.support := by
+lean/Taut/Splitting.lean:358:    rw [Finsupp.mem_support_iff, hUt₀]
+lean/Taut/Splitting.lean:359:    exact Finsupp.mem_support_iff.mp ht₀
+lean/Taut/Splitting.lean:385:            exact hy₀A ((hX s (Finsupp.mem_support_iff.mpr h)).1 hys)
+lean/Taut/Splitting.lean:388:            have hsB := (hY s (Finsupp.mem_support_iff.mpr h)).1
+lean/Taut/Splitting.lean:418:    exact Finsupp.mem_support_iff.mp ht₀U happ.symm
+lean/Taut/Splitting.lean:426:      (mem_vert.mpr ⟨t₀.erase y₀, Finsupp.mem_support_iff.mpr hWne, hx'⟩)
+lean/Taut/Splitting.lean:439:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:440:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:451:  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Splitting.lean:454:    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Splitting.lean:457:  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Splitting.lean:459:  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Splitting.lean:461:  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+lean/Taut/Splitting.lean:469:  have hdich : ∀ t ∈ M.support, t ⊆ A ∨ t ⊆ B := by
+lean/Taut/Splitting.lean:481:      have hsuppBA : ∀ t' ∈ M.support, t' ⊆ B ∪ A := by
+lean/Taut/Splitting.lean:493:  have hMxsupp : ∀ t ∈ Mx.support, t ⊆ A ∧ t.card = n + 2 := by
+lean/Taut/Splitting.lean:495:    rw [hMx, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:497:  have hMysupp : ∀ t ∈ My.support, t ⊆ B ∧ t.card = n + 2 := by
+lean/Taut/Splitting.lean:499:    rw [hMy, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Separation.lean:11:H₁ = 0 it bounds a face-set `W`; `σ₁ := W.support`, `σ₂ := σ \ σ₁`. The defining
+lean/Taut/Separation.lean:23:/-- The 1-chain supported on the edges of `γ`. -/
+lean/Taut/Separation.lean:155:/-- `∂₁c` at a vertex `x` lying on exactly the two support-edges `e₁, e₂` equals
+lean/Taut/Separation.lean:172:/-- A 1-cycle supported on the edges of `γ` (a triangle whose 2-subsets are
+lean/Taut/Separation.lean:173:edges) is `0` or the whole γ-cycle: `∂₁ = 0` forces the three coefficients
+lean/Taut/Separation.lean:247:  -- so the three coefficients are equal
+lean/Taut/Projection.lean:20:* small-support triviality: `eq_zero_of_supp_card_lt`,
+lean/Taut/Projection.lean:327:lemma nrm_smul (c : ℤ) (M : Chain V) : nrm (c • M) = c.natAbs * nrm M := by
+lean/Taut/Projection.lean:330:  · rw [nrm, nrm, Finsupp.support_smul_eq hc, Finset.mul_sum]
+lean/Taut/Projection.lean:332:      rw [Finsupp.smul_apply, smul_eq_mul, Int.natAbs_mul]
+lean/Taut/Projection.lean:338:  · rw [nrm_smul, nrm_single, natAbs_sgn, Int.natAbs_one, mul_one]
+lean/Taut/Projection.lean:344:  · rw [nrm_single, Int.natAbs_one]
+lean/Taut/Projection.lean:348:      rw [hz, Finset.sum_singleton, nrm_smul, natAbs_sgn, one_mul]
+lean/Taut/Projection.lean:352:/-- `Kmap` as a sum over the support. -/
+lean/Taut/Projection.lean:354:    Kmap A p M = ∑ s ∈ M.support, M s • KGen A p s := by
+lean/Taut/Projection.lean:364:      ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:365:    calc nrm (Kmap A p M) ≤ ∑ s ∈ M.support, nrm (M s • KGen A p s) := by
+lean/Taut/Projection.lean:367:      _ = ∑ s ∈ M.support, (M s).natAbs * nrm (KGen A p s) := by
+lean/Taut/Projection.lean:369:      _ = (∑ s ∈ M.support.filter (fun s => Kkills A p s),
+lean/Taut/Projection.lean:370:            (M s).natAbs * nrm (KGen A p s))
+lean/Taut/Projection.lean:371:          + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s),
+lean/Taut/Projection.lean:372:            (M s).natAbs * nrm (KGen A p s) := by
+lean/Taut/Projection.lean:374:      _ = ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s),
+lean/Taut/Projection.lean:375:            (M s).natAbs * nrm (KGen A p s) := by
+lean/Taut/Projection.lean:378:      _ ≤ ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:380:          calc (M s).natAbs * nrm (KGen A p s)
+lean/Taut/Projection.lean:381:              ≤ (M s).natAbs * 1 :=
+lean/Taut/Projection.lean:383:            _ = (M s).natAbs := Nat.mul_one _
+lean/Taut/Projection.lean:385:      ∑ s ∈ M.support.filter (fun s => Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:386:    rw [nrm, Finsupp.support_filter]
+lean/Taut/Projection.lean:389:  have h3 : nrm M = (∑ s ∈ M.support.filter (fun s => Kkills A p s),
+lean/Taut/Projection.lean:390:      (M s).natAbs)
+lean/Taut/Projection.lean:391:      + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:395:/-! ## Small-support triviality -/
+lean/Taut/Projection.lean:398:supported on simplices of size exceeding its vertex pool is zero. -/
+lean/Taut/Projection.lean:400:    (hsupp : ∀ s ∈ M.support, s ⊆ W ∧ s.card = k) (hk : W.card < k) :
+lean/Taut/Projection.lean:402:  rw [← Finsupp.support_eq_empty]
+lean/Taut/Projection.lean:410:dimension `k−1` supported in a `k`-element vertex set vanishes. -/
+lean/Taut/Projection.lean:412:    {M : Chain V} (hsupp : ∀ s ∈ M.support, s ⊆ W ∧ s.card = k)
+lean/Taut/Projection.lean:414:  have hsub : M.support ⊆ {W} := by
+lean/Taut/Projection.lean:420:    Finsupp.support_subset_singleton.mp hsub
+
+exec
+/bin/zsh -lc "sed -n '1,220p' lean/Taut/Complex2.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Splitting
+
+/-!
+# Combinatorial 2-spheres
+
+The definitional layer for Theorems 2–4 of "Taut fillings".  A pure
+2-complex is identified with its facet set `σ : Finset (Finset V)`
+(members are the 2-simplices, of card 3); edges and vertices are derived.
+
+`IsSphere2 σ` is the combinatorial replacement for "simplicial
+triangulation of S²": pure, closed pseudomanifold (every edge in exactly
+two faces), connected vertex links, connected, Euler characteristic 2.
+With χ in the definition, the Euler counting relations (`3f = 2e`,
+`3v = e + 6`, `2v = f + 4`) are free arithmetic; "links are single
+cycles" is derivable (closed pm ⟹ links 2-regular; 2-regular and
+connected ⟹ one cycle) rather than assumed.
+
+Validation (build-checked):
+* the counting relations above (`three_mul_card_faces`,
+  `three_mul_card_verts`, `two_mul_card_verts`);
+* the boundary of the tetrahedron on any four distinct vertices is a
+  sphere (`isSphere2_tetraBdry`) — the semantic smoke test against a
+  vacuous or over-strong definition, and the base-case complex of the
+  Theorem 2 induction.
+-/
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-! ## Derived skeleta of a pure 2-complex -/
+
+/-- The edges (1-simplices) of a complex of triangles. -/
+def edgesOf (σ : Finset (Finset V)) : Finset (Finset V) :=
+  σ.biUnion (Finset.powersetCard 2)
+
+/-- The vertices of a complex. -/
+def vertsOf (σ : Finset (Finset V)) : Finset V := σ.biUnion id
+
+/-- The number of faces containing a given edge. -/
+def edgeDeg (σ : Finset (Finset V)) (e : Finset V) : ℕ :=
+  (σ.filter (fun f => e ⊆ f)).card
+
+lemma mem_edgesOf {σ : Finset (Finset V)} {e : Finset V} :
+    e ∈ edgesOf σ ↔ ∃ f ∈ σ, e ⊆ f ∧ e.card = 2 := by
+  simp only [edgesOf, Finset.mem_biUnion, Finset.mem_powersetCard]
+
+lemma card_of_mem_edgesOf {σ : Finset (Finset V)} {e : Finset V}
+    (he : e ∈ edgesOf σ) : e.card = 2 := by
+  obtain ⟨f, _, _, h⟩ := mem_edgesOf.mp he
+  exact h
+
+lemma mem_vertsOf {σ : Finset (Finset V)} {x : V} :
+    x ∈ vertsOf σ ↔ ∃ f ∈ σ, x ∈ f := by
+  simp [vertsOf]
+
+/-- The 1-skeleton, as a simple graph on all of `V`. -/
+def skel (σ : Finset (Finset V)) : SimpleGraph V where
+  Adj a b := a ≠ b ∧ {a, b} ∈ edgesOf σ
+  symm := by
+    intro a b h
+    exact ⟨h.1.symm, by rw [Finset.pair_comm b a]; exact h.2⟩
+  loopless := ⟨fun a h => h.1 rfl⟩
+
+/-- The link of a vertex, as a simple graph: `a ~ b` iff `{v,a,b}` is a
+face. -/
+def linkGraph (σ : Finset (Finset V)) (v : V) : SimpleGraph V where
+  Adj a b := a ≠ b ∧ {v, a, b} ∈ σ
+  symm := by
+    intro a b h
+    refine ⟨h.1.symm, ?_⟩
+    rw [Finset.pair_comm b a]
+    exact h.2
+  loopless := ⟨fun a h => h.1 rfl⟩
+
+instance (σ : Finset (Finset V)) (v : V) : DecidableRel (linkGraph σ v).Adj :=
+  fun a b => decidable_of_iff (a ≠ b ∧ {v, a, b} ∈ σ) Iff.rfl
+
+instance (σ : Finset (Finset V)) : DecidableRel (skel σ).Adj :=
+  fun a b => decidable_of_iff (a ≠ b ∧ {a, b} ∈ edgesOf σ) Iff.rfl
+
+/-- The neighbors of `v`: vertices of the faces at `v`, except `v`. -/
+def linkVerts (σ : Finset (Finset V)) (v : V) : Finset V :=
+  (vertsOf (σ.filter (fun f => v ∈ f))).erase v
+
+/-- Connectivity of a graph on a prescribed finite support. -/
+def ConnOn (G : SimpleGraph V) (s : Finset V) : Prop :=
+  ∀ a ∈ s, ∀ b ∈ s, G.Reachable a b
+
+/-! ## Combinatorial 2-spheres -/
+
+/-- A combinatorial closed surface: pure 2-dimensional, every edge in exactly
+two faces, connected vertex links, connected. This is `IsSphere2` minus the
+`χ = 2` constraint — the geometric content the homology machinery (b₂ = 1,
+r₁ = V−1) actually rests on. Euler enters `IsSphere2` only via nonemptiness. -/
+structure IsClosedSurface (σ : Finset (Finset V)) : Prop where
+  pure : ∀ f ∈ σ, f.card = 3
+  closed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2
+  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+  conn : ConnOn (skel σ) (vertsOf σ)
+
+/-- A combinatorial 2-sphere: a closed surface with Euler characteristic 2.
+This is the paper's "clean complex" (normal pseudomanifold) sharpened by
+`χ = 2`, replacing "simplicial triangulation of S²". -/
+structure IsSphere2 (σ : Finset (Finset V)) : Prop where
+  pure : ∀ f ∈ σ, f.card = 3
+  closed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2
+  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+  conn : ConnOn (skel σ) (vertsOf σ)
+  euler : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2
+
+/-- Forget the Euler constraint: every sphere is a closed surface. -/
+def IsSphere2.toClosedSurface {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    IsClosedSurface σ :=
+  ⟨h.pure, h.closed, h.linkConn, h.conn⟩
+
+/-! ## Euler counting -/
+
+/-- Double counting face–edge incidences: `3f = 2e`. -/
+theorem three_mul_card_faces {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    3 * σ.card = 2 * (edgesOf σ).card := by
+  classical
+  have hfilter : ∀ f ∈ σ, (edgesOf σ).filter (fun e => e ⊆ f)
+      = f.powersetCard 2 := by
+    intro f hf
+    ext e
+    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+    constructor
+    · rintro ⟨he, hef⟩
+      exact ⟨hef, card_of_mem_edgesOf he⟩
+    · rintro ⟨hef, hcard⟩
+      exact ⟨mem_edgesOf.mpr ⟨f, hf, hef, hcard⟩, hef⟩
+  have key : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+      = ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card := by
+    simp_rw [Finset.card_filter]
+    exact Finset.sum_comm
+  have hcongr : ∀ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card = 3 := by
+    intro f hf
+    rw [hfilter f hf, Finset.card_powersetCard, h.pure f hf]
+    rfl
+  have hcl : ∀ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card = 2 :=
+    h.closed
+  have hleft : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+      = 3 * σ.card := by
+    rw [Finset.sum_congr rfl hcongr, Finset.sum_const, smul_eq_mul, mul_comm]
+  have hright : ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card
+      = 2 * (edgesOf σ).card := by
+    rw [Finset.sum_congr rfl hcl, Finset.sum_const, smul_eq_mul, mul_comm]
+  rw [← hleft, key, hright]
+
+/-- `3v = e + 6`. -/
+theorem three_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    3 * (vertsOf σ).card = (edgesOf σ).card + 6 := by
+  have h1 := three_mul_card_faces h
+  have h2 := h.euler
+  omega
+
+/-- `2v = f + 4`. -/
+theorem two_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    2 * (vertsOf σ).card = σ.card + 4 := by
+  have h1 := three_mul_card_faces h
+  have h2 := h.euler
+  omega
+
+/-! ## Local structure: edges and links -/
+
+/-- The third vertex of a triangle over an edge. -/
+lemma exists_third {e f : Finset V} (hef : e ⊆ f) (he : e.card = 2)
+    (hf : f.card = 3) : ∃ z, z ∉ e ∧ f = insert z e := by
+  have hd : (f \ e).card = 1 := by
+    rw [Finset.card_sdiff_of_subset hef, hf, he]
+  obtain ⟨z, hz⟩ := Finset.card_eq_one.mp hd
+  have hzf : z ∈ f \ e := hz ▸ Finset.mem_singleton_self z
+  obtain ⟨hzf', hze⟩ := Finset.mem_sdiff.mp hzf
+  refine ⟨z, hze, ?_⟩
+  ext x
+  simp only [Finset.mem_insert]
+  constructor
+  · intro hx
+    by_cases hxe : x ∈ e
+    · exact Or.inr hxe
+    · left
+      have hxd : x ∈ f \ e := Finset.mem_sdiff.mpr ⟨hx, hxe⟩
+      rw [hz, Finset.mem_singleton] at hxd
+      exact hxd
+  · rintro (rfl | hx)
+    · exact hzf'
+    · exact hef hx
+
+/-- The two faces over an edge of a sphere, by name. -/
+lemma exists_two_faces {σ : Finset (Finset V)} (h : IsClosedSurface σ)
+    {e : Finset V} (he : e ∈ edgesOf σ) :
+    ∃ f₁ ∈ σ, ∃ f₂ ∈ σ, f₁ ≠ f₂ ∧ e ⊆ f₁ ∧ e ⊆ f₂ ∧
+      ∀ f ∈ σ, e ⊆ f → f = f₁ ∨ f = f₂ := by
+  have h2 := h.closed e he
+  rw [edgeDeg] at h2
+  obtain ⟨f₁, f₂, hne, hpair⟩ := Finset.card_eq_two.mp h2
+  have hf₁ : f₁ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+  have hf₂ : f₂ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+  obtain ⟨hf₁σ, hef₁⟩ := Finset.mem_filter.mp hf₁
+  obtain ⟨hf₂σ, hef₂⟩ := Finset.mem_filter.mp hf₂
+  refine ⟨f₁, hf₁σ, f₂, hf₂σ, hne, hef₁, hef₂, fun f hf hef => ?_⟩
+  have hmem : f ∈ σ.filter (fun f => e ⊆ f) := Finset.mem_filter.mpr ⟨hf, hef⟩
+  rw [hpair] at hmem
+  simpa using hmem
+
+/-- Two distinct triangles over a common edge meet exactly in it. -/
+lemma inter_eq_edge_of_two_faces {f₁ f₂ e : Finset V}
+    (h3₁ : f₁.card = 3) (h3₂ : f₂.card = 3) (hne : f₁ ≠ f₂)
+    (he : e.card = 2) (h1 : e ⊆ f₁) (h2 : e ⊆ f₂) : f₁ ∩ f₂ = e := by
+  have hsub : e ⊆ f₁ ∩ f₂ := Finset.subset_inter h1 h2
+  have hcap : (f₁ ∩ f₂).card ≤ 3 :=
+    h3₁ ▸ Finset.card_le_card Finset.inter_subset_left
+  have hne3 : (f₁ ∩ f₂).card ≠ 3 := by
+    intro h3
+    have hi : f₁ ∩ f₂ = f₁ :=
+      Finset.eq_of_subset_of_card_le Finset.inter_subset_left (by omega)
+    have hsub12 : f₁ ⊆ f₂ := hi ▸ Finset.inter_subset_right
+    exact hne (Finset.eq_of_subset_of_card_le hsub12 (by omega))
+  have h2le := Finset.card_le_card hsub
+
+exec
+/bin/zsh -lc "rg -n \"Orient|orientation|oriented|coeff|±|pm|cycle|closed.*Chain|IsCycle|C2|bd2|gammaChain|support.*σ|faceSet|ComplexChain|sphere.*chain\" lean/Taut notes/codex-consults -g '*.lean' -g '*.md'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:14:- *Eligible* tet `t ∈ M`: shares 2 oriented faces with σ (≤2 since no deg-3
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:35:  Chains: `Chain V := Finset V →₀ ℤ`, augmented, canonical orientation.
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:45:Candidate: M is *simplicial* (all coeffs ±1, `nrm M = M.support.card`) and
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:55:two faces of the tetrahedron `{a,b,c,d}`. This is oriented-chain bookkeeping on
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:57:oriented boundary faces, removing it flips edge ab↔cd". Is the current `bdry`/
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:68:with `∂Mᵢ = X(σᵢ)`. The M10-M14 G1 verdict flagged an "orientation coherence"
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:69:lemma (∂ of the split restricted to a side = ±the γ/cd-boundary). Does `separates`
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:70:need an integral/oriented strengthening, or does `IsTaut.splits` already deliver
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:97:Q4. The separates↔case-2 bridge: does `separates` (𝔽₂) need an integral/oriented
+lean/Taut/Complex2.lean:15:cycles" is derivable (closed pm ⟹ links 2-regular; 2-regular and
+lean/Taut/Complex2.lean:16:connected ⟹ one cycle) rather than assumed.
+lean/Taut/Chains.lean:10:supported function `Finset V →₀ ℤ`, a generator being an unoriented simplex
+lean/Taut/Chains.lean:11:`s : Finset V` carrying its canonical orientation (vertices in increasing
+lean/Taut/Chains.lean:429:/-- The L¹ norm of a chain: its size as a multiset of oriented simplices. -/
+lean/Taut/Zvol.lean:25:/-- `U` is a sub-multiset of `M`: at every simplex the coefficient of `U`
+lean/Taut/Zvol.lean:86:lemma bdry_cone_of_closed {x : V} {X : Chain V} (hX : bdry X = 0) :
+lean/Taut/Homology2.lean:6:The watershed of Theorem 2. A non-face triangle (a 3-cycle in the 1-skeleton
+lean/Taut/Homology2.lean:12:  b₂ = 1 (the fundamental class is unique up to scale — a 2-cycle assigns equal
+lean/Taut/Homology2.lean:14:* so the given χ = 2 forces **b₁ = 0**, i.e. every 1-cycle bounds.
+lean/Taut/Homology2.lean:17:`bd1 ∘ bd2 = 0`, `r₂ := finrank (range bd2) = F − 1` (dual connectivity),
+lean/Taut/Homology2.lean:19:`finrank (ker bd1) = E − (V−1) = F − 1 = finrank (range bd2)` using χ = 2;
+lean/Taut/Homology2.lean:20:with `range bd2 ⊆ ker bd1`, equal finrank forces `range bd2 = ker bd1` — H₁ = 0.
+lean/Taut/Homology2.lean:23:Orientation is *not* present here; it is re-attached afterward via the integral
+lean/Taut/Homology2.lean:24:fundamental cycle when packaging the split for `IsTaut.splits`.
+lean/Taut/Homology2.lean:40:abbrev C2 (σ : Finset (Finset V)) := σ → ZMod 2
+lean/Taut/Homology2.lean:44:noncomputable def bd2 (σ : Finset (Finset V)) : C2 σ →ₗ[ZMod 2] C1 σ :=
+lean/Taut/Homology2.lean:54:lemma bd2_apply (σ : Finset (Finset V)) (w : C2 σ) (e : edgesOf σ) :
+lean/Taut/Homology2.lean:55:    bd2 σ w e = ∑ f : σ, (if (e : Finset V) ⊆ (f : Finset V) then 1 else 0) * w f := by
+lean/Taut/Homology2.lean:56:  simp only [bd2, LinearMap.pi_apply, LinearMap.coe_sum, Finset.sum_apply,
+lean/Taut/Homology2.lean:123:theorem bd1_comp_bd2 (σ : Finset (Finset V)) (hpure : ∀ f ∈ σ, f.card = 3) :
+lean/Taut/Homology2.lean:124:    bd1 σ ∘ₗ bd2 σ = 0 := by
+lean/Taut/Homology2.lean:128:  show bd1 σ (bd2 σ w) x = 0
+lean/Taut/Homology2.lean:132:      (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0) * bd2 σ w e
+lean/Taut/Homology2.lean:136:    rw [bd2_apply, Finset.mul_sum]
+lean/Taut/Homology2.lean:155:/-- The all-faces 2-chain `𝟙` is a cycle: every edge lies in exactly two faces,
+lean/Taut/Homology2.lean:158:theorem bd2_one (σ : Finset (Finset V)) (hclosed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2) :
+lean/Taut/Homology2.lean:159:    bd2 σ (fun _ => 1) = 0 := by
+lean/Taut/Homology2.lean:162:  show bd2 σ (fun _ => 1) e = 0
+lean/Taut/Homology2.lean:163:  rw [bd2_apply]
+lean/Taut/Homology2.lean:174:faces. This turns the cocycle condition into "equal weight across every edge". -/
+lean/Taut/Homology2.lean:175:lemma bd2_at_edge {σ : Finset (Finset V)} (w : C2 σ) {e : Finset V} (he : e ∈ edgesOf σ)
+lean/Taut/Homology2.lean:178:    bd2 σ w ⟨e, he⟩ = w ⟨f₁, h1⟩ + w ⟨f₂, h2⟩ := by
+lean/Taut/Homology2.lean:180:  rw [bd2_apply]
+lean/Taut/Homology2.lean:210:/-- A 2-cycle (element of `ker ∂₂`) assigns equal weight to dual-adjacent faces:
+lean/Taut/Homology2.lean:212:lemma dualGraph_ker_const {σ : Finset (Finset V)} (h : IsClosedSurface σ) {w : C2 σ}
+lean/Taut/Homology2.lean:213:    (hw : bd2 σ w = 0) {f g : σ} (hadj : (dualGraph σ).Adj f g) : w f = w g := by
+lean/Taut/Homology2.lean:234:  have hbd : bd2 σ w ⟨e, he⟩ = w f + w g :=
+lean/Taut/Homology2.lean:235:    bd2_at_edge w he f.2 g.2 hfg_ne hef heg huniq_fg
+lean/Taut/Homology2.lean:379:/-- Every 2-cycle is constant: dual connectivity propagates the edge-local
+lean/Taut/Homology2.lean:381:lemma bd2_ker_constant {σ : Finset (Finset V)} (h : IsClosedSurface σ) {w : C2 σ}
+lean/Taut/Homology2.lean:382:    (hw : bd2 σ w = 0) (f g : σ) : w f = w g :=
+lean/Taut/Homology2.lean:387:lemma ker_bd2_eq_span {σ : Finset (Finset V)} (h : IsClosedSurface σ) (hne : σ.Nonempty) :
+lean/Taut/Homology2.lean:388:    LinearMap.ker (bd2 σ) = Submodule.span (ZMod 2) {(fun _ => 1 : C2 σ)} := by
+lean/Taut/Homology2.lean:398:    exact bd2_ker_constant h hw ⟨f₀, hf₀⟩ g
+lean/Taut/Homology2.lean:400:    exact bd2_one σ h.closed
+lean/Taut/Homology2.lean:402:/-- **b₂ = 1.** The space of 2-cycles is one-dimensional. -/
+lean/Taut/Homology2.lean:403:theorem finrank_ker_bd2 {σ : Finset (Finset V)} (h : IsClosedSurface σ) (hne : σ.Nonempty) :
+lean/Taut/Homology2.lean:404:    finrank (ZMod 2) (LinearMap.ker (bd2 σ)) = 1 := by
+lean/Taut/Homology2.lean:405:  rw [ker_bd2_eq_span h hne]
+lean/Taut/Homology2.lean:557:/-! ### H₁ = 0 — every 1-cycle bounds -/
+lean/Taut/Homology2.lean:559:/-- **The watershed.** On a combinatorial 2-sphere every 1-cycle is a boundary:
+lean/Taut/Homology2.lean:563:theorem range_bd2_eq_ker_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Homology2.lean:564:    LinearMap.range (bd2 σ) = LinearMap.ker (bd1 σ) := by
+lean/Taut/Homology2.lean:565:  have hle : LinearMap.range (bd2 σ) ≤ LinearMap.ker (bd1 σ) :=
+lean/Taut/Homology2.lean:566:    LinearMap.range_le_ker_iff.mpr (bd1_comp_bd2 σ h.pure)
+lean/Taut/Homology2.lean:568:  have hF : finrank (ZMod 2) (C2 σ) = σ.card := by
+lean/Taut/Homology2.lean:572:  have hr2 : finrank (ZMod 2) (LinearMap.range (bd2 σ)) = σ.card - 1 := by
+lean/Taut/Homology2.lean:573:    have := LinearMap.finrank_range_add_finrank_ker (bd2 σ)
+lean/Taut/Homology2.lean:574:    rw [finrank_ker_bd2 h.toClosedSurface h.nonempty, hF] at this; omega
+lean/Taut/Homology2.lean:596:  have hF : finrank (ZMod 2) (C2 σ) = σ.card := by
+lean/Taut/Homology2.lean:602:  have e2 := LinearMap.finrank_range_add_finrank_ker (bd2 σ)
+lean/Taut/Homology2.lean:603:  rw [finrank_ker_bd2 h hσne, hF] at e2          -- r₂ + 1 = F
+lean/Taut/Homology2.lean:607:  have hle : LinearMap.range (bd2 σ) ≤ LinearMap.ker (bd1 σ) :=
+lean/Taut/Homology2.lean:608:    LinearMap.range_le_ker_iff.mpr (bd1_comp_bd2 σ h.pure)
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:4:triangle (3-cycle in the 1-skeleton that is not a face) partitions σ into two
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:14:b₂ = 1 (the fundamental class is unique up to scale — "a 2-cycle assigns
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:16:χ = 2 forces **b₁ = 0**, i.e. H₁ = 0, i.e. every 1-cycle bounds. The non-face
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:17:triangle's cycle then bounds a 2-chain = one side; the other side is the
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:19:directly; orientation is re-attached afterward via the existing integral
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:20:fundamental cycle X.
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:40:    C2 σ := ↥σ          → K       -- ↥s = {x // x ∈ s}
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:45:    (bd2 w) ⟨e,_⟩ := ∑ f ∈ σ.attach, if e ⊆ (f:Finset V) then w f else 0
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:51:`bd1 ∘ bd2 = 0`: each face f and vertex x∈f, the edges e with x∈e⊆f number
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:52:exactly 2 (the two edges of f at x), so the coefficient is 2 = 0 in `ZMod 2`.
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:59:- **r₂ = F − 1**: `ker bd2 = K · 𝟙` (all-faces vector), since the dual graph
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:60:  (faces, edge-adjacency) is connected. "w ∈ ker bd2 ⟹ w constant across each
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:62:  finrank(ker bd2)=1, so r₂ = F − 1 by rank-nullity. Dual connectivity itself:
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:71:    -- from H₁=0: the 1-cycle ∂₂⟨γ⟩ (the three edges of γ) lies in ker bd1 =
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:72:    -- range bd2, so = bd2 W for a face-set W =: σ₁; σ₂ := σ \ σ₁.
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:74:Integral re-orientation: with the existing fundamental 2-cycle X (∂X = 0,
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:75:support σ, ±1), set X₁ := X restricted to σ₁ capped by −⟨γ⟩, X₂ likewise; then
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:81:𝔽₂ for the homology/separation (set-level cut, no signs); orientation lives in
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:89:(a) `bd1 ∘ bd2 = 0`.
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:91:    finrank ker bd1 = 3, finrank range bd2 = 3, ker bd1 = range bd2 (H₁=0).
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:97:(a) catches a wrong bd (bd1∘bd2 ≠ 0); (b) catches a wrong finrank/rank wiring
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:100:links-are-cycles lemma did.
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:104:    lean/Taut/Homology2.lean — new: C0/C1/C2, bd1/bd2, bd1∘bd2=0, the two
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:114:    `Matrix` + `Matrix.rank`. Which is less painful for (i) proving bd1∘bd2=0,
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:116:    z ∈ range bd2? I lean LinearMap+Submodule for (iii). Endorse or redirect.
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:118:Q2. The "equal weight across every edge ⟹ constant" step (for ker bd2 = K·𝟙)
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:123:Q3. Working over 𝔽₂ for the partition, then re-attaching orientation via the
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:137:    **integral** ±1 partition (not merely an 𝔽₂ one) need a torsion-freeness
+notes/codex-consults/2026-06-12-g1-homology-separation-spec.md:138:    argument I'm not seeing, or does "W is a set of faces over 𝔽₂, oriented by
+lean/Taut/Separation.lean:6:H₁ = 0 (`range_bd2_eq_ker_bd1`) turned into the geometric cut: a non-face
+lean/Taut/Separation.lean:10:The γ-edge 1-chain is a cycle (each vertex of γ lies in two of its edges), so by
+lean/Taut/Separation.lean:11:H₁ = 0 it bounds a face-set `W`; `σ₁ := W.support`, `σ₂ := σ \ σ₁`. The defining
+lean/Taut/Separation.lean:24:def gammaChain (σ : Finset (Finset V)) (γ : Finset V) : C1 σ :=
+lean/Taut/Separation.lean:27:/-- The γ-edge 1-chain is a cycle: every vertex lies in an even number of γ's
+lean/Taut/Separation.lean:29:lemma bd1_gammaChain {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+lean/Taut/Separation.lean:30:    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) : bd1 σ (gammaChain σ γ) = 0 := by
+lean/Taut/Separation.lean:33:  show bd1 σ (gammaChain σ γ) x = 0
+lean/Taut/Separation.lean:36:      (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0) * gammaChain σ γ e
+lean/Taut/Separation.lean:39:    simp only [gammaChain]
+lean/Taut/Separation.lean:48:/-- **The cut exists.** A non-face triangle's edge-cycle bounds a face-set `W`
+lean/Taut/Separation.lean:52:    ∃ W : C2 σ, bd2 σ W = gammaChain σ γ := by
+lean/Taut/Separation.lean:53:  have hcyc : gammaChain σ γ ∈ LinearMap.ker (bd1 σ) :=
+lean/Taut/Separation.lean:54:    LinearMap.mem_ker.mpr (bd1_gammaChain hγ3 hγe)
+lean/Taut/Separation.lean:55:  rw [← range_bd2_eq_ker_bd1 h] at hcyc
+lean/Taut/Separation.lean:61:noncomputable def cutSet (σ : Finset (Finset V)) (W : C2 σ) : Finset (Finset V) :=
+lean/Taut/Separation.lean:64:lemma mem_cutSet {σ : Finset (Finset V)} {W : C2 σ} {g : Finset V} :
+lean/Taut/Separation.lean:71:lemma cutSet_subset {σ : Finset (Finset V)} {W : C2 σ} : cutSet σ W ⊆ σ := by
+lean/Taut/Separation.lean:76:lemma edge_cut_parity {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:77:    (hW : bd2 σ W = gammaChain σ γ) {e : Finset V} (he : e ∈ edgesOf σ)
+lean/Taut/Separation.lean:81:  have hb := bd2_at_edge W he h1 h2 hne he1 he2 huniq
+lean/Taut/Separation.lean:84:  simp only [gammaChain]
+lean/Taut/Separation.lean:88:variable {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:113:    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ) (hW : bd2 σ W = gammaChain σ γ) :
+lean/Taut/Separation.lean:172:/-- A 1-cycle supported on the edges of `γ` (a triangle whose 2-subsets are
+lean/Taut/Separation.lean:173:edges) is `0` or the whole γ-cycle: `∂₁ = 0` forces the three coefficients
+lean/Taut/Separation.lean:178:    c = 0 ∨ c = gammaChain σ γ := by
+lean/Taut/Separation.lean:247:  -- so the three coefficients are equal
+lean/Taut/Separation.lean:251:  -- c = (c eab) • gammaChain
+lean/Taut/Separation.lean:252:  have hrep : c = (c eab) • gammaChain σ γ := by
+lean/Taut/Separation.lean:254:    simp only [Pi.smul_apply, gammaChain, smul_eq_mul]
+lean/Taut/Separation.lean:281:noncomputable def reachChain (σ : Finset (Finset V)) (S : Finset (Finset V)) (f₀ : σ) : C2 σ :=
+lean/Taut/Separation.lean:328:lemma bd2_reachChain_supp {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:329:    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {f₀ : σ}
+lean/Taut/Separation.lean:331:    bd2 σ (reachChain σ (cutSet σ W) f₀) ⟨e, he⟩ = 0 := by
+lean/Taut/Separation.lean:334:  rw [bd2_at_edge _ he h1 h2 hne he1 he2 huniq]
+lean/Taut/Separation.lean:369:theorem cutSet_dualConn {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:371:    (hW : bd2 σ W = gammaChain σ γ) {f₀ : σ} (hf₀ : W f₀ = 1) :
+lean/Taut/Separation.lean:376:  -- a 2-cycle is a constant function (ker ∂₂ = span 𝟙)
+lean/Taut/Separation.lean:377:  have const_of_cycle : ∀ x : C2 σ, bd2 σ x = 0 → ∃ cc : ZMod 2, x = fun _ => cc := by
+lean/Taut/Separation.lean:379:    have hmem : x ∈ Submodule.span (ZMod 2) {(fun _ => 1 : C2 σ)} := by
+lean/Taut/Separation.lean:380:      rw [← ker_bd2_eq_span h.toClosedSurface h.nonempty]; exact LinearMap.mem_ker.mpr hx
+lean/Taut/Separation.lean:383:  -- gammaChain ≠ 0 (it is 1 on each edge of γ)
+lean/Taut/Separation.lean:384:  have hWγ : gammaChain σ γ ≠ 0 := by
+lean/Taut/Separation.lean:390:    have hv1 : gammaChain σ γ ⟨e0, he0e⟩ = 1 := by simp only [gammaChain, if_pos he0.1]
+lean/Taut/Separation.lean:392:  -- some face is off the cut (else W = 𝟙 and gammaChain = bd2 𝟙 = 0)
+lean/Taut/Separation.lean:398:    rw [hW1, bd2_one σ h.closed] at hW
+lean/Taut/Separation.lean:400:  have hker : bd1 σ (bd2 σ (reachChain σ (cutSet σ W) f₀)) = 0 := by
+lean/Taut/Separation.lean:401:    have := bd1_comp_bd2 σ h.pure
+lean/Taut/Separation.lean:403:  have hsupp : ∀ e : edgesOf σ, bd2 σ (reachChain σ (cutSet σ W) f₀) e ≠ 0 →
+lean/Taut/Separation.lean:405:    by_contra heγ; exact hbe (bd2_reachChain_supp h hW hf₀mem e.2 heγ)
+lean/Taut/Separation.lean:407:  · -- bd2 R = 0 ⟹ R is constant; but R f₀ = 1 and R vanishes on σ₂ — impossible
+lean/Taut/Separation.lean:409:    obtain ⟨cc, hcc⟩ := const_of_cycle _ hb0
+lean/Taut/Separation.lean:414:  · -- bd2 R = gammaChain = bd2 W ⟹ R + W is a constant cc; at f₀, cc = 0; so R = W
+lean/Taut/Separation.lean:415:    have hsum : bd2 σ (reachChain σ (cutSet σ W) f₀ + W) = 0 := by
+lean/Taut/Separation.lean:418:    obtain ⟨cc, hcc⟩ := const_of_cycle _ hsum
+lean/Taut/Separation.lean:467:lemma dualOn_skel_insert {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} :
+lean/Taut/Separation.lean:485:theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:487:    (hW : bd2 σ W = gammaChain σ γ) :
+lean/Taut/Separation.lean:491:  -- a base cut-face f₀ (W f₀ = 1), exists since gammaChain ≠ 0
+lean/Taut/Separation.lean:505:    have hv1 : gammaChain σ γ ⟨e0, he0e⟩ = 1 := by simp only [gammaChain, if_pos he0.1]
+lean/Taut/Separation.lean:555:lemma W_eq_of_share_edge {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:556:    (hW : bd2 σ W = gammaChain σ γ) {e : Finset V} (he : e ∈ edgesOf σ) (heγ : ¬ e ⊆ γ)
+lean/Taut/Separation.lean:574:lemma W_eq_along_link {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:575:    (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∉ γ) :
+lean/Taut/Separation.lean:623:lemma W_const_at {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:624:    (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∉ γ) {f g : σ}
+lean/Taut/Separation.lean:667:lemma gamma_chord_adj {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} {v a b : V}
+lean/Taut/Separation.lean:677:lemma cut_link_closure_nonendpoint {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:678:    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {v x y : V}
+lean/Taut/Separation.lean:707:lemma reroute_to_gamma_endpoint {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:708:    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {v a b : V}
+lean/Taut/Separation.lean:738:lemma linkConn_cut_at_gamma {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:740:    (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∈ γ) :
+lean/Taut/Separation.lean:773:lemma linkGraph_le_cut_nonendpoint {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:774:    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∉ γ)
+lean/Taut/Separation.lean:786:lemma linkConn_cut_off_gamma {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:787:    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∉ γ)
+lean/Taut/Separation.lean:814:lemma linkConn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:816:    (hW : bd2 σ W = gammaChain σ γ) :
+lean/Taut/Separation.lean:828:lemma bd2_W_add_one {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:829:    (hW : bd2 σ W = gammaChain σ γ) :
+lean/Taut/Separation.lean:830:    bd2 σ (W + fun _ => 1) = gammaChain σ γ := by
+lean/Taut/Separation.lean:831:  rw [map_add, hW, bd2_one σ h.closed, add_zero]
+lean/Taut/Separation.lean:834:lemma mem_cutSet_add_one {σ : Finset (Finset V)} {W : C2 σ} {g : Finset V} (hg : g ∈ σ) :
+lean/Taut/Separation.lean:843:lemma cutSet_add_one_eq_sdiff {σ : Finset (Finset V)} (W : C2 σ) :
+lean/Taut/Separation.lean:861:lemma pure_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:870:lemma card_faces_cut_add {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} (hγσ : γ ∉ σ) :
+lean/Taut/Separation.lean:899:lemma vertsOf_cut_union {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:920:lemma vertsOf_cut_inter {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:921:    (hW : bd2 σ W = gammaChain σ γ) :
+lean/Taut/Separation.lean:945:lemma edgesOf_cut_union {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:962:lemma edgesOf_cut_inter {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:963:    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hW : bd2 σ W = gammaChain σ γ) :
+lean/Taut/Separation.lean:993:lemma euler_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:995:    (hW : bd2 σ W = gammaChain σ γ) :
+lean/Taut/Separation.lean:998:  have hW2 : bd2 σ (W + fun _ => 1) = gammaChain σ γ := bd2_W_add_one h hW
+lean/Taut/Separation.lean:1025:theorem isSphere2_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:1027:    (hW : bd2 σ W = gammaChain σ γ) : IsSphere2 (insert γ (cutSet σ W)) :=
+lean/Taut/Separation.lean:1041:    isSphere2_cut h hγ3 hγe hγσ (bd2_W_add_one h hW)⟩
+lean/Taut/Splitting.lean:19:   taut chain cannot contain — the coefficient-level vanishing argument
+lean/Taut/Splitting.lean:303:the coefficient-level vanishing argument: hybrid faces `X^n y₀` are
+notes/codex-consults/2026-06-13-g1-euler-spec.md:11:`range_bd2_eq_ker_bd1` (uses χ=2 ⇒ H₁=0; genuinely circular for χ). The
+notes/codex-consults/2026-06-13-g1-euler-spec.md:15:- `finrank_ker_bd2`: `h.nonempty`.
+notes/codex-consults/2026-06-13-g1-euler-spec.md:23:Chain complex `C2 →[bd2] C1 →[bd1] C0`, dims F=|σ|, E=|edgesOf σ|, V=|vertsOf σ|.
+notes/codex-consults/2026-06-13-g1-euler-spec.md:24:- b₂ := dim ker bd2 = 1  (generalized `finrank_ker_bd2`).
+notes/codex-consults/2026-06-13-g1-euler-spec.md:26:- range bd2 ⊆ ker bd1 (∂∂=0, `bd1_comp_bd2`), so
+notes/codex-consults/2026-06-13-g1-euler-spec.md:27:  dim range bd2 ≤ dim ker bd1, i.e. (F − b₂) ≤ (E − r₁):
+notes/codex-consults/2026-06-13-g1-euler-spec.md:41:`dualGraph_preconnected`, `finrank_ker_bd2` (+ `ker_bd2_eq_span`),
+notes/codex-consults/2026-06-13-g1-euler-spec.md:67:- σ₂ side: `bd2 (W+𝟙) = gammaChain σ γ` (since `bd2 𝟙 = 0` = `bd2_one`), so all
+notes/codex-consults/2026-06-13-g1-euler-spec.md:84:    ℤ-combination)? Any orientation/double-count trap with `edgesOf τ₁ ∩ τ₂ =
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:15:A generator is an *unoriented* simplex `s : Finset V` (sorted by the order =
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:16:canonical orientation; `s.card = n+1` means dimension n; `∅` is the
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:45:## 2. Orientation conventions
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:47:Canonical orientation of a simplex = its vertices in increasing order. The
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:1:# G1 design spec: linkConn for the cut pieces (the v∈γ cycle-arc)
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:12:`W : ↥σ → ZMod 2` with `bd2 σ W = gammaChain σ γ` (`exists_cut`):
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:28:- Mathlib (v4.29.1) has `SimpleGraph.IsCycles` (`Matching.lean`): a graph where
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:29:  every vertex has neighbour-set ncard 0 or 2, with `IsCycles.other_adj_of_adj`,
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:30:  `IsCycles.existsUnique_ne_adj`,
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:31:  `IsCycles.exists_cycle_toSubgraph_verts_eq_connectedComponentSupp`.
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:38:Geometry: `linkGraph σ v` is a single cycle `C` (2-regular + connected). Its
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:47:`linkGraph (insert γ σ₁) v` = "σ₁-arc + chord a–b" = a single cycle ⇒ connected;
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:51:**Route A (IsCycles + traversal).** Show `linkGraph σ v` is `IsCycles` (from
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:53:is `IsCycles` too (every link-vertex has degree exactly 2: interior σ₁-arc
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:55:"connected 2-regular = one cycle" — but `IsCycles` alone gives a *disjoint
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:56:union* of cycles; connectivity needs that the side flips at exactly the two
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:57:points `a,b` (so one σ₁-arc, not several). Formalize via cycle traversal
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:72:Unoriented; the cut side is `W` over `ZMod 2`. `insert γ σ₁` is the capped
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:84:  satisfies `bd2 (W+𝟙) = gammaChain` since `bd2 𝟙 = 0`).
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:87:- The v∈γ link is a cycle and the cut gives exactly two arcs: cross-checks
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:97:Q1. Which route (A IsCycles-traversal / B reroute / C degree-2+cheaper-cert)
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:98:    is the least painful in Lean for the v∈γ linkConn? Is `SimpleGraph.IsCycles`
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:99:    the right tool, or does it add more friction than a hand-rolled cycle
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:102:    proved by cycle traversal, or is there a slicker invariant (e.g. an
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:4:2-cycle orienting) a simplicial triangulation σ of S² arises from a
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:33:   an even subgraph because vertex links are cycles"). Mathlib has NO
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:41:   simpliciality of M, support-is-a-ball, boundary = σ, and free
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:75:      closed   : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2          -- closed pm
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:81:3v = e + 6, 2v = f + 4 are free arithmetic); "links are single cycles"
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:82:is NOT assumed — it follows: closed pm makes each link graph 2-regular,
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:83:and 2-regular + connected = one cycle (derived lemma, used for the
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:104:orientability): for X a closed chain with coefficients in {−1,1} exactly
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:105:on σ := X.support, IsSphere2 σ, and M taut with bdry M = X:
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:106:∀ t, M t ∈ {−1,0,1}, and IsBall M.support σ, freely shellable.
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:107:Orientability of IsSphere2 (existence of such X) is NOT needed for
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:109:be either one of the 2-cycles").
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:113:Unoriented complexes only; orientations stay in the chain layer (M2).
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:114:The bridge: `X.support = σ`, coefficients ±1; faces/edges of complexes
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:127:    = single cycle; mindeg ≥ 3.
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:134:links-are-cycles lemma cross-validates `closed` against `linkConn`.
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:138:    lean/Taut/Complex2.lean — definitions + (a),(b) now; link-cycle
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:148:    links-are-cycles), versus assuming links-are-cycles outright,
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:165:    empty + links-are-cycles): endorse this as the planned route for the
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:167:Q5. The chain↔complex bridge (σ := X.support, coefficients ±1, no
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:169:    boundary cycles must be re-derived after splitting along an edge?
+
+exec
+/bin/zsh -lc "ls lean/Taut && sed -n '1,140p' lean/Taut/Homology2.lean 2>/dev/null" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+Ball.lean
+Chains.lean
+Complex2.lean
+Homology2.lean
+Projection.lean
+Separation.lean
+Splitting.lean
+Theorem1.lean
+Zvol.lean
+import Taut.Complex2
+
+/-!
+# 𝔽₂ homology of a combinatorial 2-complex, and the separation theorem
+
+The watershed of Theorem 2. A non-face triangle (a 3-cycle in the 1-skeleton
+that is not a face of σ) partitions a combinatorial 2-sphere into two sides,
+each capping to a sphere. The route (settled with the PI):
+
+* the Euler–Poincaré identity χ = b₀ − b₁ + b₂ is pure linear algebra;
+* `IsSphere2` already asserts χ = 2, and gives b₀ = 1 (connected) and
+  b₂ = 1 (the fundamental class is unique up to scale — a 2-cycle assigns equal
+  weight across every edge, hence is constant on the dual-connected complex);
+* so the given χ = 2 forces **b₁ = 0**, i.e. every 1-cycle bounds.
+
+We avoid Betti numbers and work with ranks over 𝔽₂ = `ZMod 2`:
+`bd1 ∘ bd2 = 0`, `r₂ := finrank (range bd2) = F − 1` (dual connectivity),
+`r₁ := finrank (range bd1) = V − 1` (skeleton connectivity), then
+`finrank (ker bd1) = E − (V−1) = F − 1 = finrank (range bd2)` using χ = 2;
+with `range bd2 ⊆ ker bd1`, equal finrank forces `range bd2 = ker bd1` — H₁ = 0.
+
+Chain groups are function spaces on Finset-coerced subtypes (`finrank = card`).
+Orientation is *not* present here; it is re-attached afterward via the integral
+fundamental cycle when packaging the split for `IsTaut.splits`.
+-/
+
+namespace Taut
+
+open Module Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-! ## Chain groups and boundary maps over 𝔽₂ -/
+
+/-- 0-chains: 𝔽₂-functions on the vertices. -/
+abbrev C0 (σ : Finset (Finset V)) := (vertsOf σ) → ZMod 2
+/-- 1-chains: 𝔽₂-functions on the edges. -/
+abbrev C1 (σ : Finset (Finset V)) := (edgesOf σ) → ZMod 2
+/-- 2-chains: 𝔽₂-functions on the faces. -/
+abbrev C2 (σ : Finset (Finset V)) := σ → ZMod 2
+
+/-- The 2-boundary `∂₂ : C₂ → C₁`. Over 𝔽₂ (no signs): a face contributes 1 to
+each of its edges. -/
+noncomputable def bd2 (σ : Finset (Finset V)) : C2 σ →ₗ[ZMod 2] C1 σ :=
+  LinearMap.pi fun e => ∑ f : σ,
+    (if (e : Finset V) ⊆ (f : Finset V) then (1 : ZMod 2) else 0) • LinearMap.proj f
+
+/-- The 1-boundary `∂₁ : C₁ → C₀`. An edge contributes 1 to each of its
+vertices. -/
+noncomputable def bd1 (σ : Finset (Finset V)) : C1 σ →ₗ[ZMod 2] C0 σ :=
+  LinearMap.pi fun x => ∑ e : (edgesOf σ),
+    (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0) • LinearMap.proj e
+
+lemma bd2_apply (σ : Finset (Finset V)) (w : C2 σ) (e : edgesOf σ) :
+    bd2 σ w e = ∑ f : σ, (if (e : Finset V) ⊆ (f : Finset V) then 1 else 0) * w f := by
+  simp only [bd2, LinearMap.pi_apply, LinearMap.coe_sum, Finset.sum_apply,
+    LinearMap.smul_apply, LinearMap.proj_apply, smul_eq_mul]
+
+lemma bd1_apply (σ : Finset (Finset V)) (u : C1 σ) (x : vertsOf σ) :
+    bd1 σ u x = ∑ e : (edgesOf σ), (if (x : V) ∈ (e : Finset V) then 1 else 0) * u e := by
+  simp only [bd1, LinearMap.pi_apply, LinearMap.coe_sum, Finset.sum_apply,
+    LinearMap.smul_apply, LinearMap.proj_apply, smul_eq_mul]
+
+/-- The edges of a triangle through a fixed vertex: exactly the two pairs
+`{x, y}` with `y` in the other two vertices. Used for `∂∂ = 0` and the cut.
+Stated for any card-3 set whose 2-subsets are edges of σ (so it also applies to
+a non-face triangle). -/
+lemma card_edges_through_vertex {σ : Finset (Finset V)} {f : Finset V}
+    (hf : f.powersetCard 2 ⊆ edgesOf σ) (hf3 : f.card = 3) (x : V) :
+    ((edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)).card = if x ∈ f then 2 else 0 := by
+  classical
+  -- the filter over edgesOf is the filter of card-2 subsets of `f` through `x`
+  have hrw : (edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)
+      = (f.powersetCard 2).filter (fun e => x ∈ e) := by
+    ext e
+    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+    constructor
+    · rintro ⟨he, hxe, hef⟩
+      exact ⟨⟨hef, card_of_mem_edgesOf he⟩, hxe⟩
+    · rintro ⟨⟨hef, hc⟩, hxe⟩
+      exact ⟨hf (Finset.mem_powersetCard.mpr ⟨hef, hc⟩), hxe, hef⟩
+  rw [hrw]
+  by_cases hx : x ∈ f
+  · simp only [hx, if_true]
+    -- card-2 subsets of `f` through `x`  ↔  `f.erase x`  via  `y ↦ {x, y}`
+    have himg : (f.powersetCard 2).filter (fun e => x ∈ e)
+        = (f.erase x).image (fun y => {x, y}) := by
+      ext e
+      simp only [Finset.mem_filter, Finset.mem_powersetCard, Finset.mem_image,
+        Finset.mem_erase]
+      constructor
+      · rintro ⟨⟨hef, hc⟩, hxe⟩
+        have h1 : (e.erase x).card = 1 := by rw [Finset.card_erase_of_mem hxe, hc]
+        obtain ⟨y, hy⟩ := Finset.card_eq_one.mp h1
+        have hymem : y ∈ e.erase x := hy ▸ Finset.mem_singleton_self y
+        have hye : y ∈ e := Finset.mem_of_mem_erase hymem
+        have hyx : y ≠ x := Finset.ne_of_mem_erase hymem
+        refine ⟨y, ⟨hyx, hef hye⟩, ?_⟩
+        rw [← Finset.insert_erase hxe, hy]
+      · rintro ⟨y, ⟨hyx, hyf⟩, rfl⟩
+        refine ⟨⟨?_, Finset.card_pair (Ne.symm hyx)⟩, Finset.mem_insert_self x _⟩
+        intro z hz
+        rcases Finset.mem_insert.mp hz with rfl | hz
+        · exact hx
+        · rw [Finset.mem_singleton] at hz; rw [hz]; exact hyf
+    rw [himg]
+    have hinj : Set.InjOn (fun y => ({x, y} : Finset V)) (f.erase x) := by
+      intro y1 h1 y2 h2 heq
+      have heq' : ({x, y1} : Finset V) = {x, y2} := heq
+      have hy1 : y1 ∈ ({x, y2} : Finset V) := heq' ▸ (show y1 ∈ ({x, y1} : Finset V) by simp)
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hy1
+      rcases hy1 with rfl | h
+      · exact absurd rfl (Finset.mem_erase.mp h1).1
+      · exact h
+    rw [Finset.card_image_of_injOn hinj, Finset.card_erase_of_mem hx, hf3]
+  · simp only [hx, if_false]
+    rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+    intro e he hxe
+    exact hx ((Finset.mem_powersetCard.mp he).1 hxe)
+
+/-- `∂₁ ∘ ∂₂ = 0`: over 𝔽₂ this holds because every vertex of a triangle lies
+in exactly two of its edges (and a vertex outside lies in none). -/
+theorem bd1_comp_bd2 (σ : Finset (Finset V)) (hpure : ∀ f ∈ σ, f.card = 3) :
+    bd1 σ ∘ₗ bd2 σ = 0 := by
+  classical
+  refine LinearMap.ext fun w => ?_
+  funext x
+  show bd1 σ (bd2 σ w) x = 0
+  rw [bd1_apply]
+  -- expand `∂₂ w` at each edge and swap the order of summation
+  have hstep : ∀ e : edgesOf σ,
+      (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0) * bd2 σ w e
+        = ∑ f : σ, (if (x : V) ∈ (e : Finset V) ∧ (e : Finset V) ⊆ (f : Finset V)
+            then (1 : ZMod 2) else 0) * w f := by
+    intro e
+    rw [bd2_apply, Finset.mul_sum]
+    refine Finset.sum_congr rfl (fun f _ => ?_)
+    rw [← mul_assoc]
+    congr 1
+    by_cases h1 : (x : V) ∈ (e : Finset V) <;> by_cases h2 : (e : Finset V) ⊆ (f : Finset V) <;>
+
+codex
+One important gap is visible: `IsSphere2` is an unoriented facet-set property, while Theorem 2’s input is an integral boundary chain. The prior notes anticipated that by keeping orientation in the chain layer, so I’m checking whether that bridge is already present or still needs to be built.
+exec
+/bin/zsh -lc "sed -n '96,116p' notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    -- side condition: IsSphere2 ∂' (sphere-hood BAKED INTO the
+    -- certificate, not derived — the Th2 induction has it available at
+    -- every gluing step, and this keeps the definition's invariant
+    -- self-evident).
+    IsBall τ ∂        := ∃ l, l.toFinset = τ ∧ l.Nodup ∧ IsShelling l ∂
+    FreelyShellable τ ∂ := ∀ t ∈ τ, ∃ l, l.head? = some t ∧ …
+
+Theorem 2+3 statement (merged conclusion, chain-first to dodge
+orientability): for X a closed chain with coefficients in {−1,1} exactly
+on σ := X.support, IsSphere2 σ, and M taut with bdry M = X:
+∀ t, M t ∈ {−1,0,1}, and IsBall M.support σ, freely shellable.
+Orientability of IsSphere2 (existence of such X) is NOT needed for
+Th2–Th4 and is not claimed; X is input data, as in the paper ("let X(σ)
+be either one of the 2-cycles").
+
+## 2. Conventions
+
+Unoriented complexes only; orientations stay in the chain layer (M2).
+The bridge: `X.support = σ`, coefficients ±1; faces/edges of complexes
+are bare Finsets. No geometric realization, no topology anywhere.
+
+
+exec
+/bin/zsh -lc "sed -n '72,142p' notes/codex-consults/2026-06-12-g1-homology-separation-spec.md" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    -- range bd2, so = bd2 W for a face-set W =: σ₁; σ₂ := σ \ σ₁.
+
+Integral re-orientation: with the existing fundamental 2-cycle X (∂X = 0,
+support σ, ±1), set X₁ := X restricted to σ₁ capped by −⟨γ⟩, X₂ likewise; then
+X = X₁ + X₂ with the two ⟨γ⟩ copies cancelling — the almost-disjoint-union
+input of Theorem 1's `IsTaut.splits`.
+
+## 2. Conventions
+
+𝔽₂ for the homology/separation (set-level cut, no signs); orientation lives in
+the integral chain layer (the existing `Chain V := Finset V →₀ ℤ`, `X`). No
+topology, no geometric realization. Chain groups are subtype-function-spaces,
+NOT the `Finset V →₀ ℤ` chains of the existing layer — the 𝔽₂ homology is a
+self-contained side computation whose only output is the face partition.
+
+## 3. Validation invariants (build-checked)
+
+(a) `bd1 ∘ bd2 = 0`.
+(b) On the tetrahedron boundary (`tetraBdry`, V=4,E=6,F=4): r₁ = 3, r₂ = 3,
+    finrank ker bd1 = 3, finrank range bd2 = 3, ker bd1 = range bd2 (H₁=0).
+(c) The separation theorem applied to a concrete non-face triangle if a cheap
+    instance exists (e.g. in a bipyramid); otherwise (b) is the smoke test.
+
+## 4. Failure modes caught
+
+(a) catches a wrong bd (bd1∘bd2 ≠ 0); (b) catches a wrong finrank/rank wiring
+(the equal-finrank step fails numerically on the tetra); the dual-connectivity
+lemma cross-checks `closed` against `linkConn` exactly as the prior
+links-are-cycles lemma did.
+
+## 5. Files and commands
+
+    lean/Taut/Homology2.lean — new: C0/C1/C2, bd1/bd2, bd1∘bd2=0, the two
+                               connectivity-rank lemmas, H₁=0, `separates`.
+    Reuses Complex2 (IsSphere2, edgesOf/vertsOf/skel/linkGraph/ConnOn) and,
+    for the integral X=X₁+X₂ packaging, Chains/Zvol/Splitting.
+    Build: cd lean && lake build. Greps + #print axioms per commit gate.
+
+## Questions for the auditor
+
+Q1. Chain groups as `↥Finset → ZMod 2` with `bd` as explicit `LinearMap`s and
+    `Submodule.finrank` / `Submodule.eq_of_le_of_finrank_eq`, vs. an incidence
+    `Matrix` + `Matrix.rank`. Which is less painful for (i) proving bd1∘bd2=0,
+    (ii) the two connectivity-rank lemmas, (iii) extracting the face-set W from
+    z ∈ range bd2? I lean LinearMap+Submodule for (iii). Endorse or redirect.
+
+Q2. The "equal weight across every edge ⟹ constant" step (for ker bd2 = K·𝟙)
+    and the symmetric "reachable ⟹ e_x+e_y ∈ range bd1" step are both Walk
+    inductions on a connected graph. Is there a cleaner Mathlib idiom than
+    hand-rolling `Walk.rec`? (Scout found no packaged "constant on reachable".)
+
+Q3. Working over 𝔽₂ for the partition, then re-attaching orientation via the
+    existing integral X for X = X₁ + X₂: sound? Any trap in proving the two
+    capped pieces `insert γ σᵢ` satisfy `IsSphere2` (each of closed / linkConn /
+    conn / euler must be re-derived for the pieces — is euler the only nontrivial
+    one, via χ-additivity χ(σ₁)+χ(σ₂) = χ(σ)+χ(γ) and χ≤2-each = b₁≥0)?
+
+Q4. Is the `separates` signature above the right consumable for the Theorem 2
+    induction (does it hand `IsTaut.splits` what it needs), or should it instead
+    directly produce the chain decomposition X = X₁ + X₂ and the two taut
+    sub-fillings? I.e. should `separates` be stated complex-side, chain-side,
+    or both?
+
+Q5. Anything in the rank argument that secretly needs more than V−E+F = 2 +
+    connectivity + dual-connectivity? In particular: does extracting an
+    **integral** ±1 partition (not merely an 𝔽₂ one) need a torsion-freeness
+    argument I'm not seeing, or does "W is a set of faces over 𝔽₂, oriented by
+    the existing X" fully sidestep it?
+
+exec
+/bin/zsh -lc "rg -n \"def Good|structure.*Filling|IsTautFilling|Coeffs|coeffs|support = σ|support.*card|nrm.*support.card|List|ShellFrom|append|concat|GlueStep\" lean notes/codex-consults -g '*.lean' -g '*.md'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:38:- Ball.lean: `IsShelling`/`IsBall`/`FreelyShellable` as List shelling
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:39:  certificates; `GlueStep` (type-1/2 glue, IsSphere2 baked in); `IsBall.isSphere2`;
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:45:Candidate: M is *simplicial* (all coeffs ±1, `nrm M = M.support.card`) and
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:48:Question: define `Good (σ) (M) : Prop := IsTautFilling σ M ∧ ∃ (shelling), …`?
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:49:Or carry the shelling as data? The induction reassembles shellings (case 1: append
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:50:`t`; case 2: concatenate two shellings through `t`), so a List-certificate
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:75:faces) ⟹ `IsBall M.support` — Ball.lean `GlueStep`. Case 2: glue two balls
+notes/codex-consults/2026-06-13-g1-theorem2-spec.md:89:    `Prop` (∃ shelling) vs. carrying the List certificate as data — given the
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:86:Balls, via explicit shelling certificates (Lists, not an inductive Prop,
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:87:because the Th2 reassembly grafts shellings by list concatenation and
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:90:    IsShelling : List (Finset V) → Finset (Finset V) → Prop
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:114:The bridge: `X.support = σ`, coefficients ±1; faces/edges of complexes
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:154:Q2. Balls as List shelling certificates with IsSphere2 of every
+notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md:157:    concatenation)? Or is an inductive Prop with the same side
+lean/Taut/Zvol.lean:140:    (hdim : ∀ s ∈ M.support, 2 ≤ s.card)
+notes/codex-consults/2026-06-11-g1-chain-encoding-spec.md:19:`∀ s ∈ M.support, s.card = k`, not part of the type.
+lean/Taut/Projection.lean:20:* small-support triviality: `eq_zero_of_supp_card_lt`,
+lean/Taut/Projection.lean:400:    (hsupp : ∀ s ∈ M.support, s ⊆ W ∧ s.card = k) (hk : W.card < k) :
+lean/Taut/Projection.lean:412:    {M : Chain V} (hsupp : ∀ s ∈ M.support, s ⊆ W ∧ s.card = k)
+lean/Taut/Theorem1.lean:85:    (h : ∀ s ∈ M.support, s.card = k) : dimPart k M = M := by
+lean/Taut/Theorem1.lean:142:    (hbd : ∀ s ∈ (bdry M).support, s.card = k) :
+lean/Taut/Theorem1.lean:143:    ∀ s ∈ M.support, s.card = k + 1 := by
+lean/Taut/Theorem1.lean:160:    (hdim : ∀ s ∈ M.support, 2 ≤ s.card) :
+lean/Taut/Theorem1.lean:235:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1) (hYc : bdry Y = 0) :
+lean/Taut/Theorem1.lean:237:  have hsupp : ∀ t ∈ (Kmap A p Y).support, t ⊆ A ∩ B ∧ t.card = n + 1 := by
+lean/Taut/Theorem1.lean:368:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Theorem1.lean:369:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Theorem1.lean:380:  · -- ≤ : concatenate optimal fillings
+lean/Taut/Theorem1.lean:387:    have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Theorem1.lean:393:    have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Theorem1.lean:395:    have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Ball.lean:15:certificate** (a `List` of tets), not an inductive `Prop`: the Theorem 2
+lean/Taut/Ball.lean:16:reassembly grafts shellings by list concatenation, and free shellability
+lean/Taut/Ball.lean:56:structure GlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop where
+lean/Taut/Ball.lean:64:def ShellFrom : Finset (Finset V) → List (Finset V) → Finset (Finset V) → Prop
+lean/Taut/Ball.lean:66:  | B₀, t :: l, B => ∃ B₁, GlueStep t B₀ B₁ ∧ ShellFrom B₁ l B
+lean/Taut/Ball.lean:71:def IsShelling : List (Finset V) → Finset (Finset V) → Prop
+lean/Taut/Ball.lean:73:  | t :: l, B => t.card = 4 ∧ ShellFrom (tetFaces t) l B
+lean/Taut/Ball.lean:78:  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+lean/Taut/Ball.lean:84:  ∀ t ∈ τ, ∃ l : List (Finset V),
+lean/Taut/Ball.lean:91:lemma ShellFrom.isSphere2 {l : List (Finset V)} :
+lean/Taut/Ball.lean:92:    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B → IsSphere2 B₀ → IsSphere2 B := by
+lean/Taut/Ball.lean:96:      simp only [ShellFrom] at h
+lean/Taut/Ball.lean:100:      simp only [ShellFrom] at h
+lean/Taut/Ball.lean:105:lemma IsShelling.isSphere2 {l : List (Finset V)} {B : Finset (Finset V)}
+lean/Taut/Ball.lean:126:  simp only [IsShelling, ShellFrom]
+lean/Taut/Ball.lean:136:  simp only [IsShelling, ShellFrom]
+lean/Taut/Splitting.lean:73:    (h : ∀ t ∈ M.support, t ⊆ B ∧ t.card = k + 1) :
+lean/Taut/Splitting.lean:74:    ∀ s ∈ (bdry M).support, s ⊆ B ∧ s.card = k := by
+lean/Taut/Splitting.lean:163:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:164:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:170:  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Splitting.lean:176:  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Splitting.lean:178:  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Splitting.lean:218:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:219:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:222:    (hpure : ∀ s ∈ M.support, s.card = n + 2)
+lean/Taut/Splitting.lean:309:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:310:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:313:    (hpure : ∀ s ∈ M.support, s.card = n + 2)
+lean/Taut/Splitting.lean:439:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:440:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:451:  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Splitting.lean:457:  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Splitting.lean:459:  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Splitting.lean:493:  have hMxsupp : ∀ t ∈ Mx.support, t ⊆ A ∧ t.card = n + 2 := by
+lean/Taut/Splitting.lean:497:  have hMysupp : ∀ t ∈ My.support, t ⊆ B ∧ t.card = n + 2 := by
+
+codex
+**Q1. Good**
+Use a `Prop` conclusion, not a data-carrying filling-pair structure. The List certificates are already data inside `IsBall` / `FreelyShellable` in [Ball.lean](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:77).
+
+Recommended chain-first target:
+
+```lean
+def UnitOn (X : Chain V) (σ : Finset (Finset V)) : Prop :=
+  X.support = σ ∧ ∀ s ∈ σ, X s = 1 ∨ X s = -1
+
+def SimplicialChain (M : Chain V) : Prop :=
+  ∀ t, M t = -1 ∨ M t = 0 ∨ M t = 1
+```
+
+Then prove the merged theorem roughly as:
+
+```lean
+IsSphere2 σ →
+UnitOn X σ →
+bdry X = 0 →
+bdry M = X →
+IsTaut M →
+SimplicialChain M ∧ IsBall M.support σ ∧ FreelyShellable M.support σ
+```
+
+For the induction, prove a stronger internal theorem parameterized by a chosen first tet, because Theorem 3 needs `FreelyShellable`:
+
+```lean
+∀ t ∈ M.support, ∃ l,
+  l.head? = some t ∧ l.toFinset = M.support ∧ l.Nodup ∧ IsShelling l σ
+```
+
+Do not put shellings into `Good` as fields carried through every hypothesis. Extract the existential List witnesses only at reassembly points.
+
+**Q2. Eligible Tet / Flip**
+The current `bdry` API can express the flip, but doing it directly everywhere will be painful. Add a small tet/flip primitive layer.
+
+Use existing core identifiers:
+
+- `bdry`, `bdryGen`, `bdry_single` from [Chains.lean](/Users/doyle/Dropbox/taut/lean/Taut/Chains.lean:137)
+- `tetFaces` from [Ball.lean](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:43)
+
+Add definitions like:
+
+```lean
+def tetChain (t : Finset V) (c : ℤ) : Chain V := Finsupp.single t c
+
+def FlipBoundary
+  (X : Chain V) (t s₁ s₂ : Finset V) (c : ℤ) : Chain V :=
+  X - bdry (Finsupp.single t c)
+```
+
+Key lemma should be a build-checked identity, not repeated ad hoc:
+
+```lean
+lemma bdry_remove_tet
+  (hMt : M t = c) :
+  bdry (M - Finsupp.single t c) = bdry M - bdry (Finsupp.single t c)
+```
+
+Then a face-support lemma:
+
+```lean
+lemma support_flipBoundary_of_eligible :
+  -- if s₁,s₂ are exactly the two boundary faces of t matching X
+  -- and t.card = 4
+  (FlipBoundary X t s₁ s₂ c).support =
+    (X.support \ {s₁, s₂}) ∪ (tetFaces t \ {s₁, s₂})
+```
+
+This is where the oriented signs live. Define eligibility in terms of coefficients of `bdry (Finsupp.single t (M t))`, not only set membership.
+
+**Q3. Induction / Prime Reduction**
+Strong induction on `nrm M` is right. Use `Nat.strong_induction_on (nrm M)` rather than literally constructing a minimal bad pair.
+
+The prime/no-degree-3 preprocessing is not avoidable. The eligible-count argument uses “no tet has more than two boundary faces,” which depends on no degree-3 vertex. In Lean this should be a first-class branch before the eligible-tet branch:
+
+1. If there is a connected-sum / degree-3 split, use `IsTaut.splits`.
+2. Recursively solve both smaller taut fillings.
+3. Reassemble shellings.
+4. Otherwise enter the prime/no-degree-3 eligible-tet count.
+
+You may not need a polished `PrimeSphere` API immediately, but you do need named lemmas for the reduction.
+
+**Q4. `separates` To Case 2**
+`separates` alone is not enough. It is 𝔽₂ and returns only sphere facet sets:
+
+```lean
+separates :
+  IsSphere2 σ →
+  γ.card = 3 →
+  γ.powersetCard 2 ⊆ edgesOf σ →
+  γ ∉ σ →
+  ∃ σ₁ σ₂, IsSphere2 (insert γ σ₁) ∧ IsSphere2 (insert γ σ₂)
+```
+
+`IsTaut.splits` already gives the integral split, but only after you provide integral closed chains `X Y` with:
+
+```lean
+bdry M' = X + Y
+bdry X = 0
+bdry Y = 0
+support X ⊆ A
+support Y ⊆ B
+```
+
+So the needed bridge lemma is not a stronger `separates`; it is an orientation-packaging lemma between `separates` and `IsTaut.splits`, roughly:
+
+```lean
+lemma oriented_split_chains_of_separates
+  (hX : UnitOn X σ) (hXc : bdry X = 0)
+  -- cut data from `separates` / `cutSet`
+  :
+  ∃ X₁ X₂ A B,
+    bdry X₁ = 0 ∧ bdry X₂ = 0 ∧
+    X' = X₁ + X₂ ∧
+    (∀ s ∈ X₁.support, s ⊆ A ∧ s.card = 3) ∧
+    (∀ s ∈ X₂.support, s ⊆ B ∧ s.card = 3)
+```
+
+Then call [IsTaut.splits](/Users/doyle/Dropbox/taut/lean/Taut/Splitting.lean:435) with `n := 2`. The precise bridge should probably consume `cutSet σ W` rather than only the existential output of `separates`, because the proof needs the actual partition.
+
+**Q5. Biggest Risk**
+The biggest ballooning risk is eligible-tet existence: the 2-to-1/maxdeg count plus “disjointly eligible” extraction. It hides several formal subfacts:
+
+- every boundary face of `X` is assigned to a correctly oriented tet of `M`;
+- no tet gets more than two assigned faces in the no-degree-3 case;
+- enough 2-fibers imply at least two usable eligible tets with disjoint boundary-face pairs;
+- “a tet with three boundary faces gives a degree-3 vertex” is a nontrivial combinatorial lemma.
+
+Second risk is the multiplicity-2 argument, because “not simplicial” must be connected to failure of `SimplicialChain` / `IsBall M.support σ` even though `support` erases multiplicity.
+
+The whole packet is tractable, but only if staged into named sub-theorems.
+
+**Q6. Milestones**
+1. Chain/facet bridge: `UnitOn`, `SimplicialChain`, support/card lemmas, `nrm_eq_support_card_of_simplicial`.
+
+2. Tet removal and flip API: `tetChain`, eligible definition, `bdry_remove_tet`, `support_flipBoundary_of_eligible`.
+
+3. Ball reassembly lemmas in [Ball.lean](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:56): append one type-2 tet, concatenate two shellings through a bridging tet, and preserve `FreelyShellable`.
+
+4. Oriented separation bridge: build `X₁ X₂` from `cutSet` data and feed `IsTaut.splits`.
+
+5. Connected-sum / degree-3 reduction using `IsTaut.splits`.
+
+6. Eligible-tet existence and disjoint-pair count.
+
+7. Main strong induction theorem, then public Theorem 2+3 wrapper.
+
+APPROVED: the decomposition is sound, but the eligible-count and oriented-separation bridge must be isolated as named milestones before the main induction.
+tokens used
+74,088
+**Q1. Good**
+Use a `Prop` conclusion, not a data-carrying filling-pair structure. The List certificates are already data inside `IsBall` / `FreelyShellable` in [Ball.lean](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:77).
+
+Recommended chain-first target:
+
+```lean
+def UnitOn (X : Chain V) (σ : Finset (Finset V)) : Prop :=
+  X.support = σ ∧ ∀ s ∈ σ, X s = 1 ∨ X s = -1
+
+def SimplicialChain (M : Chain V) : Prop :=
+  ∀ t, M t = -1 ∨ M t = 0 ∨ M t = 1
+```
+
+Then prove the merged theorem roughly as:
+
+```lean
+IsSphere2 σ →
+UnitOn X σ →
+bdry X = 0 →
+bdry M = X →
+IsTaut M →
+SimplicialChain M ∧ IsBall M.support σ ∧ FreelyShellable M.support σ
+```
+
+For the induction, prove a stronger internal theorem parameterized by a chosen first tet, because Theorem 3 needs `FreelyShellable`:
+
+```lean
+∀ t ∈ M.support, ∃ l,
+  l.head? = some t ∧ l.toFinset = M.support ∧ l.Nodup ∧ IsShelling l σ
+```
+
+Do not put shellings into `Good` as fields carried through every hypothesis. Extract the existential List witnesses only at reassembly points.
+
+**Q2. Eligible Tet / Flip**
+The current `bdry` API can express the flip, but doing it directly everywhere will be painful. Add a small tet/flip primitive layer.
+
+Use existing core identifiers:
+
+- `bdry`, `bdryGen`, `bdry_single` from [Chains.lean](/Users/doyle/Dropbox/taut/lean/Taut/Chains.lean:137)
+- `tetFaces` from [Ball.lean](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:43)
+
+Add definitions like:
+
+```lean
+def tetChain (t : Finset V) (c : ℤ) : Chain V := Finsupp.single t c
+
+def FlipBoundary
+  (X : Chain V) (t s₁ s₂ : Finset V) (c : ℤ) : Chain V :=
+  X - bdry (Finsupp.single t c)
+```
+
+Key lemma should be a build-checked identity, not repeated ad hoc:
+
+```lean
+lemma bdry_remove_tet
+  (hMt : M t = c) :
+  bdry (M - Finsupp.single t c) = bdry M - bdry (Finsupp.single t c)
+```
+
+Then a face-support lemma:
+
+```lean
+lemma support_flipBoundary_of_eligible :
+  -- if s₁,s₂ are exactly the two boundary faces of t matching X
+  -- and t.card = 4
+  (FlipBoundary X t s₁ s₂ c).support =
+    (X.support \ {s₁, s₂}) ∪ (tetFaces t \ {s₁, s₂})
+```
+
+This is where the oriented signs live. Define eligibility in terms of coefficients of `bdry (Finsupp.single t (M t))`, not only set membership.
+
+**Q3. Induction / Prime Reduction**
+Strong induction on `nrm M` is right. Use `Nat.strong_induction_on (nrm M)` rather than literally constructing a minimal bad pair.
+
+The prime/no-degree-3 preprocessing is not avoidable. The eligible-count argument uses “no tet has more than two boundary faces,” which depends on no degree-3 vertex. In Lean this should be a first-class branch before the eligible-tet branch:
+
+1. If there is a connected-sum / degree-3 split, use `IsTaut.splits`.
+2. Recursively solve both smaller taut fillings.
+3. Reassemble shellings.
+4. Otherwise enter the prime/no-degree-3 eligible-tet count.
+
+You may not need a polished `PrimeSphere` API immediately, but you do need named lemmas for the reduction.
+
+**Q4. `separates` To Case 2**
+`separates` alone is not enough. It is 𝔽₂ and returns only sphere facet sets:
+
+```lean
+separates :
+  IsSphere2 σ →
+  γ.card = 3 →
+  γ.powersetCard 2 ⊆ edgesOf σ →
+  γ ∉ σ →
+  ∃ σ₁ σ₂, IsSphere2 (insert γ σ₁) ∧ IsSphere2 (insert γ σ₂)
+```
+
+`IsTaut.splits` already gives the integral split, but only after you provide integral closed chains `X Y` with:
+
+```lean
+bdry M' = X + Y
+bdry X = 0
+bdry Y = 0
+support X ⊆ A
+support Y ⊆ B
+```
+
+So the needed bridge lemma is not a stronger `separates`; it is an orientation-packaging lemma between `separates` and `IsTaut.splits`, roughly:
+
+```lean
+lemma oriented_split_chains_of_separates
+  (hX : UnitOn X σ) (hXc : bdry X = 0)
+  -- cut data from `separates` / `cutSet`
+  :
+  ∃ X₁ X₂ A B,
+    bdry X₁ = 0 ∧ bdry X₂ = 0 ∧
+    X' = X₁ + X₂ ∧
+    (∀ s ∈ X₁.support, s ⊆ A ∧ s.card = 3) ∧
+    (∀ s ∈ X₂.support, s ⊆ B ∧ s.card = 3)
+```
+
+Then call [IsTaut.splits](/Users/doyle/Dropbox/taut/lean/Taut/Splitting.lean:435) with `n := 2`. The precise bridge should probably consume `cutSet σ W` rather than only the existential output of `separates`, because the proof needs the actual partition.
+
+**Q5. Biggest Risk**
+The biggest ballooning risk is eligible-tet existence: the 2-to-1/maxdeg count plus “disjointly eligible” extraction. It hides several formal subfacts:
+
+- every boundary face of `X` is assigned to a correctly oriented tet of `M`;
+- no tet gets more than two assigned faces in the no-degree-3 case;
+- enough 2-fibers imply at least two usable eligible tets with disjoint boundary-face pairs;
+- “a tet with three boundary faces gives a degree-3 vertex” is a nontrivial combinatorial lemma.
+
+Second risk is the multiplicity-2 argument, because “not simplicial” must be connected to failure of `SimplicialChain` / `IsBall M.support σ` even though `support` erases multiplicity.
+
+The whole packet is tractable, but only if staged into named sub-theorems.
+
+**Q6. Milestones**
+1. Chain/facet bridge: `UnitOn`, `SimplicialChain`, support/card lemmas, `nrm_eq_support_card_of_simplicial`.
+
+2. Tet removal and flip API: `tetChain`, eligible definition, `bdry_remove_tet`, `support_flipBoundary_of_eligible`.
+
+3. Ball reassembly lemmas in [Ball.lean](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:56): append one type-2 tet, concatenate two shellings through a bridging tet, and preserve `FreelyShellable`.
+
+4. Oriented separation bridge: build `X₁ X₂` from `cutSet` data and feed `IsTaut.splits`.
+
+5. Connected-sum / degree-3 reduction using `IsTaut.splits`.
+
+6. Eligible-tet existence and disjoint-pair count.
+
+7. Main strong induction theorem, then public Theorem 2+3 wrapper.
+
+APPROVED: the decomposition is sound, but the eligible-count and oriented-separation bridge must be isolated as named milestones before the main induction.

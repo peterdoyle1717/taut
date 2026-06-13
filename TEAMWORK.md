@@ -239,11 +239,46 @@ sphere/ball definitions.
   both χ=2), `isSphere2_cut` (all 5 fields), `separates`. Build green
   (8258 jobs), no sorry, `separates`/`isSphere2_cut`/`euler_cut` on the
   standard three axioms. **Theorem 2's geometric core (the cut) is complete.**
-- NEXT: the chain-level wrapper feeding `IsTaut.splits` (X=X₁+X₂ via the
-  "orientation coherence" lemma codex flagged: integral fundamental cycle on
-  each capped sphere, ∂ restricted to a side = ±γ-boundary), then the merged
-  Th2+Th3 induction (eligible tets, flip, base ∂Δ³, shelling reassembly) — its
-  own G1 audit. Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
+- G1 VERDICT (Theorem 2+3 induction, the central theorem): **APPROVED** — codex
+  session 019ec265-480d-7ce0-841b-a0f0c80595b3, output
+  notes/codex-consults/2026-06-13-g1-theorem2-output.txt. Rulings:
+  • Q1 "good" = a **Prop** conclusion (NOT a data-carrying structure). Target:
+    `IsSphere2 σ → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+     SimplicialChain M ∧ IsBall M.support σ ∧ FreelyShellable M.support σ`.
+    For Th3, prove a stronger internal theorem parameterized by a chosen first
+    tet; extract List shelling witnesses only at reassembly points.
+  • Q2 add a small **tet/flip primitive layer** (tetChain, FlipBoundary,
+    `bdry_remove_tet`, `support_flipBoundary_of_eligible`); define eligibility
+    via coefficients of `bdry (Finsupp.single t (M t))`, not just set membership.
+  • Q3 **strong induction on `nrm M`** (`Nat.strong_induction_on`). The prime/
+    no-deg-3 preprocessing is NOT avoidable — make it a first-class branch
+    (connected-sum/deg-3 split via IsTaut.splits) before the eligible-tet branch.
+  • Q4 `separates` is NOT enough alone (𝔽₂, sphere facet sets only). Need an
+    **orientation-packaging bridge** `oriented_split_chains_of_separates`
+    (consume the actual `cutSet σ W` partition) producing integral closed X₁,X₂
+    with supports in A,B, then call `IsTaut.splits` (n:=2). Not a stronger
+    separates — a packaging lemma between separates/cutSet and IsTaut.splits.
+  • Q5 BIGGEST RISK = **eligible-tet existence** (2-to-1/maxdeg count + disjoint
+    extraction + "3 boundary faces ⟹ deg-3 vertex"); 2nd = the multiplicity-2
+    argument (link "not simplicial" to SimplicialChain/IsBall though support
+    erases multiplicity). Tractable only if staged.
+  • Q6 MILESTONE DECOMPOSITION (do #4 and #6 — the bridge and the count —
+    BEFORE the main induction):
+    M20 = chain/facet bridge (UnitOn, SimplicialChain, nrm_eq_support_card_of_simplicial);
+    M21 = tet removal + flip API (tetChain, eligible, bdry_remove_tet, support_flipBoundary_of_eligible);
+    M22 = Ball reassembly (append type-2 tet; concat two shellings thru a bridge tet; preserve FreelyShellable);
+    M23 = oriented separation bridge (oriented_split_chains_of_separates → IsTaut.splits);
+    M24 = connected-sum/deg-3 reduction via IsTaut.splits;
+    M25 = eligible-tet existence + disjoint-pair count (the risk);
+    M26 = main strong induction + public Theorem 2+3 wrapper.
+- M20 (DONE, Theorem2.lean, building): **the chain/facet bridge.** New file
+  `Taut/Theorem2.lean`: `UnitOn` (±1-chain supported on σ), `SimplicialChain`
+  (coeffs in {-1,0,1}), `SimplicialChain.natAbs_eq_one`,
+  `nrm_eq_support_card_of_simplicial` (|M| = #support when simplicial — links
+  the nrm-induction to the ball's facet count), `UnitOn.simplicialChain`,
+  `UnitOn.nrm_eq` (nrm = #σ). Build green (8259 jobs), no sorry, standard three.
+- NEXT: M21 (tet removal + flip API) — then M22-M26 per the decomposition.
+- Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
@@ -333,4 +368,11 @@ sphere/ball definitions.
   2-spheres (both pieces get all 5 IsSphere2 fields; euler via chi_le_two +
   the V/E/F additivity counts). This completes the geometric core of Theorem 2.
   Build green (8258 jobs), no sorry, separates on the standard three axioms.
-  → M19 commit pending G2.
+  → M19 committed (312750b).
+
+- 2026-06-13: G1 audit of the CENTRAL theorem (Theorem 2+3 induction) →
+  **APPROVED** (codex 019ec265) with a 7-milestone decomposition (M20-M26) and
+  two pieces flagged to isolate first (the eligible-tet count M25, the oriented
+  separation bridge M23). M20 — implemented the chain/facet bridge (UnitOn,
+  SimplicialChain, nrm_eq_support_card_of_simplicial). Build green (8259 jobs),
+  no sorry, standard three axioms. → M20 commit pending G2.
