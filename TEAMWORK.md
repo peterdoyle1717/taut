@@ -229,9 +229,21 @@ sphere/ball definitions.
   watershed + Separation:380 pass `.toClosedSurface`. New `chi_le_two`
   (V+F ≤ E+2 from b₂=1, r₁=V−1, range∂₂≤ker∂₁, additive rank-nullity — no euler).
   Build green (8258 jobs), no sorry, watershed still standard-three-axioms.
-- NEXT (M19, approved): additivity (counts V₁+V₂=Vσ+3, E₁+E₂=Eσ+3, F₁+F₂=Fσ+2)
-  + euler for the pieces (omega: σ.euler + chi_le_two each) + assemble
-  `IsSphere2 (insert γ σᵢ)` both sides. Then X=X₁+X₂ → `IsTaut.splits`.
+- M19 (DONE, building): **`separates` — THE SEPARATION THEOREM.** A non-face
+  triangle γ of a combinatorial 2-sphere splits it into two sides, each capping
+  with γ to a combinatorial 2-sphere. New lemmas: `bd2_W_add_one`,
+  `mem_cutSet_add_one`/`cutSet_add_one_eq_sdiff` (the two sides partition σ),
+  `pure_cut`, `card_faces_cut_add` (Fτ₁+Fτ₂=Fσ+2), `gamma_vert_mem_verts`,
+  `vertsOf_cut_union`/`vertsOf_cut_inter` (=γ), `edgesOf_cut_union`/
+  `edgesOf_cut_inter` (=γ.pwsCard2), `euler_cut` (χ≤2 each + additivity ⟹
+  both χ=2), `isSphere2_cut` (all 5 fields), `separates`. Build green
+  (8258 jobs), no sorry, `separates`/`isSphere2_cut`/`euler_cut` on the
+  standard three axioms. **Theorem 2's geometric core (the cut) is complete.**
+- NEXT: the chain-level wrapper feeding `IsTaut.splits` (X=X₁+X₂ via the
+  "orientation coherence" lemma codex flagged: integral fundamental cycle on
+  each capped sphere, ∂ restricted to a side = ±γ-boundary), then the merged
+  Th2+Th3 induction (eligible tets, flip, base ∂Δ³, shelling reassembly) — its
+  own G1 audit. Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
@@ -310,4 +322,15 @@ sphere/ball definitions.
   V₁+V₂=Vσ+3, E₁+E₂=Eσ+3, F₁+F₂=Fσ+2. M18 — implemented the refactor + chi_le_two
   (the key euler-free lemma). The b₂/r₁ machinery only ever used euler for
   nonemptiness, so the generalization is clean. Build green, no sorry, watershed
-  still standard-three-axioms. → M18 commit pending G2.
+  still standard-three-axioms. → M18 committed (0c75083). (G2 commit was first
+  blocked by the pre-commit hook on TRAILING WHITESPACE in the codex output log
+  — `**Q1**  ` markdown line-breaks; codex found no substantive issue. Fixed by
+  stripping trailing whitespace from the consult logs. Lesson: strip trailing
+  whitespace from codex-output files before staging.)
+
+- 2026-06-13: M19 — **`separates`, the separation theorem, is PROVED.** A
+  non-face triangle of a combinatorial 2-sphere cuts it into two combinatorial
+  2-spheres (both pieces get all 5 IsSphere2 fields; euler via chi_le_two +
+  the V/E/F additivity counts). This completes the geometric core of Theorem 2.
+  Build green (8258 jobs), no sorry, separates on the standard three axioms.
+  → M19 commit pending G2.

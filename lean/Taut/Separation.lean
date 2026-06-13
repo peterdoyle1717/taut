@@ -822,4 +822,222 @@ lemma linkConn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
   · exact linkConn_cut_at_gamma h hγ3 hγe hW hvγ
   · exact linkConn_cut_off_gamma h hW hvγ hvτ
 
+/-! ## euler for the pieces, and assembling `IsSphere2` -/
+
+/-- The complementary side `W + 𝟙` is also a cut for `γ` (`∂₂𝟙 = 0`). -/
+lemma bd2_W_add_one {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) :
+    bd2 σ (W + fun _ => 1) = gammaChain σ γ := by
+  rw [map_add, hW, bd2_one σ h.closed, add_zero]
+
+/-- A face is on the `W+𝟙` side iff it is off the `W` side. -/
+lemma mem_cutSet_add_one {σ : Finset (Finset V)} {W : C2 σ} {g : Finset V} (hg : g ∈ σ) :
+    g ∈ cutSet σ (W + fun _ => 1) ↔ W ⟨g, hg⟩ = 0 := by
+  rw [mem_cutSet]
+  have key : ∀ x : ZMod 2, (x + 1 = 1) ↔ x = 0 := by decide
+  constructor
+  · rintro ⟨hg', hWg'⟩; exact (key _).mp hWg'
+  · intro h0; exact ⟨hg, by show W ⟨g, hg⟩ + 1 = 1; rw [h0]; decide⟩
+
+/-- The two sides partition the faces of `σ`. -/
+lemma cutSet_add_one_eq_sdiff {σ : Finset (Finset V)} (W : C2 σ) :
+    cutSet σ (W + fun _ => 1) = σ \ cutSet σ W := by
+  ext g
+  simp only [Finset.mem_sdiff]
+  constructor
+  · intro hg2
+    have hgσ : g ∈ σ := cutSet_subset hg2
+    rw [mem_cutSet_add_one hgσ] at hg2
+    refine ⟨hgσ, fun hc => ?_⟩
+    obtain ⟨_, hW1⟩ := mem_cutSet.mp hc
+    rw [hg2] at hW1; exact one_ne_zero hW1.symm
+  · rintro ⟨hgσ, hgnc⟩
+    rw [mem_cutSet_add_one hgσ]
+    rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W ⟨g, hgσ⟩) with h0 | h1
+    · exact h0
+    · exact absurd (mem_cutSet.mpr ⟨hgσ, h1⟩) hgnc
+
+/-- `pure` for a capped side: faces are `γ` (card 3) or σ-faces (card 3). -/
+lemma pure_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hγ3 : γ.card = 3) : ∀ f ∈ insert γ (cutSet σ W), f.card = 3 := by
+  intro f hf
+  rcases Finset.mem_insert.mp hf with rfl | hf
+  · exact hγ3
+  · exact h.pure f (cutSet_subset hf)
+
+/-- **Face additivity.** `Fτ₁ + Fτ₂ = Fσ + 2` (the two sides partition σ; each
+caps with the one extra face γ). -/
+lemma card_faces_cut_add {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} (hγσ : γ ∉ σ) :
+    (insert γ (cutSet σ W)).card + (insert γ (cutSet σ (W + fun _ => 1))).card
+      = σ.card + 2 := by
+  have hd : Disjoint (cutSet σ W) (cutSet σ (W + fun _ => 1)) := by
+    rw [cutSet_add_one_eq_sdiff]; exact Finset.disjoint_sdiff
+  have hu : cutSet σ W ∪ cutSet σ (W + fun _ => 1) = σ := by
+    rw [cutSet_add_one_eq_sdiff, Finset.union_sdiff_of_subset cutSet_subset]
+  have hγ1 : γ ∉ cutSet σ W := fun hc => hγσ (cutSet_subset hc)
+  have hγ2 : γ ∉ cutSet σ (W + fun _ => 1) := fun hc => hγσ (cutSet_subset hc)
+  rw [Finset.card_insert_of_notMem hγ1, Finset.card_insert_of_notMem hγ2]
+  have hcard := Finset.card_union_of_disjoint hd
+  rw [hu] at hcard
+  omega
+
+/-- A vertex of `γ` is a vertex of `σ` (its γ-edges are edges of σ). -/
+lemma gamma_vert_mem_verts {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) {v : V} (hv : v ∈ γ) : v ∈ vertsOf σ := by
+  obtain ⟨w, hw⟩ : (γ.erase v).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_erase_of_mem hv, hγ3]; omega
+  have hwv : w ≠ v := Finset.ne_of_mem_erase hw
+  have hsub : ({v, w} : Finset V) ⊆ γ := by
+    intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz
+    rcases hz with rfl | rfl
+    · exact hv
+    · exact Finset.mem_of_mem_erase hw
+  exact edge_mem_vertsOf
+    (hγe (Finset.mem_powersetCard.mpr ⟨hsub, Finset.card_pair (Ne.symm hwv)⟩)) (by simp)
+
+/-- **Vertex union.** The two capped sides cover σ's vertices. -/
+lemma vertsOf_cut_union {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
+    vertsOf (insert γ (cutSet σ W)) ∪ vertsOf (insert γ (cutSet σ (W + fun _ => 1)))
+      = vertsOf σ := by
+  apply Finset.Subset.antisymm
+  · intro v hv
+    rcases Finset.mem_union.mp hv with hv | hv <;>
+      · obtain ⟨f, hf, hvf⟩ := mem_vertsOf.mp hv
+        rcases Finset.mem_insert.mp hf with rfl | hf
+        · exact gamma_vert_mem_verts hγ3 hγe hvf
+        · exact mem_vertsOf.mpr ⟨f, cutSet_subset hf, hvf⟩
+  · intro v hv
+    obtain ⟨f, hf, hvf⟩ := mem_vertsOf.mp hv
+    rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W ⟨f, hf⟩) with h0 | h1
+    · exact Finset.mem_union_right _
+        (mem_vertsOf.mpr ⟨f, Finset.mem_insert_of_mem ((mem_cutSet_add_one hf).mpr h0), hvf⟩)
+    · exact Finset.mem_union_left _
+        (mem_vertsOf.mpr ⟨f, Finset.mem_insert_of_mem (mem_cutSet.mpr ⟨hf, h1⟩), hvf⟩)
+
+/-- **Vertex intersection.** The two capped sides share exactly γ's vertices
+(off-γ vertices lie on a single side, by `W_const_at`). -/
+lemma vertsOf_cut_inter {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) :
+    vertsOf (insert γ (cutSet σ W)) ∩ vertsOf (insert γ (cutSet σ (W + fun _ => 1)))
+      = γ := by
+  apply Finset.Subset.antisymm
+  · intro v hv
+    rw [Finset.mem_inter] at hv
+    by_contra hvγ
+    obtain ⟨f1, hf1, hvf1⟩ := mem_vertsOf.mp hv.1
+    obtain ⟨f2, hf2, hvf2⟩ := mem_vertsOf.mp hv.2
+    have hf1c : f1 ∈ cutSet σ W :=
+      (Finset.mem_insert.mp hf1).resolve_left (fun he => hvγ (he ▸ hvf1))
+    have hf2c : f2 ∈ cutSet σ (W + fun _ => 1) :=
+      (Finset.mem_insert.mp hf2).resolve_left (fun he => hvγ (he ▸ hvf2))
+    obtain ⟨hf1σ, hW1⟩ := mem_cutSet.mp hf1c
+    have hf2σ : f2 ∈ σ := cutSet_subset hf2c
+    have hW2 : W ⟨f2, hf2σ⟩ = 0 := (mem_cutSet_add_one hf2σ).mp hf2c
+    have key : W (⟨f1, hf1σ⟩ : σ) = W (⟨f2, hf2σ⟩ : σ) := W_const_at h hW hvγ hvf1 hvf2
+    rw [hW1, hW2] at key; exact one_ne_zero key
+  · intro v hv
+    exact Finset.mem_inter.mpr
+      ⟨mem_vertsOf.mpr ⟨γ, Finset.mem_insert_self _ _, hv⟩,
+       mem_vertsOf.mpr ⟨γ, Finset.mem_insert_self _ _, hv⟩⟩
+
+/-- **Edge union.** The two capped sides cover σ's edges. -/
+lemma edgesOf_cut_union {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
+    edgesOf (insert γ (cutSet σ W)) ∪ edgesOf (insert γ (cutSet σ (W + fun _ => 1)))
+      = edgesOf σ := by
+  apply Finset.Subset.antisymm
+  · intro e he
+    rcases Finset.mem_union.mp he with he | he <;> exact edgesOf_cut_subset hγe he
+  · intro e he
+    obtain ⟨f, hf, hef, hc⟩ := mem_edgesOf.mp he
+    rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W ⟨f, hf⟩) with h0 | h1
+    · exact Finset.mem_union_right _ (mem_edgesOf.mpr
+        ⟨f, Finset.mem_insert_of_mem ((mem_cutSet_add_one hf).mpr h0), hef, hc⟩)
+    · exact Finset.mem_union_left _ (mem_edgesOf.mpr
+        ⟨f, Finset.mem_insert_of_mem (mem_cutSet.mpr ⟨hf, h1⟩), hef, hc⟩)
+
+/-- **Edge intersection.** The two capped sides share exactly γ's edges
+(a non-γ edge's two faces lie on the same side, by `W_eq_of_share_edge`). -/
+lemma edgesOf_cut_inter {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hW : bd2 σ W = gammaChain σ γ) :
+    edgesOf (insert γ (cutSet σ W)) ∩ edgesOf (insert γ (cutSet σ (W + fun _ => 1)))
+      = γ.powersetCard 2 := by
+  apply Finset.Subset.antisymm
+  · intro e he
+    rw [Finset.mem_inter] at he
+    rw [Finset.mem_powersetCard]
+    have heσ : e ∈ edgesOf σ := edgesOf_cut_subset hγe he.1
+    refine ⟨?_, card_of_mem_edgesOf heσ⟩
+    by_contra heγ
+    obtain ⟨f1, hf1, hef1, _⟩ := mem_edgesOf.mp he.1
+    obtain ⟨f2, hf2, hef2, _⟩ := mem_edgesOf.mp he.2
+    have hf1c : f1 ∈ cutSet σ W :=
+      (Finset.mem_insert.mp hf1).resolve_left (fun h' => heγ (h' ▸ hef1))
+    have hf2c : f2 ∈ cutSet σ (W + fun _ => 1) :=
+      (Finset.mem_insert.mp hf2).resolve_left (fun h' => heγ (h' ▸ hef2))
+    obtain ⟨hf1σ, hW1⟩ := mem_cutSet.mp hf1c
+    have hf2σ : f2 ∈ σ := cutSet_subset hf2c
+    have hW2 : W ⟨f2, hf2σ⟩ = 0 := (mem_cutSet_add_one hf2σ).mp hf2c
+    have key : W (⟨f1, hf1σ⟩ : σ) = W (⟨f2, hf2σ⟩ : σ) :=
+      W_eq_of_share_edge h hW heσ heγ hef1 hef2
+    rw [hW1, hW2] at key; exact one_ne_zero key
+  · intro e he
+    rw [Finset.mem_powersetCard] at he
+    exact Finset.mem_inter.mpr
+      ⟨mem_edgesOf.mpr ⟨γ, Finset.mem_insert_self _ _, he.1, he.2⟩,
+       mem_edgesOf.mpr ⟨γ, Finset.mem_insert_self _ _, he.1, he.2⟩⟩
+
+/-- **`euler` for a capped side.** Both sides have `χ ≤ 2` (closed surfaces) and
+their χ's add to `χσ + 2 = 4`, forcing each to be exactly 2. -/
+lemma euler_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ)
+    (hW : bd2 σ W = gammaChain σ γ) :
+    (vertsOf (insert γ (cutSet σ W))).card + (insert γ (cutSet σ W)).card
+      = (edgesOf (insert γ (cutSet σ W))).card + 2 := by
+  have hW2 : bd2 σ (W + fun _ => 1) = gammaChain σ γ := bd2_W_add_one h hW
+  have hcs1 : IsClosedSurface (insert γ (cutSet σ W)) :=
+    ⟨pure_cut h hγ3, closed_cut h hγ3 hγe hγσ hW, linkConn_cut h hγ3 hγe hW,
+      conn_cut h hγ3 hγe hW⟩
+  have hcs2 : IsClosedSurface (insert γ (cutSet σ (W + fun _ => 1))) :=
+    ⟨pure_cut h hγ3, closed_cut h hγ3 hγe hγσ hW2, linkConn_cut h hγ3 hγe hW2,
+      conn_cut h hγ3 hγe hW2⟩
+  obtain ⟨v0, hv0⟩ : γ.Nonempty := Finset.card_pos.mp (by rw [hγ3]; omega)
+  have hne1 : (vertsOf (insert γ (cutSet σ W))).Nonempty :=
+    ⟨v0, mem_vertsOf.mpr ⟨γ, Finset.mem_insert_self _ _, hv0⟩⟩
+  have hne2 : (vertsOf (insert γ (cutSet σ (W + fun _ => 1)))).Nonempty :=
+    ⟨v0, mem_vertsOf.mpr ⟨γ, Finset.mem_insert_self _ _, hv0⟩⟩
+  have hle1 := chi_le_two hcs1 hne1
+  have hle2 := chi_le_two hcs2 hne2
+  have hchoose : Nat.choose 3 2 = 3 := by decide
+  have hVadd := Finset.card_union_add_card_inter
+    (vertsOf (insert γ (cutSet σ W))) (vertsOf (insert γ (cutSet σ (W + fun _ => 1))))
+  rw [vertsOf_cut_union hγ3 hγe, vertsOf_cut_inter h hW, hγ3] at hVadd
+  have hEadd := Finset.card_union_add_card_inter
+    (edgesOf (insert γ (cutSet σ W))) (edgesOf (insert γ (cutSet σ (W + fun _ => 1))))
+  rw [edgesOf_cut_union hγe, edgesOf_cut_inter h hγe hW, Finset.card_powersetCard, hγ3,
+    hchoose] at hEadd
+  have hFadd := card_faces_cut_add (W := W) hγσ
+  have he := h.euler
+  omega
+
+/-- **A capped side of the cut is a sphere.** All five `IsSphere2` fields. -/
+theorem isSphere2_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ)
+    (hW : bd2 σ W = gammaChain σ γ) : IsSphere2 (insert γ (cutSet σ W)) :=
+  ⟨pure_cut h hγ3, closed_cut h hγ3 hγe hγσ hW, linkConn_cut h hγ3 hγe hW,
+    conn_cut h hγ3 hγe hW, euler_cut h hγ3 hγe hγσ hW⟩
+
+/-- **The separation theorem (sphere halves).** A non-face triangle `γ` of a
+combinatorial 2-sphere splits it into two sides, each capping with `γ` to a
+combinatorial 2-sphere. -/
+theorem separates {σ : Finset (Finset V)} (h : IsSphere2 σ) {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ) :
+    ∃ σ₁ σ₂ : Finset (Finset V),
+      IsSphere2 (insert γ σ₁) ∧ IsSphere2 (insert γ σ₂) := by
+  obtain ⟨W, hW⟩ := exists_cut h hγ3 hγe
+  exact ⟨cutSet σ W, cutSet σ (W + fun _ => 1),
+    isSphere2_cut h hγ3 hγe hγσ hW,
+    isSphere2_cut h hγ3 hγe hγσ (bd2_W_add_one h hW)⟩
+
 end Taut
