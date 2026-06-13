@@ -144,13 +144,21 @@ sphere/ball definitions.
   **`conn_cut`** (skel of `insert γ (cutSet σ W)` connected — every vertex
   reaches a base cut-face vertex; cut-faces via the transport, γ via its
   shared edge with a cut-face). So pieces now have pure+closed+conn.
-- Next, to finish `separates`: (a) **`linkConn`** for the pieces (auditor:
-  NO obstruction — from original linkConn + cut boundary = exactly the two
-  γ-edges at each γ-vertex, empty off γ); (b) `euler` (χ-additivity + χ≤2
-  from b₂); (c) assemble `IsSphere2 (insert γ σᵢ)` (both sides: σ₂ = cutSet
-  of W+𝟙); (d) reorient via integral X to get X=X₁+X₂ feeding
-  `IsTaut.splits` (needs the "orientation coherence" lemma codex flagged).
-  Then the merged Th2+Th3 induction (G1-audit it with codex `< /dev/null`).
+- M16 (in Separation.lean, building): **`linkConn` infrastructure + the v∉γ
+  half**. `W_eq_of_share_edge` (two faces sharing a non-γ edge are same-side,
+  from edge_cut_parity), `W_eq_along_link` (W constant along a link walk at
+  v∉γ), `W_const_at` (all faces through an off-γ vertex are same-side, via
+  linkConn σ). So for v ∉ γ, the cut faces at v are all-σ₁-or-all-σ₂ ⟹
+  linkGraph of the piece at v = linkGraph σ at v ⟹ linkConn inherited.
+- Next, to finish `separates`: (a) the **v∈γ case of `linkConn`** — THE
+  remaining crux: linkGraph σ v is a cycle (2-regular+conn, link_two_regular);
+  the cut flips side exactly at the two γ-link-vertices, so the σ₁-faces at v
+  form an arc closed by γ ⟹ the piece's link at v is connected. Needs cycle/
+  arc structure (Mathlib `SimpleGraph.IsCycles` is a candidate). (b) assemble
+  full `linkConn_cut` (both cases) + `euler` (χ-additivity + χ≤2 from b₂); (c)
+  assemble `IsSphere2 (insert γ σᵢ)` (both sides via W+𝟙); (d) X=X₁+X₂ feeding
+  `IsTaut.splits` (the "orientation coherence" lemma). Then the merged Th2+Th3
+  induction (G1-audit with codex `< /dev/null`).
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 

@@ -549,4 +549,92 @@ theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : F
   intro a ha b hb
   exact (reachAll a ha).trans (reachAll b hb).symm
 
+/-! ## linkConn for the capped pieces -/
+
+/-- Two faces sharing a non-γ edge are on the same side of the cut. -/
+lemma W_eq_of_share_edge {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) {e : Finset V} (he : e ∈ edgesOf σ) (heγ : ¬ e ⊆ γ)
+    {f g : σ} (hef : e ⊆ (f : Finset V)) (heg : e ⊆ (g : Finset V)) : W f = W g := by
+  classical
+  obtain ⟨f₁, h1, f₂, h2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h he
+  have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
+  -- both f and g are among the two faces f₁, f₂ of e
+  have hfg : ∀ {k : σ}, e ⊆ (k : Finset V) → W k = W ⟨f₁, h1⟩ ∨ W k = W ⟨f₂, h2⟩ := by
+    intro k hk
+    rcases huniq (k : Finset V) k.2 hk with hh | hh
+    · exact Or.inl (by rw [show k = ⟨f₁, h1⟩ from Subtype.ext hh])
+    · exact Or.inr (by rw [show k = ⟨f₂, h2⟩ from Subtype.ext hh])
+  have hpar := edge_cut_parity hW he h1 h2 hne hsub1 hsub2 huniq
+  rw [if_neg heγ] at hpar
+  have h12 : W ⟨f₁, h1⟩ = W ⟨f₂, h2⟩ := c2 _ _ hpar
+  rcases hfg hef with hf | hf <;> rcases hfg heg with hg | hg <;>
+    rw [hf, hg] <;> first | rfl | exact h12 | exact h12.symm
+
+/-- Along a link walk at a vertex `v ∉ γ`, all faces lie on the same side. -/
+lemma W_eq_along_link {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∉ γ) :
+    ∀ {a a' : V} (_ : (linkGraph σ v).Walk a a') {f f' : σ},
+      v ∈ (f : Finset V) → a ∈ (f : Finset V) → a ≠ v →
+      v ∈ (f' : Finset V) → a' ∈ (f' : Finset V) → a' ≠ v → W f = W f' := by
+  -- faces sharing the edge {v,y} (y ≠ v) have equal W
+  have step : ∀ {y : V} {k k' : σ}, y ≠ v → v ∈ (k : Finset V) → y ∈ (k : Finset V) →
+      v ∈ (k' : Finset V) → y ∈ (k' : Finset V) → W k = W k' := by
+    intro y k k' hyv hvk hyk hvk' hyk'
+    have hsub : ∀ {m : σ}, v ∈ (m : Finset V) → y ∈ (m : Finset V) →
+        ({v, y} : Finset V) ⊆ (m : Finset V) := by
+      intro m hvm hym z hz
+      rcases Finset.mem_insert.mp hz with rfl | hz
+      · exact hvm
+      · rw [Finset.mem_singleton] at hz; exact hz ▸ hym
+    have he : ({v, y} : Finset V) ∈ edgesOf σ :=
+      mem_edgesOf.mpr ⟨k, k.2, hsub hvk hyk, Finset.card_pair (Ne.symm hyv)⟩
+    exact W_eq_of_share_edge h hW he (fun hc => hvγ (hc (Finset.mem_insert_self v _)))
+      (hsub hvk hyk) (hsub hvk' hyk')
+  intro a a' p
+  induction p with
+  | nil => intro f f' hvf haf hav hvf' haf' _; exact step hav hvf haf hvf' haf'
+  | @cons a x a' hadj q ih =>
+      intro f f' hvf haf hav hvf' haf' ha'v
+      rw [linkGraph] at hadj
+      obtain ⟨hax, hface⟩ := hadj
+      have hmem : ({v, a, x} : Finset V) ∈ σ := hface
+      have hxv : x ≠ v := by
+        intro hxv
+        have h3 := h.pure _ hmem
+        have hle : ({v, a, x} : Finset V).card ≤ 2 := by
+          have hsub : ({v, a, x} : Finset V) ⊆ {v, a} := by
+            intro z hz
+            simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢
+            rcases hz with rfl | rfl | rfl
+            · exact Or.inl rfl
+            · exact Or.inr rfl
+            · exact Or.inl hxv
+          exact le_trans (Finset.card_le_card hsub)
+            (le_trans (Finset.card_insert_le _ _) (by simp))
+        omega
+      have hvh : v ∈ ({v, a, x} : Finset V) := Finset.mem_insert_self v _
+      have hah : a ∈ ({v, a, x} : Finset V) :=
+        Finset.mem_insert_of_mem (Finset.mem_insert_self a _)
+      have hxh : x ∈ ({v, a, x} : Finset V) :=
+        Finset.mem_insert_of_mem (Finset.mem_insert_of_mem (Finset.mem_singleton_self x))
+      exact (step hav hvf haf hvh hah).trans (ih (f := ⟨_, hmem⟩) hvh hxh hxv hvf' haf' ha'v)
+
+/-- All faces through an off-γ vertex lie on the same side (via `linkConn`). -/
+lemma W_const_at {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∉ γ) {f g : σ}
+    (hvf : v ∈ (f : Finset V)) (hvg : v ∈ (g : Finset V)) : W f = W g := by
+  obtain ⟨a, ha⟩ : ((f : Finset V).erase v).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_erase_of_mem hvf, h.pure _ f.2]; omega
+  obtain ⟨c, hc⟩ : ((g : Finset V).erase v).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_erase_of_mem hvg, h.pure _ g.2]; omega
+  have haf := Finset.mem_of_mem_erase ha
+  have hcg := Finset.mem_of_mem_erase hc
+  have hav := Finset.ne_of_mem_erase ha
+  have hcv := Finset.ne_of_mem_erase hc
+  have hvV : v ∈ vertsOf σ := mem_vertsOf.mpr ⟨f, f.2, hvf⟩
+  have haL : a ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hav, f, f.2, hvf, haf⟩
+  have hcL : c ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hcv, g, g.2, hvg, hcg⟩
+  obtain ⟨p⟩ := h.linkConn v hvV a haL c hcL
+  exact W_eq_along_link h hW hvγ p hvf haf hav hvg hcg hcv
+
 end Taut
