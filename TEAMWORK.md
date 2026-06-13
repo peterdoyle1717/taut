@@ -330,9 +330,24 @@ sphere/ball definitions.
 - M22b (THE HARD PART, next-or-later): `relShelling_of_separated_cap` — prove the
   ball filling a capped side σᵢ supplies a `RelShelling` onto the ambient
   boundary along the cap. This is the hidden-topology fact; own G1 design.
-- NEXT: M23 (oriented separation bridge `oriented_split_chains_of_separates` →
-  `IsTaut.splits`), then M24 (deg-3 reduction), M25 (eligible-tet count — biggest
-  risk), M26 (induction). M22b folds into the case-2 path.
+- ARCHITECT (codex 019ec2e0): M23 design APPROVED. KEY INSIGHT: for the case-2
+  EDGE-join (the two spheres share an edge cd, not a triangle), the side-filter
+  of a closed unit cycle is AGAIN CLOSED — because a closed chain supported on a
+  single edge must be 0 ("the hidden orientation/coherence fact"; a triangle-cut
+  would NOT be closed, needs capping — but case 2 is an edge-join). Numerology
+  confirmed: n=2, A∩B = cd (card 2), 2 ≤ 2 ≤ n+1=3. Leave `IsTaut (removeTet M t)`
+  to M26. Minimal-viable = the 3 closed-filter lemmas.
+- M23 (DONE, Theorem2.lean, building): the closed-filter core — `bdry_filter_apply
+  _eq_bdry_of_no_cross` (filtering doesn't change a coeff with no cross-contribution)
+  and **`bdry_filter_subset_eq_zero_of_inter_card_two`** (the A-side filter of a
+  closed triangle-cycle with |A∩B|=2 is closed). The "closed chain on one edge is
+  0" step REUSES the existing `eq_zero_of_closed_supp_card_eq` (Projection.lean) —
+  the gate caught an initial duplicate of it. Build green (8259 jobs), no sorry,
+  standard three axioms. (Full `oriented_split_chains_of_edge_join` + the
+  `IsTaut.splits_edge_join` wrapper fold into M26's case-2.)
+- NEXT: M24 (deg-3/connected-sum reduction), M25 (eligible-tet count — architect's
+  biggest-risk flag), M26 (the strong induction + Th2+3 wrapper); M22b
+  (relShelling_of_separated_cap, the ball-side hidden topology) on the case-2 path.
 - Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
@@ -455,7 +470,16 @@ sphere/ball definitions.
   reassembly lemmas, `IsBall.insert_of_glueStep` (case-1), `RelShelling` +
   `IsBall.bridge_of_relShelling` (case-2 bridge given the relative shelling).
   Build green (8259 jobs), no sorry, standard three axioms. M22b (proving the
-  separated balls supply the RelShelling) is the hard remainder. → M22a commit pending G2.
+  separated balls supply the RelShelling) is the hard remainder. → M22a committed (65e0520).
+
+- 2026-06-13: codex architected M23 (oriented separation bridge), APPROVED with
+  the edge-join insight (a closed chain on a single shared edge is 0, so the
+  side-filter stays closed — no capping needed for case 2). M23 — implemented the
+  closed-filter core (bdry_filter_apply_eq_bdry_of_no_cross +
+  bdry_filter_subset_eq_zero_of_inter_card_two), reusing the existing
+  eq_zero_of_closed_supp_card_eq for the single-edge step (gate caught an initial
+  duplicate). Build green (8259 jobs), no sorry, standard three axioms.
+  → M23 commit pending G2.
 
 - 2026-06-13: also fixed the recurring approval friction — the G2 evidence file
   now lives at `.session/claude-commit-evidence.md` (the harness guards `.git/`

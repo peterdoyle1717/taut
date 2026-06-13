@@ -309,4 +309,56 @@ theorem unitOn_flipBoundary_of_eligible {M : Chain V} {σ : Finset (Finset V)} {
     rcases tetContribution_eq_pm_one_of_mem_tetFaces ht4 hpm
       (exposedFaces_subset_tetFaces M t hs) with h1 | h1 <;> rw [h1] <;> decide
 
+/-! ## M23: the oriented separation bridge (architect: codex 019ec2e0)
+
+For the *edge-join* case-2 of the induction, the side-filter of a closed unit
+cycle is again closed — because the two sides share a single edge, and a closed
+chain supported on one edge must vanish. This is the orientation/coherence fact
+the paper hides; it is what lets `IsTaut.splits` apply to the integral split. -/
+
+/-- Filtering a chain by `P` does not change a boundary coefficient `u` for which
+no `¬P` generator contributes. -/
+lemma bdry_filter_apply_eq_bdry_of_no_cross {X : Chain V} {P : Finset V → Prop}
+    [DecidablePred P] {u : Finset V}
+    (hvanish : ∀ s ∈ X.support, ¬ P s → bdryGen s u = 0) :
+    bdry (X.filter P) u = bdry X u := by
+  have hz : bdry (X.filter (fun s => ¬ P s)) u = 0 := by
+    rw [bdry_apply_eq_sum]
+    refine Finset.sum_eq_zero fun t ht => ?_
+    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+    rw [hvanish t ht.1 ht.2, mul_zero]
+  have hsum : bdry (X.filter P) u + bdry (X.filter (fun s => ¬ P s)) u = bdry X u := by
+    rw [← Finsupp.add_apply, ← map_add, Finsupp.filter_pos_add_filter_neg]
+  rw [hz, add_zero] at hsum; exact hsum
+
+/-- **The edge-join closed-filter lemma.** If `X` is a closed chain whose faces
+are triangles each lying on the `A`-side or the `B`-side, and `A ∩ B` is a single
+edge, then the `A`-side filter of `X` is again closed — its boundary is a closed
+chain supported on the single shared edge `A ∩ B`, hence zero
+(`eq_zero_of_closed_supp_card_eq`). A *triangle* cut would instead leave the
+filter open; the edge-join is exactly what makes case 2 work. -/
+lemma bdry_filter_subset_eq_zero_of_inter_card_two {X : Chain V} {A B : Finset V}
+    (hXc : bdry X = 0) (hXsupp : ∀ s ∈ X.support, s.card = 3 ∧ (s ⊆ A ∨ s ⊆ B))
+    (hAB2 : (A ∩ B).card = 2) :
+    bdry (X.filter (fun s => s ⊆ A)) = 0 := by
+  classical
+  refine eq_zero_of_closed_supp_card_eq (W := A ∩ B) (k := 2) (by norm_num) ?_ hAB2
+    (bdry_bdry _)
+  intro u hu
+  have hfaces : ∀ s ∈ (X.filter (fun s => s ⊆ A)).support, s ⊆ A ∧ s.card = 2 + 1 := by
+    intro s hs
+    rw [Finsupp.support_filter, Finset.mem_filter] at hs
+    exact ⟨hs.2, by rw [(hXsupp s hs.1).1]⟩
+  obtain ⟨huA, huc⟩ := bdry_supp_of_supp hfaces u hu
+  have huB : u ⊆ B := by
+    by_contra hcon
+    have hcross : bdry (X.filter (fun s => s ⊆ A)) u = bdry X u := by
+      refine bdry_filter_apply_eq_bdry_of_no_cross fun s hsX hsA => ?_
+      by_contra hbg
+      obtain ⟨w, _, hue⟩ := exists_facet_of_bdryGen_ne_zero hbg
+      exact hcon (hue ▸ (Finset.erase_subset w s).trans (((hXsupp s hsX).2).resolve_left hsA))
+    rw [hXc, Finsupp.coe_zero, Pi.zero_apply] at hcross
+    exact Finsupp.mem_support_iff.mp hu hcross
+  exact ⟨Finset.subset_inter huA huB, huc⟩
+
 end Taut
