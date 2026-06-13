@@ -88,11 +88,27 @@ sphere/ball definitions.
   (`dualGraph_preconnected`, from conn+linkConn+closed via two Walk
   inductions — the hard derived lemma), and **b₂ = 1**
   (`finrank_ker_bd2`: ker ∂₂ = span of the fundamental class). Axioms:
-  standard three. NB: G1 audit infra HUNG twice (codex never returned on
-  the long prompt; M9-style G2 reviews work fine) — proceeded per the
-  process-friction clause on the PI's in-session design + the documented
-  spec + compile-validated primitives + self-verified IsTaut.splits
-  interface; see notes/codex-consults/2026-06-12-g1-homology-separation-*.
+  standard three.
+- G1 VERDICT (M10-M14, post-implementation): **APPROVED** — codex session
+  019ec1fd-f620-7871-92f7-16fb7e06b717, output
+  notes/codex-consults/2026-06-13-g1-homology-postimpl-output.txt. "No math
+  blocker in the b₁=0 route; uses only IsSphere2.euler/conn/linkConn/closed
+  + 𝔽₂ linear algebra; no hidden tree-cotree." Endorsed: LinearMap+Submodule
+  encoding (Q1), const_of_adj_of_reachable/accumulate (Q2), 𝔽₂-then-reorient
+  (Q3), two-layer separates (Q4). codex re-ran the build + #print axioms.
+  Forward guidance: (i) the X=X₁+X₂ step needs an "orientation coherence"
+  lemma (∂ of X restricted to a side = ±γ-boundary, from bdry X=0 + ±1
+  coeffs + edge_cut_parity); (ii) linkConn for the pieces has NO obstruction
+  (from original linkConn + cut boundary = exactly the two γ-edges at each
+  γ-vertex, empty off γ); euler via additivity or direct counting.
+- PROCESS FIX (root cause of the earlier "hangs"): the prior G1 attempts
+  were mis-invoked — `codex exec "$PROMPT"` reads stdin (appends a <stdin>
+  block) and BLOCKS until EOF; backgrounded with no redirect, stdin never
+  closes, so codex sat at "Reading additional input from stdin..." forever.
+  G2 worked only because it pipes a bundle (`< file`). FIX: always redirect
+  stdin — `codex exec "$PROMPT" < /dev/null` for audits, or pipe a file.
+  Verified: `codex exec "..." < /dev/null` returns in ~6s. NOT an infra
+  problem; codex is reliable when stdin is given EOF.
 - Homology2.lean (M11) — COMPLETE and building: the b₀=1/r₁ side and the
   watershed. `aug` (augmentation ε), `finrank_ker_aug` (= V−1),
   `bd1_single_pair` (∂₁ of an edge basis vector = its endpoint-indicator),
