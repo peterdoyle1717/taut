@@ -116,7 +116,7 @@ lemma closed_cut (h : IsSphere2 σ) (hγ3 : γ.card = 3)
   classical
   intro e he
   have heσ : e ∈ edgesOf σ := edgesOf_cut_subset hγe he
-  obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h heσ
+  obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h.toClosedSurface heσ
   -- the cut-faces through e are exactly those of {f₁,f₂} in the cut set
   have hfilter : (cutSet σ W).filter (fun f => e ⊆ f)
       = ({f₁, f₂} : Finset (Finset V)).filter (fun f => f ∈ cutSet σ W) := by
@@ -330,7 +330,7 @@ lemma bd2_reachChain_supp {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ
     (hf₀ : (f₀ : Finset V) ∈ cutSet σ W) {e : Finset V} (he : e ∈ edgesOf σ) (heγ : ¬ e ⊆ γ) :
     bd2 σ (reachChain σ (cutSet σ W) f₀) ⟨e, he⟩ = 0 := by
   classical
-  obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h he
+  obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h.toClosedSurface he
   rw [bd2_at_edge _ he h1 h2 hne he1 he2 huniq]
   have hpar := edge_cut_parity hW he h1 h2 hne he1 he2 huniq
   rw [if_neg heγ] at hpar
@@ -377,7 +377,7 @@ theorem cutSet_dualConn {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
   have const_of_cycle : ∀ x : C2 σ, bd2 σ x = 0 → ∃ cc : ZMod 2, x = fun _ => cc := by
     intro x hx
     have hmem : x ∈ Submodule.span (ZMod 2) {(fun _ => 1 : C2 σ)} := by
-      rw [← ker_bd2_eq_span h]; exact LinearMap.mem_ker.mpr hx
+      rw [← ker_bd2_eq_span h.toClosedSurface h.nonempty]; exact LinearMap.mem_ker.mpr hx
     obtain ⟨cc, hcc⟩ := Submodule.mem_span_singleton.mp hmem
     exact ⟨cc, funext fun g => by have := congrFun hcc g; simpa using this.symm⟩
   -- gammaChain ≠ 0 (it is 1 on each edge of γ)
@@ -524,7 +524,7 @@ theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : F
     Finset.card_pos.mp (by rw [Finset.card_powersetCard, hγ3]; decide)
   rw [Finset.mem_powersetCard] at he0
   have he0e : e0 ∈ edgesOf σ := hγe (Finset.mem_powersetCard.mpr he0)
-  obtain ⟨g1, hg1, g2, hg2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h he0e
+  obtain ⟨g1, hg1, g2, hg2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h.toClosedSurface he0e
   have hpar := edge_cut_parity hW he0e hg1 hg2 hne hsub1 hsub2 huniq
   rw [if_pos he0.1] at hpar
   -- pick the cut-side face f₁ of e0, and a shared vertex v₀ ∈ e0 ⊆ γ ∩ f₁
@@ -556,7 +556,7 @@ lemma W_eq_of_share_edge {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
     (hW : bd2 σ W = gammaChain σ γ) {e : Finset V} (he : e ∈ edgesOf σ) (heγ : ¬ e ⊆ γ)
     {f g : σ} (hef : e ⊆ (f : Finset V)) (heg : e ⊆ (g : Finset V)) : W f = W g := by
   classical
-  obtain ⟨f₁, h1, f₂, h2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h he
+  obtain ⟨f₁, h1, f₂, h2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h.toClosedSurface he
   have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
   -- both f and g are among the two faces f₁, f₂ of e
   have hfg : ∀ {k : σ}, e ⊆ (k : Finset V) → W k = W ⟨f₁, h1⟩ ∨ W k = W ⟨f₂, h2⟩ := by

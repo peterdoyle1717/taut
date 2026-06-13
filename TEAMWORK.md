@@ -197,6 +197,41 @@ sphere/ball definitions.
   machinery off `IsSphere2`). Then assemble `IsSphere2 (insert γ σᵢ)` both
   sides (σ₂ via `bd2 (W+𝟙)=gammaChain`), then X=X₁+X₂ → `IsTaut.splits`, then
   the Th2+Th3 induction (own G1 audit).
+- G1 VERDICT (euler packet): **APPROVED** — codex session
+  019ec247-f4dc-7eb0-8f2c-70cdf163ff64, output
+  notes/codex-consults/2026-06-13-g1-euler-output.txt. Rulings:
+  • **Option C**: add `structure IsClosedSurface` (pure+closed+linkConn+conn)
+    BEFORE IsSphere2, keep IsSphere2 unchanged, add forgetful
+    `IsSphere2.toClosedSurface`. NOT `extends` (would churn every constructor).
+  • **χ≤2** (no euler): b₂=1 + r₁=V−1 + `range bd2 ≤ ker bd1`
+    (`LinearMap.range_le_ker_iff.mpr (bd1_comp_bd2 σ h.pure)`, then
+    `Submodule.finrank_mono`) ⟹ (F−1) ≤ (E−(V−1)) ⟹ V−E+F ≤ 2. Carry
+    `(vertsOf σ).Nonempty` explicitly (IsClosedSurface vacuous on ∅; recover
+    σ.Nonempty via mem_vertsOf for finrank_ker_bd2).
+  • Generalize {dualGraph_preconnected, finrank_ker_bd2 (+ker_bd2_eq_span),
+    finrank_ker_aug, bd1_single_pair, accumulate, finrank_range_bd1} to take
+    IsClosedSurface+nonempty; watershed passes toClosedSurface+vertsOf_nonempty.
+    finrank_range_bd1 does NOT smuggle euler (only conn + vertex nonemptiness).
+  • **Additivity** χτ₁+χτ₂=4, via counts V₁+V₂=Vσ+3, E₁+E₂=Eσ+3, F₁+F₂=Fσ+2
+    (incl-excl: vertsOf τ₁∪τ₂=vertsOf σ & ∩=γ; edgesOf likewise & ∩=γ.pwsCard2;
+    τ₁∪τ₂=σ∪{γ} & ∩={γ}). Lemmas: `Finset.card_union_add_card_inter`,
+    `card_insert_of_notMem`, `card_powersetCard`. Then with σ.euler + χ≤2 each,
+    `omega` ⟹ both euler. Every γ-edge in BOTH pieces (γ inserted in both);
+    excluding non-γ edges from the ∩ uses cut parity (edge_cut_parity).
+  • σ₂ side mirrors: `bd2 (W+𝟙)=gammaChain` (map_add+hW+bd2_one); optional
+    `cutSet σ (W+𝟙) = σ \ cutSet σ W`. Show γ's verts/edges ⊆ σ via hγe first.
+- M18 (DONE, building): **IsClosedSurface + generalized homology + chi_le_two.**
+  `structure IsClosedSurface` (pure+closed+linkConn+conn) + `IsSphere2.toClosedSurface`
+  in Complex2. Generalized {exists_two_faces, dualGraph_ker_const, linkwalk_dual,
+  dual_reach_shared_vertex, skelwalk_dual, dualGraph_preconnected, bd2_ker_constant,
+  ker_bd2_eq_span, finrank_ker_bd2, finrank_ker_aug, ker_aug_le_range_bd1,
+  finrank_range_bd1} to IsClosedSurface (+ explicit nonemptiness where used);
+  watershed + Separation:380 pass `.toClosedSurface`. New `chi_le_two`
+  (V+F ≤ E+2 from b₂=1, r₁=V−1, range∂₂≤ker∂₁, additive rank-nullity — no euler).
+  Build green (8258 jobs), no sorry, watershed still standard-three-axioms.
+- NEXT (M19, approved): additivity (counts V₁+V₂=Vσ+3, E₁+E₂=Eσ+3, F₁+F₂=Fσ+2)
+  + euler for the pieces (omega: σ.euler + chi_le_two each) + assemble
+  `IsSphere2 (insert γ σᵢ)` both sides. Then X=X₁+X₂ → `IsTaut.splits`.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
@@ -267,4 +302,12 @@ sphere/ball definitions.
   v∉γ) is proved, the last hard field of "the cut pieces are spheres". The v∈γ
   reroute decouples the walk endpoint from the reach-target `a` so the walk
   induction doesn't pin the target (the trap that bit the earlier attempts).
-  Build green (8258 jobs), no sorry, standard three axioms. → M17 commit pending G2.
+  Build green (8258 jobs), no sorry, standard three axioms. → M17 committed (c2c6cc7).
+
+- 2026-06-13: G1 audit of the euler packet → **APPROVED** (codex 019ec247).
+  Rulings: Option C (new IsClosedSurface, no IsSphere2 redefinition, forgetful
+  map); χ≤2 via b₂=1 + r₁=V−1 + range∂₂≤ker∂₁ (no euler); additivity counts
+  V₁+V₂=Vσ+3, E₁+E₂=Eσ+3, F₁+F₂=Fσ+2. M18 — implemented the refactor + chi_le_two
+  (the key euler-free lemma). The b₂/r₁ machinery only ever used euler for
+  nonemptiness, so the generalization is clean. Build green, no sorry, watershed
+  still standard-three-axioms. → M18 commit pending G2.

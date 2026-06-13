@@ -209,7 +209,7 @@ def dualGraph (σ : Finset (Finset V)) : SimpleGraph σ where
 
 /-- A 2-cycle (element of `ker ∂₂`) assigns equal weight to dual-adjacent faces:
 across their shared edge, `∂₂ w = w f + w g = 0`. -/
-lemma dualGraph_ker_const {σ : Finset (Finset V)} (h : IsSphere2 σ) {w : C2 σ}
+lemma dualGraph_ker_const {σ : Finset (Finset V)} (h : IsClosedSurface σ) {w : C2 σ}
     (hw : bd2 σ w = 0) {f g : σ} (hadj : (dualGraph σ).Adj f g) : w f = w g := by
   rw [dualGraph_adj] at hadj
   obtain ⟨hne, e, he, hef, heg⟩ := hadj
@@ -267,7 +267,7 @@ lemma dualReach_of_pair {σ : Finset (Finset V)} {f g : σ} {v a : V} (hav : a �
 
 /-- Faces along a link-walk at `v` are dual-reachable: induction transporting a
 walk in `linkGraph σ v` to a dual path. -/
-lemma linkwalk_dual {σ : Finset (Finset V)} (h : IsSphere2 σ) {v : V} :
+lemma linkwalk_dual {σ : Finset (Finset V)} (h : IsClosedSurface σ) {v : V} :
     ∀ {a a' : V} (_ : (linkGraph σ v).Walk a a') {f f' : σ},
       v ∈ (f : Finset V) → a ∈ (f : Finset V) → a ≠ v →
       v ∈ (f' : Finset V) → a' ∈ (f' : Finset V) → a' ≠ v →
@@ -308,7 +308,7 @@ lemma linkwalk_dual {σ : Finset (Finset V)} (h : IsSphere2 σ) {v : V} :
         (ih hvh hxh hxv hvf' haf' ha'v)
 
 /-- Two faces sharing a vertex are dual-reachable (uses `linkConn`). -/
-lemma dual_reach_shared_vertex {σ : Finset (Finset V)} (h : IsSphere2 σ) {f g : σ} {v : V}
+lemma dual_reach_shared_vertex {σ : Finset (Finset V)} (h : IsClosedSurface σ) {f g : σ} {v : V}
     (hvf : v ∈ (f : Finset V)) (hvg : v ∈ (g : Finset V)) :
     (dualGraph σ).Reachable f g := by
   obtain ⟨a, ha⟩ : (((f : Finset V).erase v)).Nonempty := by
@@ -327,7 +327,7 @@ lemma dual_reach_shared_vertex {σ : Finset (Finset V)} (h : IsSphere2 σ) {f g 
 
 /-- Faces along a skeleton walk are dual-reachable: induction transporting a
 walk in `skel σ` to a dual path, jumping between vertex-stars. -/
-lemma skelwalk_dual {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lemma skelwalk_dual {σ : Finset (Finset V)} (h : IsClosedSurface σ) :
     ∀ {u w : V} (_ : (skel σ).Walk u w) {f f' : σ},
       u ∈ (f : Finset V) → w ∈ (f' : Finset V) → (dualGraph σ).Reachable f f' := by
   intro u w p
@@ -347,7 +347,7 @@ lemma skelwalk_dual {σ : Finset (Finset V)} (h : IsSphere2 σ) :
         (ih (f := ⟨hf, hhf⟩) hxh hwf')
 
 /-- **Dual connectivity.** The dual graph of a sphere is connected. -/
-theorem dualGraph_preconnected {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+theorem dualGraph_preconnected {σ : Finset (Finset V)} (h : IsClosedSurface σ) :
     (dualGraph σ).Preconnected := by
   intro f g
   obtain ⟨u, hu⟩ : (f : Finset V).Nonempty := by
@@ -378,15 +378,15 @@ lemma IsSphere2.nonempty {σ : Finset (Finset V)} (h : IsSphere2 σ) : σ.Nonemp
 
 /-- Every 2-cycle is constant: dual connectivity propagates the edge-local
 equality. -/
-lemma bd2_ker_constant {σ : Finset (Finset V)} (h : IsSphere2 σ) {w : C2 σ}
+lemma bd2_ker_constant {σ : Finset (Finset V)} (h : IsClosedSurface σ) {w : C2 σ}
     (hw : bd2 σ w = 0) (f g : σ) : w f = w g :=
   const_of_adj_of_reachable (fun _ _ hab => dualGraph_ker_const h hw hab)
     (dualGraph_preconnected h f g)
 
 /-- `ker ∂₂` is exactly the constants, i.e. the span of the fundamental class. -/
-lemma ker_bd2_eq_span {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lemma ker_bd2_eq_span {σ : Finset (Finset V)} (h : IsClosedSurface σ) (hne : σ.Nonempty) :
     LinearMap.ker (bd2 σ) = Submodule.span (ZMod 2) {(fun _ => 1 : C2 σ)} := by
-  obtain ⟨f₀, hf₀⟩ := h.nonempty
+  obtain ⟨f₀, hf₀⟩ := hne
   apply le_antisymm
   · intro w hw
     rw [LinearMap.mem_ker] at hw
@@ -400,11 +400,11 @@ lemma ker_bd2_eq_span {σ : Finset (Finset V)} (h : IsSphere2 σ) :
     exact bd2_one σ h.closed
 
 /-- **b₂ = 1.** The space of 2-cycles is one-dimensional. -/
-theorem finrank_ker_bd2 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+theorem finrank_ker_bd2 {σ : Finset (Finset V)} (h : IsClosedSurface σ) (hne : σ.Nonempty) :
     finrank (ZMod 2) (LinearMap.ker (bd2 σ)) = 1 := by
-  rw [ker_bd2_eq_span h]
+  rw [ker_bd2_eq_span h hne]
   apply finrank_span_singleton
-  obtain ⟨f₀, hf₀⟩ := h.nonempty
+  obtain ⟨f₀, hf₀⟩ := hne
   intro hcontra
   have := congrFun hcontra ⟨f₀, hf₀⟩
   simp only [Pi.zero_apply] at this
@@ -428,9 +428,9 @@ lemma IsSphere2.vertsOf_nonempty {σ : Finset (Finset V)} (h : IsSphere2 σ) :
   exact ⟨x, mem_vertsOf.mpr ⟨f, hf, hx⟩⟩
 
 /-- `finrank (ker ε) = V − 1` since `ε` is surjective. -/
-lemma finrank_ker_aug {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lemma finrank_ker_aug {σ : Finset (Finset V)} (hne0 : (vertsOf σ).Nonempty) :
     finrank (ZMod 2) (LinearMap.ker (aug σ)) = (vertsOf σ).card - 1 := by
-  have hne : Nonempty (vertsOf σ) := h.vertsOf_nonempty.to_subtype
+  have hne : Nonempty (vertsOf σ) := hne0.to_subtype
   have hsurj : Function.Surjective (aug σ) := by
     obtain ⟨x0⟩ := hne
     intro a
@@ -526,11 +526,12 @@ lemma aug_comp_bd1 (σ : Finset (Finset V)) : aug σ ∘ₗ bd1 σ = 0 := by
   rw [h0, zero_mul]
 
 /-- The connectivity direction: a sum-zero 0-chain bounds. -/
-lemma ker_aug_le_range_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lemma ker_aug_le_range_bd1 {σ : Finset (Finset V)} (h : IsClosedSurface σ)
+    (hne0 : (vertsOf σ).Nonempty) :
     LinearMap.ker (aug σ) ≤ LinearMap.range (bd1 σ) := by
   intro c hc
   rw [LinearMap.mem_ker, aug_apply] at hc
-  obtain ⟨x₀, hx₀⟩ := h.vertsOf_nonempty
+  obtain ⟨x₀, hx₀⟩ := hne0
   have hbasis : (∑ x : vertsOf σ, c x • (Pi.single x (1 : ZMod 2) : C0 σ)) = c := by
     funext y
     simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.single_apply, mul_ite,
@@ -546,11 +547,12 @@ lemma ker_aug_le_range_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
   exact accumulate p x.2 hx₀
 
 /-- **r₁ = V − 1.** The boundaries of 0-chains form a space of dimension V − 1. -/
-theorem finrank_range_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+theorem finrank_range_bd1 {σ : Finset (Finset V)} (h : IsClosedSurface σ)
+    (hne0 : (vertsOf σ).Nonempty) :
     finrank (ZMod 2) (LinearMap.range (bd1 σ)) = (vertsOf σ).card - 1 := by
   have heq : LinearMap.range (bd1 σ) = LinearMap.ker (aug σ) :=
-    le_antisymm (LinearMap.range_le_ker_iff.mpr (aug_comp_bd1 σ)) (ker_aug_le_range_bd1 h)
-  rw [heq, finrank_ker_aug h]
+    le_antisymm (LinearMap.range_le_ker_iff.mpr (aug_comp_bd1 σ)) (ker_aug_le_range_bd1 h hne0)
+  rw [heq, finrank_ker_aug hne0]
 
 /-! ### H₁ = 0 — every 1-cycle bounds -/
 
@@ -569,13 +571,43 @@ theorem range_bd2_eq_ker_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
     rw [Module.finrank_fintype_fun_eq_card, Fintype.card_coe]
   have hr2 : finrank (ZMod 2) (LinearMap.range (bd2 σ)) = σ.card - 1 := by
     have := LinearMap.finrank_range_add_finrank_ker (bd2 σ)
-    rw [finrank_ker_bd2 h, hF] at this; omega
+    rw [finrank_ker_bd2 h.toClosedSurface h.nonempty, hF] at this; omega
   have hk1 : finrank (ZMod 2) (LinearMap.ker (bd1 σ))
       = (edgesOf σ).card - ((vertsOf σ).card - 1) := by
     have := LinearMap.finrank_range_add_finrank_ker (bd1 σ)
-    rw [finrank_range_bd1 h, hE] at this; omega
+    rw [finrank_range_bd1 h.toClosedSurface h.vertsOf_nonempty, hE] at this; omega
   have he := h.euler
   have hV : 1 ≤ (vertsOf σ).card := h.vertsOf_nonempty.card_pos
   rw [hr2, hk1]; omega
+
+/-! ### χ ≤ 2 for closed surfaces (no Euler hypothesis) -/
+
+/-- **χ ≤ 2** for any combinatorial closed surface. From `b₂ = 1`, `r₁ = V−1`,
+and `range ∂₂ ≤ ker ∂₁` (∂∂ = 0): `dim range ∂₂ ≤ dim ker ∂₁`, i.e.
+`(F − 1) ≤ (E − (V − 1))`, which is `V + F ≤ E + 2`. (Equality is the watershed,
+which needs the extra Euler input.) -/
+theorem chi_le_two {σ : Finset (Finset V)} (h : IsClosedSurface σ)
+    (hne0 : (vertsOf σ).Nonempty) :
+    (vertsOf σ).card + σ.card ≤ (edgesOf σ).card + 2 := by
+  have hσne : σ.Nonempty := by
+    obtain ⟨x, hx⟩ := hne0
+    obtain ⟨f₀, hf₀, _⟩ := mem_vertsOf.mp hx
+    exact ⟨f₀, hf₀⟩
+  have hF : finrank (ZMod 2) (C2 σ) = σ.card := by
+    rw [Module.finrank_fintype_fun_eq_card, Fintype.card_coe]
+  have hE : finrank (ZMod 2) (C1 σ) = (edgesOf σ).card := by
+    rw [Module.finrank_fintype_fun_eq_card, Fintype.card_coe]
+  -- rank–nullity, additive form (no nat subtraction):
+  -- (r₂ + b₂) = F with b₂ = 1, and (r₁ + k₁) = E with r₁ = V − 1.
+  have e2 := LinearMap.finrank_range_add_finrank_ker (bd2 σ)
+  rw [finrank_ker_bd2 h hσne, hF] at e2          -- r₂ + 1 = F
+  have e1 := LinearMap.finrank_range_add_finrank_ker (bd1 σ)
+  rw [finrank_range_bd1 h hne0, hE] at e1        -- (V − 1) + k₁ = E
+  -- range ∂₂ ≤ ker ∂₁ (∂∂ = 0) ⟹ r₂ ≤ k₁
+  have hle : LinearMap.range (bd2 σ) ≤ LinearMap.ker (bd1 σ) :=
+    LinearMap.range_le_ker_iff.mpr (bd1_comp_bd2 σ h.pure)
+  have hmono := Submodule.finrank_mono hle
+  have hV : 1 ≤ (vertsOf σ).card := hne0.card_pos
+  omega
 
 end Taut

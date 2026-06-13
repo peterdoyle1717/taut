@@ -89,8 +89,17 @@ def ConnOn (G : SimpleGraph V) (s : Finset V) : Prop :=
 
 /-! ## Combinatorial 2-spheres -/
 
-/-- A combinatorial 2-sphere: pure 2-dimensional, every edge in exactly
-two faces, connected vertex links, connected, Euler characteristic 2.
+/-- A combinatorial closed surface: pure 2-dimensional, every edge in exactly
+two faces, connected vertex links, connected. This is `IsSphere2` minus the
+`χ = 2` constraint — the geometric content the homology machinery (b₂ = 1,
+r₁ = V−1) actually rests on. Euler enters `IsSphere2` only via nonemptiness. -/
+structure IsClosedSurface (σ : Finset (Finset V)) : Prop where
+  pure : ∀ f ∈ σ, f.card = 3
+  closed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2
+  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+  conn : ConnOn (skel σ) (vertsOf σ)
+
+/-- A combinatorial 2-sphere: a closed surface with Euler characteristic 2.
 This is the paper's "clean complex" (normal pseudomanifold) sharpened by
 `χ = 2`, replacing "simplicial triangulation of S²". -/
 structure IsSphere2 (σ : Finset (Finset V)) : Prop where
@@ -99,6 +108,11 @@ structure IsSphere2 (σ : Finset (Finset V)) : Prop where
   linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
   conn : ConnOn (skel σ) (vertsOf σ)
   euler : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2
+
+/-- Forget the Euler constraint: every sphere is a closed surface. -/
+def IsSphere2.toClosedSurface {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    IsClosedSurface σ :=
+  ⟨h.pure, h.closed, h.linkConn, h.conn⟩
 
 /-! ## Euler counting -/
 
@@ -174,7 +188,7 @@ lemma exists_third {e f : Finset V} (hef : e ⊆ f) (he : e.card = 2)
     · exact hef hx
 
 /-- The two faces over an edge of a sphere, by name. -/
-lemma exists_two_faces {σ : Finset (Finset V)} (h : IsSphere2 σ)
+lemma exists_two_faces {σ : Finset (Finset V)} (h : IsClosedSurface σ)
     {e : Finset V} (he : e ∈ edgesOf σ) :
     ∃ f₁ ∈ σ, ∃ f₂ ∈ σ, f₁ ≠ f₂ ∧ e ⊆ f₁ ∧ e ⊆ f₂ ∧
       ∀ f ∈ σ, e ⊆ f → f = f₁ ∨ f = f₂ := by
@@ -316,7 +330,7 @@ theorem three_le_card_linkVerts {σ : Finset (Finset V)} (h : IsSphere2 σ)
       exact hu ▸ hxf
   have hedge : {v, x} ∈ edgesOf σ :=
     mem_edgesOf.mpr ⟨f, hf, hvx_sub, Finset.card_pair (Ne.symm hxv)⟩
-  obtain ⟨f₁, hf₁, f₂, hf₂, hne, he₁, he₂, huniq⟩ := exists_two_faces h hedge
+  obtain ⟨f₁, hf₁, f₂, hf₂, hne, he₁, he₂, huniq⟩ := exists_two_faces h.toClosedSurface hedge
   obtain ⟨f', hf', hef', hff'⟩ : ∃ f' ∈ σ, {v, x} ⊆ f' ∧ f' ≠ f := by
     rcases huniq f hf hvx_sub with rfl | rfl
     · exact ⟨f₂, hf₂, he₂, hne.symm⟩
