@@ -425,4 +425,128 @@ theorem cutSet_dualConn {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
     simp only [Pi.add_apply] at hg
     exact c2 _ _ hg
 
+/-! ## From dual-connectivity to skeleton-connectivity -/
+
+/-- Two vertices of a single face are skeleton-reachable. -/
+lemma skel_reach_within {τ : Finset (Finset V)} {f : τ} {u w : V}
+    (hu : u ∈ (f : Finset V)) (hw : w ∈ (f : Finset V)) : (skel τ).Reachable u w := by
+  by_cases huw : u = w
+  · exact huw ▸ SimpleGraph.Reachable.refl u
+  · refine SimpleGraph.Adj.reachable ⟨huw, mem_edgesOf.mpr ⟨f, f.2, ?_, Finset.card_pair huw⟩⟩
+    intro y hy
+    rcases Finset.mem_insert.mp hy with rfl | hy
+    · exact hu
+    · rw [Finset.mem_singleton] at hy; exact hy ▸ hw
+
+/-- Reverse transport: a dual-graph walk yields a skeleton walk between chosen
+vertices of its endpoint faces. -/
+lemma dualwalk_skel {τ : Finset (Finset V)} :
+    ∀ {f g : τ} (_ : (dualGraph τ).Walk f g) {u w : V},
+      u ∈ (f : Finset V) → w ∈ (g : Finset V) → (skel τ).Reachable u w := by
+  intro f g p
+  induction p with
+  | nil => intro u w hu hw; exact skel_reach_within hu hw
+  | @cons f x g hadj _ ih =>
+      intro u w hu hw
+      obtain ⟨_, e, he, hef, hex⟩ := dualGraph_adj.mp hadj
+      obtain ⟨z, hz⟩ : e.Nonempty := Finset.card_pos.mp (by rw [card_of_mem_edgesOf he]; omega)
+      exact (skel_reach_within hu (hef hz)).trans (ih (hex hz) hw)
+
+/-- **Dual-connectivity ⟹ skeleton-connectivity** for any complex of nonempty
+faces. -/
+lemma skelConn_of_dualPreconn {τ : Finset (Finset V)} (hpre : (dualGraph τ).Preconnected) :
+    ConnOn (skel τ) (vertsOf τ) := by
+  intro u hu w hw
+  obtain ⟨f, hf, huf⟩ := mem_vertsOf.mp hu
+  obtain ⟨g, hg, hwg⟩ := mem_vertsOf.mp hw
+  obtain ⟨p⟩ := hpre ⟨f, hf⟩ ⟨g, hg⟩
+  exact dualwalk_skel p huf hwg
+
+/-- A `dualOn` walk among cut-faces transports to a skeleton walk in the capped
+complex `insert γ (cutSet σ W)`. -/
+lemma dualOn_skel_insert {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} :
+    ∀ {a b : σ} (_ : (dualOn σ (cutSet σ W)).Walk a b) {u w : V},
+      u ∈ (a : Finset V) → w ∈ (b : Finset V) → (a : Finset V) ∈ cutSet σ W →
+      (skel (insert γ (cutSet σ W))).Reachable u w := by
+  intro a b p
+  induction p with
+  | nil => intro u w hu hw haS; exact skel_reach_within (f := ⟨_, Finset.mem_insert_of_mem haS⟩) hu hw
+  | @cons a x b hadj q ih =>
+      intro u w hu hw haS
+      obtain ⟨hadjσ, _, hxS⟩ := dualOn_adj.mp hadj
+      obtain ⟨_, e, he, hea, hex⟩ := dualGraph_adj.mp hadjσ
+      obtain ⟨z, hz⟩ : e.Nonempty := Finset.card_pos.mp (by rw [card_of_mem_edgesOf he]; omega)
+      exact (skel_reach_within (f := ⟨_, Finset.mem_insert_of_mem haS⟩) hu (hea hz)).trans
+        (ih (hex hz) hw hxS)
+
+/-- **`conn` for the capped side.** The skeleton of `insert γ (cutSet σ W)` is
+connected: every vertex reaches a fixed cut-face vertex (cut-faces via the
+dual-connectivity transport, `γ` via its shared edge with a cut-face). -/
+theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+    (hW : bd2 σ W = gammaChain σ γ) :
+    ConnOn (skel (insert γ (cutSet σ W))) (vertsOf (insert γ (cutSet σ W))) := by
+  classical
+  have c2 : ∀ x y : ZMod 2, x + y = 1 → x = 1 ∨ y = 1 := by decide
+  -- a base cut-face f₀ (W f₀ = 1), exists since gammaChain ≠ 0
+  obtain ⟨f₀, hf₀⟩ : ∃ f₀ : σ, W f₀ = 1 := by
+    by_contra hc
+    simp only [not_exists] at hc
+    have hW0 : W = 0 := by
+      funext f
+      rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W f) with h0 | h1
+      · exact h0
+      · exact absurd h1 (hc f)
+    rw [hW0, map_zero] at hW
+    obtain ⟨e0, he0⟩ : (γ.powersetCard 2).Nonempty :=
+      Finset.card_pos.mp (by rw [Finset.card_powersetCard, hγ3]; decide)
+    rw [Finset.mem_powersetCard] at he0
+    have he0e : e0 ∈ edgesOf σ := hγe (Finset.mem_powersetCard.mpr he0)
+    have hv1 : gammaChain σ γ ⟨e0, he0e⟩ = 1 := by simp only [gammaChain, if_pos he0.1]
+    rw [← hW] at hv1; simp only [Pi.zero_apply] at hv1; exact one_ne_zero hv1.symm
+  have hf₀mem : (f₀ : Finset V) ∈ cutSet σ W := mem_cutSet.mpr ⟨f₀.2, hf₀⟩
+  have hdc := cutSet_dualConn h hγ3 hγe hW hf₀
+  -- a base vertex c₀ ∈ f₀
+  obtain ⟨c₀, hc₀⟩ : (f₀ : Finset V).Nonempty := by
+    rw [← Finset.card_pos, h.pure _ f₀.2]; omega
+  -- every cut-face vertex reaches c₀
+  have reachσ1 : ∀ (g : σ) (x : V), W g = 1 → x ∈ (g : Finset V) →
+      (skel (insert γ (cutSet σ W))).Reachable x c₀ := by
+    intro g x hWg hxg
+    have hgmem : (g : Finset V) ∈ cutSet σ W := mem_cutSet.mpr ⟨g.2, hWg⟩
+    have : reachChain σ (cutSet σ W) f₀ g = 1 := by rw [hdc]; exact hWg
+    have hr : (dualOn σ (cutSet σ W)).Reachable f₀ g := by
+      by_contra hcon; simp only [reachChain, if_neg hcon] at this; exact one_ne_zero this.symm
+    obtain ⟨p⟩ := hr
+    exact (dualOn_skel_insert p hc₀ hxg hf₀mem).symm
+  -- a γ-edge and its cut-side face
+  obtain ⟨e0, he0⟩ : (γ.powersetCard 2).Nonempty :=
+    Finset.card_pos.mp (by rw [Finset.card_powersetCard, hγ3]; decide)
+  rw [Finset.mem_powersetCard] at he0
+  have he0e : e0 ∈ edgesOf σ := hγe (Finset.mem_powersetCard.mpr he0)
+  obtain ⟨g1, hg1, g2, hg2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h he0e
+  have hpar := edge_cut_parity hW he0e hg1 hg2 hne hsub1 hsub2 huniq
+  rw [if_pos he0.1] at hpar
+  -- pick the cut-side face f₁ of e0, and a shared vertex v₀ ∈ e0 ⊆ γ ∩ f₁
+  obtain ⟨v₀, hv₀⟩ : e0.Nonempty := Finset.card_pos.mp (by rw [he0.2]; omega)
+  have hvγ : v₀ ∈ γ := he0.1 hv₀
+  have reachγ : (skel (insert γ (cutSet σ W))).Reachable v₀ c₀ := by
+    rcases c2 _ _ hpar with hw1 | hw1
+    · exact reachσ1 ⟨g1, hg1⟩ v₀ hw1 (hsub1 hv₀)
+    · exact reachσ1 ⟨g2, hg2⟩ v₀ hw1 (hsub2 hv₀)
+  -- every vertex reaches c₀
+  have reachAll : ∀ x ∈ vertsOf (insert γ (cutSet σ W)),
+      (skel (insert γ (cutSet σ W))).Reachable x c₀ := by
+    intro x hx
+    obtain ⟨fx, hfx, hxfx⟩ := mem_vertsOf.mp hx
+    rcases Finset.mem_insert.mp hfx with hfxγ | hfxc
+    · -- x ∈ γ: reach v₀ within γ, then v₀ → c₀
+      have hxγ : x ∈ γ := hfxγ ▸ hxfx
+      exact (skel_reach_within (f := ⟨γ, Finset.mem_insert_self γ _⟩) hxγ hvγ).trans reachγ
+    · -- x in a cut-face
+      obtain ⟨hgσ, hWg⟩ := mem_cutSet.mp hfxc
+      exact reachσ1 ⟨fx, hgσ⟩ x hWg hxfx
+  intro a ha b hb
+  exact (reachAll a ha).trans (reachAll b hb).symm
+
 end Taut

@@ -137,17 +137,20 @@ sphere/ball definitions.
   parity), and **`cutSet_dualConn`** (`reachChain = W`: every cut-face is
   dual-reachable from f₀ — via gammaCycle_dichotomy + ker ∂₂={0,𝟙}). The
   hard core of `conn`. Axioms: standard three.
-- Next, to finish `separates`: (a) dual-conn ⟹ skeleton-`conn` for the
-  pieces (a dual-walk → vertex-walk transport, ~50 lines); (b) **`linkConn`**
-  (the genuinely hard field — at a γ-vertex the σ₁-faces form a connected
-  arc of the link cycle, closed by γ; subgraph-of-a-cycle-with-2-odd-
-  vertices-is-an-arc); (c) `euler` (χ-additivity + χ≤2 from b₂=1); (d)
-  assemble `IsSphere2 (insert γ σᵢ)` (both sides: σ₂ = cutSet of W+𝟙);
-  (e) reorient via the integral X to get X = X₁+X₂ feeding `IsTaut.splits`.
-  Then the merged Th2+Th3 induction (eligible tets, flip, base case,
-  shelling reassembly). NB: this is genuinely multi-session work — the
-  watershed (M11) and the cut/closed/dual-conn (M12-14) are done; the
-  remaining pieces-are-spheres (esp. linkConn) + induction are the bulk.
+- M15 (in Separation.lean, building): **`conn` for the capped side**. Generic
+  `skel_reach_within`, `dualwalk_skel`, `skelConn_of_dualPreconn` (dual-
+  preconnected ⟹ skeleton-connected, reusable), `dualOn_skel_insert` (a
+  dualOn walk among cut-faces → skeleton walk in `insert γ σ₁`), and
+  **`conn_cut`** (skel of `insert γ (cutSet σ W)` connected — every vertex
+  reaches a base cut-face vertex; cut-faces via the transport, γ via its
+  shared edge with a cut-face). So pieces now have pure+closed+conn.
+- Next, to finish `separates`: (a) **`linkConn`** for the pieces (auditor:
+  NO obstruction — from original linkConn + cut boundary = exactly the two
+  γ-edges at each γ-vertex, empty off γ); (b) `euler` (χ-additivity + χ≤2
+  from b₂); (c) assemble `IsSphere2 (insert γ σᵢ)` (both sides: σ₂ = cutSet
+  of W+𝟙); (d) reorient via integral X to get X=X₁+X₂ feeding
+  `IsTaut.splits` (needs the "orientation coherence" lemma codex flagged).
+  Then the merged Th2+Th3 induction (G1-audit it with codex `< /dev/null`).
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
