@@ -6,3 +6,4 @@ import Taut.Splitting
 import Taut.Complex2
 import Taut.Ball
 import Taut.Homology2
+import Taut.Separation

@@ -62,9 +62,11 @@ lemma bd1_apply (σ : Finset (Finset V)) (u : C1 σ) (x : vertsOf σ) :
     LinearMap.smul_apply, LinearMap.proj_apply, smul_eq_mul]
 
 /-- The edges of a triangle through a fixed vertex: exactly the two pairs
-`{x, y}` with `y` in the other two vertices. Used for `∂∂ = 0`. -/
-lemma card_edges_through_vertex {σ : Finset (Finset V)} {f : Finset V} (hf : f ∈ σ)
-    (hf3 : f.card = 3) (x : V) :
+`{x, y}` with `y` in the other two vertices. Used for `∂∂ = 0` and the cut.
+Stated for any card-3 set whose 2-subsets are edges of σ (so it also applies to
+a non-face triangle). -/
+lemma card_edges_through_vertex {σ : Finset (Finset V)} {f : Finset V}
+    (hf : f.powersetCard 2 ⊆ edgesOf σ) (hf3 : f.card = 3) (x : V) :
     ((edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)).card = if x ∈ f then 2 else 0 := by
   classical
   -- the filter over edgesOf is the filter of card-2 subsets of `f` through `x`
@@ -76,7 +78,7 @@ lemma card_edges_through_vertex {σ : Finset (Finset V)} {f : Finset V} (hf : f 
     · rintro ⟨he, hxe, hef⟩
       exact ⟨⟨hef, card_of_mem_edgesOf he⟩, hxe⟩
     · rintro ⟨⟨hef, hc⟩, hxe⟩
-      exact ⟨mem_edgesOf.mpr ⟨f, hf, hef, hc⟩, hxe, hef⟩
+      exact ⟨hf (Finset.mem_powersetCard.mpr ⟨hef, hc⟩), hxe, hef⟩
   rw [hrw]
   by_cases hx : x ∈ f
   · simp only [hx, if_true]
@@ -144,7 +146,9 @@ theorem bd1_comp_bd2 (σ : Finset (Finset V)) (hpure : ∀ f ∈ σ, f.card = 3)
       then (1 : ZMod 2) else 0)) = 0 := by
     rw [Finset.sum_coe_sort (edgesOf σ)
         (fun e => if (x : V) ∈ e ∧ e ⊆ (f : Finset V) then (1 : ZMod 2) else 0),
-      Finset.sum_boole, card_edges_through_vertex f.2 (hpure f f.2) x]
+      Finset.sum_boole, card_edges_through_vertex
+        (fun e he => mem_edgesOf.mpr ⟨f, f.2, (Finset.mem_powersetCard.mp he).1,
+          (Finset.mem_powersetCard.mp he).2⟩) (hpure f f.2) x]
     split <;> decide
   rw [hsum0, zero_mul]
 

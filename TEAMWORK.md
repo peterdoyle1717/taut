@@ -101,12 +101,23 @@ sphere/ball definitions.
   (`range_bd2_eq_ker_bd1`: range ∂₂ = ker ∂₁, from ∂∂=0 + equal finrank
   F−1 using the given χ=2). THE WATERSHED IS DONE — every 1-cycle on a
   combinatorial 2-sphere bounds. Axioms: standard three. (577 lines total.)
-- Next: `separates` — turn H₁=0 into the geometric cut. A non-face
-  triangle γ gives a 1-cycle z = ∂₂⟨γ⟩ ∈ ker ∂₁ = range ∂₂, so z = ∂₂ W
-  for a face-set W =: σ₁; σ₂ := σ \ σ₁; prove each `insert γ σᵢ` IsSphere2
-  (euler via χ-additivity, b₁≥0); reorient via the integral X to get
-  X = X₁+X₂ feeding `IsTaut.splits`. Then the merged Th2+Th3 induction
-  (eligible tets, flip, base case, reassembly via shellings).
+- `Taut/Separation.lean` (M12) — IN PROGRESS, building. `gammaChain` (the
+  γ-edge 1-chain), `bd1_gammaChain` (it's a cycle), **`exists_cut`** (H₁=0
+  ⟹ ∃ W, ∂₂W = γ-cycle — this is where the watershed is spent), `cutSet`
+  (= W's support = one side σ₁), `edge_cut_parity` (across each edge the
+  two faces' W-values sum to [e⊆γ] — the geometric cut), and **`closed_cut`**
+  (each capped side `insert γ σ₁` is a closed pseudomanifold — the second
+  IsSphere2 field). Axioms: standard three.
+- Next, to finish `separates`: `conn` for the pieces (σ₁ is dual-connected
+  — dual-component argument: any component's boundary is a 1-cycle on γ's
+  edges ∈ {0,vγ}, and ker ∂₂={0,𝟙} forces it whole); then **`linkConn`**
+  for the pieces (the genuinely hard field — at a γ-vertex the σ₁-faces
+  form a connected arc of the link cycle, closed by γ; a subgraph-of-a-
+  cycle-with-2-odd-vertices-is-an-arc argument); then `euler` (χ-additivity
+  + χ≤2-per-piece from b₂=1); assemble `IsSphere2 (insert γ σᵢ)`; reorient
+  via the integral X to get X = X₁+X₂ feeding `IsTaut.splits`. Then the
+  merged Th2+Th3 induction (eligible tets, flip, base case, shelling
+  reassembly).
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
