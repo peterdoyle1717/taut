@@ -113,17 +113,25 @@ sphere/ball definitions.
   (a 1-cycle supported on γ's edges is 0 or vγ — the load-bearing fact for
   both `conn` and the final piece-decomposition; ∂₁=0 forces the three
   triangle-edge coefficients equal). Axioms: standard three.
-- Next, to finish `separates`: `conn` for the pieces (σ₁ is dual-connected
-  — dual-component argument: any component's boundary is a 1-cycle on γ's
-  edges ∈ {0,vγ} via gammaCycle_dichotomy, and ker ∂₂={0,𝟙} forces it
-  whole; then dual-conn ⟹ skeleton-conn); then **`linkConn`**
-  for the pieces (the genuinely hard field — at a γ-vertex the σ₁-faces
-  form a connected arc of the link cycle, closed by γ; a subgraph-of-a-
-  cycle-with-2-odd-vertices-is-an-arc argument); then `euler` (χ-additivity
-  + χ≤2-per-piece from b₂=1); assemble `IsSphere2 (insert γ σᵢ)`; reorient
-  via the integral X to get X = X₁+X₂ feeding `IsTaut.splits`. Then the
-  merged Th2+Th3 induction (eligible tets, flip, base case, shelling
-  reassembly).
+- M14 (in Separation.lean, building): **σ₁ is dual-connected**. `dualOn`
+  (dual graph restricted to a side), `reachChain` (indicator of faces
+  dual-reachable from a base face inside the side) + `reachChain_self`/
+  `_closed`/`_mem`/`_zero`/`dualOn_walk_mem`, `bd2_reachChain_supp` (∂₂ of
+  the reach-chain vanishes off γ-edges, by dual-closedness + the cut
+  parity), and **`cutSet_dualConn`** (`reachChain = W`: every cut-face is
+  dual-reachable from f₀ — via gammaCycle_dichotomy + ker ∂₂={0,𝟙}). The
+  hard core of `conn`. Axioms: standard three.
+- Next, to finish `separates`: (a) dual-conn ⟹ skeleton-`conn` for the
+  pieces (a dual-walk → vertex-walk transport, ~50 lines); (b) **`linkConn`**
+  (the genuinely hard field — at a γ-vertex the σ₁-faces form a connected
+  arc of the link cycle, closed by γ; subgraph-of-a-cycle-with-2-odd-
+  vertices-is-an-arc); (c) `euler` (χ-additivity + χ≤2 from b₂=1); (d)
+  assemble `IsSphere2 (insert γ σᵢ)` (both sides: σ₂ = cutSet of W+𝟙);
+  (e) reorient via the integral X to get X = X₁+X₂ feeding `IsTaut.splits`.
+  Then the merged Th2+Th3 induction (eligible tets, flip, base case,
+  shelling reassembly). NB: this is genuinely multi-session work — the
+  watershed (M11) and the cut/closed/dual-conn (M12-14) are done; the
+  remaining pieces-are-spheres (esp. linkConn) + induction are the bulk.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 

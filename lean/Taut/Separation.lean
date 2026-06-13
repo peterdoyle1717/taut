@@ -266,4 +266,163 @@ lemma gammaCycle_dichotomy {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.c
   · left; rw [hrep, h0, zero_smul]
   · right; rw [hrep, h1, one_smul]
 
+/-- The dual graph restricted to a face-set `S`: dual-adjacent and both in `S`. -/
+def dualOn (σ : Finset (Finset V)) (S : Finset (Finset V)) : SimpleGraph σ where
+  Adj f g := (dualGraph σ).Adj f g ∧ (f : Finset V) ∈ S ∧ (g : Finset V) ∈ S
+  symm := by rintro f g ⟨hfg, hf, hg⟩; exact ⟨hfg.symm, hg, hf⟩
+  loopless := ⟨fun f h => h.1.1 rfl⟩
+
+@[simp] lemma dualOn_adj {σ S : Finset (Finset V)} {f g : σ} :
+    (dualOn σ S).Adj f g ↔
+      (dualGraph σ).Adj f g ∧ (f : Finset V) ∈ S ∧ (g : Finset V) ∈ S := Iff.rfl
+
+open Classical in
+/-- The indicator 2-chain of the cut-faces dual-reachable from `f₀` inside `S`. -/
+noncomputable def reachChain (σ : Finset (Finset V)) (S : Finset (Finset V)) (f₀ : σ) : C2 σ :=
+  fun g => if (dualOn σ S).Reachable f₀ g then 1 else 0
+
+lemma reachChain_self {σ : Finset (Finset V)} {S : Finset (Finset V)} {f₀ : σ} :
+    reachChain σ S f₀ f₀ = 1 := by
+  classical
+  simp only [reachChain, if_pos (SimpleGraph.Reachable.refl f₀)]
+
+/-- The reach-set is closed under within-`S` dual adjacency: if `f` is reached and
+`g` is dual-adjacent to `f` with both faces in `S`, then `g` is reached. -/
+lemma reachChain_closed {σ : Finset (Finset V)} {S : Finset (Finset V)} {f₀ : σ}
+    {f g : σ} (hf : reachChain σ S f₀ f = 1) (hfg : (dualGraph σ).Adj f g)
+    (hfS : (f : Finset V) ∈ S) (hgS : (g : Finset V) ∈ S) : reachChain σ S f₀ g = 1 := by
+  classical
+  have hrf : (dualOn σ S).Reachable f₀ f := by
+    by_contra hc
+    simp only [reachChain, if_neg hc] at hf
+    exact one_ne_zero hf.symm
+  have hrg : (dualOn σ S).Reachable f₀ g :=
+    hrf.trans (SimpleGraph.Adj.reachable (dualOn_adj.mpr ⟨hfg, hfS, hgS⟩))
+  simp only [reachChain, if_pos hrg]
+
+/-- Reachability inside `S` stays in `S`. -/
+lemma dualOn_walk_mem {σ S : Finset (Finset V)} :
+    ∀ {f₀ g : σ}, (dualOn σ S).Walk f₀ g → (f₀ : Finset V) ∈ S → (g : Finset V) ∈ S := by
+  intro f₀ g p
+  induction p with
+  | nil => exact fun h => h
+  | cons hab _ ih => exact fun _ => ih ((dualOn_adj.mp hab).2.2)
+
+/-- A reached face is in the side (given the base is). -/
+lemma reachChain_mem {σ S : Finset (Finset V)} {f₀ g : σ} (hf₀ : (f₀ : Finset V) ∈ S)
+    (hg : reachChain σ S f₀ g = 1) : (g : Finset V) ∈ S := by
+  classical
+  by_contra hgS
+  have : ¬ (dualOn σ S).Reachable f₀ g := fun ⟨p⟩ => hgS (dualOn_walk_mem p hf₀)
+  simp only [reachChain, if_neg this] at hg
+  exact one_ne_zero hg.symm
+
+lemma reachChain_zero {σ S : Finset (Finset V)} {f₀ g : σ} (hf₀ : (f₀ : Finset V) ∈ S)
+    (hg : (g : Finset V) ∉ S) : reachChain σ S f₀ g = 0 := by
+  rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (reachChain σ S f₀ g) with h | h
+  · exact h
+  · exact absurd (reachChain_mem hf₀ h) hg
+
+/-- The boundary of the reach-chain vanishes off γ's edges: dual-closedness +
+the cut parity. -/
+lemma bd2_reachChain_supp {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {f₀ : σ}
+    (hf₀ : (f₀ : Finset V) ∈ cutSet σ W) {e : Finset V} (he : e ∈ edgesOf σ) (heγ : ¬ e ⊆ γ) :
+    bd2 σ (reachChain σ (cutSet σ W) f₀) ⟨e, he⟩ = 0 := by
+  classical
+  obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h he
+  rw [bd2_at_edge _ he h1 h2 hne he1 he2 huniq]
+  have hpar := edge_cut_parity hW he h1 h2 hne he1 he2 huniq
+  rw [if_neg heγ] at hpar
+  have hmem1 : (f₁ : Finset V) ∈ cutSet σ W ↔ W ⟨f₁, h1⟩ = 1 := by
+    rw [mem_cutSet]; exact ⟨fun ⟨_, hh⟩ => hh, fun hh => ⟨h1, hh⟩⟩
+  have hmem2 : (f₂ : Finset V) ∈ cutSet σ W ↔ W ⟨f₂, h2⟩ = 1 := by
+    rw [mem_cutSet]; exact ⟨fun ⟨_, hh⟩ => hh, fun hh => ⟨h2, hh⟩⟩
+  have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
+  have hWeq : W ⟨f₁, h1⟩ = W ⟨f₂, h2⟩ := c2 _ _ hpar
+  rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W ⟨f₁, h1⟩) with hv | hv
+  · -- both faces in σ₂: reach-chain is 0 on both
+    have hn1 : (f₁ : Finset V) ∉ cutSet σ W :=
+      fun hc => absurd (hmem1.mp hc) (by rw [hv]; decide)
+    have hn2 : (f₂ : Finset V) ∉ cutSet σ W :=
+      fun hc => absurd (hmem2.mp hc) (by rw [← hWeq, hv]; decide)
+    rw [reachChain_zero hf₀ hn1, reachChain_zero hf₀ hn2, add_zero]
+  · -- both faces in σ₁: dual-adjacent, so reach-chain agrees
+    have hf1S : (f₁ : Finset V) ∈ cutSet σ W := hmem1.mpr hv
+    have hf2S : (f₂ : Finset V) ∈ cutSet σ W := hmem2.mpr (hWeq ▸ hv)
+    have hadj : (dualGraph σ).Adj ⟨f₁, h1⟩ ⟨f₂, h2⟩ :=
+      dualGraph_adj.mpr ⟨fun heq => hne (congrArg Subtype.val heq), e, he, he1, he2⟩
+    -- equal values
+    have heq : reachChain σ (cutSet σ W) f₀ ⟨f₁, h1⟩ = reachChain σ (cutSet σ W) f₀ ⟨f₂, h2⟩ := by
+      rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1)
+        (reachChain σ (cutSet σ W) f₀ ⟨f₁, h1⟩) with hr | hr
+      · rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1)
+          (reachChain σ (cutSet σ W) f₀ ⟨f₂, h2⟩) with hr2 | hr2
+        · rw [hr, hr2]
+        · exact absurd (reachChain_closed hr2 hadj.symm hf2S hf1S) (by rw [hr]; decide)
+      · rw [hr]; exact (reachChain_closed hr hadj hf1S hf2S).symm
+    rw [heq]
+    exact CharTwo.add_self_eq_zero _
+
+/-- **One side is dual-connected.** Every cut-face is dual-reachable from a fixed
+cut-face `f₀`; equivalently the reach-chain equals the cut indicator `W`. -/
+theorem cutSet_dualConn {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+    {γ : Finset V} (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+    (hW : bd2 σ W = gammaChain σ γ) {f₀ : σ} (hf₀ : W f₀ = 1) :
+    reachChain σ (cutSet σ W) f₀ = W := by
+  classical
+  have hf₀mem : (f₀ : Finset V) ∈ cutSet σ W := mem_cutSet.mpr ⟨f₀.2, hf₀⟩
+  have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
+  -- a 2-cycle is a constant function (ker ∂₂ = span 𝟙)
+  have const_of_cycle : ∀ x : C2 σ, bd2 σ x = 0 → ∃ cc : ZMod 2, x = fun _ => cc := by
+    intro x hx
+    have hmem : x ∈ Submodule.span (ZMod 2) {(fun _ => 1 : C2 σ)} := by
+      rw [← ker_bd2_eq_span h]; exact LinearMap.mem_ker.mpr hx
+    obtain ⟨cc, hcc⟩ := Submodule.mem_span_singleton.mp hmem
+    exact ⟨cc, funext fun g => by have := congrFun hcc g; simpa using this.symm⟩
+  -- gammaChain ≠ 0 (it is 1 on each edge of γ)
+  have hWγ : gammaChain σ γ ≠ 0 := by
+    obtain ⟨e0, he0⟩ : (γ.powersetCard 2).Nonempty :=
+      Finset.card_pos.mp (by rw [Finset.card_powersetCard, hγ3]; decide)
+    rw [Finset.mem_powersetCard] at he0
+    have he0e : e0 ∈ edgesOf σ := hγe (Finset.mem_powersetCard.mpr he0)
+    intro h0
+    have hv1 : gammaChain σ γ ⟨e0, he0e⟩ = 1 := by simp only [gammaChain, if_pos he0.1]
+    rw [h0] at hv1; simp only [Pi.zero_apply] at hv1; exact one_ne_zero hv1.symm
+  -- some face is off the cut (else W = 𝟙 and gammaChain = bd2 𝟙 = 0)
+  have hσ2 : ∃ g : σ, (g : Finset V) ∉ cutSet σ W := by
+    by_contra hc
+    simp only [not_exists, not_not] at hc
+    have hW1 : W = (fun _ => 1) := by
+      funext g; obtain ⟨_, hh⟩ := mem_cutSet.mp (hc g); exact hh
+    rw [hW1, bd2_one σ h.closed] at hW
+    exact hWγ hW.symm
+  have hker : bd1 σ (bd2 σ (reachChain σ (cutSet σ W) f₀)) = 0 := by
+    have := bd1_comp_bd2 σ h.pure
+    rw [LinearMap.ext_iff] at this; simpa using this _
+  have hsupp : ∀ e : edgesOf σ, bd2 σ (reachChain σ (cutSet σ W) f₀) e ≠ 0 →
+      (e : Finset V) ⊆ γ := fun e hbe => by
+    by_contra heγ; exact hbe (bd2_reachChain_supp h hW hf₀mem e.2 heγ)
+  rcases gammaCycle_dichotomy hγ3 hγe hker hsupp with hb0 | hbγ
+  · -- bd2 R = 0 ⟹ R is constant; but R f₀ = 1 and R vanishes on σ₂ — impossible
+    exfalso
+    obtain ⟨cc, hcc⟩ := const_of_cycle _ hb0
+    obtain ⟨g, hg⟩ := hσ2
+    have e1 : (1 : ZMod 2) = cc := reachChain_self.symm.trans (congrFun hcc f₀)
+    have e2 : (0 : ZMod 2) = cc := (reachChain_zero hf₀mem hg).symm.trans (congrFun hcc g)
+    exact one_ne_zero (e1.trans e2.symm)
+  · -- bd2 R = gammaChain = bd2 W ⟹ R + W is a constant cc; at f₀, cc = 0; so R = W
+    have hsum : bd2 σ (reachChain σ (cutSet σ W) f₀ + W) = 0 := by
+      rw [map_add, hbγ, hW]; funext e
+      simp only [Pi.add_apply, Pi.zero_apply]; exact CharTwo.add_self_eq_zero _
+    obtain ⟨cc, hcc⟩ := const_of_cycle _ hsum
+    have hf := congrFun hcc f₀
+    simp only [Pi.add_apply, hf₀, reachChain_self] at hf
+    have hcc0 : cc = 0 := by rw [← hf]; decide
+    funext g
+    have hg := congrFun hcc g
+    rw [hcc0] at hg
+    simp only [Pi.add_apply] at hg
+    exact c2 _ _ hg
+
 end Taut
