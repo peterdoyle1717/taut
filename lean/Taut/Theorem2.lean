@@ -174,4 +174,139 @@ lemma nrm_removeTet_of_simplicial {M : Chain V} {t : Finset V}
     nrm (removeTet M t) = nrm M - 1 := by
   have := nrm_removeTet_add_one_of_simplicial hS ht; omega
 
+/-! ### M21b: the edge-flip sign bookkeeping (architect: codex 019ec271) -/
+
+/-- `∂` of a tet's basis vector, read off at one of its own faces, is the sign. -/
+lemma bdryGen_apply_erase_of_mem {t : Finset V} {x : V} (hx : x ∈ t) :
+    bdryGen t (t.erase x) = sgn x t := by
+  rw [bdryGen, Finset.sum_apply']
+  have key : ∀ y ∈ t, y ≠ x →
+      (sgn y t • Finsupp.single (t.erase y) (1 : ℤ)) (t.erase x) = 0 := by
+    intro y hy hyx
+    have hne : t.erase x ≠ t.erase y := by
+      intro hc
+      have hmem : y ∈ t.erase x := Finset.mem_erase.mpr ⟨hyx, hy⟩
+      rw [hc] at hmem
+      exact Finset.notMem_erase y t hmem
+    rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne hne, smul_zero]
+  rw [Finset.sum_eq_single_of_mem x hx key, Finsupp.smul_apply, Finsupp.single_eq_same,
+    smul_eq_mul, mul_one]
+
+/-- The tet's contribution at one of its faces is `M t · sgn`. -/
+lemma tetContribution_apply_erase_of_mem {M : Chain V} {t : Finset V} {x : V} (hx : x ∈ t) :
+    tetContribution M t (t.erase x) = M t * sgn x t := by
+  rw [tetContribution, bdry_single, Finsupp.smul_apply, bdryGen_apply_erase_of_mem hx,
+    smul_eq_mul]
+
+/-- Off the tet's four faces, the tet contributes nothing. -/
+lemma tetContribution_apply_of_not_mem_tetFaces {M : Chain V} {t s : Finset V}
+    (ht : t.card = 4) (hs : s ∉ tetFaces t) : tetContribution M t s = 0 := by
+  have hz : bdryGen t s = 0 := by
+    rw [bdryGen, Finset.sum_apply']
+    apply Finset.sum_eq_zero
+    intro y hy
+    rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne
+      (fun hc => (hc ▸ hs) (erase_mem_tetFaces ht hy)), smul_zero]
+  rw [tetContribution, bdry_single, Finsupp.smul_apply, hz, smul_zero]
+
+/-- Every tet face is `t.erase y` for a (unique) vertex `y ∈ t`. -/
+lemma exists_erase_eq_of_mem_tetFaces {t s : Finset V} (ht : t.card = 4)
+    (hs : s ∈ tetFaces t) : ∃ y, y ∈ t ∧ s = t.erase y := by
+  obtain ⟨hsub, hcard⟩ := Finset.mem_powersetCard.mp hs
+  have hd : (t \ s).card = 1 := by rw [Finset.card_sdiff_of_subset hsub, ht, hcard]
+  obtain ⟨y, hy⟩ := Finset.card_eq_one.mp hd
+  obtain ⟨hyt, hys⟩ := Finset.mem_sdiff.mp (hy ▸ Finset.mem_singleton_self y)
+  refine ⟨y, hyt, Finset.Subset.antisymm (fun z hz => ?_) (fun z hz => ?_)⟩
+  · exact Finset.mem_erase.mpr ⟨fun hzy => hys (hzy ▸ hz), hsub hz⟩
+  · rw [Finset.mem_erase] at hz
+    by_contra hzs
+    exact hz.1 (by have := hy ▸ Finset.mem_sdiff.mpr ⟨hz.2, hzs⟩; rwa [Finset.mem_singleton] at this)
+
+/-- On a tet face the contribution is nonzero (the tet is genuinely present). -/
+lemma tetContribution_ne_zero_of_mem_tetFaces {M : Chain V} {t s : Finset V}
+    (ht : t.card = 4) (htM : M t ≠ 0) (hs : s ∈ tetFaces t) : tetContribution M t s ≠ 0 := by
+  obtain ⟨y, hyt, rfl⟩ := exists_erase_eq_of_mem_tetFaces ht hs
+  rw [tetContribution_apply_erase_of_mem hyt]
+  exact mul_ne_zero htM (by rw [sgn]; exact pow_ne_zero _ (by norm_num))
+
+/-- An exposed face is absent from the current boundary. -/
+lemma bdry_apply_eq_zero_of_mem_exposedFaces {M : Chain V} {t s : Finset V}
+    (hs : s ∈ exposedFaces M t) : (bdry M) s = 0 := by
+  rw [exposedFaces, Finset.mem_sdiff, sharedFaces, Finset.mem_inter] at hs
+  by_contra h0
+  exact hs.2 ⟨hs.1, Finsupp.mem_support_iff.mpr h0⟩
+
+/-- **The flip on supports.** Removing an eligible tet drops its two shared
+boundary faces and adds its two exposed ones — the paper's `ab → cd` flip. -/
+theorem support_flipBoundary_of_eligible {M : Chain V} {t : Finset V} (h : EligibleTet M t) :
+    (bdry (removeTet M t)).support
+      = ((bdry M).support \ sharedFaces M t) ∪ exposedFaces M t := by
+  obtain ⟨ht4, htM, _, hshared⟩ := h
+  have htM' : M t ≠ 0 := Finsupp.mem_support_iff.mp htM
+  ext s
+  simp only [Finsupp.mem_support_iff, bdry_removeTet, Finsupp.sub_apply, Finset.mem_union,
+    Finset.mem_sdiff]
+  by_cases hsf : s ∈ tetFaces t
+  · by_cases hss : s ∈ sharedFaces M t
+    · rw [hshared s hss, sub_self]
+      constructor
+      · intro h; exact absurd rfl h
+      · rintro (⟨_, hns⟩ | hex)
+        · exact absurd hss hns
+        · exact absurd (Finset.mem_sdiff.mp hex).2 (not_not.mpr hss)
+    · have hse : s ∈ exposedFaces M t := Finset.mem_sdiff.mpr ⟨hsf, hss⟩
+      rw [bdry_apply_eq_zero_of_mem_exposedFaces hse, zero_sub, neg_ne_zero]
+      constructor
+      · intro _; exact Or.inr hse
+      · intro _; exact tetContribution_ne_zero_of_mem_tetFaces ht4 htM' hsf
+  · rw [tetContribution_apply_of_not_mem_tetFaces ht4 hsf, sub_zero]
+    have hns : s ∉ sharedFaces M t := fun hc => hsf (sharedFaces_subset_tetFaces M t hc)
+    have hne : s ∉ exposedFaces M t := fun hc => hsf (exposedFaces_subset_tetFaces M t hc)
+    constructor
+    · intro h; exact Or.inl ⟨h, hns⟩
+    · rintro (⟨h, _⟩ | h)
+      · exact h
+      · exact absurd h hne
+
+/-- An eligible tet of a simplicial filling carries coefficient `±1`. -/
+lemma tet_coeff_eq_pm_one_of_eligible {M : Chain V} {t : Finset V}
+    (hS : SimplicialChain M) (h : EligibleTet M t) : M t = 1 ∨ M t = -1 := by
+  have htM : M t ≠ 0 := Finsupp.mem_support_iff.mp h.2.1
+  rcases hS t with h1 | h0 | h1
+  · exact Or.inr h1
+  · exact absurd h0 htM
+  · exact Or.inl h1
+
+/-- On a tet face, a `±1`-coefficient tet contributes `±1`. -/
+lemma tetContribution_eq_pm_one_of_mem_tetFaces {M : Chain V} {t s : Finset V}
+    (ht : t.card = 4) (hpm : M t = 1 ∨ M t = -1) (hs : s ∈ tetFaces t) :
+    tetContribution M t s = 1 ∨ tetContribution M t s = -1 := by
+  obtain ⟨y, hyt, rfl⟩ := exists_erase_eq_of_mem_tetFaces ht hs
+  rw [tetContribution_apply_erase_of_mem hyt]
+  have hsgn : sgn y t = 1 ∨ sgn y t = -1 := mul_self_eq_one_iff.mp (sgn_mul_self y t)
+  rcases hpm with hm | hm <;> rcases hsgn with hs1 | hs1 <;> rw [hm, hs1] <;> decide
+
+/-- **The flip on unit chains.** If `bdry M` is a unit chain on `σ`, then after
+removing an eligible tet the new boundary is a unit chain on the flipped sphere
+`(σ \ sharedFaces) ∪ exposedFaces`. -/
+theorem unitOn_flipBoundary_of_eligible {M : Chain V} {σ : Finset (Finset V)} {t : Finset V}
+    (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (h : EligibleTet M t) :
+    UnitOn (bdry (removeTet M t)) ((σ \ sharedFaces M t) ∪ exposedFaces M t) := by
+  have ht4 := h.1
+  have hpm := tet_coeff_eq_pm_one_of_eligible hS h
+  refine ⟨by rw [support_flipBoundary_of_eligible h, hU.1], ?_⟩
+  intro s hs
+  rw [Finset.mem_union] at hs
+  rcases hs with hs | hs
+  · rw [Finset.mem_sdiff] at hs
+    have hssupp : s ∈ (bdry M).support := by rw [hU.1]; exact hs.1
+    have hsf : s ∉ tetFaces t := fun hcon =>
+      hs.2 (Finset.mem_inter.mpr ⟨hcon, hssupp⟩)
+    rw [bdry_removeTet, Finsupp.sub_apply, tetContribution_apply_of_not_mem_tetFaces ht4 hsf,
+      sub_zero]
+    exact hU.2 s hs.1
+  · rw [bdry_removeTet, Finsupp.sub_apply, bdry_apply_eq_zero_of_mem_exposedFaces hs, zero_sub]
+    rcases tetContribution_eq_pm_one_of_mem_tetFaces ht4 hpm
+      (exposedFaces_subset_tetFaces M t hs) with h1 | h1 <;> rw [h1] <;> decide
+
 end Taut
