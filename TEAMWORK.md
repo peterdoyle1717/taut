@@ -62,11 +62,28 @@ sphere/ball definitions.
 - Sphere local structure (M8) — COMPLETE: exists_third,
   exists_two_faces, inter_eq_edge_of_two_faces, mem_linkVerts(_iff_edge),
   link_two_regular, three_le_card_linkVerts, Decidable adjacencies.
-- Next: links-are-cycles packaging (2-regular + connected ⟹ cycle
-  traversal, in whatever form the χ ≤ 2 parity argument needs);
-  Taut/Ball.lean (List shelling certificates per audit); flip dichotomy;
-  χ ≤ 2 via tree-cotree (even-boundary-in-tree + dual connectivity are
-  the flagged first-class risks).
+- `Taut/Ball.lean` (M9) — COMPLETE and building: the audited Q2/Q3
+  shelling-certificate layer. `tetFaces`, `GlueStep` (type 1/2 glue,
+  symmetric-difference boundary, IsSphere2 baked in), `ShellFrom`
+  accumulator, `IsShelling`, `IsBall` (shelling-certified ball),
+  `FreelyShellable`. Validation: `IsBall.isSphere2` (boundary of a ball
+  is a sphere), `isBall_singleton`/`freelyShellable_singleton` (a single
+  tet is a freely shellable ball). Plus `isSphere2_powersetCard3` in
+  Complex2 (base-case sphere = boundary of any 4-set). Axioms: standard
+  three. NOTE: GlueStep's sym-diff formula is exercised structurally but
+  not yet on a worked multi-tet sphere (e.g. bipyramid) — that lands for
+  free with the flip dichotomy / induction, or as a later smoke test.
+- Next (the watershed): the χ ≤ 2 packet — needs its OWN G1 audit (new
+  encodings: closed-surface predicate sans χ; dual graph on faces;
+  boundary ∂S of a face-set; even-subgraph; tree-cotree). Planned route
+  (elementary, avoids 𝔽₂ linear algebra): edge-DISJOINT spanning trees of
+  skeleton (V−1 edges) and dual graph (F−1 edges) ⟹ E ≥ V+F−2 ⟹ χ ≤ 2.
+  Three lemmas: (L1) dual connectivity from conn+linkConn+closed; (L2)
+  ∂S even subgraph from links-are-cycles; (L3) even subgraph in a forest
+  is empty. Technical wrinkle to audit: complexes live in arbitrary `V`
+  (infinite); spanning-tree API wants the graph on the vertex subtype/
+  Fintype `{x // x ∈ vertsOf σ}`. Then flip dichotomy, then merged
+  Th2+Th3 induction (assembly).
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
@@ -95,3 +112,9 @@ sphere/ball definitions.
   sign library, bdry/cone/lk/nbhd/vert/nrm/deg, ∂∂=0, homotopy identity,
   cone_lk, localization, cone injectivity, norm accounting. Axioms:
   standard three only. → M2 committed.
+
+- 2026-06-12: M9 — Ball.lean, the shelling-certificate layer (audited
+  Q2/Q3). Shelling-certified balls as List certificates with IsSphere2
+  baked into each glue; boundary-of-ball-is-sphere; single tet is a
+  freely shellable ball. Base-case sphere isSphere2_powersetCard3 added
+  to Complex2. Build green, standard three axioms. → M9 committed.

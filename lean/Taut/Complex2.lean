@@ -589,4 +589,16 @@ theorem isSphere2_tetraBdry :
 
 end Tetra
 
+/-- The boundary of any 4-element set (its card-3 subsets) is a combinatorial
+2-sphere.  This is the base-case sphere of the Theorem 2 induction and the
+initial boundary of a one-tet ball. -/
+theorem isSphere2_powersetCard3 {t : Finset V} (ht : t.card = 4) :
+    IsSphere2 (t.powersetCard 3) := by
+  obtain ⟨a, b, c, d, hab, hac, had, hbc, hbd, hcd, rfl⟩ := Finset.card_eq_four.mp ht
+  have heq : ({a, b, c, d} : Finset V).powersetCard 3 = tetraBdry a b c d := by
+    ext f
+    rw [Finset.mem_powersetCard, tetra_mem hab hac had hbc hbd hcd f]
+  rw [heq]
+  exact isSphere2_tetraBdry hab hac had hbc hbd hcd
+
 end Taut
