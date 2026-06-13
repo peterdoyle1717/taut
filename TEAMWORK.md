@@ -73,17 +73,32 @@ sphere/ball definitions.
   three. NOTE: GlueStep's sym-diff formula is exercised structurally but
   not yet on a worked multi-tet sphere (e.g. bipyramid) — that lands for
   free with the flip dichotomy / induction, or as a later smoke test.
-- Next (the watershed): the χ ≤ 2 packet — needs its OWN G1 audit (new
-  encodings: closed-surface predicate sans χ; dual graph on faces;
-  boundary ∂S of a face-set; even-subgraph; tree-cotree). Planned route
-  (elementary, avoids 𝔽₂ linear algebra): edge-DISJOINT spanning trees of
-  skeleton (V−1 edges) and dual graph (F−1 edges) ⟹ E ≥ V+F−2 ⟹ χ ≤ 2.
-  Three lemmas: (L1) dual connectivity from conn+linkConn+closed; (L2)
-  ∂S even subgraph from links-are-cycles; (L3) even subgraph in a forest
-  is empty. Technical wrinkle to audit: complexes live in arbitrary `V`
-  (infinite); spanning-tree API wants the graph on the vertex subtype/
-  Fintype `{x // x ∈ vertsOf σ}`. Then flip dichotomy, then merged
-  Th2+Th3 induction (assembly).
+- ROUTE CHANGE (PI, in session): tree–cotree for χ ≤ 2 is DROPPED — it was
+  re-deriving a hypothesis we already have. χ = 2 is in IsSphere2, and the
+  Euler–Poincaré identity χ = b₀ − b₁ + b₂ is pure linear algebra, so
+  b₀ = 1 (conn) + b₂ = 1 (Doyle's "a 2-cycle has equal weight across every
+  edge, hence constant") + the given χ = 2 force **b₁ = 0** (H₁ = 0,
+  every 1-cycle bounds). The separation then falls out as a chain split
+  feeding `IsTaut.splits`. Far cheaper, reuses the chain layer.
+- `Taut/Homology2.lean` (M10) — COMPLETE and building: the 𝔽₂ chain
+  complex (C0/C1/C2 as ↥Finset→ZMod 2, bd1/bd2 as LinearMaps),
+  `bd1_comp_bd2` (∂∂=0, via "each vertex in exactly two of a triangle's
+  edges"), `bd2_one` (all-faces fundamental cycle), `bd2_at_edge` (∂₂ at
+  an edge = sum of its two faces), the dual graph + FULL dual connectivity
+  (`dualGraph_preconnected`, from conn+linkConn+closed via two Walk
+  inductions — the hard derived lemma), and **b₂ = 1**
+  (`finrank_ker_bd2`: ker ∂₂ = span of the fundamental class). Axioms:
+  standard three. NB: G1 audit infra HUNG twice (codex never returned on
+  the long prompt; M9-style G2 reviews work fine) — proceeded per the
+  process-friction clause on the PI's in-session design + the documented
+  spec + compile-validated primitives + self-verified IsTaut.splits
+  interface; see notes/codex-consults/2026-06-12-g1-homology-separation-*.
+- Next: r₁ = V−1 (finrank range bd1, via the GIVEN skeleton conn — the
+  easy connectivity side; aug map + accumulation Walk lemma); then
+  H₁ = 0 (`range bd2 = ker bd1` from range bd2 ⊆ ker bd1 + equal finrank,
+  using χ=2); then `separates` (the cut → face partition → X = X₁+X₂);
+  then the merged Th2+Th3 induction (eligible tets, flip, base case,
+  reassembly via shellings).
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
@@ -118,3 +133,11 @@ sphere/ball definitions.
   baked into each glue; boundary-of-ball-is-sphere; single tet is a
   freely shellable ball. Base-case sphere isSphere2_powersetCard3 added
   to Complex2. Build green, standard three axioms. → M9 committed.
+
+- 2026-06-12 (cont): PI redirected the watershed — dropped tree–cotree
+  for the b₁=0 / Euler–Poincaré route (use the given χ=2 + b₂=1). M10 —
+  Homology2.lean: 𝔽₂ chain complex, ∂∂=0, fundamental cycle, dual graph
+  + full dual connectivity (two Walk inductions), and b₂=1. Build green,
+  standard three axioms. G1 audit infra hung twice; proceeded per the
+  process-friction clause (PI design + spec + pre-validated primitives +
+  G2 backstop). → M10 commit pending G2.

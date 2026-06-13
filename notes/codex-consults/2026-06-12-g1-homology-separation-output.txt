@@ -1,0 +1,14 @@
+G1 audit attempted TWICE (background task b5mzsbdzf, then foreground/auto-backgrounded
+b1v4auxdn). Both runs: codex exec (gpt-5.5) accepted the prompt ("Reading additional
+input from stdin...") but never produced output — each ran >15 min with no streamed
+verdict and was killed. The M9 G2 review (a shorter codex prompt) completed normally in
+the same session, so the failure is specific to this long G1 prompt, not codex generally.
+
+PROCEEDING per the process-friction clause (~/.claude/CLAUDE.md): the design is the PI's
+own (Doyle co-designed the b₁=0 / Euler–Poincaré route directly in session, replacing the
+tree–cotree plan); the spec 2026-06-12-g1-homology-separation-spec.md documents every
+convention; all encoding primitives were compile-validated before use (chain groups,
+rank-nullity, LinearMap.pi boundary, card−1 kernel rank, Walk-induction constancy &
+accumulation); the IsTaut.splits consumer interface was read and verified directly; and
+the G2 commit gate (which works) reviews the actual code. Verdict: PENDING (infra), not
+APPROVED — recorded honestly.
