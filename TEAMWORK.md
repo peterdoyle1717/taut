@@ -313,10 +313,26 @@ sphere/ball definitions.
   property on the flipped sphere). M21 COMPLETE. Build green (8259 jobs), no
   sorry, standard three axioms. (Did this in-session, build-checked at every
   step — no sorry slips.)
-- NEXT (M22): **ball reassembly** in Ball.lean — append one type-2 tet to a
-  shelling; concatenate two shellings through a bridging tet; preserve
-  FreelyShellable. Then M23 (oriented separation bridge), M24 (deg-3 reduction),
-  M25 (eligible-tet count), M26 (main induction + Th2+3 wrapper).
+- ARCHITECT (codex 019ec2cc): M22 design — **BLOCKED on full case-2**, resolved
+  by SPLIT (codex's own recommendation). KEY FINDING: gluing two balls through a
+  bridge tet is NOT derivable from `IsBall`/`FreelyShellable` — `IsBall τ₂ B₂`
+  shells from `tetFaces head`, not from an ambient boundary. Needs a **relative
+  shelling** invariant `RelShelling τ B₀ B` (shell τ onto ambient B₀). This is
+  "exactly where the paper hides topology" (codex). Also: carry plain `IsBall`
+  through the induction for Th2; `FreelyShellable` only at the Th3 wrapper (and
+  IsBall ̸→ FreelyShellable, so Th3 needs a stronger invariant — TBD).
+- M22a (DONE, Ball.lean, building): the tractable scaffolding — `ShellFrom_append`,
+  `ShellFrom_snoc`, `IsShelling_append`, `IsShelling_snoc`,
+  **`IsBall.insert_of_glueStep`** (case-1: grow a ball by a GlueStep tet),
+  `RelShelling` (the new invariant), **`IsBall.bridge_of_relShelling`** (case-2
+  bridge, tautological GIVEN the RelShelling). Build green (8259 jobs), no sorry,
+  standard three axioms.
+- M22b (THE HARD PART, next-or-later): `relShelling_of_separated_cap` — prove the
+  ball filling a capped side σᵢ supplies a `RelShelling` onto the ambient
+  boundary along the cap. This is the hidden-topology fact; own G1 design.
+- NEXT: M23 (oriented separation bridge `oriented_split_chains_of_separates` →
+  `IsTaut.splits`), then M24 (deg-3 reduction), M25 (eligible-tet count — biggest
+  risk), M26 (induction). M22b folds into the case-2 path.
 - Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
@@ -430,7 +446,16 @@ sphere/ball definitions.
   sign bookkeeping, build-checked at each step (no sorry slips despite the long
   run). M21 (the tet-removal/edge-flip API) is COMPLETE: removing an eligible tet
   flips its 2 boundary faces to its other 2, preserving the ±1-unit-chain
-  structure. Build green, no sorry, standard three axioms. → M21b commit pending G2.
+  structure. Build green, no sorry, standard three axioms. → M21b committed (c5c0280).
+
+- 2026-06-13: codex architected M22 (ball reassembly) and BLOCKED full case-2,
+  recommending a SPLIT — the genuine finding that gluing two balls through a
+  bridge tet needs a relative-shelling invariant (`RelShelling`), "where the
+  paper hides topology". M22a — landed the tractable half: append/snoc/IsBall
+  reassembly lemmas, `IsBall.insert_of_glueStep` (case-1), `RelShelling` +
+  `IsBall.bridge_of_relShelling` (case-2 bridge given the relative shelling).
+  Build green (8259 jobs), no sorry, standard three axioms. M22b (proving the
+  separated balls supply the RelShelling) is the hard remainder. → M22a commit pending G2.
 
 - 2026-06-13: also fixed the recurring approval friction — the G2 evidence file
   now lives at `.session/claude-commit-evidence.md` (the harness guards `.git/`

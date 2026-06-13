@@ -116,6 +116,94 @@ theorem IsBall.isSphere2 {τ B : Finset (Finset V)} (h : IsBall τ B) :
   obtain ⟨_, _, _, hsh⟩ := h
   exact hsh.isSphere2
 
+/-! ## Reassembly (M22a): appending tets and bridging two balls
+
+Architect: codex 019ec2cc. `ShellFrom`/`IsShelling` are closed under appending
+tets at the end; a ball with a `GlueStep` tet on its boundary grows by that tet
+(case-1 of the Theorem-2 induction). Gluing two balls through a bridging tet
+needs *relative* shellability (`RelShelling`) — that is the genuine hidden-
+topology fact (M22b), here reduced to a tautological bridge given the relative
+shelling. -/
+
+/-- `ShellFrom` composes: glue `l₁` then `l₂`. -/
+lemma ShellFrom_append {B₀ B₁ B₂ : Finset (Finset V)} {l₁ l₂ : List (Finset V)}
+    (h₁ : ShellFrom B₀ l₁ B₁) (h₂ : ShellFrom B₁ l₂ B₂) :
+    ShellFrom B₀ (l₁ ++ l₂) B₂ := by
+  induction l₁ generalizing B₀ with
+  | nil => simp only [ShellFrom, List.nil_append] at h₁ ⊢; exact h₁ ▸ h₂
+  | cons t l ih =>
+      simp only [ShellFrom, List.cons_append] at h₁ ⊢
+      obtain ⟨B', hg, hrest⟩ := h₁
+      exact ⟨B', hg, ih hrest⟩
+
+/-- Append one `GlueStep` tet to a `ShellFrom`. -/
+lemma ShellFrom_snoc {B₀ B B' : Finset (Finset V)} {l : List (Finset V)} {t : Finset V}
+    (h : ShellFrom B₀ l B) (hg : GlueStep t B B') : ShellFrom B₀ (l ++ [t]) B' :=
+  ShellFrom_append h ⟨B', hg, rfl⟩
+
+/-- Glue a `ShellFrom` of `l₂` onto the end of a shelling `l`. -/
+lemma IsShelling_append {l l₂ : List (Finset V)} {B₁ B : Finset (Finset V)}
+    (h : IsShelling l B₁) (hf : ShellFrom B₁ l₂ B) : IsShelling (l ++ l₂) B := by
+  cases l with
+  | nil => simp only [IsShelling] at h
+  | cons t r => simp only [IsShelling, List.cons_append] at h ⊢; exact ⟨h.1, ShellFrom_append h.2 hf⟩
+
+/-- Append one `GlueStep` tet to a shelling. -/
+lemma IsShelling_snoc {B B' : Finset (Finset V)} {l : List (Finset V)} {t : Finset V}
+    (h : IsShelling l B) (hg : GlueStep t B B') : IsShelling (l ++ [t]) B' :=
+  IsShelling_append h ⟨B', hg, rfl⟩
+
+/-- **Case-1 reassembly.** A ball whose boundary admits a `GlueStep` for a fresh
+tet `t` grows to the ball with `t` adjoined. -/
+theorem IsBall.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Finset V}
+    (h : IsBall τ B) (hg : GlueStep t B B') (ht : t ∉ τ) : IsBall (insert t τ) B' := by
+  obtain ⟨l, hlτ, hnodup, hsh⟩ := h
+  have htl : t ∉ l := fun hc => ht (hlτ ▸ List.mem_toFinset.mpr hc)
+  refine ⟨l ++ [t], ?_, ?_, IsShelling_snoc hsh hg⟩
+  · rw [List.toFinset_append, hlτ]
+    ext s
+    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+    tauto
+  · refine hnodup.append (List.nodup_singleton t) ?_
+    rw [List.disjoint_left]; intro a ha
+    simp only [List.mem_singleton]; rintro rfl; exact htl ha
+
+/-- A *relative shelling*: glue the tets of `τ` onto an ambient boundary `B₀`,
+ending at `B`. (`IsBall` is the special case `B₀ = tetFaces (head)`.) This is the
+invariant the case-2 bridge needs but `IsBall` does not supply. -/
+def RelShelling (τ B₀ B : Finset (Finset V)) : Prop :=
+  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ ShellFrom B₀ l B
+
+/-- **Case-2 bridge (tautological given the relative shelling).** A ball `τ₁`,
+a `GlueStep` tet `t` onto its boundary, and a relative shelling of `τ₂` onto the
+resulting boundary, assemble into one ball. The hard part — that the separated
+ball actually supplies the `RelShelling` — is M22b. -/
+theorem IsBall.bridge_of_relShelling {τ₁ τ₂ B₁ Bmid B : Finset (Finset V)} {t : Finset V}
+    (h₁ : IsBall τ₁ B₁) (hg : GlueStep t B₁ Bmid) (h₂ : RelShelling τ₂ Bmid B)
+    (ht₁ : t ∉ τ₁) (ht₂ : t ∉ τ₂) (hdisj : Disjoint τ₁ τ₂) :
+    IsBall (insert t (τ₁ ∪ τ₂)) B := by
+  obtain ⟨l₁, hl₁, hn₁, hsh₁⟩ := h₁
+  obtain ⟨l₂, hl₂, hn₂, hsf₂⟩ := h₂
+  have htl₁ : t ∉ l₁ := fun hc => ht₁ (hl₁ ▸ List.mem_toFinset.mpr hc)
+  have htl₂ : t ∉ l₂ := fun hc => ht₂ (hl₂ ▸ List.mem_toFinset.mpr hc)
+  have hdl : l₁.Disjoint l₂ := by
+    intro a ha ha₂
+    exact Finset.disjoint_left.mp hdisj (hl₁ ▸ List.mem_toFinset.mpr ha)
+      (hl₂ ▸ List.mem_toFinset.mpr ha₂)
+  refine ⟨(l₁ ++ [t]) ++ l₂, ?_, ?_, IsShelling_append (IsShelling_snoc hsh₁ hg) hsf₂⟩
+  · rw [List.toFinset_append, List.toFinset_append, hl₁, hl₂]
+    ext s
+    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+    tauto
+  · refine (hn₁.append (List.nodup_singleton t) ?_).append hn₂ ?_
+    · rw [List.disjoint_left]; intro a ha
+      simp only [List.mem_singleton]; rintro rfl; exact htl₁ ha
+    · rw [List.disjoint_left]; intro a ha
+      rw [List.mem_append, List.mem_singleton] at ha
+      rcases ha with ha | rfl
+      · exact List.disjoint_left.mp hdl ha
+      · exact htl₂
+
 /-! ## A single tetrahedron is a ball -/
 
 /-- A single tetrahedron `t` is a shelling-certified ball whose boundary is
