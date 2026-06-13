@@ -406,4 +406,172 @@ theorem finrank_ker_bd2 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
   simp only [Pi.zero_apply] at this
   exact one_ne_zero this
 
+/-! ### `range ∂₁` has dimension V − 1 (from the skeleton connectivity) -/
+
+/-- The augmentation `ε : C₀ → 𝔽₂`, summing coordinates. -/
+noncomputable def aug (σ : Finset (Finset V)) : C0 σ →ₗ[ZMod 2] ZMod 2 :=
+  ∑ x : vertsOf σ, LinearMap.proj x
+
+lemma aug_apply (σ : Finset (Finset V)) (c : C0 σ) :
+    aug σ c = ∑ x : vertsOf σ, c x := by
+  simp only [aug, LinearMap.coe_sum, Finset.sum_apply, LinearMap.proj_apply]
+
+/-- A sphere has at least one vertex. -/
+lemma IsSphere2.vertsOf_nonempty {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    (vertsOf σ).Nonempty := by
+  obtain ⟨f, hf⟩ := h.nonempty
+  obtain ⟨x, hx⟩ : f.Nonempty := by rw [← Finset.card_pos, h.pure f hf]; omega
+  exact ⟨x, mem_vertsOf.mpr ⟨f, hf, hx⟩⟩
+
+/-- `finrank (ker ε) = V − 1` since `ε` is surjective. -/
+lemma finrank_ker_aug {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    finrank (ZMod 2) (LinearMap.ker (aug σ)) = (vertsOf σ).card - 1 := by
+  have hne : Nonempty (vertsOf σ) := h.vertsOf_nonempty.to_subtype
+  have hsurj : Function.Surjective (aug σ) := by
+    obtain ⟨x0⟩ := hne
+    intro a
+    refine ⟨Pi.single x0 a, ?_⟩
+    rw [aug_apply]
+    rw [Finset.sum_eq_single x0] <;> simp_all
+  have hrn := LinearMap.finrank_range_add_finrank_ker (aug σ)
+  rw [LinearMap.range_eq_top.mpr hsurj] at hrn
+  have h1 : finrank (ZMod 2) (⊤ : Submodule (ZMod 2) (ZMod 2)) = 1 := by
+    rw [finrank_top]; exact finrank_self (ZMod 2)
+  rw [h1, show finrank (ZMod 2) (C0 σ) = (vertsOf σ).card from by
+    rw [Module.finrank_fintype_fun_eq_card, Fintype.card_coe]] at hrn
+  omega
+
+/-- A vertex of an edge is a vertex of the complex. -/
+lemma edge_mem_vertsOf {σ : Finset (Finset V)} {e : Finset V} (he : e ∈ edgesOf σ)
+    {v : V} (hv : v ∈ e) : v ∈ vertsOf σ := by
+  obtain ⟨f, hf, hef, _⟩ := mem_edgesOf.mp he
+  exact mem_vertsOf.mpr ⟨f, hf, hef hv⟩
+
+/-- `∂₁` of an edge's basis vector is the indicator of its two endpoints. -/
+lemma bd1_single_pair {σ : Finset (Finset V)} {u w : V} (huw : u ≠ w)
+    (he : ({u, w} : Finset V) ∈ edgesOf σ) (hu : u ∈ vertsOf σ) (hw : w ∈ vertsOf σ) :
+    bd1 σ (Pi.single ⟨{u, w}, he⟩ 1) = Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨w, hw⟩ 1 := by
+  funext x
+  rw [bd1_apply, Finset.sum_eq_single (⟨{u, w}, he⟩ : edgesOf σ)]
+  · rw [Pi.single_eq_same, mul_one, Pi.add_apply]
+    by_cases hxu : x = (⟨u, hu⟩ : vertsOf σ)
+    · subst hxu
+      rw [Pi.single_eq_same, Pi.single_eq_of_ne (by rw [Ne, Subtype.ext_iff]; exact huw),
+        if_pos (by simp), add_zero]
+    · by_cases hxw : x = (⟨w, hw⟩ : vertsOf σ)
+      · subst hxw
+        rw [Pi.single_eq_same, Pi.single_eq_of_ne (by rw [Ne, Subtype.ext_iff]; exact Ne.symm huw),
+          if_pos (by simp), zero_add]
+      · rw [Pi.single_eq_of_ne hxu, Pi.single_eq_of_ne hxw, if_neg, add_zero]
+        simp only [Finset.mem_insert, Finset.mem_singleton]
+        rintro (hc | hc)
+        · exact hxu (Subtype.ext hc)
+        · exact hxw (Subtype.ext hc)
+  · intro e _ hne; rw [Pi.single_eq_of_ne hne, mul_zero]
+  · intro hc; exact absurd (Finset.mem_univ _) hc
+
+/-- Skeleton-walk accumulation: `δ_u + δ_w ∈ range ∂₁` whenever `u, w` are joined
+by a skeleton walk (each edge contributes its endpoint-indicator, telescoping). -/
+lemma accumulate {σ : Finset (Finset V)} :
+    ∀ {u w : V} (_ : (skel σ).Walk u w) (hu : u ∈ vertsOf σ) (hw : w ∈ vertsOf σ),
+      (Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨w, hw⟩ 1 : C0 σ) ∈ LinearMap.range (bd1 σ) := by
+  have key : ∀ a b c : ZMod 2, a + b + (b + c) = a + c := by
+    intro a b c
+    rw [add_assoc, ← add_assoc b b, CharTwo.add_self_eq_zero, zero_add]
+  intro u w p
+  induction p with
+  | nil =>
+      intro hu hw
+      convert Submodule.zero_mem (LinearMap.range (bd1 σ)) using 1
+      funext y
+      simp only [Pi.add_apply, Pi.zero_apply]
+      exact CharTwo.add_self_eq_zero _
+  | @cons u x w hadj q ih =>
+      intro hu hw
+      rw [skel] at hadj
+      obtain ⟨hux, hedge⟩ := hadj
+      have hx : x ∈ vertsOf σ := edge_mem_vertsOf hedge (by simp)
+      have h1 : (Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨x, hx⟩ 1 : C0 σ) ∈ LinearMap.range (bd1 σ) :=
+        ⟨Pi.single ⟨{u, x}, hedge⟩ 1, bd1_single_pair hux hedge hu hx⟩
+      have h2 := ih hx hw
+      have hsum : (Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨x, hx⟩ 1)
+          + (Pi.single ⟨x, hx⟩ 1 + Pi.single ⟨w, hw⟩ 1)
+          = (Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨w, hw⟩ 1 : C0 σ) := by
+        funext y; simp only [Pi.add_apply]; exact key _ _ _
+      rw [← hsum]; exact Submodule.add_mem _ h1 h2
+
+/-- `ε ∘ ∂₁ = 0`: each edge has exactly two vertices (over 𝔽₂ they cancel). -/
+lemma aug_comp_bd1 (σ : Finset (Finset V)) : aug σ ∘ₗ bd1 σ = 0 := by
+  classical
+  refine LinearMap.ext fun u => ?_
+  show aug σ (bd1 σ u) = 0
+  rw [aug_apply]
+  simp_rw [bd1_apply]
+  rw [Finset.sum_comm]
+  refine Finset.sum_eq_zero (fun e _ => ?_)
+  rw [← Finset.sum_mul]
+  have h0 : (∑ x : vertsOf σ, (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0)) = 0 := by
+    rw [Finset.sum_coe_sort (vertsOf σ)
+        (fun x => if x ∈ (e : Finset V) then (1 : ZMod 2) else 0), Finset.sum_boole,
+      show (vertsOf σ).filter (fun x => x ∈ (e : Finset V)) = (e : Finset V) from by
+        ext y
+        simp only [Finset.mem_filter]
+        exact ⟨fun hh => hh.2, fun hh => ⟨edge_mem_vertsOf e.2 hh, hh⟩⟩,
+      card_of_mem_edgesOf e.2]
+    decide
+  rw [h0, zero_mul]
+
+/-- The connectivity direction: a sum-zero 0-chain bounds. -/
+lemma ker_aug_le_range_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    LinearMap.ker (aug σ) ≤ LinearMap.range (bd1 σ) := by
+  intro c hc
+  rw [LinearMap.mem_ker, aug_apply] at hc
+  obtain ⟨x₀, hx₀⟩ := h.vertsOf_nonempty
+  have hbasis : (∑ x : vertsOf σ, c x • (Pi.single x (1 : ZMod 2) : C0 σ)) = c := by
+    funext y
+    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.single_apply, mul_ite,
+      mul_one, mul_zero]
+    rw [Finset.sum_ite_eq Finset.univ y (fun x => c x)]
+    simp
+  have hrep : c = ∑ x : vertsOf σ, c x • (Pi.single x 1 + Pi.single ⟨x₀, hx₀⟩ 1) := by
+    simp_rw [smul_add]
+    rw [Finset.sum_add_distrib, ← Finset.sum_smul, hc, zero_smul, add_zero, hbasis]
+  rw [hrep]
+  refine Submodule.sum_mem _ (fun x _ => Submodule.smul_mem _ _ ?_)
+  obtain ⟨p⟩ := h.conn (x : V) x.2 x₀ hx₀
+  exact accumulate p x.2 hx₀
+
+/-- **r₁ = V − 1.** The boundaries of 0-chains form a space of dimension V − 1. -/
+theorem finrank_range_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    finrank (ZMod 2) (LinearMap.range (bd1 σ)) = (vertsOf σ).card - 1 := by
+  have heq : LinearMap.range (bd1 σ) = LinearMap.ker (aug σ) :=
+    le_antisymm (LinearMap.range_le_ker_iff.mpr (aug_comp_bd1 σ)) (ker_aug_le_range_bd1 h)
+  rw [heq, finrank_ker_aug h]
+
+/-! ### H₁ = 0 — every 1-cycle bounds -/
+
+/-- **The watershed.** On a combinatorial 2-sphere every 1-cycle is a boundary:
+`range ∂₂ = ker ∂₁`. Proof: `range ∂₂ ⊆ ker ∂₁` (from ∂∂=0), and both have
+finrank `F − 1` — `range ∂₂` by b₂=1, `ker ∂₁` by r₁=V−1 together with the given
+χ = 2 — so they coincide. -/
+theorem range_bd2_eq_ker_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    LinearMap.range (bd2 σ) = LinearMap.ker (bd1 σ) := by
+  have hle : LinearMap.range (bd2 σ) ≤ LinearMap.ker (bd1 σ) :=
+    LinearMap.range_le_ker_iff.mpr (bd1_comp_bd2 σ h.pure)
+  apply Submodule.eq_of_le_of_finrank_le hle
+  have hF : finrank (ZMod 2) (C2 σ) = σ.card := by
+    rw [Module.finrank_fintype_fun_eq_card, Fintype.card_coe]
+  have hE : finrank (ZMod 2) (C1 σ) = (edgesOf σ).card := by
+    rw [Module.finrank_fintype_fun_eq_card, Fintype.card_coe]
+  have hr2 : finrank (ZMod 2) (LinearMap.range (bd2 σ)) = σ.card - 1 := by
+    have := LinearMap.finrank_range_add_finrank_ker (bd2 σ)
+    rw [finrank_ker_bd2 h, hF] at this; omega
+  have hk1 : finrank (ZMod 2) (LinearMap.ker (bd1 σ))
+      = (edgesOf σ).card - ((vertsOf σ).card - 1) := by
+    have := LinearMap.finrank_range_add_finrank_ker (bd1 σ)
+    rw [finrank_range_bd1 h, hE] at this; omega
+  have he := h.euler
+  have hV : 1 ≤ (vertsOf σ).card := h.vertsOf_nonempty.card_pos
+  rw [hr2, hk1]; omega
+
 end Taut

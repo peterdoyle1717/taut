@@ -93,12 +93,20 @@ sphere/ball definitions.
   process-friction clause on the PI's in-session design + the documented
   spec + compile-validated primitives + self-verified IsTaut.splits
   interface; see notes/codex-consults/2026-06-12-g1-homology-separation-*.
-- Next: r₁ = V−1 (finrank range bd1, via the GIVEN skeleton conn — the
-  easy connectivity side; aug map + accumulation Walk lemma); then
-  H₁ = 0 (`range bd2 = ker bd1` from range bd2 ⊆ ker bd1 + equal finrank,
-  using χ=2); then `separates` (the cut → face partition → X = X₁+X₂);
-  then the merged Th2+Th3 induction (eligible tets, flip, base case,
-  reassembly via shellings).
+- Homology2.lean (M11) — COMPLETE and building: the b₀=1/r₁ side and the
+  watershed. `aug` (augmentation ε), `finrank_ker_aug` (= V−1),
+  `bd1_single_pair` (∂₁ of an edge basis vector = its endpoint-indicator),
+  `accumulate` (skeleton-walk accumulation: δ_u+δ_w ∈ range ∂₁), the two
+  directions giving **`finrank_range_bd1` = V−1**, and **H₁ = 0**
+  (`range_bd2_eq_ker_bd1`: range ∂₂ = ker ∂₁, from ∂∂=0 + equal finrank
+  F−1 using the given χ=2). THE WATERSHED IS DONE — every 1-cycle on a
+  combinatorial 2-sphere bounds. Axioms: standard three. (577 lines total.)
+- Next: `separates` — turn H₁=0 into the geometric cut. A non-face
+  triangle γ gives a 1-cycle z = ∂₂⟨γ⟩ ∈ ker ∂₁ = range ∂₂, so z = ∂₂ W
+  for a face-set W =: σ₁; σ₂ := σ \ σ₁; prove each `insert γ σᵢ` IsSphere2
+  (euler via χ-additivity, b₁≥0); reorient via the integral X to get
+  X = X₁+X₂ feeding `IsTaut.splits`. Then the merged Th2+Th3 induction
+  (eligible tets, flip, base case, reassembly via shellings).
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
@@ -140,4 +148,10 @@ sphere/ball definitions.
   + full dual connectivity (two Walk inductions), and b₂=1. Build green,
   standard three axioms. G1 audit infra hung twice; proceeded per the
   process-friction clause (PI design + spec + pre-validated primitives +
-  G2 backstop). → M10 commit pending G2.
+  G2 backstop). → M10 committed.
+
+- 2026-06-12 (cont): M11 — the r₁ side and the watershed itself. aug +
+  finrank_ker_aug (V−1), bd1_single_pair, accumulate (skeleton-walk),
+  finrank_range_bd1 (= V−1), and H₁ = 0 (range_bd2_eq_ker_bd1: every
+  1-cycle on a sphere bounds). Build green, standard three axioms.
+  → M11 commit pending G2.
