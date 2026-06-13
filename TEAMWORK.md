@@ -1,5 +1,15 @@
 # TEAMWORK baton — taut fillings formalization
 
+> ## ⟲ RECOVERY CHECKPOINT — `fable-axed` (commit `a8a8954`, branch `main`)
+> The canonical "where we were when Fable was removed" state. To return to it
+> exactly: `git checkout fable-axed`. Full details + recovery commands +
+> what-remains in **`RECOVERY.md`**. State: M9–M16 (watershed H₁=0 + most of
+> the separation), G1-APPROVED, build green, no sorry/admit, standard axioms.
+>
+> **Protocol (Fable removed):** back to codex doing the architecture — G1
+> design audit before new load-bearing code, G2 gate on every commit.
+> Run codex with `< /dev/null` (no stdin redirect ⇒ it hangs; not infra).
+
 ## Goal
 
 Formalize the results of `taut/taut.tex` (Doyle–Ellison–Wang, "Taut
@@ -207,3 +217,18 @@ sphere/ball definitions.
   finrank_range_bd1 (= V−1), and H₁ = 0 (range_bd2_eq_ker_bd1: every
   1-cycle on a sphere bounds). Build green, standard three axioms.
   → M11 commit pending G2.
+
+- 2026-06-13: M12–M16 (Separation.lean) — exists_cut (the cut from H₁=0),
+  edge_cut_parity, closed_cut, gammaCycle_dichotomy, cutSet_dualConn
+  (σ₁ dual-connected), conn_cut (conn for the pieces), and the v∉γ half of
+  linkConn (W_eq_of_share_edge/W_eq_along_link/W_const_at). Diagnosed +
+  fixed codex: `codex exec` blocks until stdin EOF — the earlier G1 "hangs"
+  were a missing stdin redirect, not infra; `< /dev/null` fixes it. Re-ran
+  the G1 audit → APPROVED (session 019ec1fd, cf807d1). Added a permission
+  for the .git evidence-file write; gitignored settings.local.json.
+
+- 2026-06-13 (checkpoint): **Fable removed from the workflow.** Tagged the
+  exact state `fable-axed` (commit a8a8954) and wrote RECOVERY.md (prominent
+  recovery instructions). Resuming the full protocol with codex doing the
+  architecture (G1 audits, run with `< /dev/null`). Next packet to G1-audit:
+  the v∈γ linkConn cycle-arc.
