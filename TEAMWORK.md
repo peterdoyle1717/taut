@@ -277,7 +277,36 @@ sphere/ball definitions.
   `nrm_eq_support_card_of_simplicial` (|M| = #support when simplicial — links
   the nrm-induction to the ball's facet count), `UnitOn.simplicialChain`,
   `UnitOn.nrm_eq` (nrm = #σ). Build green (8259 jobs), no sorry, standard three.
-- NEXT: M21 (tet removal + flip API) — then M22-M26 per the decomposition.
+- ARCHITECT (codex, Fable away): M21 design APPROVED — codex session
+  019ec271-7ecc-77f3-8797-5c2b8d03fe8f, output
+  notes/codex-consults/2026-06-13-g1-m21-flip-output.txt. Defs: `tetContribution
+  M t := bdry (single t (M t))`, `removeTet M t := M − single t (M t)`,
+  `sharedFaces M t := tetFaces t ∩ (bdry M).support`, `exposedFaces M t :=
+  tetFaces t \ sharedFaces M t`, `EligibleTet M t := t.card=4 ∧ t∈M.support ∧
+  (sharedFaces M t).card=2 ∧ ∀ s∈sharedFaces, (bdry M) s = tetContribution M t s`
+  (eligibility is STRONGER than "2 matching faces" — the 2 non-shared faces must
+  be ABSENT from the support, else removal could make a ±2 coeff), `FlipEdgePresent
+  σ f₃ f₄ := f₃∩f₄ ∈ edgesOf σ` (case-1/2 hook). Key sign lemma
+  `bdryGen_apply_erase_of_mem : bdryGen t (t.erase x) = sgn x t` (Finset.sum_apply'
+  + erase_injOn). Main: `support_flipBoundary_of_eligible` ((bdry (removeTet M t)).support
+  = ((bdry M).support \ sharedFaces) ∪ exposedFaces), `unitOn_flipBoundary_of_eligible`,
+  `nrm_removeTet_of_simplicial` (= nrm M − 1). Handle both signs of M t. ~25 lemmas,
+  ordered (Q6).
+- M21a (DONE, Theorem2.lean, building): **tet-removal scaffolding** (first half
+  of codex's M21 design). Reuses the existing `Ball.tetFaces` (= powersetCard 3;
+  the gate caught an initial `tetFaces'` duplicate — fixed). Defs `tetContribution`,
+  `removeTet`, `sharedFaces`, `exposedFaces`, `EligibleTet`, `FlipEdgePresent`;
+  combinatorics
+  `card_tetFaces`/`erase_mem_tetFaces`/subset lemmas/`exposedFaces_card_of_eligible`
+  (=2); boundary algebra `bdry_sub_single`/`bdry_removeTet`; and the removeTet
+  chain algebra `removeTet_apply_self`/`_ne`, `support_removeTet_of_mem`,
+  `simplicialChain_removeTet`, `nrm_removeTet_of_simplicial` (= nrm M − 1). Build
+  green (8259 jobs), no sorry, standard three axioms.
+- NEXT (M21b): the **edge-flip sign bookkeeping** — `bdryGen_apply_erase_of_mem`
+  (= sgn x t), `tetContribution_apply_erase_of_mem`, the pointwise flip lemmas,
+  `support_flipBoundary_of_eligible`, `unitOn_flipBoundary_of_eligible`. This is
+  the intricate oriented-sign half codex flagged; doing it fresh (not at
+  marathon-tail) to avoid the sorry-slip failure mode. Then M22-M26.
 - Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
@@ -375,4 +404,11 @@ sphere/ball definitions.
   two pieces flagged to isolate first (the eligible-tet count M25, the oriented
   separation bridge M23). M20 — implemented the chain/facet bridge (UnitOn,
   SimplicialChain, nrm_eq_support_card_of_simplicial). Build green (8259 jobs),
-  no sorry, standard three axioms. → M20 commit pending G2.
+  no sorry, standard three axioms. → M20 committed (88ad7ab).
+
+- 2026-06-13: codex took over as architect (Fable away, per Peter). Codex
+  architected M21 in implementable detail (session 019ec271). M21a — implemented
+  the tet-removal scaffolding (definitions + combinatorics + removeTet chain
+  algebra + nrm decrement). Build green (8259 jobs), no sorry, standard three.
+  The edge-flip sign-bookkeeping half (M21b) deferred to a fresh start (intricate
+  oriented signs; avoiding marathon-tail quality risk). → M21a commit pending G2.
