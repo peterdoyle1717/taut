@@ -160,15 +160,43 @@ sphere/ball definitions.
   v∉γ), `W_const_at` (all faces through an off-γ vertex are same-side, via
   linkConn σ). So for v ∉ γ, the cut faces at v are all-σ₁-or-all-σ₂ ⟹
   linkGraph of the piece at v = linkGraph σ at v ⟹ linkConn inherited.
-- Next, to finish `separates`: (a) the **v∈γ case of `linkConn`** — THE
-  remaining crux: linkGraph σ v is a cycle (2-regular+conn, link_two_regular);
-  the cut flips side exactly at the two γ-link-vertices, so the σ₁-faces at v
-  form an arc closed by γ ⟹ the piece's link at v is connected. Needs cycle/
-  arc structure (Mathlib `SimpleGraph.IsCycles` is a candidate). (b) assemble
-  full `linkConn_cut` (both cases) + `euler` (χ-additivity + χ≤2 from b₂); (c)
-  assemble `IsSphere2 (insert γ σᵢ)` (both sides via W+𝟙); (d) X=X₁+X₂ feeding
-  `IsTaut.splits` (the "orientation coherence" lemma). Then the merged Th2+Th3
-  induction (G1-audit with codex `< /dev/null`).
+- G1 VERDICT (linkConn v∈γ packet): **APPROVED** — codex session
+  019ec22b-9f84-7ea2-8bcd-09da5de864c7, output
+  notes/codex-consults/2026-06-13-g1-linkconn-output.txt. KEY RULING: **avoid
+  `IsCycles` and any explicit "single-arc" theorem** — they drag in Set
+  neighbor-sets and only give per-component cycles. Instead use a local-
+  closure + walk-reroute proof (mirrors `W_eq_along_link`):
+  1. `gamma_endpoints_at` — γ = {v,a,b}, a≠b, a≠v, b≠v (the flip vertices are
+     the OTHER two, not all 3);
+  2. `gamma_chord_adj` — `(linkGraph τ v).Adj a b` (γ ∈ τ);
+  3. `cut_link_closure_nonendpoint` — x ∈ linkVerts τ v, x ∉ γ,
+     `(linkGraph σ v).Adj x y` ⟹ `(linkGraph τ v).Adj x y` (x∉γ ⟹ {v,x}
+     non-γ ⟹ W_eq_of_share_edge forces every σ-face thru {v,x} same-side,
+     so {v,x,y} ∈ cutSet ⊆ τ);
+  4. `reroute_to_gamma_endpoint` — induct a σ-link walk x→a to a τ-link
+     reach: at a stop; at b use chord; else lift via (3);
+  5. `linkConn_cut_at_gamma` + combine with the v∉γ case ⟹ full `linkConn_cut`.
+  Trap: for x∈linkVerts τ v with x∉γ the witness face can't be γ (the bridge
+  to a cut face). euler: χ-additivity (state vertsOf/edgesOf/τ₁∩τ₂ set lemmas
+  first; χτ₁+χτ₂=4) — but needs a **generalized χ≤2 lemma for connected closed
+  pure 2-complexes with connected links** (small refactor of the M10 dual-conn/
+  rank machinery off `IsSphere2`). σ₂ side mirrors via `bd2 (W+𝟙)=gammaChain`.
+- M17 (DONE, Separation.lean, building): **`linkConn_cut` — both cases**, via
+  the codex-approved local-closure + reroute route (NO IsCycles). New lemmas:
+  `face_two_ne`, `gamma_endpoints_at`, `gamma_chord_adj`,
+  `cut_link_closure_nonendpoint` (at a non-γ link vertex every σ-link edge is a
+  τ-link edge), `reroute_to_gamma_endpoint` (a walk to any γ-vertex lifts to a
+  τ-reach of `a`; endpoint kept generic to avoid pinning the induction),
+  `linkConn_cut_at_gamma` (v∈γ), `linkGraph_le_cut_nonendpoint` +
+  `linkConn_cut_off_gamma` (v∉γ, via `Reachable.mono` on the subgraph), and
+  `linkConn_cut`. Build green (8258 jobs), no sorry, standard three axioms.
+- NEXT (approved): `euler` for the pieces. Plan (codex Q4): χ-additivity with
+  explicit set lemmas (vertsOf τ₁∪τ₂=vertsOf σ, ∩=γ; edgesOf likewise;
+  τ₁∩τ₂={γ}) ⟹ χτ₁+χτ₂=4; needs a **generalized χ≤2** for connected closed
+  pure 2-complexes with connected links (refactor the M10 dual-conn/rank
+  machinery off `IsSphere2`). Then assemble `IsSphere2 (insert γ σᵢ)` both
+  sides (σ₂ via `bd2 (W+𝟙)=gammaChain`), then X=X₁+X₂ → `IsTaut.splits`, then
+  the Th2+Th3 induction (own G1 audit).
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
@@ -232,3 +260,11 @@ sphere/ball definitions.
   recovery instructions). Resuming the full protocol with codex doing the
   architecture (G1 audits, run with `< /dev/null`). Next packet to G1-audit:
   the v∈γ linkConn cycle-arc.
+
+- 2026-06-13: G1 audit of the v∈γ linkConn packet → **APPROVED** (codex
+  019ec22b), with a key redirect: avoid `IsCycles`, use local-closure +
+  walk-reroute. M17 — implemented exactly that: `linkConn_cut` (both v∈γ and
+  v∉γ) is proved, the last hard field of "the cut pieces are spheres". The v∈γ
+  reroute decouples the walk endpoint from the reach-target `a` so the walk
+  induction doesn't pin the target (the trap that bit the earlier attempts).
+  Build green (8258 jobs), no sorry, standard three axioms. → M17 commit pending G2.

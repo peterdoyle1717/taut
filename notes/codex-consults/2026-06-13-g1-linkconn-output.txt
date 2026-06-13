@@ -1,0 +1,2757 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019ec22b-9f84-7ea2-8bcd-09da5de864c7
+--------
+user
+G1 design audit (pre-code) for the taut-fillings Lean formalization: completing `linkConn` for the cut pieces of the separation — the v∈γ cycle-arc, the last hard field of "the cut pieces are spheres". Read notes/codex-consults/2026-06-13-g1-linkconn-spec.md in full. Context already built and committed (tag fable-axed): lean/Taut/Separation.lean has the cut (exists_cut), closed_cut, conn_cut, edge_cut_parity, and the v∉γ half of linkConn (W_eq_of_share_edge, W_eq_along_link, W_const_at); lean/Taut/Complex2.lean has IsSphere2, linkGraph, linkVerts, link_two_regular, exists_two_faces, mem_linkVerts; lean/Taut/Homology2.lean has the b₂=1 dual-connectivity machinery. Mathlib v4.29.1 has SimpleGraph.IsCycles (in Combinatorics/SimpleGraph/Matching.lean) with other_adj_of_adj / existsUnique_ne_adj / exists_cycle_toSubgraph_verts_eq_connectedComponentSupp. The math: for v∈γ={v,a,b}, linkGraph σ v is a single cycle, the cut side flips exactly at the two γ-link-vertices a,b, so the σ₁-faces at v form one arc closed by the chord {a,b}=γ, making linkGraph (insert γ σ₁) v a single cycle hence connected. Audit the DESIGN: answer Q1-Q5 in the spec — especially Q1 (which of Route A IsCycles-traversal / B reroute-along-linkConn-σ / C degree-2+cheaper-certificate is least painful in Lean; is IsCycles the right tool or more friction than a hand-rolled walk), Q2 (best way to prove "flips at exactly a,b ⇒ single arc"), and Q4 (euler via χ-additivity vs direct counting). Flag any hidden trap that makes the v∈γ case false or much harder than sketched. Be concrete about Lean identifiers and the cleanest lemma sequence. End with a line that is exactly APPROVED or BLOCKED: <one-line reason>.
+codex
+I’ll read the spec and surrounding Lean files before judging the design. I’m treating this as a review/audit only, so I’ll avoid editing unless the repo turns out to contain generated artifacts that need inspection.
+exec
+/bin/zsh -lc "sed -n '1,260p' notes/codex-consults/2026-06-13-g1-linkconn-spec.md" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+# G1 design spec: linkConn for the cut pieces (the v∈γ cycle-arc)
+
+Target: complete `linkConn` for the capped sides `insert γ (cutSet σ W)` of the
+separation, then assemble `IsSphere2` for the pieces. This is the last hard
+field of "the cut pieces are spheres". Resuming the protocol with codex on
+architecture; M9–M16 are committed (tag `fable-axed`) and G1-APPROVED.
+
+## 0. Context — what is already built (Separation.lean, all building)
+
+For a sphere `σ : Finset (Finset V)` (`IsSphere2`), a non-face triangle `γ`
+(`γ.card = 3`, `γ.powersetCard 2 ⊆ edgesOf σ`, `γ ∉ σ`), and a cut
+`W : ↥σ → ZMod 2` with `bd2 σ W = gammaChain σ γ` (`exists_cut`):
+- `cutSet σ W` = the faces with `W = 1` (one side σ₁); `σ₂ = cutSet σ (W+𝟙)`.
+- `edge_cut_parity`: across each edge `e` with faces `f₁,f₂`,
+  `W f₁ + W f₂ = if e ⊆ γ then 1 else 0`. So **non-γ edges don't cross the
+  cut; the three γ-edges do.**
+- `closed_cut`: `insert γ (cutSet σ W)` is a closed pseudomanifold.
+- `conn_cut`: its skeleton is connected.
+- **v∉γ half of linkConn already done**: `W_eq_of_share_edge` (two faces
+  sharing a non-γ edge are same-side), `W_eq_along_link` (W constant along a
+  link walk at v∉γ), `W_const_at` (all faces through an off-γ vertex are
+  same-side). Consequence (to be packaged): for `v ∉ γ`, all cut faces at `v`
+  are uniformly σ₁ or σ₂, so `linkGraph (insert γ σ₁) v = linkGraph σ v` on the
+  same `linkVerts`, and `linkConn` is inherited from `σ`.
+- M8 facts available: `link_two_regular` (each `x ∈ linkVerts σ v` has exactly
+  2 neighbours in `linkGraph σ v`), `linkConn σ` (links connected),
+  `three_le_card_linkVerts`, `exists_two_faces`, `mem_linkVerts(_iff_edge)`.
+- Mathlib (v4.29.1) has `SimpleGraph.IsCycles` (`Matching.lean`): a graph where
+  every vertex has neighbour-set ncard 0 or 2, with `IsCycles.other_adj_of_adj`,
+  `IsCycles.existsUnique_ne_adj`,
+  `IsCycles.exists_cycle_toSubgraph_verts_eq_connectedComponentSupp`.
+
+## 1. The remaining design: the v∈γ case of linkConn
+
+Goal: for `v ∈ γ` (so `v ∈ vertsOf (insert γ σ₁)`),
+`ConnOn (linkGraph (insert γ σ₁) v) (linkVerts (insert γ σ₁) v)`.
+
+Geometry: `linkGraph σ v` is a single cycle `C` (2-regular + connected). Its
+edges = σ-faces at `v`; its vertices = `linkVerts σ v`. Write `γ = {v,a,b}`.
+The cut "side" of a face `{v,x,y}` is `W`; two faces sharing link-vertex `z`
+(edge `{v,z}`) are same-side iff `{v,z}` is non-γ iff `z ∉ {a,b}`. So going
+around `C` the side is **constant except it flips exactly at `a` and `b`** ⇒
+`C` splits into two arcs between `a` and `b`: one all-σ₁, one all-σ₂.
+
+The faces of `insert γ σ₁` at `v` = (σ₁-faces at `v`) ∪ {γ}; as link data
+= (the σ₁-arc's edges) + the chord `{a,b}` (from γ). So
+`linkGraph (insert γ σ₁) v` = "σ₁-arc + chord a–b" = a single cycle ⇒ connected;
+`linkVerts (insert γ σ₁) v` = the σ₁-arc's vertices (with `a,b` its endpoints).
+
+### Candidate proof routes (the audited question)
+**Route A (IsCycles + traversal).** Show `linkGraph σ v` is `IsCycles` (from
+`link_two_regular` + neighbours-lie-in-linkVerts). Show `linkGraph (insert γ σ₁) v`
+is `IsCycles` too (every link-vertex has degree exactly 2: interior σ₁-arc
+vertices keep their two σ₁ faces; `a,b` get one σ₁ face + the chord). Then
+"connected 2-regular = one cycle" — but `IsCycles` alone gives a *disjoint
+union* of cycles; connectivity needs that the side flips at exactly the two
+points `a,b` (so one σ₁-arc, not several). Formalize via cycle traversal
+(`other_adj_of_adj` to walk the σ₁-arc from `a` to `b`).
+
+**Route B (reroute along `linkConn σ`).** For `y ∈ linkVerts (insert γ σ₁) v`,
+build a path `y → a` in `linkGraph (insert γ σ₁) v`: take the `linkConn σ`
+path `y → a` in `C`; where it would use a σ₂-face, reroute via the chord
+`{a,b}`. Needs the same arc fact (a σ₂-excursion enters/leaves only at `a,b`).
+
+**Route C (degree-2 + connected-skeleton transfer).** `linkGraph (insert γ σ₁) v`
+is 2-regular on its link-verts (as above). Is there a cheaper connectivity
+certificate than full arc traversal — e.g. counting (a connected 2-regular
+graph on `linkVerts (insert γ σ₁) v` with the chord), or a parity/Euler
+argument on the 1-dimensional link?
+
+## 2. Conventions
+Unoriented; the cut side is `W` over `ZMod 2`. `insert γ σ₁` is the capped
+side. `linkVerts`/`linkGraph` as in Complex2. No new global convention; this is
+proof machinery for one IsSphere2 field.
+
+## 3. After linkConn: euler + assembly (sanity-check the rest of the packet)
+- `euler` for the pieces: `χ(insert γ σ₁) = 2`. Plan: χ-additivity
+  `χ(τ₁) + χ(τ₂) = χ(σ ∪ {γ}) + χ(shared)` with `σ∪{γ}` adding 1 face / 0 new
+  edges-or-verts to σ (so χ = 3) and shared = the closed triangle γ (χ = 1),
+  giving `χ(τ₁)+χ(τ₂) = 4`; with `χ(τᵢ) ≤ 2` (each is a connected closed
+  surface, so `b₂=1` via the M10 dual-connectivity argument ⇒ χ = 2 − b₁ ≤ 2)
+  forcing each `= 2`. OR direct vertex/edge/face counting. Which is cleaner?
+- assemble `IsSphere2 (insert γ σᵢ)` for BOTH sides (σ₂ via `W + 𝟙`, which also
+  satisfies `bd2 (W+𝟙) = gammaChain` since `bd2 𝟙 = 0`).
+
+## 4. Validation invariants / failure modes
+- The v∈γ link is a cycle and the cut gives exactly two arcs: cross-checks
+  `link_two_regular` + `edge_cut_parity` against each other; a wrong arc count
+  breaks connectivity. Smoke test: the tetrahedron-boundary sphere with a
+  non-face triangle (if a cheap instance exists), else the build is the test.
+
+## 5. Files and commands
+`lean/Taut/Separation.lean` (extend). Build `cd lean && lake build`; greps +
+`#print axioms` per the G2 gate.
+
+## Questions for the auditor
+Q1. Which route (A IsCycles-traversal / B reroute / C degree-2+cheaper-cert)
+    is the least painful in Lean for the v∈γ linkConn? Is `SimpleGraph.IsCycles`
+    the right tool, or does it add more friction than a hand-rolled cycle
+    walk built from `link_two_regular`?
+Q2. Is "the side flips at exactly `a,b` ⇒ the σ₁-faces form a single arc" best
+    proved by cycle traversal, or is there a slicker invariant (e.g. an
+    even/odd-crossing parity argument) that avoids constructing the arc?
+Q3. Any hidden trap making the v∈γ case false or much harder than sketched —
+    e.g. degenerate links (`linkVerts` small), or `a = b` impossible to rule
+    out (γ.card = 3 gives a ≠ b)?
+Q4. `euler` for the pieces: χ-additivity vs. direct counting — which is the
+    lower-risk path, and does additivity need an inclusion–exclusion lemma I
+    should state first?
+Q5. Anything in assembling `IsSphere2 (insert γ σᵢ)` for the σ₂ side (via W+𝟙)
+    that won't just mirror the σ₁ side?
+
+exec
+/bin/zsh -lc 'git status --short' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? notes/codex-consults/2026-06-13-g1-linkconn-output.txt
+?? notes/codex-consults/2026-06-13-g1-linkconn-spec.md
+
+exec
+/bin/zsh -lc 'rg -n "linkConn|W_eq|W_const|exists_cut|closed_cut|conn_cut|edge_cut_parity|IsSphere2|linkGraph|linkVerts|link_two_regular|exists_two_faces|mem_linkVerts|IsCycles|exists_cycle" lean/Taut notes/codex-consults/2026-06-13-g1-linkconn-spec.md' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:1:# G1 design spec: linkConn for the cut pieces (the v∈γ cycle-arc)
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:3:Target: complete `linkConn` for the capped sides `insert γ (cutSet σ W)` of the
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:4:separation, then assemble `IsSphere2` for the pieces. This is the last hard
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:10:For a sphere `σ : Finset (Finset V)` (`IsSphere2`), a non-face triangle `γ`
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:12:`W : ↥σ → ZMod 2` with `bd2 σ W = gammaChain σ γ` (`exists_cut`):
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:14:- `edge_cut_parity`: across each edge `e` with faces `f₁,f₂`,
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:17:- `closed_cut`: `insert γ (cutSet σ W)` is a closed pseudomanifold.
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:18:- `conn_cut`: its skeleton is connected.
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:19:- **v∉γ half of linkConn already done**: `W_eq_of_share_edge` (two faces
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:20:  sharing a non-γ edge are same-side), `W_eq_along_link` (W constant along a
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:21:  link walk at v∉γ), `W_const_at` (all faces through an off-γ vertex are
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:23:  are uniformly σ₁ or σ₂, so `linkGraph (insert γ σ₁) v = linkGraph σ v` on the
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:24:  same `linkVerts`, and `linkConn` is inherited from `σ`.
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:25:- M8 facts available: `link_two_regular` (each `x ∈ linkVerts σ v` has exactly
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:26:  2 neighbours in `linkGraph σ v`), `linkConn σ` (links connected),
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:27:  `three_le_card_linkVerts`, `exists_two_faces`, `mem_linkVerts(_iff_edge)`.
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:28:- Mathlib (v4.29.1) has `SimpleGraph.IsCycles` (`Matching.lean`): a graph where
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:29:  every vertex has neighbour-set ncard 0 or 2, with `IsCycles.other_adj_of_adj`,
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:30:  `IsCycles.existsUnique_ne_adj`,
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:31:  `IsCycles.exists_cycle_toSubgraph_verts_eq_connectedComponentSupp`.
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:33:## 1. The remaining design: the v∈γ case of linkConn
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:36:`ConnOn (linkGraph (insert γ σ₁) v) (linkVerts (insert γ σ₁) v)`.
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:38:Geometry: `linkGraph σ v` is a single cycle `C` (2-regular + connected). Its
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:39:edges = σ-faces at `v`; its vertices = `linkVerts σ v`. Write `γ = {v,a,b}`.
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:47:`linkGraph (insert γ σ₁) v` = "σ₁-arc + chord a–b" = a single cycle ⇒ connected;
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:48:`linkVerts (insert γ σ₁) v` = the σ₁-arc's vertices (with `a,b` its endpoints).
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:51:**Route A (IsCycles + traversal).** Show `linkGraph σ v` is `IsCycles` (from
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:52:`link_two_regular` + neighbours-lie-in-linkVerts). Show `linkGraph (insert γ σ₁) v`
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:53:is `IsCycles` too (every link-vertex has degree exactly 2: interior σ₁-arc
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:55:"connected 2-regular = one cycle" — but `IsCycles` alone gives a *disjoint
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:60:**Route B (reroute along `linkConn σ`).** For `y ∈ linkVerts (insert γ σ₁) v`,
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:61:build a path `y → a` in `linkGraph (insert γ σ₁) v`: take the `linkConn σ`
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:65:**Route C (degree-2 + connected-skeleton transfer).** `linkGraph (insert γ σ₁) v`
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:68:graph on `linkVerts (insert γ σ₁) v` with the chord), or a parity/Euler
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:73:side. `linkVerts`/`linkGraph` as in Complex2. No new global convention; this is
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:74:proof machinery for one IsSphere2 field.
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:76:## 3. After linkConn: euler + assembly (sanity-check the rest of the packet)
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:83:- assemble `IsSphere2 (insert γ σᵢ)` for BOTH sides (σ₂ via `W + 𝟙`, which also
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:88:  `link_two_regular` + `edge_cut_parity` against each other; a wrong arc count
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:97:Q1. Which route (A IsCycles-traversal / B reroute / C degree-2+cheaper-cert)
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:98:    is the least painful in Lean for the v∈γ linkConn? Is `SimpleGraph.IsCycles`
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:100:    walk built from `link_two_regular`?
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:105:    e.g. degenerate links (`linkVerts` small), or `a = b` impossible to rule
+notes/codex-consults/2026-06-13-g1-linkconn-spec.md:110:Q5. Anything in assembling `IsSphere2 (insert γ σᵢ)` for the σ₂ side (via W+𝟙)
+lean/Taut/Ball.lean:17:quantifies over the first element.  `IsSphere2` of every intermediate
+lean/Taut/Ball.lean:60:  sphere : IsSphere2 B'
+lean/Taut/Ball.lean:92:    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B → IsSphere2 B₀ → IsSphere2 B := by
+lean/Taut/Ball.lean:106:    (h : IsShelling l B) : IsSphere2 B := by
+lean/Taut/Ball.lean:115:    IsSphere2 B := by
+lean/Taut/Complex2.lean:10:`IsSphere2 σ` is the combinatorial replacement for "simplicial
+lean/Taut/Complex2.lean:67:def linkGraph (σ : Finset (Finset V)) (v : V) : SimpleGraph V where
+lean/Taut/Complex2.lean:76:instance (σ : Finset (Finset V)) (v : V) : DecidableRel (linkGraph σ v).Adj :=
+lean/Taut/Complex2.lean:83:def linkVerts (σ : Finset (Finset V)) (v : V) : Finset V :=
+lean/Taut/Complex2.lean:96:structure IsSphere2 (σ : Finset (Finset V)) : Prop where
+lean/Taut/Complex2.lean:99:  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+lean/Taut/Complex2.lean:106:theorem three_mul_card_faces {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Complex2.lean:138:theorem three_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Complex2.lean:145:theorem two_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Complex2.lean:177:lemma exists_two_faces {σ : Finset (Finset V)} (h : IsSphere2 σ)
+lean/Taut/Complex2.lean:210:lemma mem_linkVerts {σ : Finset (Finset V)} {v x : V} :
+lean/Taut/Complex2.lean:211:    x ∈ linkVerts σ v ↔ x ≠ v ∧ ∃ f ∈ σ, v ∈ f ∧ x ∈ f := by
+lean/Taut/Complex2.lean:212:  rw [linkVerts, Finset.mem_erase, mem_vertsOf]
+lean/Taut/Complex2.lean:221:lemma mem_linkVerts_iff_edge {σ : Finset (Finset V)} (h : IsSphere2 σ)
+lean/Taut/Complex2.lean:223:    x ∈ linkVerts σ v ↔ {v, x} ∈ edgesOf σ := by
+lean/Taut/Complex2.lean:226:    obtain ⟨_, f, hf, hvf, hxf⟩ := mem_linkVerts.mp hx
+lean/Taut/Complex2.lean:235:    exact mem_linkVerts.mpr ⟨hxv, f, hf,
+lean/Taut/Complex2.lean:241:theorem link_two_regular {σ : Finset (Finset V)} (h : IsSphere2 σ)
+lean/Taut/Complex2.lean:242:    {v x : V} (hx : x ∈ linkVerts σ v) :
+lean/Taut/Complex2.lean:243:    ((linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y)).card = 2 := by
+lean/Taut/Complex2.lean:246:  have hedge : {v, x} ∈ edgesOf σ := (mem_linkVerts_iff_edge h hxv).mp hx
+lean/Taut/Complex2.lean:247:  have himg : ((linkVerts σ v).filter
+lean/Taut/Complex2.lean:248:        (fun y => (linkGraph σ v).Adj x y)).image (fun y => {v, x, y})
+lean/Taut/Complex2.lean:273:      · exact mem_linkVerts.mpr ⟨hzv, f, hf,
+lean/Taut/Complex2.lean:276:  have hinj : ∀ y₁ ∈ (linkVerts σ v).filter
+lean/Taut/Complex2.lean:277:        (fun y => (linkGraph σ v).Adj x y),
+lean/Taut/Complex2.lean:278:      ∀ y₂ ∈ (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y),
+lean/Taut/Complex2.lean:298:theorem three_le_card_linkVerts {σ : Finset (Finset V)} (h : IsSphere2 σ)
+lean/Taut/Complex2.lean:299:    {v : V} (hv : v ∈ vertsOf σ) : 3 ≤ (linkVerts σ v).card := by
+lean/Taut/Complex2.lean:319:  obtain ⟨f₁, hf₁, f₂, hf₂, hne, he₁, he₂, huniq⟩ := exists_two_faces h hedge
+lean/Taut/Complex2.lean:337:  have hxL : x ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hxv, f, hf, hvf, hxf⟩
+lean/Taut/Complex2.lean:338:  have hyL : y ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hyv, f, hf, hvf, hyf⟩
+lean/Taut/Complex2.lean:339:  have hzL : z ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hzv, f', hf',
+lean/Taut/Complex2.lean:344:    _ ≤ (linkVerts σ v).card := by
+lean/Taut/Complex2.lean:536:    IsSphere2 (tetraBdry a b c d) := by
+lean/Taut/Complex2.lean:546:    have hmemT : ∀ w, w ∈ linkVerts (tetraBdry a b c d) v →
+lean/Taut/Complex2.lean:596:    IsSphere2 (t.powersetCard 3) := by
+lean/Taut/Separation.lean:50:theorem exists_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {γ : Finset V}
+lean/Taut/Separation.lean:76:lemma edge_cut_parity {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:112:lemma closed_cut (h : IsSphere2 σ) (hγ3 : γ.card = 3)
+lean/Taut/Separation.lean:119:  obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h heσ
+lean/Taut/Separation.lean:128:  have hpar := edge_cut_parity hW heσ h1 h2 hne he1 he2 huniq
+lean/Taut/Separation.lean:328:lemma bd2_reachChain_supp {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:333:  obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h he
+lean/Taut/Separation.lean:335:  have hpar := edge_cut_parity hW he h1 h2 hne he1 he2 huniq
+lean/Taut/Separation.lean:369:theorem cutSet_dualConn {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+lean/Taut/Separation.lean:485:theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:527:  obtain ⟨g1, hg1, g2, hg2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h he0e
+lean/Taut/Separation.lean:528:  have hpar := edge_cut_parity hW he0e hg1 hg2 hne hsub1 hsub2 huniq
+lean/Taut/Separation.lean:552:/-! ## linkConn for the capped pieces -/
+lean/Taut/Separation.lean:555:lemma W_eq_of_share_edge {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:559:  obtain ⟨f₁, h1, f₂, h2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h he
+lean/Taut/Separation.lean:567:  have hpar := edge_cut_parity hW he h1 h2 hne hsub1 hsub2 huniq
+lean/Taut/Separation.lean:574:lemma W_eq_along_link {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:576:    ∀ {a a' : V} (_ : (linkGraph σ v).Walk a a') {f f' : σ},
+lean/Taut/Separation.lean:591:    exact W_eq_of_share_edge h hW he (fun hc => hvγ (hc (Finset.mem_insert_self v _)))
+lean/Taut/Separation.lean:598:      rw [linkGraph] at hadj
+lean/Taut/Separation.lean:622:/-- All faces through an off-γ vertex lie on the same side (via `linkConn`). -/
+lean/Taut/Separation.lean:623:lemma W_const_at {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:635:  have haL : a ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hav, f, f.2, hvf, haf⟩
+lean/Taut/Separation.lean:636:  have hcL : c ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hcv, g, g.2, hvg, hcg⟩
+lean/Taut/Separation.lean:637:  obtain ⟨p⟩ := h.linkConn v hvV a haL c hcL
+lean/Taut/Separation.lean:638:  exact W_eq_along_link h hW hvγ p hvf haf hav hvg hcg hcv
+lean/Taut/Homology2.lean:11:* `IsSphere2` already asserts χ = 2, and gives b₀ = 1 (connected) and
+lean/Taut/Homology2.lean:212:lemma dualGraph_ker_const {σ : Finset (Finset V)} (h : IsSphere2 σ) {w : C2 σ}
+lean/Taut/Homology2.lean:216:  obtain ⟨f₁, h1, f₂, h2, hne12, he1, he2, huniq⟩ := exists_two_faces h he
+lean/Taut/Homology2.lean:243:/-! ### Dual-graph connectivity (from `conn` + `linkConn` + `closed`) -/
+lean/Taut/Homology2.lean:269:walk in `linkGraph σ v` to a dual path. -/
+lean/Taut/Homology2.lean:270:lemma linkwalk_dual {σ : Finset (Finset V)} (h : IsSphere2 σ) {v : V} :
+lean/Taut/Homology2.lean:271:    ∀ {a a' : V} (_ : (linkGraph σ v).Walk a a') {f f' : σ},
+lean/Taut/Homology2.lean:283:      rw [linkGraph] at hadj
+lean/Taut/Homology2.lean:310:/-- Two faces sharing a vertex are dual-reachable (uses `linkConn`). -/
+lean/Taut/Homology2.lean:311:lemma dual_reach_shared_vertex {σ : Finset (Finset V)} (h : IsSphere2 σ) {f g : σ} {v : V}
+lean/Taut/Homology2.lean:323:  have haL : a ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hav, f, f.2, hvf, haf⟩
+lean/Taut/Homology2.lean:324:  have hcL : c ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hcv, g, g.2, hvg, hcg⟩
+lean/Taut/Homology2.lean:325:  obtain ⟨p⟩ := h.linkConn v hvV a haL c hcL
+lean/Taut/Homology2.lean:330:lemma skelwalk_dual {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Homology2.lean:350:theorem dualGraph_preconnected {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Homology2.lean:373:lemma IsSphere2.nonempty {σ : Finset (Finset V)} (h : IsSphere2 σ) : σ.Nonempty := by
+lean/Taut/Homology2.lean:381:lemma bd2_ker_constant {σ : Finset (Finset V)} (h : IsSphere2 σ) {w : C2 σ}
+lean/Taut/Homology2.lean:387:lemma ker_bd2_eq_span {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Homology2.lean:403:theorem finrank_ker_bd2 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Homology2.lean:424:lemma IsSphere2.vertsOf_nonempty {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Homology2.lean:431:lemma finrank_ker_aug {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Homology2.lean:529:lemma ker_aug_le_range_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Homology2.lean:549:theorem finrank_range_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Homology2.lean:561:theorem range_bd2_eq_ker_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+
+codex
+The spec matches the summary: the remaining risk is not proving local degree, it is proving there is only one selected arc. I’m going to inspect the exact definitions around links/cuts and the current proof style so the recommendation is anchored in existing lemmas, not just graph theory folklore.
+exec
+/bin/zsh -lc "sed -n '1,700p' lean/Taut/Separation.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Homology2
+
+/-!
+# The separation theorem
+
+H₁ = 0 (`range_bd2_eq_ker_bd1`) turned into the geometric cut: a non-face
+triangle γ in a combinatorial 2-sphere σ partitions the faces into two sides,
+each of which caps with γ to a sphere.
+
+The γ-edge 1-chain is a cycle (each vertex of γ lies in two of its edges), so by
+H₁ = 0 it bounds a face-set `W`; `σ₁ := W.support`, `σ₂ := σ \ σ₁`. The defining
+identity `∂₂W = vγ` says: every edge has an *even* number of `σ₁`-faces unless it
+is a γ-edge, where the count is *odd* (= 1). With σ's `closed` (≤ 2 faces per
+edge) this pins the cut and drives the sphere-hood of the pieces.
+-/
+
+namespace Taut
+
+open Module Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-- The 1-chain supported on the edges of `γ`. -/
+def gammaChain (σ : Finset (Finset V)) (γ : Finset V) : C1 σ :=
+  fun e => if (e : Finset V) ⊆ γ then 1 else 0
+
+/-- The γ-edge 1-chain is a cycle: every vertex lies in an even number of γ's
+edges (two, if on γ; none otherwise). -/
+lemma bd1_gammaChain {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) : bd1 σ (gammaChain σ γ) = 0 := by
+  classical
+  funext x
+  show bd1 σ (gammaChain σ γ) x = 0
+  rw [bd1_apply]
+  have hstep : ∀ e : edgesOf σ,
+      (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0) * gammaChain σ γ e
+        = (if (x : V) ∈ (e : Finset V) ∧ (e : Finset V) ⊆ γ then (1 : ZMod 2) else 0) := by
+    intro e
+    simp only [gammaChain]
+    by_cases h1 : (x : V) ∈ (e : Finset V) <;> by_cases h2 : (e : Finset V) ⊆ γ <;>
+      simp [h1, h2]
+  rw [Finset.sum_congr rfl (fun e _ => hstep e),
+    Finset.sum_coe_sort (edgesOf σ)
+      (fun e => if (x : V) ∈ e ∧ e ⊆ γ then (1 : ZMod 2) else 0),
+    Finset.sum_boole, card_edges_through_vertex hγe hγ3 x]
+  split <;> decide
+
+/-- **The cut exists.** A non-face triangle's edge-cycle bounds a face-set `W`
+(this is exactly where H₁ = 0 is spent). -/
+theorem exists_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
+    ∃ W : C2 σ, bd2 σ W = gammaChain σ γ := by
+  have hcyc : gammaChain σ γ ∈ LinearMap.ker (bd1 σ) :=
+    LinearMap.mem_ker.mpr (bd1_gammaChain hγ3 hγe)
+  rw [← range_bd2_eq_ker_bd1 h] at hcyc
+  exact LinearMap.mem_range.mp hcyc
+
+/-! ## The two sides -/
+
+/-- One side of the cut: the faces on which the bounding chain `W` is `1`. -/
+noncomputable def cutSet (σ : Finset (Finset V)) (W : C2 σ) : Finset (Finset V) :=
+  (Finset.univ.filter (fun f : σ => W f = 1)).image Subtype.val
+
+lemma mem_cutSet {σ : Finset (Finset V)} {W : C2 σ} {g : Finset V} :
+    g ∈ cutSet σ W ↔ ∃ hg : g ∈ σ, W ⟨g, hg⟩ = 1 := by
+  simp only [cutSet, Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and]
+  constructor
+  · rintro ⟨⟨g', hg'⟩, hW, rfl⟩; exact ⟨hg', hW⟩
+  · rintro ⟨hg, hW⟩; exact ⟨⟨g, hg⟩, hW, rfl⟩
+
+lemma cutSet_subset {σ : Finset (Finset V)} {W : C2 σ} : cutSet σ W ⊆ σ := by
+  intro g hg; obtain ⟨hg', _⟩ := mem_cutSet.mp hg; exact hg'
+
+/-- The defining parity of the cut: across each edge, the two faces' `W`-values
+sum to `1` iff the edge lies on `γ`. -/
+lemma edge_cut_parity {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) {e : Finset V} (he : e ∈ edgesOf σ)
+    {f₁ f₂ : Finset V} (h1 : f₁ ∈ σ) (h2 : f₂ ∈ σ) (hne : f₁ ≠ f₂)
+    (he1 : e ⊆ f₁) (he2 : e ⊆ f₂) (huniq : ∀ f ∈ σ, e ⊆ f → f = f₁ ∨ f = f₂) :
+    W ⟨f₁, h1⟩ + W ⟨f₂, h2⟩ = if e ⊆ γ then 1 else 0 := by
+  have hb := bd2_at_edge W he h1 h2 hne he1 he2 huniq
+  rw [hW] at hb
+  rw [← hb]
+  simp only [gammaChain]
+
+/-! ## The pieces are closed pseudomanifolds -/
+
+variable {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+
+/-- Edges of a capped side are edges of σ. -/
+lemma edgesOf_cut_subset (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
+    edgesOf (insert γ (cutSet σ W)) ⊆ edgesOf σ := by
+  intro e he
+  obtain ⟨f, hf, hef, hc⟩ := mem_edgesOf.mp he
+  rcases Finset.mem_insert.mp hf with rfl | hf
+  · exact hγe (Finset.mem_powersetCard.mpr ⟨hef, hc⟩)
+  · exact mem_edgesOf.mpr ⟨f, cutSet_subset hf, hef, hc⟩
+
+/-- The edge-degree in a capped side splits into the γ-contribution and the
+cut-faces through the edge. -/
+lemma edgeDeg_cut (hγσ : γ ∉ σ) (e : Finset V) :
+    edgeDeg (insert γ (cutSet σ W)) e
+      = (if e ⊆ γ then 1 else 0) + ((cutSet σ W).filter (fun f => e ⊆ f)).card := by
+  rw [edgeDeg, Finset.filter_insert]
+  by_cases heγ : e ⊆ γ
+  · rw [if_pos heγ, Finset.card_insert_of_notMem
+      (fun hγf => hγσ (cutSet_subset (Finset.mem_of_mem_filter _ hγf))), if_pos heγ, add_comm]
+  · rw [if_neg heγ, if_neg heγ, zero_add]
+
+/-- **`closed` for the pieces.** Every edge of a capped side lies in exactly two
+of its faces, by the cut parity. -/
+lemma closed_cut (h : IsSphere2 σ) (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ) (hW : bd2 σ W = gammaChain σ γ) :
+    ∀ e ∈ edgesOf (insert γ (cutSet σ W)),
+      edgeDeg (insert γ (cutSet σ W)) e = 2 := by
+  classical
+  intro e he
+  have heσ : e ∈ edgesOf σ := edgesOf_cut_subset hγe he
+  obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h heσ
+  -- the cut-faces through e are exactly those of {f₁,f₂} in the cut set
+  have hfilter : (cutSet σ W).filter (fun f => e ⊆ f)
+      = ({f₁, f₂} : Finset (Finset V)).filter (fun f => f ∈ cutSet σ W) := by
+    ext g
+    simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+    constructor
+    · rintro ⟨hg, heg⟩; exact ⟨huniq g (cutSet_subset hg) heg, hg⟩
+    · rintro ⟨hg12, hgc⟩; exact ⟨hgc, by rcases hg12 with rfl | rfl; exacts [he1, he2]⟩
+  have hpar := edge_cut_parity hW heσ h1 h2 hne he1 he2 huniq
+  have hmem1 : f₁ ∈ cutSet σ W ↔ W ⟨f₁, h1⟩ = 1 := by
+    rw [mem_cutSet]; exact ⟨fun ⟨_, hh⟩ => hh, fun hh => ⟨h1, hh⟩⟩
+  have hmem2 : f₂ ∈ cutSet σ W ↔ W ⟨f₂, h2⟩ = 1 := by
+    rw [mem_cutSet]; exact ⟨fun ⟨_, hh⟩ => hh, fun hh => ⟨h2, hh⟩⟩
+  rw [edgeDeg_cut hγσ, hfilter, Finset.card_filter, Finset.sum_pair hne]
+  simp only [hmem1, hmem2]
+  have hzo : ∀ a : ZMod 2, a = 0 ∨ a = 1 := by decide
+  by_cases heγ : e ⊆ γ
+  · -- parity = 1: exactly one face in the cut
+    rw [if_pos heγ] at hpar ⊢
+    obtain h1' | h1' := hzo (W ⟨f₁, h1⟩) <;> obtain h2' | h2' := hzo (W ⟨f₂, h2⟩) <;>
+      rw [h1', h2'] at hpar ⊢ <;> simp_all
+  · -- parity = 0: zero or two; `e ∈ edgesOf` of the piece rules out zero
+    rw [if_neg heγ] at hpar ⊢
+    have hone : W ⟨f₁, h1⟩ = 1 ∨ W ⟨f₂, h2⟩ = 1 := by
+      obtain ⟨g, hg, heg, _⟩ := mem_edgesOf.mp he
+      rcases Finset.mem_insert.mp hg with rfl | hg
+      · exact absurd heg heγ
+      · rcases huniq g (cutSet_subset hg) heg with rfl | rfl
+        · exact Or.inl (hmem1.mp hg)
+        · exact Or.inr (hmem2.mp hg)
+    obtain h1' | h1' := hzo (W ⟨f₁, h1⟩) <;> obtain h2' | h2' := hzo (W ⟨f₂, h2⟩) <;>
+      rw [h1', h2'] at hpar hone ⊢ <;> simp_all
+
+/-! ## The pieces are connected -/
+
+/-- `∂₁c` at a vertex `x` lying on exactly the two support-edges `e₁, e₂` equals
+`c e₁ + c e₂`. -/
+lemma bd1_eval_two {σ : Finset (Finset V)} {c : C1 σ} {x : V} (hx : x ∈ vertsOf σ)
+    {e₁ e₂ : edgesOf σ} (hne : e₁ ≠ e₂) (hx1 : x ∈ (e₁ : Finset V)) (hx2 : x ∈ (e₂ : Finset V))
+    (honly : ∀ e : edgesOf σ, x ∈ (e : Finset V) → c e ≠ 0 → e = e₁ ∨ e = e₂) :
+    bd1 σ c ⟨x, hx⟩ = c e₁ + c e₂ := by
+  classical
+  rw [bd1_apply]
+  rw [← Finset.sum_subset (Finset.subset_univ {e₁, e₂}) (fun e _ hes => ?_)]
+  · rw [Finset.sum_pair hne, if_pos hx1, if_pos hx2, one_mul, one_mul]
+  · -- terms off {e₁,e₂} vanish
+    by_cases hxe : x ∈ (e : Finset V)
+    · by_cases hce : c e = 0
+      · rw [hce, mul_zero]
+      · rcases honly e hxe hce with rfl | rfl <;> simp_all
+    · rw [if_neg hxe, zero_mul]
+
+/-- A 1-cycle supported on the edges of `γ` (a triangle whose 2-subsets are
+edges) is `0` or the whole γ-cycle: `∂₁ = 0` forces the three coefficients
+equal. -/
+lemma gammaCycle_dichotomy {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) {c : C1 σ} (hc : bd1 σ c = 0)
+    (hsupp : ∀ e : edgesOf σ, c e ≠ 0 → (e : Finset V) ⊆ γ) :
+    c = 0 ∨ c = gammaChain σ γ := by
+  classical
+  obtain ⟨a, b, d, hab, had, hbd, hγ⟩ := Finset.card_eq_three.mp hγ3
+  have mk : ∀ {p q : V}, p ≠ q → ({p, q} : Finset V) ⊆ γ → ({p, q} : Finset V) ∈ edgesOf σ :=
+    fun hpq hsub => hγe (Finset.mem_powersetCard.mpr ⟨hsub, Finset.card_pair hpq⟩)
+  have sab : ({a, b} : Finset V) ⊆ γ := by
+    rw [hγ]; intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+  have sad : ({a, d} : Finset V) ⊆ γ := by
+    rw [hγ]; intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+  have sbd : ({b, d} : Finset V) ⊆ γ := by
+    rw [hγ]; intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+  set eab : edgesOf σ := ⟨{a, b}, mk hab sab⟩ with heab
+  set ead : edgesOf σ := ⟨{a, d}, mk had sad⟩ with head
+  set ebd : edgesOf σ := ⟨{b, d}, mk hbd sbd⟩ with hebd
+  -- every γ-edge is one of the three
+  have tri : ∀ e : edgesOf σ, (e : Finset V) ⊆ γ → e = eab ∨ e = ead ∨ e = ebd := by
+    intro e hsub
+    obtain ⟨p, q, hpq, hpqe⟩ := Finset.card_eq_two.mp (card_of_mem_edgesOf e.2)
+    rw [hγ] at hsub
+    have hp : p ∈ ({a, b, d} : Finset V) := hsub (hpqe ▸ by simp)
+    have hq : q ∈ ({a, b, d} : Finset V) := hsub (hpqe ▸ by simp)
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hp hq
+    have key : (e : Finset V) = {a, b} ∨ (e : Finset V) = {a, d} ∨ (e : Finset V) = {b, d} := by
+      rw [hpqe]
+      rcases hp with rfl | rfl | rfl <;> rcases hq with rfl | rfl | rfl <;>
+        first
+          | exact absurd rfl hpq
+          | exact Or.inl rfl
+          | exact Or.inl (Finset.pair_comm _ _)
+          | exact Or.inr (Or.inl rfl)
+          | exact Or.inr (Or.inl (Finset.pair_comm _ _))
+          | exact Or.inr (Or.inr rfl)
+          | exact Or.inr (Or.inr (Finset.pair_comm _ _))
+    rcases key with h | h | h
+    · exact Or.inl (Subtype.ext h)
+    · exact Or.inr (Or.inl (Subtype.ext h))
+    · exact Or.inr (Or.inr (Subtype.ext h))
+  have ha : a ∈ vertsOf σ := edge_mem_vertsOf (mk hab sab) (by simp)
+  have hb : b ∈ vertsOf σ := edge_mem_vertsOf (mk hab sab) (by simp)
+  have hd : d ∈ vertsOf σ := edge_mem_vertsOf (mk had sad) (by simp)
+  have ne_ab_ad : eab ≠ ead := by
+    rw [heab, head, ne_eq, Subtype.mk.injEq]; intro h
+    have : b ∈ ({a, d} : Finset V) := h ▸ by simp
+    simp only [Finset.mem_insert, Finset.mem_singleton] at this; tauto
+  have ne_ab_bd : eab ≠ ebd := by
+    rw [heab, hebd, ne_eq, Subtype.mk.injEq]; intro h
+    have : a ∈ ({b, d} : Finset V) := h ▸ by simp
+    simp only [Finset.mem_insert, Finset.mem_singleton] at this; tauto
+  have ne_ad_bd : ead ≠ ebd := by
+    rw [head, hebd, ne_eq, Subtype.mk.injEq]; intro h
+    have : a ∈ ({b, d} : Finset V) := h ▸ by simp
+    simp only [Finset.mem_insert, Finset.mem_singleton] at this; tauto
+  -- the three vertex equations
+  have hva : c eab + c ead = 0 := by
+    have honly : ∀ e : edgesOf σ, a ∈ (e : Finset V) → c e ≠ 0 → e = eab ∨ e = ead := by
+      intro e hxe hce
+      rcases hone : tri e (hsupp e hce) with h | h | h
+      · exact Or.inl h
+      · exact Or.inr h
+      · exact absurd (h ▸ hxe) (by rw [hebd]; simp only [Finset.mem_insert, Finset.mem_singleton]; tauto)
+    rw [← bd1_eval_two ha ne_ab_ad (by rw [heab]; simp) (by rw [head]; simp) honly, hc]; rfl
+  have hvb : c eab + c ebd = 0 := by
+    have honly : ∀ e : edgesOf σ, b ∈ (e : Finset V) → c e ≠ 0 → e = eab ∨ e = ebd := by
+      intro e hxe hce
+      rcases tri e (hsupp e hce) with h | h | h
+      · exact Or.inl h
+      · exact absurd (h ▸ hxe) (by rw [head]; simp only [Finset.mem_insert, Finset.mem_singleton]; tauto)
+      · exact Or.inr h
+    rw [← bd1_eval_two hb ne_ab_bd (by rw [heab]; simp) (by rw [hebd]; simp) honly, hc]; rfl
+  -- so the three coefficients are equal
+  have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
+  have e1 : c ead = c eab := (c2 _ _ hva).symm
+  have e2 : c ebd = c eab := (c2 _ _ hvb).symm
+  -- c = (c eab) • gammaChain
+  have hrep : c = (c eab) • gammaChain σ γ := by
+    funext e
+    simp only [Pi.smul_apply, gammaChain, smul_eq_mul]
+    by_cases hsub : (e : Finset V) ⊆ γ
+    · rw [if_pos hsub, mul_one]
+      rcases tri e hsub with h | h | h
+      · rw [h]
+      · rw [h, e1]
+      · rw [h, e2]
+    · rw [if_neg hsub, mul_zero]
+      by_contra hce
+      exact hsub (hsupp e hce)
+  -- conclude on the value c eab ∈ {0,1}
+  rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (c eab) with h0 | h1
+  · left; rw [hrep, h0, zero_smul]
+  · right; rw [hrep, h1, one_smul]
+
+/-- The dual graph restricted to a face-set `S`: dual-adjacent and both in `S`. -/
+def dualOn (σ : Finset (Finset V)) (S : Finset (Finset V)) : SimpleGraph σ where
+  Adj f g := (dualGraph σ).Adj f g ∧ (f : Finset V) ∈ S ∧ (g : Finset V) ∈ S
+  symm := by rintro f g ⟨hfg, hf, hg⟩; exact ⟨hfg.symm, hg, hf⟩
+  loopless := ⟨fun f h => h.1.1 rfl⟩
+
+@[simp] lemma dualOn_adj {σ S : Finset (Finset V)} {f g : σ} :
+    (dualOn σ S).Adj f g ↔
+      (dualGraph σ).Adj f g ∧ (f : Finset V) ∈ S ∧ (g : Finset V) ∈ S := Iff.rfl
+
+open Classical in
+/-- The indicator 2-chain of the cut-faces dual-reachable from `f₀` inside `S`. -/
+noncomputable def reachChain (σ : Finset (Finset V)) (S : Finset (Finset V)) (f₀ : σ) : C2 σ :=
+  fun g => if (dualOn σ S).Reachable f₀ g then 1 else 0
+
+lemma reachChain_self {σ : Finset (Finset V)} {S : Finset (Finset V)} {f₀ : σ} :
+    reachChain σ S f₀ f₀ = 1 := by
+  classical
+  simp only [reachChain, if_pos (SimpleGraph.Reachable.refl f₀)]
+
+/-- The reach-set is closed under within-`S` dual adjacency: if `f` is reached and
+`g` is dual-adjacent to `f` with both faces in `S`, then `g` is reached. -/
+lemma reachChain_closed {σ : Finset (Finset V)} {S : Finset (Finset V)} {f₀ : σ}
+    {f g : σ} (hf : reachChain σ S f₀ f = 1) (hfg : (dualGraph σ).Adj f g)
+    (hfS : (f : Finset V) ∈ S) (hgS : (g : Finset V) ∈ S) : reachChain σ S f₀ g = 1 := by
+  classical
+  have hrf : (dualOn σ S).Reachable f₀ f := by
+    by_contra hc
+    simp only [reachChain, if_neg hc] at hf
+    exact one_ne_zero hf.symm
+  have hrg : (dualOn σ S).Reachable f₀ g :=
+    hrf.trans (SimpleGraph.Adj.reachable (dualOn_adj.mpr ⟨hfg, hfS, hgS⟩))
+  simp only [reachChain, if_pos hrg]
+
+/-- Reachability inside `S` stays in `S`. -/
+lemma dualOn_walk_mem {σ S : Finset (Finset V)} :
+    ∀ {f₀ g : σ}, (dualOn σ S).Walk f₀ g → (f₀ : Finset V) ∈ S → (g : Finset V) ∈ S := by
+  intro f₀ g p
+  induction p with
+  | nil => exact fun h => h
+  | cons hab _ ih => exact fun _ => ih ((dualOn_adj.mp hab).2.2)
+
+/-- A reached face is in the side (given the base is). -/
+lemma reachChain_mem {σ S : Finset (Finset V)} {f₀ g : σ} (hf₀ : (f₀ : Finset V) ∈ S)
+    (hg : reachChain σ S f₀ g = 1) : (g : Finset V) ∈ S := by
+  classical
+  by_contra hgS
+  have : ¬ (dualOn σ S).Reachable f₀ g := fun ⟨p⟩ => hgS (dualOn_walk_mem p hf₀)
+  simp only [reachChain, if_neg this] at hg
+  exact one_ne_zero hg.symm
+
+lemma reachChain_zero {σ S : Finset (Finset V)} {f₀ g : σ} (hf₀ : (f₀ : Finset V) ∈ S)
+    (hg : (g : Finset V) ∉ S) : reachChain σ S f₀ g = 0 := by
+  rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (reachChain σ S f₀ g) with h | h
+  · exact h
+  · exact absurd (reachChain_mem hf₀ h) hg
+
+/-- The boundary of the reach-chain vanishes off γ's edges: dual-closedness +
+the cut parity. -/
+lemma bd2_reachChain_supp {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {f₀ : σ}
+    (hf₀ : (f₀ : Finset V) ∈ cutSet σ W) {e : Finset V} (he : e ∈ edgesOf σ) (heγ : ¬ e ⊆ γ) :
+    bd2 σ (reachChain σ (cutSet σ W) f₀) ⟨e, he⟩ = 0 := by
+  classical
+  obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h he
+  rw [bd2_at_edge _ he h1 h2 hne he1 he2 huniq]
+  have hpar := edge_cut_parity hW he h1 h2 hne he1 he2 huniq
+  rw [if_neg heγ] at hpar
+  have hmem1 : (f₁ : Finset V) ∈ cutSet σ W ↔ W ⟨f₁, h1⟩ = 1 := by
+    rw [mem_cutSet]; exact ⟨fun ⟨_, hh⟩ => hh, fun hh => ⟨h1, hh⟩⟩
+  have hmem2 : (f₂ : Finset V) ∈ cutSet σ W ↔ W ⟨f₂, h2⟩ = 1 := by
+    rw [mem_cutSet]; exact ⟨fun ⟨_, hh⟩ => hh, fun hh => ⟨h2, hh⟩⟩
+  have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
+  have hWeq : W ⟨f₁, h1⟩ = W ⟨f₂, h2⟩ := c2 _ _ hpar
+  rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W ⟨f₁, h1⟩) with hv | hv
+  · -- both faces in σ₂: reach-chain is 0 on both
+    have hn1 : (f₁ : Finset V) ∉ cutSet σ W :=
+      fun hc => absurd (hmem1.mp hc) (by rw [hv]; decide)
+    have hn2 : (f₂ : Finset V) ∉ cutSet σ W :=
+      fun hc => absurd (hmem2.mp hc) (by rw [← hWeq, hv]; decide)
+    rw [reachChain_zero hf₀ hn1, reachChain_zero hf₀ hn2, add_zero]
+  · -- both faces in σ₁: dual-adjacent, so reach-chain agrees
+    have hf1S : (f₁ : Finset V) ∈ cutSet σ W := hmem1.mpr hv
+    have hf2S : (f₂ : Finset V) ∈ cutSet σ W := hmem2.mpr (hWeq ▸ hv)
+    have hadj : (dualGraph σ).Adj ⟨f₁, h1⟩ ⟨f₂, h2⟩ :=
+      dualGraph_adj.mpr ⟨fun heq => hne (congrArg Subtype.val heq), e, he, he1, he2⟩
+    -- equal values
+    have heq : reachChain σ (cutSet σ W) f₀ ⟨f₁, h1⟩ = reachChain σ (cutSet σ W) f₀ ⟨f₂, h2⟩ := by
+      rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1)
+        (reachChain σ (cutSet σ W) f₀ ⟨f₁, h1⟩) with hr | hr
+      · rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1)
+          (reachChain σ (cutSet σ W) f₀ ⟨f₂, h2⟩) with hr2 | hr2
+        · rw [hr, hr2]
+        · exact absurd (reachChain_closed hr2 hadj.symm hf2S hf1S) (by rw [hr]; decide)
+      · rw [hr]; exact (reachChain_closed hr hadj hf1S hf2S).symm
+    rw [heq]
+    exact CharTwo.add_self_eq_zero _
+
+/-- **One side is dual-connected.** Every cut-face is dual-reachable from a fixed
+cut-face `f₀`; equivalently the reach-chain equals the cut indicator `W`. -/
+theorem cutSet_dualConn {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+    {γ : Finset V} (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+    (hW : bd2 σ W = gammaChain σ γ) {f₀ : σ} (hf₀ : W f₀ = 1) :
+    reachChain σ (cutSet σ W) f₀ = W := by
+  classical
+  have hf₀mem : (f₀ : Finset V) ∈ cutSet σ W := mem_cutSet.mpr ⟨f₀.2, hf₀⟩
+  have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
+  -- a 2-cycle is a constant function (ker ∂₂ = span 𝟙)
+  have const_of_cycle : ∀ x : C2 σ, bd2 σ x = 0 → ∃ cc : ZMod 2, x = fun _ => cc := by
+    intro x hx
+    have hmem : x ∈ Submodule.span (ZMod 2) {(fun _ => 1 : C2 σ)} := by
+      rw [← ker_bd2_eq_span h]; exact LinearMap.mem_ker.mpr hx
+    obtain ⟨cc, hcc⟩ := Submodule.mem_span_singleton.mp hmem
+    exact ⟨cc, funext fun g => by have := congrFun hcc g; simpa using this.symm⟩
+  -- gammaChain ≠ 0 (it is 1 on each edge of γ)
+  have hWγ : gammaChain σ γ ≠ 0 := by
+    obtain ⟨e0, he0⟩ : (γ.powersetCard 2).Nonempty :=
+      Finset.card_pos.mp (by rw [Finset.card_powersetCard, hγ3]; decide)
+    rw [Finset.mem_powersetCard] at he0
+    have he0e : e0 ∈ edgesOf σ := hγe (Finset.mem_powersetCard.mpr he0)
+    intro h0
+    have hv1 : gammaChain σ γ ⟨e0, he0e⟩ = 1 := by simp only [gammaChain, if_pos he0.1]
+    rw [h0] at hv1; simp only [Pi.zero_apply] at hv1; exact one_ne_zero hv1.symm
+  -- some face is off the cut (else W = 𝟙 and gammaChain = bd2 𝟙 = 0)
+  have hσ2 : ∃ g : σ, (g : Finset V) ∉ cutSet σ W := by
+    by_contra hc
+    simp only [not_exists, not_not] at hc
+    have hW1 : W = (fun _ => 1) := by
+      funext g; obtain ⟨_, hh⟩ := mem_cutSet.mp (hc g); exact hh
+    rw [hW1, bd2_one σ h.closed] at hW
+    exact hWγ hW.symm
+  have hker : bd1 σ (bd2 σ (reachChain σ (cutSet σ W) f₀)) = 0 := by
+    have := bd1_comp_bd2 σ h.pure
+    rw [LinearMap.ext_iff] at this; simpa using this _
+  have hsupp : ∀ e : edgesOf σ, bd2 σ (reachChain σ (cutSet σ W) f₀) e ≠ 0 →
+      (e : Finset V) ⊆ γ := fun e hbe => by
+    by_contra heγ; exact hbe (bd2_reachChain_supp h hW hf₀mem e.2 heγ)
+  rcases gammaCycle_dichotomy hγ3 hγe hker hsupp with hb0 | hbγ
+  · -- bd2 R = 0 ⟹ R is constant; but R f₀ = 1 and R vanishes on σ₂ — impossible
+    exfalso
+    obtain ⟨cc, hcc⟩ := const_of_cycle _ hb0
+    obtain ⟨g, hg⟩ := hσ2
+    have e1 : (1 : ZMod 2) = cc := reachChain_self.symm.trans (congrFun hcc f₀)
+    have e2 : (0 : ZMod 2) = cc := (reachChain_zero hf₀mem hg).symm.trans (congrFun hcc g)
+    exact one_ne_zero (e1.trans e2.symm)
+  · -- bd2 R = gammaChain = bd2 W ⟹ R + W is a constant cc; at f₀, cc = 0; so R = W
+    have hsum : bd2 σ (reachChain σ (cutSet σ W) f₀ + W) = 0 := by
+      rw [map_add, hbγ, hW]; funext e
+      simp only [Pi.add_apply, Pi.zero_apply]; exact CharTwo.add_self_eq_zero _
+    obtain ⟨cc, hcc⟩ := const_of_cycle _ hsum
+    have hf := congrFun hcc f₀
+    simp only [Pi.add_apply, hf₀, reachChain_self] at hf
+    have hcc0 : cc = 0 := by rw [← hf]; decide
+    funext g
+    have hg := congrFun hcc g
+    rw [hcc0] at hg
+    simp only [Pi.add_apply] at hg
+    exact c2 _ _ hg
+
+/-! ## From dual-connectivity to skeleton-connectivity -/
+
+/-- Two vertices of a single face are skeleton-reachable. -/
+lemma skel_reach_within {τ : Finset (Finset V)} {f : τ} {u w : V}
+    (hu : u ∈ (f : Finset V)) (hw : w ∈ (f : Finset V)) : (skel τ).Reachable u w := by
+  by_cases huw : u = w
+  · exact huw ▸ SimpleGraph.Reachable.refl u
+  · refine SimpleGraph.Adj.reachable ⟨huw, mem_edgesOf.mpr ⟨f, f.2, ?_, Finset.card_pair huw⟩⟩
+    intro y hy
+    rcases Finset.mem_insert.mp hy with rfl | hy
+    · exact hu
+    · rw [Finset.mem_singleton] at hy; exact hy ▸ hw
+
+/-- Reverse transport: a dual-graph walk yields a skeleton walk between chosen
+vertices of its endpoint faces. -/
+lemma dualwalk_skel {τ : Finset (Finset V)} :
+    ∀ {f g : τ} (_ : (dualGraph τ).Walk f g) {u w : V},
+      u ∈ (f : Finset V) → w ∈ (g : Finset V) → (skel τ).Reachable u w := by
+  intro f g p
+  induction p with
+  | nil => intro u w hu hw; exact skel_reach_within hu hw
+  | @cons f x g hadj _ ih =>
+      intro u w hu hw
+      obtain ⟨_, e, he, hef, hex⟩ := dualGraph_adj.mp hadj
+      obtain ⟨z, hz⟩ : e.Nonempty := Finset.card_pos.mp (by rw [card_of_mem_edgesOf he]; omega)
+      exact (skel_reach_within hu (hef hz)).trans (ih (hex hz) hw)
+
+/-- **Dual-connectivity ⟹ skeleton-connectivity** for any complex of nonempty
+faces. -/
+lemma skelConn_of_dualPreconn {τ : Finset (Finset V)} (hpre : (dualGraph τ).Preconnected) :
+    ConnOn (skel τ) (vertsOf τ) := by
+  intro u hu w hw
+  obtain ⟨f, hf, huf⟩ := mem_vertsOf.mp hu
+  obtain ⟨g, hg, hwg⟩ := mem_vertsOf.mp hw
+  obtain ⟨p⟩ := hpre ⟨f, hf⟩ ⟨g, hg⟩
+  exact dualwalk_skel p huf hwg
+
+/-- A `dualOn` walk among cut-faces transports to a skeleton walk in the capped
+complex `insert γ (cutSet σ W)`. -/
+lemma dualOn_skel_insert {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} :
+    ∀ {a b : σ} (_ : (dualOn σ (cutSet σ W)).Walk a b) {u w : V},
+      u ∈ (a : Finset V) → w ∈ (b : Finset V) → (a : Finset V) ∈ cutSet σ W →
+      (skel (insert γ (cutSet σ W))).Reachable u w := by
+  intro a b p
+  induction p with
+  | nil => intro u w hu hw haS; exact skel_reach_within (f := ⟨_, Finset.mem_insert_of_mem haS⟩) hu hw
+  | @cons a x b hadj q ih =>
+      intro u w hu hw haS
+      obtain ⟨hadjσ, _, hxS⟩ := dualOn_adj.mp hadj
+      obtain ⟨_, e, he, hea, hex⟩ := dualGraph_adj.mp hadjσ
+      obtain ⟨z, hz⟩ : e.Nonempty := Finset.card_pos.mp (by rw [card_of_mem_edgesOf he]; omega)
+      exact (skel_reach_within (f := ⟨_, Finset.mem_insert_of_mem haS⟩) hu (hea hz)).trans
+        (ih (hex hz) hw hxS)
+
+/-- **`conn` for the capped side.** The skeleton of `insert γ (cutSet σ W)` is
+connected: every vertex reaches a fixed cut-face vertex (cut-faces via the
+dual-connectivity transport, `γ` via its shared edge with a cut-face). -/
+theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+    (hW : bd2 σ W = gammaChain σ γ) :
+    ConnOn (skel (insert γ (cutSet σ W))) (vertsOf (insert γ (cutSet σ W))) := by
+  classical
+  have c2 : ∀ x y : ZMod 2, x + y = 1 → x = 1 ∨ y = 1 := by decide
+  -- a base cut-face f₀ (W f₀ = 1), exists since gammaChain ≠ 0
+  obtain ⟨f₀, hf₀⟩ : ∃ f₀ : σ, W f₀ = 1 := by
+    by_contra hc
+    simp only [not_exists] at hc
+    have hW0 : W = 0 := by
+      funext f
+      rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W f) with h0 | h1
+      · exact h0
+      · exact absurd h1 (hc f)
+    rw [hW0, map_zero] at hW
+    obtain ⟨e0, he0⟩ : (γ.powersetCard 2).Nonempty :=
+      Finset.card_pos.mp (by rw [Finset.card_powersetCard, hγ3]; decide)
+    rw [Finset.mem_powersetCard] at he0
+    have he0e : e0 ∈ edgesOf σ := hγe (Finset.mem_powersetCard.mpr he0)
+    have hv1 : gammaChain σ γ ⟨e0, he0e⟩ = 1 := by simp only [gammaChain, if_pos he0.1]
+    rw [← hW] at hv1; simp only [Pi.zero_apply] at hv1; exact one_ne_zero hv1.symm
+  have hf₀mem : (f₀ : Finset V) ∈ cutSet σ W := mem_cutSet.mpr ⟨f₀.2, hf₀⟩
+  have hdc := cutSet_dualConn h hγ3 hγe hW hf₀
+  -- a base vertex c₀ ∈ f₀
+  obtain ⟨c₀, hc₀⟩ : (f₀ : Finset V).Nonempty := by
+    rw [← Finset.card_pos, h.pure _ f₀.2]; omega
+  -- every cut-face vertex reaches c₀
+  have reachσ1 : ∀ (g : σ) (x : V), W g = 1 → x ∈ (g : Finset V) →
+      (skel (insert γ (cutSet σ W))).Reachable x c₀ := by
+    intro g x hWg hxg
+    have hgmem : (g : Finset V) ∈ cutSet σ W := mem_cutSet.mpr ⟨g.2, hWg⟩
+    have : reachChain σ (cutSet σ W) f₀ g = 1 := by rw [hdc]; exact hWg
+    have hr : (dualOn σ (cutSet σ W)).Reachable f₀ g := by
+      by_contra hcon; simp only [reachChain, if_neg hcon] at this; exact one_ne_zero this.symm
+    obtain ⟨p⟩ := hr
+    exact (dualOn_skel_insert p hc₀ hxg hf₀mem).symm
+  -- a γ-edge and its cut-side face
+  obtain ⟨e0, he0⟩ : (γ.powersetCard 2).Nonempty :=
+    Finset.card_pos.mp (by rw [Finset.card_powersetCard, hγ3]; decide)
+  rw [Finset.mem_powersetCard] at he0
+  have he0e : e0 ∈ edgesOf σ := hγe (Finset.mem_powersetCard.mpr he0)
+  obtain ⟨g1, hg1, g2, hg2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h he0e
+  have hpar := edge_cut_parity hW he0e hg1 hg2 hne hsub1 hsub2 huniq
+  rw [if_pos he0.1] at hpar
+  -- pick the cut-side face f₁ of e0, and a shared vertex v₀ ∈ e0 ⊆ γ ∩ f₁
+  obtain ⟨v₀, hv₀⟩ : e0.Nonempty := Finset.card_pos.mp (by rw [he0.2]; omega)
+  have hvγ : v₀ ∈ γ := he0.1 hv₀
+  have reachγ : (skel (insert γ (cutSet σ W))).Reachable v₀ c₀ := by
+    rcases c2 _ _ hpar with hw1 | hw1
+    · exact reachσ1 ⟨g1, hg1⟩ v₀ hw1 (hsub1 hv₀)
+    · exact reachσ1 ⟨g2, hg2⟩ v₀ hw1 (hsub2 hv₀)
+  -- every vertex reaches c₀
+  have reachAll : ∀ x ∈ vertsOf (insert γ (cutSet σ W)),
+      (skel (insert γ (cutSet σ W))).Reachable x c₀ := by
+    intro x hx
+    obtain ⟨fx, hfx, hxfx⟩ := mem_vertsOf.mp hx
+    rcases Finset.mem_insert.mp hfx with hfxγ | hfxc
+    · -- x ∈ γ: reach v₀ within γ, then v₀ → c₀
+      have hxγ : x ∈ γ := hfxγ ▸ hxfx
+      exact (skel_reach_within (f := ⟨γ, Finset.mem_insert_self γ _⟩) hxγ hvγ).trans reachγ
+    · -- x in a cut-face
+      obtain ⟨hgσ, hWg⟩ := mem_cutSet.mp hfxc
+      exact reachσ1 ⟨fx, hgσ⟩ x hWg hxfx
+  intro a ha b hb
+  exact (reachAll a ha).trans (reachAll b hb).symm
+
+/-! ## linkConn for the capped pieces -/
+
+/-- Two faces sharing a non-γ edge are on the same side of the cut. -/
+lemma W_eq_of_share_edge {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) {e : Finset V} (he : e ∈ edgesOf σ) (heγ : ¬ e ⊆ γ)
+    {f g : σ} (hef : e ⊆ (f : Finset V)) (heg : e ⊆ (g : Finset V)) : W f = W g := by
+  classical
+  obtain ⟨f₁, h1, f₂, h2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h he
+  have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
+  -- both f and g are among the two faces f₁, f₂ of e
+  have hfg : ∀ {k : σ}, e ⊆ (k : Finset V) → W k = W ⟨f₁, h1⟩ ∨ W k = W ⟨f₂, h2⟩ := by
+    intro k hk
+    rcases huniq (k : Finset V) k.2 hk with hh | hh
+    · exact Or.inl (by rw [show k = ⟨f₁, h1⟩ from Subtype.ext hh])
+    · exact Or.inr (by rw [show k = ⟨f₂, h2⟩ from Subtype.ext hh])
+  have hpar := edge_cut_parity hW he h1 h2 hne hsub1 hsub2 huniq
+  rw [if_neg heγ] at hpar
+  have h12 : W ⟨f₁, h1⟩ = W ⟨f₂, h2⟩ := c2 _ _ hpar
+  rcases hfg hef with hf | hf <;> rcases hfg heg with hg | hg <;>
+    rw [hf, hg] <;> first | rfl | exact h12 | exact h12.symm
+
+/-- Along a link walk at a vertex `v ∉ γ`, all faces lie on the same side. -/
+lemma W_eq_along_link {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∉ γ) :
+    ∀ {a a' : V} (_ : (linkGraph σ v).Walk a a') {f f' : σ},
+      v ∈ (f : Finset V) → a ∈ (f : Finset V) → a ≠ v →
+      v ∈ (f' : Finset V) → a' ∈ (f' : Finset V) → a' ≠ v → W f = W f' := by
+  -- faces sharing the edge {v,y} (y ≠ v) have equal W
+  have step : ∀ {y : V} {k k' : σ}, y ≠ v → v ∈ (k : Finset V) → y ∈ (k : Finset V) →
+      v ∈ (k' : Finset V) → y ∈ (k' : Finset V) → W k = W k' := by
+    intro y k k' hyv hvk hyk hvk' hyk'
+    have hsub : ∀ {m : σ}, v ∈ (m : Finset V) → y ∈ (m : Finset V) →
+        ({v, y} : Finset V) ⊆ (m : Finset V) := by
+      intro m hvm hym z hz
+      rcases Finset.mem_insert.mp hz with rfl | hz
+      · exact hvm
+      · rw [Finset.mem_singleton] at hz; exact hz ▸ hym
+    have he : ({v, y} : Finset V) ∈ edgesOf σ :=
+      mem_edgesOf.mpr ⟨k, k.2, hsub hvk hyk, Finset.card_pair (Ne.symm hyv)⟩
+    exact W_eq_of_share_edge h hW he (fun hc => hvγ (hc (Finset.mem_insert_self v _)))
+      (hsub hvk hyk) (hsub hvk' hyk')
+  intro a a' p
+  induction p with
+  | nil => intro f f' hvf haf hav hvf' haf' _; exact step hav hvf haf hvf' haf'
+  | @cons a x a' hadj q ih =>
+      intro f f' hvf haf hav hvf' haf' ha'v
+      rw [linkGraph] at hadj
+      obtain ⟨hax, hface⟩ := hadj
+      have hmem : ({v, a, x} : Finset V) ∈ σ := hface
+      have hxv : x ≠ v := by
+        intro hxv
+        have h3 := h.pure _ hmem
+        have hle : ({v, a, x} : Finset V).card ≤ 2 := by
+          have hsub : ({v, a, x} : Finset V) ⊆ {v, a} := by
+            intro z hz
+            simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢
+            rcases hz with rfl | rfl | rfl
+            · exact Or.inl rfl
+            · exact Or.inr rfl
+            · exact Or.inl hxv
+          exact le_trans (Finset.card_le_card hsub)
+            (le_trans (Finset.card_insert_le _ _) (by simp))
+        omega
+      have hvh : v ∈ ({v, a, x} : Finset V) := Finset.mem_insert_self v _
+      have hah : a ∈ ({v, a, x} : Finset V) :=
+        Finset.mem_insert_of_mem (Finset.mem_insert_self a _)
+      have hxh : x ∈ ({v, a, x} : Finset V) :=
+        Finset.mem_insert_of_mem (Finset.mem_insert_of_mem (Finset.mem_singleton_self x))
+      exact (step hav hvf haf hvh hah).trans (ih (f := ⟨_, hmem⟩) hvh hxh hxv hvf' haf' ha'v)
+
+/-- All faces through an off-γ vertex lie on the same side (via `linkConn`). -/
+lemma W_const_at {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∉ γ) {f g : σ}
+    (hvf : v ∈ (f : Finset V)) (hvg : v ∈ (g : Finset V)) : W f = W g := by
+  obtain ⟨a, ha⟩ : ((f : Finset V).erase v).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_erase_of_mem hvf, h.pure _ f.2]; omega
+  obtain ⟨c, hc⟩ : ((g : Finset V).erase v).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_erase_of_mem hvg, h.pure _ g.2]; omega
+  have haf := Finset.mem_of_mem_erase ha
+  have hcg := Finset.mem_of_mem_erase hc
+  have hav := Finset.ne_of_mem_erase ha
+  have hcv := Finset.ne_of_mem_erase hc
+  have hvV : v ∈ vertsOf σ := mem_vertsOf.mpr ⟨f, f.2, hvf⟩
+  have haL : a ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hav, f, f.2, hvf, haf⟩
+  have hcL : c ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hcv, g, g.2, hvg, hcg⟩
+  obtain ⟨p⟩ := h.linkConn v hvV a haL c hcL
+  exact W_eq_along_link h hW hvγ p hvf haf hav hvg hcg hcv
+
+end Taut
+
+exec
+/bin/zsh -lc "sed -n '1,360p' lean/Taut/Complex2.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Splitting
+
+/-!
+# Combinatorial 2-spheres
+
+The definitional layer for Theorems 2–4 of "Taut fillings".  A pure
+2-complex is identified with its facet set `σ : Finset (Finset V)`
+(members are the 2-simplices, of card 3); edges and vertices are derived.
+
+`IsSphere2 σ` is the combinatorial replacement for "simplicial
+triangulation of S²": pure, closed pseudomanifold (every edge in exactly
+two faces), connected vertex links, connected, Euler characteristic 2.
+With χ in the definition, the Euler counting relations (`3f = 2e`,
+`3v = e + 6`, `2v = f + 4`) are free arithmetic; "links are single
+cycles" is derivable (closed pm ⟹ links 2-regular; 2-regular and
+connected ⟹ one cycle) rather than assumed.
+
+Validation (build-checked):
+* the counting relations above (`three_mul_card_faces`,
+  `three_mul_card_verts`, `two_mul_card_verts`);
+* the boundary of the tetrahedron on any four distinct vertices is a
+  sphere (`isSphere2_tetraBdry`) — the semantic smoke test against a
+  vacuous or over-strong definition, and the base-case complex of the
+  Theorem 2 induction.
+-/
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-! ## Derived skeleta of a pure 2-complex -/
+
+/-- The edges (1-simplices) of a complex of triangles. -/
+def edgesOf (σ : Finset (Finset V)) : Finset (Finset V) :=
+  σ.biUnion (Finset.powersetCard 2)
+
+/-- The vertices of a complex. -/
+def vertsOf (σ : Finset (Finset V)) : Finset V := σ.biUnion id
+
+/-- The number of faces containing a given edge. -/
+def edgeDeg (σ : Finset (Finset V)) (e : Finset V) : ℕ :=
+  (σ.filter (fun f => e ⊆ f)).card
+
+lemma mem_edgesOf {σ : Finset (Finset V)} {e : Finset V} :
+    e ∈ edgesOf σ ↔ ∃ f ∈ σ, e ⊆ f ∧ e.card = 2 := by
+  simp only [edgesOf, Finset.mem_biUnion, Finset.mem_powersetCard]
+
+lemma card_of_mem_edgesOf {σ : Finset (Finset V)} {e : Finset V}
+    (he : e ∈ edgesOf σ) : e.card = 2 := by
+  obtain ⟨f, _, _, h⟩ := mem_edgesOf.mp he
+  exact h
+
+lemma mem_vertsOf {σ : Finset (Finset V)} {x : V} :
+    x ∈ vertsOf σ ↔ ∃ f ∈ σ, x ∈ f := by
+  simp [vertsOf]
+
+/-- The 1-skeleton, as a simple graph on all of `V`. -/
+def skel (σ : Finset (Finset V)) : SimpleGraph V where
+  Adj a b := a ≠ b ∧ {a, b} ∈ edgesOf σ
+  symm := by
+    intro a b h
+    exact ⟨h.1.symm, by rw [Finset.pair_comm b a]; exact h.2⟩
+  loopless := ⟨fun a h => h.1 rfl⟩
+
+/-- The link of a vertex, as a simple graph: `a ~ b` iff `{v,a,b}` is a
+face. -/
+def linkGraph (σ : Finset (Finset V)) (v : V) : SimpleGraph V where
+  Adj a b := a ≠ b ∧ {v, a, b} ∈ σ
+  symm := by
+    intro a b h
+    refine ⟨h.1.symm, ?_⟩
+    rw [Finset.pair_comm b a]
+    exact h.2
+  loopless := ⟨fun a h => h.1 rfl⟩
+
+instance (σ : Finset (Finset V)) (v : V) : DecidableRel (linkGraph σ v).Adj :=
+  fun a b => decidable_of_iff (a ≠ b ∧ {v, a, b} ∈ σ) Iff.rfl
+
+instance (σ : Finset (Finset V)) : DecidableRel (skel σ).Adj :=
+  fun a b => decidable_of_iff (a ≠ b ∧ {a, b} ∈ edgesOf σ) Iff.rfl
+
+/-- The neighbors of `v`: vertices of the faces at `v`, except `v`. -/
+def linkVerts (σ : Finset (Finset V)) (v : V) : Finset V :=
+  (vertsOf (σ.filter (fun f => v ∈ f))).erase v
+
+/-- Connectivity of a graph on a prescribed finite support. -/
+def ConnOn (G : SimpleGraph V) (s : Finset V) : Prop :=
+  ∀ a ∈ s, ∀ b ∈ s, G.Reachable a b
+
+/-! ## Combinatorial 2-spheres -/
+
+/-- A combinatorial 2-sphere: pure 2-dimensional, every edge in exactly
+two faces, connected vertex links, connected, Euler characteristic 2.
+This is the paper's "clean complex" (normal pseudomanifold) sharpened by
+`χ = 2`, replacing "simplicial triangulation of S²". -/
+structure IsSphere2 (σ : Finset (Finset V)) : Prop where
+  pure : ∀ f ∈ σ, f.card = 3
+  closed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2
+  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+  conn : ConnOn (skel σ) (vertsOf σ)
+  euler : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2
+
+/-! ## Euler counting -/
+
+/-- Double counting face–edge incidences: `3f = 2e`. -/
+theorem three_mul_card_faces {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    3 * σ.card = 2 * (edgesOf σ).card := by
+  classical
+  have hfilter : ∀ f ∈ σ, (edgesOf σ).filter (fun e => e ⊆ f)
+      = f.powersetCard 2 := by
+    intro f hf
+    ext e
+    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+    constructor
+    · rintro ⟨he, hef⟩
+      exact ⟨hef, card_of_mem_edgesOf he⟩
+    · rintro ⟨hef, hcard⟩
+      exact ⟨mem_edgesOf.mpr ⟨f, hf, hef, hcard⟩, hef⟩
+  have key : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+      = ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card := by
+    simp_rw [Finset.card_filter]
+    exact Finset.sum_comm
+  have hcongr : ∀ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card = 3 := by
+    intro f hf
+    rw [hfilter f hf, Finset.card_powersetCard, h.pure f hf]
+    rfl
+  have hcl : ∀ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card = 2 :=
+    h.closed
+  have hleft : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+      = 3 * σ.card := by
+    rw [Finset.sum_congr rfl hcongr, Finset.sum_const, smul_eq_mul, mul_comm]
+  have hright : ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card
+      = 2 * (edgesOf σ).card := by
+    rw [Finset.sum_congr rfl hcl, Finset.sum_const, smul_eq_mul, mul_comm]
+  rw [← hleft, key, hright]
+
+/-- `3v = e + 6`. -/
+theorem three_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    3 * (vertsOf σ).card = (edgesOf σ).card + 6 := by
+  have h1 := three_mul_card_faces h
+  have h2 := h.euler
+  omega
+
+/-- `2v = f + 4`. -/
+theorem two_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    2 * (vertsOf σ).card = σ.card + 4 := by
+  have h1 := three_mul_card_faces h
+  have h2 := h.euler
+  omega
+
+/-! ## Local structure: edges and links -/
+
+/-- The third vertex of a triangle over an edge. -/
+lemma exists_third {e f : Finset V} (hef : e ⊆ f) (he : e.card = 2)
+    (hf : f.card = 3) : ∃ z, z ∉ e ∧ f = insert z e := by
+  have hd : (f \ e).card = 1 := by
+    rw [Finset.card_sdiff_of_subset hef, hf, he]
+  obtain ⟨z, hz⟩ := Finset.card_eq_one.mp hd
+  have hzf : z ∈ f \ e := hz ▸ Finset.mem_singleton_self z
+  obtain ⟨hzf', hze⟩ := Finset.mem_sdiff.mp hzf
+  refine ⟨z, hze, ?_⟩
+  ext x
+  simp only [Finset.mem_insert]
+  constructor
+  · intro hx
+    by_cases hxe : x ∈ e
+    · exact Or.inr hxe
+    · left
+      have hxd : x ∈ f \ e := Finset.mem_sdiff.mpr ⟨hx, hxe⟩
+      rw [hz, Finset.mem_singleton] at hxd
+      exact hxd
+  · rintro (rfl | hx)
+    · exact hzf'
+    · exact hef hx
+
+/-- The two faces over an edge of a sphere, by name. -/
+lemma exists_two_faces {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {e : Finset V} (he : e ∈ edgesOf σ) :
+    ∃ f₁ ∈ σ, ∃ f₂ ∈ σ, f₁ ≠ f₂ ∧ e ⊆ f₁ ∧ e ⊆ f₂ ∧
+      ∀ f ∈ σ, e ⊆ f → f = f₁ ∨ f = f₂ := by
+  have h2 := h.closed e he
+  rw [edgeDeg] at h2
+  obtain ⟨f₁, f₂, hne, hpair⟩ := Finset.card_eq_two.mp h2
+  have hf₁ : f₁ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+  have hf₂ : f₂ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+  obtain ⟨hf₁σ, hef₁⟩ := Finset.mem_filter.mp hf₁
+  obtain ⟨hf₂σ, hef₂⟩ := Finset.mem_filter.mp hf₂
+  refine ⟨f₁, hf₁σ, f₂, hf₂σ, hne, hef₁, hef₂, fun f hf hef => ?_⟩
+  have hmem : f ∈ σ.filter (fun f => e ⊆ f) := Finset.mem_filter.mpr ⟨hf, hef⟩
+  rw [hpair] at hmem
+  simpa using hmem
+
+/-- Two distinct triangles over a common edge meet exactly in it. -/
+lemma inter_eq_edge_of_two_faces {f₁ f₂ e : Finset V}
+    (h3₁ : f₁.card = 3) (h3₂ : f₂.card = 3) (hne : f₁ ≠ f₂)
+    (he : e.card = 2) (h1 : e ⊆ f₁) (h2 : e ⊆ f₂) : f₁ ∩ f₂ = e := by
+  have hsub : e ⊆ f₁ ∩ f₂ := Finset.subset_inter h1 h2
+  have hcap : (f₁ ∩ f₂).card ≤ 3 :=
+    h3₁ ▸ Finset.card_le_card Finset.inter_subset_left
+  have hne3 : (f₁ ∩ f₂).card ≠ 3 := by
+    intro h3
+    have hi : f₁ ∩ f₂ = f₁ :=
+      Finset.eq_of_subset_of_card_le Finset.inter_subset_left (by omega)
+    have hsub12 : f₁ ⊆ f₂ := hi ▸ Finset.inter_subset_right
+    exact hne (Finset.eq_of_subset_of_card_le hsub12 (by omega))
+  have h2le := Finset.card_le_card hsub
+  exact (Finset.eq_of_subset_of_card_le hsub (by omega)).symm
+
+/-- Membership in the link of a vertex. -/
+lemma mem_linkVerts {σ : Finset (Finset V)} {v x : V} :
+    x ∈ linkVerts σ v ↔ x ≠ v ∧ ∃ f ∈ σ, v ∈ f ∧ x ∈ f := by
+  rw [linkVerts, Finset.mem_erase, mem_vertsOf]
+  constructor
+  · rintro ⟨hxv, f, hf, hxf⟩
+    exact ⟨hxv, f, Finset.mem_of_mem_filter f hf,
+      (Finset.mem_filter.mp hf).2, hxf⟩
+  · rintro ⟨hxv, f, hf, hvf, hxf⟩
+    exact ⟨hxv, f, Finset.mem_filter.mpr ⟨hf, hvf⟩, hxf⟩
+
+/-- In a sphere, link membership is edge membership. -/
+lemma mem_linkVerts_iff_edge {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {v x : V} (hxv : x ≠ v) :
+    x ∈ linkVerts σ v ↔ {v, x} ∈ edgesOf σ := by
+  constructor
+  · intro hx
+    obtain ⟨_, f, hf, hvf, hxf⟩ := mem_linkVerts.mp hx
+    refine mem_edgesOf.mpr ⟨f, hf, ?_, Finset.card_pair (Ne.symm hxv)⟩
+    intro u hu
+    rcases Finset.mem_insert.mp hu with rfl | hu
+    · exact hvf
+    · rw [Finset.mem_singleton] at hu
+      exact hu ▸ hxf
+  · intro hx
+    obtain ⟨f, hf, hef, _⟩ := mem_edgesOf.mp hx
+    exact mem_linkVerts.mpr ⟨hxv, f, hf,
+      hef (Finset.mem_insert_self v _),
+      hef (by simp)⟩
+
+/-- In a sphere, every link vertex has exactly two neighbors in the
+link: the links are 2-regular. -/
+theorem link_two_regular {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {v x : V} (hx : x ∈ linkVerts σ v) :
+    ((linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y)).card = 2 := by
+  classical
+  have hxv : x ≠ v := (Finset.mem_erase.mp hx).1
+  have hedge : {v, x} ∈ edgesOf σ := (mem_linkVerts_iff_edge h hxv).mp hx
+  have himg : ((linkVerts σ v).filter
+        (fun y => (linkGraph σ v).Adj x y)).image (fun y => {v, x, y})
+      = σ.filter (fun f => {v, x} ⊆ f) := by
+    ext f
+    rw [Finset.mem_image, Finset.mem_filter]
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      obtain ⟨hyL, hxy, hface⟩ := Finset.mem_filter.mp hy
+      refine ⟨hface, ?_⟩
+      intro u hu
+      rcases Finset.mem_insert.mp hu with rfl | hu
+      · exact Finset.mem_insert_self _ _
+      · rw [Finset.mem_singleton] at hu
+        subst hu
+        exact Finset.mem_insert_of_mem (Finset.mem_insert_self _ _)
+    · rintro ⟨hf, hef⟩
+      obtain ⟨z, hze, hfz⟩ := exists_third hef
+        (Finset.card_pair (Ne.symm hxv)) (h.pure f hf)
+      have hzv : z ≠ v := fun hzv => hze (by rw [hzv]; simp)
+      have hzx : z ≠ x := fun hzx => hze (by simp [hzx])
+      have hfz' : f = {v, x, z} := by
+        rw [hfz]
+        ext u
+        simp only [Finset.mem_insert, Finset.mem_singleton]
+        tauto
+      refine ⟨z, Finset.mem_filter.mpr ⟨?_, ?_⟩, hfz'.symm⟩
+      · exact mem_linkVerts.mpr ⟨hzv, f, hf,
+          hef (Finset.mem_insert_self v _), hfz' ▸ (by simp)⟩
+      · exact ⟨Ne.symm hzx, hfz' ▸ hf⟩
+  have hinj : ∀ y₁ ∈ (linkVerts σ v).filter
+        (fun y => (linkGraph σ v).Adj x y),
+      ∀ y₂ ∈ (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y),
+      (fun y => ({v, x, y} : Finset V)) y₁
+        = (fun y => ({v, x, y} : Finset V)) y₂ → y₁ = y₂ := by
+    intro y₁ h₁ y₂ h₂ heq
+    have hy₁v : y₁ ≠ v := (Finset.mem_erase.mp (Finset.mem_filter.mp h₁).1).1
+    have hy₁x : y₁ ≠ x := Ne.symm (Finset.mem_filter.mp h₁).2.1
+    have heq' : ({v, x, y₁} : Finset V) = {v, x, y₂} := heq
+    have hy₁ : y₁ ∈ ({v, x, y₂} : Finset V) := heq' ▸ (by simp)
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hy₁
+    rcases hy₁ with rfl | rfl | hy
+    · exact absurd rfl hy₁v
+    · exact absurd rfl hy₁x
+    · exact hy
+  have hcard := Finset.card_image_of_injOn hinj
+  rw [himg] at hcard
+  rw [← hcard]
+  exact h.closed _ hedge
+
+/-- Minimum degree three: every vertex of a sphere has at least three
+neighbors. -/
+theorem three_le_card_linkVerts {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {v : V} (hv : v ∈ vertsOf σ) : 3 ≤ (linkVerts σ v).card := by
+  obtain ⟨f, hf, hvf⟩ := mem_vertsOf.mp hv
+  have hf3 := h.pure f hf
+  have he2 : (f.erase v).card = 2 := by
+    rw [Finset.card_erase_of_mem hvf, hf3]
+  obtain ⟨x, y, hxy, hpair⟩ := Finset.card_eq_two.mp he2
+  have hxe : x ∈ f.erase v := by rw [hpair]; simp
+  have hye : y ∈ f.erase v := by rw [hpair]; simp
+  have hxf : x ∈ f := Finset.mem_of_mem_erase hxe
+  have hyf : y ∈ f := Finset.mem_of_mem_erase hye
+  have hxv : x ≠ v := Finset.ne_of_mem_erase hxe
+  have hyv : y ≠ v := Finset.ne_of_mem_erase hye
+  have hvx_sub : ({v, x} : Finset V) ⊆ f := by
+    intro u hu
+    rcases Finset.mem_insert.mp hu with rfl | hu
+    · exact hvf
+    · rw [Finset.mem_singleton] at hu
+      exact hu ▸ hxf
+  have hedge : {v, x} ∈ edgesOf σ :=
+    mem_edgesOf.mpr ⟨f, hf, hvx_sub, Finset.card_pair (Ne.symm hxv)⟩
+  obtain ⟨f₁, hf₁, f₂, hf₂, hne, he₁, he₂, huniq⟩ := exists_two_faces h hedge
+  obtain ⟨f', hf', hef', hff'⟩ : ∃ f' ∈ σ, {v, x} ⊆ f' ∧ f' ≠ f := by
+    rcases huniq f hf hvx_sub with rfl | rfl
+    · exact ⟨f₂, hf₂, he₂, hne.symm⟩
+    · exact ⟨f₁, hf₁, he₁, hne⟩
+  obtain ⟨z, hze, hfz⟩ := exists_third hef'
+    (Finset.card_pair (Ne.symm hxv)) (h.pure f' hf')
+  have hzv : z ≠ v := fun hzv => hze (by rw [hzv]; simp)
+  have hzx : z ≠ x := fun hzx => hze (by simp [hzx])
+  have hzy : z ≠ y := by
+    intro hzy
+    apply hff'
+    have hfeq : f = insert v {x, y} := by
+      rw [← hpair, Finset.insert_erase hvf]
+    rw [hfz, hzy, hfeq]
+    ext u
+    simp only [Finset.mem_insert, Finset.mem_singleton]
+    tauto
+  have hxL : x ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hxv, f, hf, hvf, hxf⟩
+  have hyL : y ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hyv, f, hf, hvf, hyf⟩
+  have hzL : z ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hzv, f', hf',
+    hef' (Finset.mem_insert_self v _), by rw [hfz]; exact Finset.mem_insert_self z _⟩
+  calc 3 = ({x, y, z} : Finset V).card :=
+        (Finset.card_eq_three.mpr ⟨x, y, z, hxy, Ne.symm hzx, Ne.symm hzy,
+          rfl⟩).symm
+    _ ≤ (linkVerts σ v).card := by
+        refine Finset.card_le_card ?_
+        intro u hu
+        rcases Finset.mem_insert.mp hu with rfl | hu
+        · exact hxL
+        · rcases Finset.mem_insert.mp hu with rfl | hu
+          · exact hyL
+          · rw [Finset.mem_singleton] at hu
+            exact hu ▸ hzL
+
+/-! ## The boundary of the tetrahedron -/
+
+/-- The boundary complex of the tetrahedron on `a, b, c, d`. -/
+def tetraBdry (a b c d : V) : Finset (Finset V) :=
+  {{a, b, c}, {a, b, d}, {a, c, d}, {b, c, d}}
+
+section Tetra
+
+exec
+/bin/zsh -lc "sed -n '240,580p' lean/Taut/Homology2.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  rw [hwg]
+  exact (CharTwo.neg_eq (w f)).symm
+
+/-! ### Dual-graph connectivity (from `conn` + `linkConn` + `closed`) -/
+
+/-- Two faces that share an edge are dual-reachable. -/
+lemma dualReach_of_common_edge {σ : Finset (Finset V)} {f g : σ} {e : Finset V}
+    (he : e ∈ edgesOf σ) (hef : e ⊆ (f : Finset V)) (heg : e ⊆ (g : Finset V)) :
+    (dualGraph σ).Reachable f g := by
+  by_cases hfg : f = g
+  · exact hfg ▸ SimpleGraph.Reachable.refl f
+  · exact SimpleGraph.Adj.reachable (by rw [dualGraph_adj]; exact ⟨hfg, e, he, hef, heg⟩)
+
+/-- Two faces meeting in the edge `{v, a}` (`a ≠ v`) are dual-reachable. -/
+lemma dualReach_of_pair {σ : Finset (Finset V)} {f g : σ} {v a : V} (hav : a ≠ v)
+    (hvf : v ∈ (f : Finset V)) (haf : a ∈ (f : Finset V))
+    (hvg : v ∈ (g : Finset V)) (hag : a ∈ (g : Finset V)) :
+    (dualGraph σ).Reachable f g := by
+  have hsub : ∀ {h : σ}, v ∈ (h : Finset V) → a ∈ (h : Finset V) →
+      ({v, a} : Finset V) ⊆ (h : Finset V) := by
+    intro h hvh hah z hz
+    rcases Finset.mem_insert.mp hz with rfl | hz
+    · exact hvh
+    · rw [Finset.mem_singleton] at hz; exact hz ▸ hah
+  have he : ({v, a} : Finset V) ∈ edgesOf σ :=
+    mem_edgesOf.mpr ⟨f, f.2, hsub hvf haf, Finset.card_pair (Ne.symm hav)⟩
+  exact dualReach_of_common_edge he (hsub hvf haf) (hsub hvg hag)
+
+/-- Faces along a link-walk at `v` are dual-reachable: induction transporting a
+walk in `linkGraph σ v` to a dual path. -/
+lemma linkwalk_dual {σ : Finset (Finset V)} (h : IsSphere2 σ) {v : V} :
+    ∀ {a a' : V} (_ : (linkGraph σ v).Walk a a') {f f' : σ},
+      v ∈ (f : Finset V) → a ∈ (f : Finset V) → a ≠ v →
+      v ∈ (f' : Finset V) → a' ∈ (f' : Finset V) → a' ≠ v →
+      (dualGraph σ).Reachable f f' := by
+  intro a a' p
+  induction p with
+  | nil =>
+      intro f f' hvf haf hav hvf' haf' _
+      exact dualReach_of_pair hav hvf haf hvf' haf'
+  | @cons a x a' hadj q ih =>
+      intro f f' hvf haf hav hvf' haf' ha'v
+      -- the head edge `a — x` of the link walk is the face `{v, a, x}`
+      rw [linkGraph] at hadj
+      obtain ⟨hax, hface⟩ := hadj
+      have hmem : ({v, a, x} : Finset V) ∈ σ := hface
+      have hxv : x ≠ v := by
+        intro hxv
+        have h3 := h.pure _ hmem
+        have hle : ({v, a, x} : Finset V).card ≤ 2 := by
+          have hsub : ({v, a, x} : Finset V) ⊆ {v, a} := by
+            intro z hz
+            simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢
+            rcases hz with rfl | rfl | rfl
+            · exact Or.inl rfl
+            · exact Or.inr rfl
+            · exact Or.inl hxv
+          exact le_trans (Finset.card_le_card hsub)
+            (le_trans (Finset.card_insert_le _ _) (by simp))
+        omega
+      set hf : σ := ⟨{v, a, x}, hmem⟩ with hhf
+      have hvh : v ∈ (hf : Finset V) := by rw [hhf]; exact Finset.mem_insert_self v _
+      have hah : a ∈ (hf : Finset V) := by
+        rw [hhf]; exact Finset.mem_insert_of_mem (Finset.mem_insert_self a _)
+      have hxh : x ∈ (hf : Finset V) := by
+        rw [hhf]; exact Finset.mem_insert_of_mem (Finset.mem_insert_of_mem
+          (Finset.mem_singleton_self x))
+      exact (dualReach_of_pair hav hvf haf hvh hah).trans
+        (ih hvh hxh hxv hvf' haf' ha'v)
+
+/-- Two faces sharing a vertex are dual-reachable (uses `linkConn`). -/
+lemma dual_reach_shared_vertex {σ : Finset (Finset V)} (h : IsSphere2 σ) {f g : σ} {v : V}
+    (hvf : v ∈ (f : Finset V)) (hvg : v ∈ (g : Finset V)) :
+    (dualGraph σ).Reachable f g := by
+  obtain ⟨a, ha⟩ : (((f : Finset V).erase v)).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_erase_of_mem hvf, h.pure _ f.2]; omega
+  obtain ⟨c, hc⟩ : (((g : Finset V).erase v)).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_erase_of_mem hvg, h.pure _ g.2]; omega
+  have hav : a ≠ v := Finset.ne_of_mem_erase ha
+  have hcv : c ≠ v := Finset.ne_of_mem_erase hc
+  have haf : a ∈ (f : Finset V) := Finset.mem_of_mem_erase ha
+  have hcg : c ∈ (g : Finset V) := Finset.mem_of_mem_erase hc
+  have hvV : v ∈ vertsOf σ := mem_vertsOf.mpr ⟨f, f.2, hvf⟩
+  have haL : a ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hav, f, f.2, hvf, haf⟩
+  have hcL : c ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hcv, g, g.2, hvg, hcg⟩
+  obtain ⟨p⟩ := h.linkConn v hvV a haL c hcL
+  exact linkwalk_dual h p hvf haf hav hvg hcg hcv
+
+/-- Faces along a skeleton walk are dual-reachable: induction transporting a
+walk in `skel σ` to a dual path, jumping between vertex-stars. -/
+lemma skelwalk_dual {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    ∀ {u w : V} (_ : (skel σ).Walk u w) {f f' : σ},
+      u ∈ (f : Finset V) → w ∈ (f' : Finset V) → (dualGraph σ).Reachable f f' := by
+  intro u w p
+  induction p with
+  | nil =>
+      intro f f' huf huf'
+      exact dual_reach_shared_vertex h huf huf'
+  | @cons u x w hadj q ih =>
+      intro f f' huf hwf'
+      rw [skel] at hadj
+      obtain ⟨hux, hedge⟩ := hadj
+      -- a face containing the edge `{u, x}`
+      obtain ⟨hf, hhf, hsub, _⟩ := mem_edgesOf.mp hedge
+      have huh : u ∈ hf := hsub (Finset.mem_insert_self u _)
+      have hxh : x ∈ hf := hsub (Finset.mem_insert_of_mem (Finset.mem_singleton_self x))
+      exact (dual_reach_shared_vertex h huf huh).trans
+        (ih (f := ⟨hf, hhf⟩) hxh hwf')
+
+/-- **Dual connectivity.** The dual graph of a sphere is connected. -/
+theorem dualGraph_preconnected {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    (dualGraph σ).Preconnected := by
+  intro f g
+  obtain ⟨u, hu⟩ : (f : Finset V).Nonempty := by
+    rw [← Finset.card_pos, h.pure _ f.2]; omega
+  obtain ⟨w, hw⟩ : (g : Finset V).Nonempty := by
+    rw [← Finset.card_pos, h.pure _ g.2]; omega
+  have huV : u ∈ vertsOf σ := mem_vertsOf.mpr ⟨f, f.2, hu⟩
+  have hwV : w ∈ vertsOf σ := mem_vertsOf.mpr ⟨g, g.2, hw⟩
+  obtain ⟨p⟩ := h.conn u huV w hwV
+  exact skelwalk_dual h p hu hw
+
+/-! ### `ker ∂₂` is one-dimensional -/
+
+/-- A function constant across every adjacency is constant on reachable vertices. -/
+lemma const_of_adj_of_reachable {W α : Type*} {G : SimpleGraph W} {φ : W → α}
+    (hφ : ∀ a b, G.Adj a b → φ a = φ b) {a b : W} (hab : G.Reachable a b) : φ a = φ b := by
+  obtain ⟨p⟩ := hab
+  induction p with
+  | nil => rfl
+  | cons hadj _ ih => exact (hφ _ _ hadj).trans ih
+
+/-- A sphere is nonempty (its Euler relation fails on the empty complex). -/
+lemma IsSphere2.nonempty {σ : Finset (Finset V)} (h : IsSphere2 σ) : σ.Nonempty := by
+  rw [Finset.nonempty_iff_ne_empty]
+  rintro rfl
+  have := h.euler
+  simp [vertsOf, edgesOf] at this
+
+/-- Every 2-cycle is constant: dual connectivity propagates the edge-local
+equality. -/
+lemma bd2_ker_constant {σ : Finset (Finset V)} (h : IsSphere2 σ) {w : C2 σ}
+    (hw : bd2 σ w = 0) (f g : σ) : w f = w g :=
+  const_of_adj_of_reachable (fun _ _ hab => dualGraph_ker_const h hw hab)
+    (dualGraph_preconnected h f g)
+
+/-- `ker ∂₂` is exactly the constants, i.e. the span of the fundamental class. -/
+lemma ker_bd2_eq_span {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    LinearMap.ker (bd2 σ) = Submodule.span (ZMod 2) {(fun _ => 1 : C2 σ)} := by
+  obtain ⟨f₀, hf₀⟩ := h.nonempty
+  apply le_antisymm
+  · intro w hw
+    rw [LinearMap.mem_ker] at hw
+    rw [Submodule.mem_span_singleton]
+    refine ⟨w ⟨f₀, hf₀⟩, ?_⟩
+    funext g
+    show w ⟨f₀, hf₀⟩ • (1 : ZMod 2) = w g
+    rw [smul_eq_mul, mul_one]
+    exact bd2_ker_constant h hw ⟨f₀, hf₀⟩ g
+  · rw [Submodule.span_le, Set.singleton_subset_iff, SetLike.mem_coe, LinearMap.mem_ker]
+    exact bd2_one σ h.closed
+
+/-- **b₂ = 1.** The space of 2-cycles is one-dimensional. -/
+theorem finrank_ker_bd2 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    finrank (ZMod 2) (LinearMap.ker (bd2 σ)) = 1 := by
+  rw [ker_bd2_eq_span h]
+  apply finrank_span_singleton
+  obtain ⟨f₀, hf₀⟩ := h.nonempty
+  intro hcontra
+  have := congrFun hcontra ⟨f₀, hf₀⟩
+  simp only [Pi.zero_apply] at this
+  exact one_ne_zero this
+
+/-! ### `range ∂₁` has dimension V − 1 (from the skeleton connectivity) -/
+
+/-- The augmentation `ε : C₀ → 𝔽₂`, summing coordinates. -/
+noncomputable def aug (σ : Finset (Finset V)) : C0 σ →ₗ[ZMod 2] ZMod 2 :=
+  ∑ x : vertsOf σ, LinearMap.proj x
+
+lemma aug_apply (σ : Finset (Finset V)) (c : C0 σ) :
+    aug σ c = ∑ x : vertsOf σ, c x := by
+  simp only [aug, LinearMap.coe_sum, Finset.sum_apply, LinearMap.proj_apply]
+
+/-- A sphere has at least one vertex. -/
+lemma IsSphere2.vertsOf_nonempty {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    (vertsOf σ).Nonempty := by
+  obtain ⟨f, hf⟩ := h.nonempty
+  obtain ⟨x, hx⟩ : f.Nonempty := by rw [← Finset.card_pos, h.pure f hf]; omega
+  exact ⟨x, mem_vertsOf.mpr ⟨f, hf, hx⟩⟩
+
+/-- `finrank (ker ε) = V − 1` since `ε` is surjective. -/
+lemma finrank_ker_aug {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    finrank (ZMod 2) (LinearMap.ker (aug σ)) = (vertsOf σ).card - 1 := by
+  have hne : Nonempty (vertsOf σ) := h.vertsOf_nonempty.to_subtype
+  have hsurj : Function.Surjective (aug σ) := by
+    obtain ⟨x0⟩ := hne
+    intro a
+    refine ⟨Pi.single x0 a, ?_⟩
+    rw [aug_apply]
+    rw [Finset.sum_eq_single x0] <;> simp_all
+  have hrn := LinearMap.finrank_range_add_finrank_ker (aug σ)
+  rw [LinearMap.range_eq_top.mpr hsurj] at hrn
+  have h1 : finrank (ZMod 2) (⊤ : Submodule (ZMod 2) (ZMod 2)) = 1 := by
+    rw [finrank_top]; exact finrank_self (ZMod 2)
+  rw [h1, show finrank (ZMod 2) (C0 σ) = (vertsOf σ).card from by
+    rw [Module.finrank_fintype_fun_eq_card, Fintype.card_coe]] at hrn
+  omega
+
+/-- A vertex of an edge is a vertex of the complex. -/
+lemma edge_mem_vertsOf {σ : Finset (Finset V)} {e : Finset V} (he : e ∈ edgesOf σ)
+    {v : V} (hv : v ∈ e) : v ∈ vertsOf σ := by
+  obtain ⟨f, hf, hef, _⟩ := mem_edgesOf.mp he
+  exact mem_vertsOf.mpr ⟨f, hf, hef hv⟩
+
+/-- `∂₁` of an edge's basis vector is the indicator of its two endpoints. -/
+lemma bd1_single_pair {σ : Finset (Finset V)} {u w : V} (huw : u ≠ w)
+    (he : ({u, w} : Finset V) ∈ edgesOf σ) (hu : u ∈ vertsOf σ) (hw : w ∈ vertsOf σ) :
+    bd1 σ (Pi.single ⟨{u, w}, he⟩ 1) = Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨w, hw⟩ 1 := by
+  funext x
+  rw [bd1_apply, Finset.sum_eq_single (⟨{u, w}, he⟩ : edgesOf σ)]
+  · rw [Pi.single_eq_same, mul_one, Pi.add_apply]
+    by_cases hxu : x = (⟨u, hu⟩ : vertsOf σ)
+    · subst hxu
+      rw [Pi.single_eq_same, Pi.single_eq_of_ne (by rw [Ne, Subtype.ext_iff]; exact huw),
+        if_pos (by simp), add_zero]
+    · by_cases hxw : x = (⟨w, hw⟩ : vertsOf σ)
+      · subst hxw
+        rw [Pi.single_eq_same, Pi.single_eq_of_ne (by rw [Ne, Subtype.ext_iff]; exact Ne.symm huw),
+          if_pos (by simp), zero_add]
+      · rw [Pi.single_eq_of_ne hxu, Pi.single_eq_of_ne hxw, if_neg, add_zero]
+        simp only [Finset.mem_insert, Finset.mem_singleton]
+        rintro (hc | hc)
+        · exact hxu (Subtype.ext hc)
+        · exact hxw (Subtype.ext hc)
+  · intro e _ hne; rw [Pi.single_eq_of_ne hne, mul_zero]
+  · intro hc; exact absurd (Finset.mem_univ _) hc
+
+/-- Skeleton-walk accumulation: `δ_u + δ_w ∈ range ∂₁` whenever `u, w` are joined
+by a skeleton walk (each edge contributes its endpoint-indicator, telescoping). -/
+lemma accumulate {σ : Finset (Finset V)} :
+    ∀ {u w : V} (_ : (skel σ).Walk u w) (hu : u ∈ vertsOf σ) (hw : w ∈ vertsOf σ),
+      (Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨w, hw⟩ 1 : C0 σ) ∈ LinearMap.range (bd1 σ) := by
+  have key : ∀ a b c : ZMod 2, a + b + (b + c) = a + c := by
+    intro a b c
+    rw [add_assoc, ← add_assoc b b, CharTwo.add_self_eq_zero, zero_add]
+  intro u w p
+  induction p with
+  | nil =>
+      intro hu hw
+      convert Submodule.zero_mem (LinearMap.range (bd1 σ)) using 1
+      funext y
+      simp only [Pi.add_apply, Pi.zero_apply]
+      exact CharTwo.add_self_eq_zero _
+  | @cons u x w hadj q ih =>
+      intro hu hw
+      rw [skel] at hadj
+      obtain ⟨hux, hedge⟩ := hadj
+      have hx : x ∈ vertsOf σ := edge_mem_vertsOf hedge (by simp)
+      have h1 : (Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨x, hx⟩ 1 : C0 σ) ∈ LinearMap.range (bd1 σ) :=
+        ⟨Pi.single ⟨{u, x}, hedge⟩ 1, bd1_single_pair hux hedge hu hx⟩
+      have h2 := ih hx hw
+      have hsum : (Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨x, hx⟩ 1)
+          + (Pi.single ⟨x, hx⟩ 1 + Pi.single ⟨w, hw⟩ 1)
+          = (Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨w, hw⟩ 1 : C0 σ) := by
+        funext y; simp only [Pi.add_apply]; exact key _ _ _
+      rw [← hsum]; exact Submodule.add_mem _ h1 h2
+
+/-- `ε ∘ ∂₁ = 0`: each edge has exactly two vertices (over 𝔽₂ they cancel). -/
+lemma aug_comp_bd1 (σ : Finset (Finset V)) : aug σ ∘ₗ bd1 σ = 0 := by
+  classical
+  refine LinearMap.ext fun u => ?_
+  show aug σ (bd1 σ u) = 0
+  rw [aug_apply]
+  simp_rw [bd1_apply]
+  rw [Finset.sum_comm]
+  refine Finset.sum_eq_zero (fun e _ => ?_)
+  rw [← Finset.sum_mul]
+  have h0 : (∑ x : vertsOf σ, (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0)) = 0 := by
+    rw [Finset.sum_coe_sort (vertsOf σ)
+        (fun x => if x ∈ (e : Finset V) then (1 : ZMod 2) else 0), Finset.sum_boole,
+      show (vertsOf σ).filter (fun x => x ∈ (e : Finset V)) = (e : Finset V) from by
+        ext y
+        simp only [Finset.mem_filter]
+        exact ⟨fun hh => hh.2, fun hh => ⟨edge_mem_vertsOf e.2 hh, hh⟩⟩,
+      card_of_mem_edgesOf e.2]
+    decide
+  rw [h0, zero_mul]
+
+/-- The connectivity direction: a sum-zero 0-chain bounds. -/
+lemma ker_aug_le_range_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    LinearMap.ker (aug σ) ≤ LinearMap.range (bd1 σ) := by
+  intro c hc
+  rw [LinearMap.mem_ker, aug_apply] at hc
+  obtain ⟨x₀, hx₀⟩ := h.vertsOf_nonempty
+  have hbasis : (∑ x : vertsOf σ, c x • (Pi.single x (1 : ZMod 2) : C0 σ)) = c := by
+    funext y
+    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.single_apply, mul_ite,
+      mul_one, mul_zero]
+    rw [Finset.sum_ite_eq Finset.univ y (fun x => c x)]
+    simp
+  have hrep : c = ∑ x : vertsOf σ, c x • (Pi.single x 1 + Pi.single ⟨x₀, hx₀⟩ 1) := by
+    simp_rw [smul_add]
+    rw [Finset.sum_add_distrib, ← Finset.sum_smul, hc, zero_smul, add_zero, hbasis]
+  rw [hrep]
+  refine Submodule.sum_mem _ (fun x _ => Submodule.smul_mem _ _ ?_)
+  obtain ⟨p⟩ := h.conn (x : V) x.2 x₀ hx₀
+  exact accumulate p x.2 hx₀
+
+/-- **r₁ = V − 1.** The boundaries of 0-chains form a space of dimension V − 1. -/
+theorem finrank_range_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    finrank (ZMod 2) (LinearMap.range (bd1 σ)) = (vertsOf σ).card - 1 := by
+  have heq : LinearMap.range (bd1 σ) = LinearMap.ker (aug σ) :=
+    le_antisymm (LinearMap.range_le_ker_iff.mpr (aug_comp_bd1 σ)) (ker_aug_le_range_bd1 h)
+  rw [heq, finrank_ker_aug h]
+
+/-! ### H₁ = 0 — every 1-cycle bounds -/
+
+/-- **The watershed.** On a combinatorial 2-sphere every 1-cycle is a boundary:
+`range ∂₂ = ker ∂₁`. Proof: `range ∂₂ ⊆ ker ∂₁` (from ∂∂=0), and both have
+finrank `F − 1` — `range ∂₂` by b₂=1, `ker ∂₁` by r₁=V−1 together with the given
+χ = 2 — so they coincide. -/
+theorem range_bd2_eq_ker_bd1 {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    LinearMap.range (bd2 σ) = LinearMap.ker (bd1 σ) := by
+  have hle : LinearMap.range (bd2 σ) ≤ LinearMap.ker (bd1 σ) :=
+    LinearMap.range_le_ker_iff.mpr (bd1_comp_bd2 σ h.pure)
+  apply Submodule.eq_of_le_of_finrank_le hle
+  have hF : finrank (ZMod 2) (C2 σ) = σ.card := by
+    rw [Module.finrank_fintype_fun_eq_card, Fintype.card_coe]
+  have hE : finrank (ZMod 2) (C1 σ) = (edgesOf σ).card := by
+    rw [Module.finrank_fintype_fun_eq_card, Fintype.card_coe]
+  have hr2 : finrank (ZMod 2) (LinearMap.range (bd2 σ)) = σ.card - 1 := by
+    have := LinearMap.finrank_range_add_finrank_ker (bd2 σ)
+    rw [finrank_ker_bd2 h, hF] at this; omega
+  have hk1 : finrank (ZMod 2) (LinearMap.ker (bd1 σ))
+      = (edgesOf σ).card - ((vertsOf σ).card - 1) := by
+    have := LinearMap.finrank_range_add_finrank_ker (bd1 σ)
+    rw [finrank_range_bd1 h, hE] at this; omega
+  have he := h.euler
+  have hV : 1 ≤ (vertsOf σ).card := h.vertsOf_nonempty.card_pos
+  rw [hr2, hk1]; omega
+
+
+codex
+The current local style already hand-transports `linkGraph` walks into face facts (`W_eq_along_link`, `linkwalk_dual`). That matters: a proof route that reuses `Walk` induction will fit the file better than importing a separate cycle abstraction unless that abstraction removes a whole connectivity argument.
+exec
+/bin/zsh -lc "rg -n \"structure IsCycles|class IsCycles|def IsCycles|theorem .*IsCycles|lemma .*IsCycles|other_adj_of_adj|existsUnique_ne_adj|exists_cycle_toSubgraph\" lean/.lake/packages/mathlib/Mathlib/Combinatorics/SimpleGraph lean/.lake/packages/mathlib/Mathlib -g '*.lean'" in /Users/doyle/Dropbox/taut
+ exited 2 in 0ms:
+rg: lean/.lake/packages/mathlib/Mathlib/Combinatorics/SimpleGraph: No such file or directory (os error 2)
+rg: lean/.lake/packages/mathlib/Mathlib: No such file or directory (os error 2)
+
+exec
+/bin/zsh -lc "rg -n \"def support|support.*C2|def bd2|bd2_at_edge|bd2_one|def euler|Euler|vertsOf.*insert|edgesOf.*insert|card.*edgesOf|inclusion\" lean/Taut -g '*.lean'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Complex2.lean:12:two faces), connected vertex links, connected, Euler characteristic 2.
+lean/Taut/Complex2.lean:13:With χ in the definition, the Euler counting relations (`3f = 2e`,
+lean/Taut/Complex2.lean:48:lemma card_of_mem_edgesOf {σ : Finset (Finset V)} {e : Finset V}
+lean/Taut/Complex2.lean:93:two faces, connected vertex links, connected, Euler characteristic 2.
+lean/Taut/Complex2.lean:101:  euler : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2
+lean/Taut/Complex2.lean:103:/-! ## Euler counting -/
+lean/Taut/Complex2.lean:107:    3 * σ.card = 2 * (edgesOf σ).card := by
+lean/Taut/Complex2.lean:116:      exact ⟨hef, card_of_mem_edgesOf he⟩
+lean/Taut/Complex2.lean:139:    3 * (vertsOf σ).card = (edgesOf σ).card + 6 := by
+lean/Taut/Complex2.lean:582:  · -- Euler: 4 + 4 = 6 + 2
+lean/Taut/Homology2.lean:10:* the Euler–Poincaré identity χ = b₀ − b₁ + b₂ is pure linear algebra;
+lean/Taut/Homology2.lean:44:noncomputable def bd2 (σ : Finset (Finset V)) : C2 σ →ₗ[ZMod 2] C1 σ :=
+lean/Taut/Homology2.lean:79:      exact ⟨⟨hef, card_of_mem_edgesOf he⟩, hxe⟩
+lean/Taut/Homology2.lean:158:theorem bd2_one (σ : Finset (Finset V)) (hclosed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2) :
+lean/Taut/Homology2.lean:175:lemma bd2_at_edge {σ : Finset (Finset V)} (w : C2 σ) {e : Finset V} (he : e ∈ edgesOf σ)
+lean/Taut/Homology2.lean:235:    bd2_at_edge w he f.2 g.2 hfg_ne hef heg huniq_fg
+lean/Taut/Homology2.lean:372:/-- A sphere is nonempty (its Euler relation fails on the empty complex). -/
+lean/Taut/Homology2.lean:400:    exact bd2_one σ h.closed
+lean/Taut/Homology2.lean:524:      card_of_mem_edgesOf e.2]
+lean/Taut/Separation.lean:51:    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
+lean/Taut/Separation.lean:81:  have hb := bd2_at_edge W he h1 h2 hne he1 he2 huniq
+lean/Taut/Separation.lean:92:    edgesOf (insert γ (cutSet σ W)) ⊆ edgesOf σ := by
+lean/Taut/Separation.lean:114:    ∀ e ∈ edgesOf (insert γ (cutSet σ W)),
+lean/Taut/Separation.lean:195:    obtain ⟨p, q, hpq, hpqe⟩ := Finset.card_eq_two.mp (card_of_mem_edgesOf e.2)
+lean/Taut/Separation.lean:334:  rw [bd2_at_edge _ he h1 h2 hne he1 he2 huniq]
+lean/Taut/Separation.lean:370:    {γ : Finset V} (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+lean/Taut/Separation.lean:398:    rw [hW1, bd2_one σ h.closed] at hW
+lean/Taut/Separation.lean:452:      obtain ⟨z, hz⟩ : e.Nonempty := Finset.card_pos.mp (by rw [card_of_mem_edgesOf he]; omega)
+lean/Taut/Separation.lean:478:      obtain ⟨z, hz⟩ : e.Nonempty := Finset.card_pos.mp (by rw [card_of_mem_edgesOf he]; omega)
+lean/Taut/Separation.lean:486:    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+lean/Taut/Separation.lean:488:    ConnOn (skel (insert γ (cutSet σ W))) (vertsOf (insert γ (cutSet σ W))) := by
+lean/Taut/Separation.lean:538:  have reachAll : ∀ x ∈ vertsOf (insert γ (cutSet σ W)),
+
+exec
+/bin/zsh -lc "rg -n \"def IsCycle|IsCycle|Walk\\.length|Walk\\.support|reachable|ConnOn|Preconnected|Connected\" lean/.lake/packages/mathlib/Mathlib/Combinatorics/SimpleGraph -g '*.lean'" in /Users/doyle/Dropbox/taut
+ exited 2 in 0ms:
+rg: lean/.lake/packages/mathlib/Mathlib/Combinatorics/SimpleGraph: IO error for operation on lean/.lake/packages/mathlib/Mathlib/Combinatorics/SimpleGraph: No such file or directory (os error 2)
+
+codex
+I hit a path mismatch for the local Mathlib checkout, so I’m locating the package tree before checking the actual `IsCycles` API.
+exec
+/bin/zsh -lc 'find lean -maxdepth 4 -type d -name Mathlib | head -20' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+exec
+/bin/zsh -lc 'ls -la lean && ls -la lean/.lake 2>/dev/null || true' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+total 32
+drwxr-xr-x@  8 doyle  staff   256 Jun 13 13:52 .
+drwxr-xr-x@ 13 doyle  staff   416 Jun 13 14:03 ..
+drwxr-xr-x@  4 doyle  staff   128 Jun 11 21:53 .lake
+drwxr-xr-x@ 11 doyle  staff   352 Jun 13 13:58 Taut
+-rw-r--r--@  1 doyle  staff   185 Jun 12 23:36 Taut.lean
+-rw-r--r--@  1 doyle  staff  3148 Jun 11 18:30 lake-manifest.json
+-rw-r--r--@  1 doyle  staff   246 Jun 11 18:35 lakefile.lean
+-rw-r--r--@  1 doyle  staff    25 Jun 11 18:30 lean-toolchain
+total 0
+drwxr-xr-x@ 4 doyle  staff  128 Jun 11 21:53 .
+drwxr-xr-x@ 8 doyle  staff  256 Jun 13 13:52 ..
+drwxr-xr-x@ 4 doyle  staff  128 Jun 11 21:53 build
+drwxr-xr-x@ 3 doyle  staff   96 Jun 11 18:31 config
+
+exec
+/bin/zsh -lc 'find . -maxdepth 4 -type f -name Matching.lean | head -20' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+codex
+This checkout appears to be using cached package artifacts without a visible Mathlib source tree. I can still interrogate names through `lake env lean` with temporary snippets, which is enough for API friction checks.
+exec
+/bin/zsh -lc "sed -n '1,230p' lean/Taut/Homology2.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Complex2
+
+/-!
+# 𝔽₂ homology of a combinatorial 2-complex, and the separation theorem
+
+The watershed of Theorem 2. A non-face triangle (a 3-cycle in the 1-skeleton
+that is not a face of σ) partitions a combinatorial 2-sphere into two sides,
+each capping to a sphere. The route (settled with the PI):
+
+* the Euler–Poincaré identity χ = b₀ − b₁ + b₂ is pure linear algebra;
+* `IsSphere2` already asserts χ = 2, and gives b₀ = 1 (connected) and
+  b₂ = 1 (the fundamental class is unique up to scale — a 2-cycle assigns equal
+  weight across every edge, hence is constant on the dual-connected complex);
+* so the given χ = 2 forces **b₁ = 0**, i.e. every 1-cycle bounds.
+
+We avoid Betti numbers and work with ranks over 𝔽₂ = `ZMod 2`:
+`bd1 ∘ bd2 = 0`, `r₂ := finrank (range bd2) = F − 1` (dual connectivity),
+`r₁ := finrank (range bd1) = V − 1` (skeleton connectivity), then
+`finrank (ker bd1) = E − (V−1) = F − 1 = finrank (range bd2)` using χ = 2;
+with `range bd2 ⊆ ker bd1`, equal finrank forces `range bd2 = ker bd1` — H₁ = 0.
+
+Chain groups are function spaces on Finset-coerced subtypes (`finrank = card`).
+Orientation is *not* present here; it is re-attached afterward via the integral
+fundamental cycle when packaging the split for `IsTaut.splits`.
+-/
+
+namespace Taut
+
+open Module Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-! ## Chain groups and boundary maps over 𝔽₂ -/
+
+/-- 0-chains: 𝔽₂-functions on the vertices. -/
+abbrev C0 (σ : Finset (Finset V)) := (vertsOf σ) → ZMod 2
+/-- 1-chains: 𝔽₂-functions on the edges. -/
+abbrev C1 (σ : Finset (Finset V)) := (edgesOf σ) → ZMod 2
+/-- 2-chains: 𝔽₂-functions on the faces. -/
+abbrev C2 (σ : Finset (Finset V)) := σ → ZMod 2
+
+/-- The 2-boundary `∂₂ : C₂ → C₁`. Over 𝔽₂ (no signs): a face contributes 1 to
+each of its edges. -/
+noncomputable def bd2 (σ : Finset (Finset V)) : C2 σ →ₗ[ZMod 2] C1 σ :=
+  LinearMap.pi fun e => ∑ f : σ,
+    (if (e : Finset V) ⊆ (f : Finset V) then (1 : ZMod 2) else 0) • LinearMap.proj f
+
+/-- The 1-boundary `∂₁ : C₁ → C₀`. An edge contributes 1 to each of its
+vertices. -/
+noncomputable def bd1 (σ : Finset (Finset V)) : C1 σ →ₗ[ZMod 2] C0 σ :=
+  LinearMap.pi fun x => ∑ e : (edgesOf σ),
+    (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0) • LinearMap.proj e
+
+lemma bd2_apply (σ : Finset (Finset V)) (w : C2 σ) (e : edgesOf σ) :
+    bd2 σ w e = ∑ f : σ, (if (e : Finset V) ⊆ (f : Finset V) then 1 else 0) * w f := by
+  simp only [bd2, LinearMap.pi_apply, LinearMap.coe_sum, Finset.sum_apply,
+    LinearMap.smul_apply, LinearMap.proj_apply, smul_eq_mul]
+
+lemma bd1_apply (σ : Finset (Finset V)) (u : C1 σ) (x : vertsOf σ) :
+    bd1 σ u x = ∑ e : (edgesOf σ), (if (x : V) ∈ (e : Finset V) then 1 else 0) * u e := by
+  simp only [bd1, LinearMap.pi_apply, LinearMap.coe_sum, Finset.sum_apply,
+    LinearMap.smul_apply, LinearMap.proj_apply, smul_eq_mul]
+
+/-- The edges of a triangle through a fixed vertex: exactly the two pairs
+`{x, y}` with `y` in the other two vertices. Used for `∂∂ = 0` and the cut.
+Stated for any card-3 set whose 2-subsets are edges of σ (so it also applies to
+a non-face triangle). -/
+lemma card_edges_through_vertex {σ : Finset (Finset V)} {f : Finset V}
+    (hf : f.powersetCard 2 ⊆ edgesOf σ) (hf3 : f.card = 3) (x : V) :
+    ((edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)).card = if x ∈ f then 2 else 0 := by
+  classical
+  -- the filter over edgesOf is the filter of card-2 subsets of `f` through `x`
+  have hrw : (edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)
+      = (f.powersetCard 2).filter (fun e => x ∈ e) := by
+    ext e
+    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+    constructor
+    · rintro ⟨he, hxe, hef⟩
+      exact ⟨⟨hef, card_of_mem_edgesOf he⟩, hxe⟩
+    · rintro ⟨⟨hef, hc⟩, hxe⟩
+      exact ⟨hf (Finset.mem_powersetCard.mpr ⟨hef, hc⟩), hxe, hef⟩
+  rw [hrw]
+  by_cases hx : x ∈ f
+  · simp only [hx, if_true]
+    -- card-2 subsets of `f` through `x`  ↔  `f.erase x`  via  `y ↦ {x, y}`
+    have himg : (f.powersetCard 2).filter (fun e => x ∈ e)
+        = (f.erase x).image (fun y => {x, y}) := by
+      ext e
+      simp only [Finset.mem_filter, Finset.mem_powersetCard, Finset.mem_image,
+        Finset.mem_erase]
+      constructor
+      · rintro ⟨⟨hef, hc⟩, hxe⟩
+        have h1 : (e.erase x).card = 1 := by rw [Finset.card_erase_of_mem hxe, hc]
+        obtain ⟨y, hy⟩ := Finset.card_eq_one.mp h1
+        have hymem : y ∈ e.erase x := hy ▸ Finset.mem_singleton_self y
+        have hye : y ∈ e := Finset.mem_of_mem_erase hymem
+        have hyx : y ≠ x := Finset.ne_of_mem_erase hymem
+        refine ⟨y, ⟨hyx, hef hye⟩, ?_⟩
+        rw [← Finset.insert_erase hxe, hy]
+      · rintro ⟨y, ⟨hyx, hyf⟩, rfl⟩
+        refine ⟨⟨?_, Finset.card_pair (Ne.symm hyx)⟩, Finset.mem_insert_self x _⟩
+        intro z hz
+        rcases Finset.mem_insert.mp hz with rfl | hz
+        · exact hx
+        · rw [Finset.mem_singleton] at hz; rw [hz]; exact hyf
+    rw [himg]
+    have hinj : Set.InjOn (fun y => ({x, y} : Finset V)) (f.erase x) := by
+      intro y1 h1 y2 h2 heq
+      have heq' : ({x, y1} : Finset V) = {x, y2} := heq
+      have hy1 : y1 ∈ ({x, y2} : Finset V) := heq' ▸ (show y1 ∈ ({x, y1} : Finset V) by simp)
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hy1
+      rcases hy1 with rfl | h
+      · exact absurd rfl (Finset.mem_erase.mp h1).1
+      · exact h
+    rw [Finset.card_image_of_injOn hinj, Finset.card_erase_of_mem hx, hf3]
+  · simp only [hx, if_false]
+    rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+    intro e he hxe
+    exact hx ((Finset.mem_powersetCard.mp he).1 hxe)
+
+/-- `∂₁ ∘ ∂₂ = 0`: over 𝔽₂ this holds because every vertex of a triangle lies
+in exactly two of its edges (and a vertex outside lies in none). -/
+theorem bd1_comp_bd2 (σ : Finset (Finset V)) (hpure : ∀ f ∈ σ, f.card = 3) :
+    bd1 σ ∘ₗ bd2 σ = 0 := by
+  classical
+  refine LinearMap.ext fun w => ?_
+  funext x
+  show bd1 σ (bd2 σ w) x = 0
+  rw [bd1_apply]
+  -- expand `∂₂ w` at each edge and swap the order of summation
+  have hstep : ∀ e : edgesOf σ,
+      (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0) * bd2 σ w e
+        = ∑ f : σ, (if (x : V) ∈ (e : Finset V) ∧ (e : Finset V) ⊆ (f : Finset V)
+            then (1 : ZMod 2) else 0) * w f := by
+    intro e
+    rw [bd2_apply, Finset.mul_sum]
+    refine Finset.sum_congr rfl (fun f _ => ?_)
+    rw [← mul_assoc]
+    congr 1
+    by_cases h1 : (x : V) ∈ (e : Finset V) <;> by_cases h2 : (e : Finset V) ⊆ (f : Finset V) <;>
+      simp [h1, h2]
+  rw [Finset.sum_congr rfl (fun e _ => hstep e), Finset.sum_comm]
+  refine Finset.sum_eq_zero (fun f _ => ?_)
+  rw [← Finset.sum_mul]
+  have hsum0 : (∑ e : edgesOf σ, (if (x : V) ∈ (e : Finset V) ∧ (e : Finset V) ⊆ (f : Finset V)
+      then (1 : ZMod 2) else 0)) = 0 := by
+    rw [Finset.sum_coe_sort (edgesOf σ)
+        (fun e => if (x : V) ∈ e ∧ e ⊆ (f : Finset V) then (1 : ZMod 2) else 0),
+      Finset.sum_boole, card_edges_through_vertex
+        (fun e he => mem_edgesOf.mpr ⟨f, f.2, (Finset.mem_powersetCard.mp he).1,
+          (Finset.mem_powersetCard.mp he).2⟩) (hpure f f.2) x]
+    split <;> decide
+  rw [hsum0, zero_mul]
+
+/-- The all-faces 2-chain `𝟙` is a cycle: every edge lies in exactly two faces,
+so over 𝔽₂ its boundary vanishes. This is the combinatorial fundamental class,
+witnessing `b₂ ≥ 1`. -/
+theorem bd2_one (σ : Finset (Finset V)) (hclosed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2) :
+    bd2 σ (fun _ => 1) = 0 := by
+  classical
+  funext e
+  show bd2 σ (fun _ => 1) e = 0
+  rw [bd2_apply]
+  simp only [mul_one]
+  rw [Finset.sum_coe_sort σ (fun f => if (e : Finset V) ⊆ f then (1 : ZMod 2) else 0),
+    Finset.sum_boole]
+  have : (σ.filter (fun f => (e : Finset V) ⊆ f)).card = 2 := hclosed e e.2
+  rw [this]
+  decide
+
+/-! ## `ker ∂₂` is the constants (b₂ = 1) -/
+
+/-- In a sphere, `∂₂ w` at an edge equals the sum of `w` over the edge's two
+faces. This turns the cocycle condition into "equal weight across every edge". -/
+lemma bd2_at_edge {σ : Finset (Finset V)} (w : C2 σ) {e : Finset V} (he : e ∈ edgesOf σ)
+    {f₁ f₂ : Finset V} (h1 : f₁ ∈ σ) (h2 : f₂ ∈ σ) (hne : f₁ ≠ f₂)
+    (he1 : e ⊆ f₁) (he2 : e ⊆ f₂) (huniq : ∀ f ∈ σ, e ⊆ f → f = f₁ ∨ f = f₂) :
+    bd2 σ w ⟨e, he⟩ = w ⟨f₁, h1⟩ + w ⟨f₂, h2⟩ := by
+  classical
+  rw [bd2_apply]
+  simp only [ite_mul, one_mul, zero_mul]
+  rw [← Finset.sum_filter]
+  have hfilter : (Finset.univ.filter (fun f : σ => (e : Finset V) ⊆ (f : Finset V)))
+      = {⟨f₁, h1⟩, ⟨f₂, h2⟩} := by
+    ext f
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
+      Finset.mem_singleton]
+    constructor
+    · intro hef
+      rcases huniq f f.2 hef with h | h
+      · exact Or.inl (Subtype.ext h)
+      · exact Or.inr (Subtype.ext h)
+    · rintro (rfl | rfl)
+      · exact he1
+      · exact he2
+  rw [hfilter, Finset.sum_pair (by simp only [ne_eq, Subtype.mk.injEq]; exact hne)]
+
+/-- The dual graph: two distinct faces are adjacent iff they share an edge. -/
+def dualGraph (σ : Finset (Finset V)) : SimpleGraph σ where
+  Adj f g := f ≠ g ∧ ∃ e ∈ edgesOf σ, e ⊆ (f : Finset V) ∧ e ⊆ (g : Finset V)
+  symm := by
+    rintro f g ⟨hne, e, he, hf, hg⟩
+    exact ⟨hne.symm, e, he, hg, hf⟩
+  loopless := ⟨fun f h => h.1 rfl⟩
+
+@[simp] lemma dualGraph_adj {σ : Finset (Finset V)} {f g : σ} :
+    (dualGraph σ).Adj f g ↔
+      f ≠ g ∧ ∃ e ∈ edgesOf σ, e ⊆ (f : Finset V) ∧ e ⊆ (g : Finset V) := Iff.rfl
+
+/-- A 2-cycle (element of `ker ∂₂`) assigns equal weight to dual-adjacent faces:
+across their shared edge, `∂₂ w = w f + w g = 0`. -/
+lemma dualGraph_ker_const {σ : Finset (Finset V)} (h : IsSphere2 σ) {w : C2 σ}
+    (hw : bd2 σ w = 0) {f g : σ} (hadj : (dualGraph σ).Adj f g) : w f = w g := by
+  rw [dualGraph_adj] at hadj
+  obtain ⟨hne, e, he, hef, heg⟩ := hadj
+  obtain ⟨f₁, h1, f₂, h2, hne12, he1, he2, huniq⟩ := exists_two_faces h he
+  have hfg_ne : (f : Finset V) ≠ (g : Finset V) := fun heq => hne (Subtype.ext heq)
+  -- `f` and `g` are exactly the two faces of `e`
+  have huniq_fg : ∀ f' ∈ σ, e ⊆ f' → f' = (f : Finset V) ∨ f' = (g : Finset V) := by
+    have hfm := huniq (f : Finset V) f.2 hef
+    have hgm := huniq (g : Finset V) g.2 heg
+    intro f' hf' hef'
+    rcases huniq f' hf' hef' with rfl | rfl
+    · rcases hfm with hh | hh
+      · exact Or.inl hh.symm
+      · rcases hgm with hh2 | hh2
+        · exact Or.inr hh2.symm
+        · exact absurd (hh.trans hh2.symm) hfg_ne
+    · rcases hgm with hh | hh
+      · rcases hfm with hh2 | hh2
+
+exec
+/bin/zsh -lc "rg -n \"card_union|card_inter|sdiff|union|insert.*card|Finset.card.*union|Disjoint|erase|filter\" lean/Taut -g '*.lean'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Complex2.lean:42:  (σ.filter (fun f => e ⊆ f)).card
+lean/Taut/Complex2.lean:84:  (vertsOf (σ.filter (fun f => v ∈ f))).erase v
+lean/Taut/Complex2.lean:109:  have hfilter : ∀ f ∈ σ, (edgesOf σ).filter (fun e => e ⊆ f)
+lean/Taut/Complex2.lean:113:    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+lean/Taut/Complex2.lean:119:  have key : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+lean/Taut/Complex2.lean:120:      = ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card := by
+lean/Taut/Complex2.lean:121:    simp_rw [Finset.card_filter]
+lean/Taut/Complex2.lean:123:  have hcongr : ∀ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card = 3 := by
+lean/Taut/Complex2.lean:125:    rw [hfilter f hf, Finset.card_powersetCard, h.pure f hf]
+lean/Taut/Complex2.lean:127:  have hcl : ∀ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card = 2 :=
+lean/Taut/Complex2.lean:129:  have hleft : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+lean/Taut/Complex2.lean:132:  have hright : ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card
+lean/Taut/Complex2.lean:157:    rw [Finset.card_sdiff_of_subset hef, hf, he]
+lean/Taut/Complex2.lean:160:  obtain ⟨hzf', hze⟩ := Finset.mem_sdiff.mp hzf
+lean/Taut/Complex2.lean:169:      have hxd : x ∈ f \ e := Finset.mem_sdiff.mpr ⟨hx, hxe⟩
+lean/Taut/Complex2.lean:184:  have hf₁ : f₁ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+lean/Taut/Complex2.lean:185:  have hf₂ : f₂ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+lean/Taut/Complex2.lean:186:  obtain ⟨hf₁σ, hef₁⟩ := Finset.mem_filter.mp hf₁
+lean/Taut/Complex2.lean:187:  obtain ⟨hf₂σ, hef₂⟩ := Finset.mem_filter.mp hf₂
+lean/Taut/Complex2.lean:189:  have hmem : f ∈ σ.filter (fun f => e ⊆ f) := Finset.mem_filter.mpr ⟨hf, hef⟩
+lean/Taut/Complex2.lean:212:  rw [linkVerts, Finset.mem_erase, mem_vertsOf]
+lean/Taut/Complex2.lean:215:    exact ⟨hxv, f, Finset.mem_of_mem_filter f hf,
+lean/Taut/Complex2.lean:216:      (Finset.mem_filter.mp hf).2, hxf⟩
+lean/Taut/Complex2.lean:218:    exact ⟨hxv, f, Finset.mem_filter.mpr ⟨hf, hvf⟩, hxf⟩
+lean/Taut/Complex2.lean:243:    ((linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y)).card = 2 := by
+lean/Taut/Complex2.lean:245:  have hxv : x ≠ v := (Finset.mem_erase.mp hx).1
+lean/Taut/Complex2.lean:247:  have himg : ((linkVerts σ v).filter
+lean/Taut/Complex2.lean:249:      = σ.filter (fun f => {v, x} ⊆ f) := by
+lean/Taut/Complex2.lean:251:    rw [Finset.mem_image, Finset.mem_filter]
+lean/Taut/Complex2.lean:254:      obtain ⟨hyL, hxy, hface⟩ := Finset.mem_filter.mp hy
+lean/Taut/Complex2.lean:272:      refine ⟨z, Finset.mem_filter.mpr ⟨?_, ?_⟩, hfz'.symm⟩
+lean/Taut/Complex2.lean:276:  have hinj : ∀ y₁ ∈ (linkVerts σ v).filter
+lean/Taut/Complex2.lean:278:      ∀ y₂ ∈ (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y),
+lean/Taut/Complex2.lean:282:    have hy₁v : y₁ ≠ v := (Finset.mem_erase.mp (Finset.mem_filter.mp h₁).1).1
+lean/Taut/Complex2.lean:283:    have hy₁x : y₁ ≠ x := Ne.symm (Finset.mem_filter.mp h₁).2.1
+lean/Taut/Complex2.lean:302:  have he2 : (f.erase v).card = 2 := by
+lean/Taut/Complex2.lean:303:    rw [Finset.card_erase_of_mem hvf, hf3]
+lean/Taut/Complex2.lean:305:  have hxe : x ∈ f.erase v := by rw [hpair]; simp
+lean/Taut/Complex2.lean:306:  have hye : y ∈ f.erase v := by rw [hpair]; simp
+lean/Taut/Complex2.lean:307:  have hxf : x ∈ f := Finset.mem_of_mem_erase hxe
+lean/Taut/Complex2.lean:308:  have hyf : y ∈ f := Finset.mem_of_mem_erase hye
+lean/Taut/Complex2.lean:309:  have hxv : x ≠ v := Finset.ne_of_mem_erase hxe
+lean/Taut/Complex2.lean:310:  have hyv : y ≠ v := Finset.ne_of_mem_erase hye
+lean/Taut/Complex2.lean:332:      rw [← hpair, Finset.insert_erase hvf]
+lean/Taut/Complex2.lean:394:      rw [Finset.card_sdiff_of_subset hsub, hT, hcard]
+lean/Taut/Complex2.lean:397:      rw [← hw, Finset.sdiff_sdiff_self_left,
+lean/Taut/Complex2.lean:402:      exact (Finset.mem_sdiff.mp this).1
+lean/Taut/Complex2.lean:409:      simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/Complex2.lean:419:      simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/Complex2.lean:429:      simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/Complex2.lean:439:      simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/Complex2.lean:456:    have h2 : 2 ≤ (({a, b, c, d} : Finset V).erase x).card := by
+lean/Taut/Complex2.lean:457:      rw [Finset.card_erase_of_mem hx, tetra_T_card hab hac had hbc hbd hcd]
+lean/Taut/Complex2.lean:462:        ⟨x, y, z, Ne.symm (Finset.ne_of_mem_erase hy),
+lean/Taut/Complex2.lean:463:          Ne.symm (Finset.ne_of_mem_erase hz), hyz, rfl⟩⟩,
+lean/Taut/Complex2.lean:469:      · exact Finset.mem_of_mem_erase hy
+lean/Taut/Complex2.lean:471:        exact hu ▸ Finset.mem_of_mem_erase hz
+lean/Taut/Complex2.lean:483:      rw [Finset.card_sdiff_of_subset hsub, tetra_T_card hab hac had hbc hbd hcd, hcard]
+lean/Taut/Complex2.lean:487:    obtain ⟨hzT, hze⟩ := Finset.mem_sdiff.mp hz
+lean/Taut/Complex2.lean:490:      Finset.subset_insert z e, hcard⟩
+lean/Taut/Complex2.lean:491:    rw [Finset.card_insert_of_notMem hze, hcard]
+lean/Taut/Complex2.lean:500:  have hfilter : (tetraBdry a b c d).filter (fun f => e ⊆ f)
+lean/Taut/Complex2.lean:503:    rw [Finset.mem_filter, Finset.mem_image]
+lean/Taut/Complex2.lean:508:        rw [Finset.card_sdiff_of_subset hef, hf3, hcard]
+lean/Taut/Complex2.lean:511:      obtain ⟨hzf', hze⟩ := Finset.mem_sdiff.mp hzf
+lean/Taut/Complex2.lean:512:      refine ⟨z, Finset.mem_sdiff.mpr ⟨hfT hzf', hze⟩, ?_⟩
+lean/Taut/Complex2.lean:514:        rw [Finset.union_sdiff_of_subset hef]
+lean/Taut/Complex2.lean:517:      simp only [Finset.mem_union, Finset.mem_singleton, Finset.mem_insert]
+lean/Taut/Complex2.lean:520:      obtain ⟨hzT, hze⟩ := Finset.mem_sdiff.mp hz
+lean/Taut/Complex2.lean:523:      rw [Finset.card_insert_of_notMem hze, hcard]
+lean/Taut/Complex2.lean:524:  rw [edgeDeg, hfilter, Finset.card_image_of_injOn, Finset.card_sdiff_of_subset hsub,
+lean/Taut/Complex2.lean:531:  · exact absurd h (Finset.mem_sdiff.mp h₁).2
+lean/Taut/Complex2.lean:549:      have hwv := Finset.ne_of_mem_erase hw
+lean/Taut/Complex2.lean:550:      have hw' := Finset.mem_of_mem_erase hw
+lean/Taut/Complex2.lean:553:      have hfσ := Finset.mem_of_mem_filter f hf
+lean/Taut/Chains.lean:43:def cnt (x : V) (s : Finset V) : ℕ := (s.filter (· < x)).card
+lean/Taut/Chains.lean:63:  rw [Finset.filter_insert]
+lean/Taut/Chains.lean:65:  · rw [Finset.card_insert_of_notMem (fun h => hz (Finset.mem_of_mem_filter z h))]
+lean/Taut/Chains.lean:81:/-- Express the sign on `s` via the sign on `s.erase z`. -/
+lean/Taut/Chains.lean:82:lemma sgn_eq_erase (x z : V) (s : Finset V) (hz : z ∈ s) :
+lean/Taut/Chains.lean:83:    sgn x s = (if z < x then -1 else 1) * sgn x (s.erase z) := by
+lean/Taut/Chains.lean:84:  conv_lhs => rw [← Finset.insert_erase hz]
+lean/Taut/Chains.lean:85:  exact sgn_insert x z _ (Finset.notMem_erase z s)
+lean/Taut/Chains.lean:87:lemma sgn_erase_self (x : V) (s : Finset V) : sgn x (s.erase x) = sgn x s := by
+lean/Taut/Chains.lean:89:  · rw [sgn_eq_erase x x s hx, if_neg (lt_irrefl x), one_mul]
+lean/Taut/Chains.lean:90:  · rw [Finset.erase_eq_of_notMem hx]
+lean/Taut/Chains.lean:102:lemma sgn_erase_cancel {x z : V} {s : Finset V} (hx : x ∈ s) (hz : z ∈ s)
+lean/Taut/Chains.lean:104:    sgn x s * sgn z (s.erase x) = -(sgn z s * sgn x (s.erase z)) := by
+lean/Taut/Chains.lean:105:  rw [sgn_eq_erase x z s hz, sgn_eq_erase z x s hx]
+lean/Taut/Chains.lean:113:    sgn x s * sgn z (insert x s) = -(sgn z s * sgn x (s.erase z)) := by
+lean/Taut/Chains.lean:115:  rw [sgn_insert z x s hx, sgn_eq_erase x z s hz]
+lean/Taut/Chains.lean:124:  ∑ x ∈ s, sgn x s • Finsupp.single (s.erase x) 1
+lean/Taut/Chains.lean:150:  if x ∈ s then sgn x s • Finsupp.single (s.erase x) 1 else 0
+lean/Taut/Chains.lean:164:  M.filter (fun s => x ∈ s)
+lean/Taut/Chains.lean:168:  simp [nbhd, Finsupp.filter_apply]
+lean/Taut/Chains.lean:176:  Finsupp.filter_single_of_pos (p := fun u => x ∈ u) h
+lean/Taut/Chains.lean:180:  Finsupp.filter_single_of_neg (p := fun u => x ∈ u) h
+lean/Taut/Chains.lean:183:  rw [nbhd, Finsupp.filter_zero]
+lean/Taut/Chains.lean:210:    cone x M u = if x ∈ u then sgn x (u.erase x) * M (u.erase x) else 0 := by
+lean/Taut/Chains.lean:219:    · -- x ∈ s : cone kills it, and `u.erase x ≠ s` since `x ∉ u.erase x`
+lean/Taut/Chains.lean:222:      have hs : s ≠ u.erase x := fun h => (Finset.notMem_erase x u) (h ▸ hxs)
+lean/Taut/Chains.lean:229:        · have hs : s = u.erase x := by rw [← he, Finset.erase_insert hxs]
+lean/Taut/Chains.lean:232:        · have hs : s ≠ u.erase x := fun h => he (by rw [h, Finset.insert_erase hxu])
+lean/Taut/Chains.lean:242:  have step : ∀ x ∈ s, bdry (sgn x s • Finsupp.single (s.erase x) 1)
+lean/Taut/Chains.lean:244:          (sgn x s * sgn z (s.erase x)) •
+lean/Taut/Chains.lean:245:            Finsupp.single ((s.erase x).erase z) (1 : ℤ)) := by
+lean/Taut/Chains.lean:248:    rw [← Finset.sum_erase (f := fun z => if z = x then 0 else
+lean/Taut/Chains.lean:249:        (sgn x s * sgn z (s.erase x)) •
+lean/Taut/Chains.lean:250:          Finsupp.single ((s.erase x).erase z) (1 : ℤ)) s (if_pos rfl)]
+lean/Taut/Chains.lean:252:    rw [if_neg (Finset.ne_of_mem_erase hz), smul_smul]
+lean/Taut/Chains.lean:261:      rw [if_neg he, if_neg hne, Finset.erase_right_comm,
+lean/Taut/Chains.lean:262:        sgn_erase_cancel h1 h2 hne, neg_smul, neg_add_cancel]
+lean/Taut/Chains.lean:297:            if_neg (Finset.notMem_erase x s), sgn_erase_self,
+lean/Taut/Chains.lean:298:            Finset.insert_erase hx, sgn_smul_sgn_smul]
+lean/Taut/Chains.lean:301:            if_pos (Finset.mem_erase_of_ne_of_mem (Ne.symm hzx) hx), smul_zero]
+lean/Taut/Chains.lean:308:                Finsupp.single (insert x (s.erase z)) (1 : ℤ) := by
+lean/Taut/Chains.lean:312:        · rw [Finset.erase_insert hx, sgn_self_insert x s hx, sgn_smul_sgn_smul]
+lean/Taut/Chains.lean:315:            Finset.erase_insert_of_ne (fun h => hx (by rw [h]; exact hz))]
+lean/Taut/Chains.lean:317:          (sgn z s * sgn x (s.erase z)) •
+lean/Taut/Chains.lean:318:            Finsupp.single (insert x (s.erase z)) (1 : ℤ) := by
+lean/Taut/Chains.lean:322:          if_neg (fun h => hx (Finset.mem_of_mem_erase h)), smul_smul]
+lean/Taut/Chains.lean:327:              Finsupp.single (insert x (s.erase z)) (1 : ℤ)
+lean/Taut/Chains.lean:328:            + (sgn z s * sgn x (s.erase z)) •
+lean/Taut/Chains.lean:329:              Finsupp.single (insert x (s.erase z)) (1 : ℤ) = 0 := by
+lean/Taut/Chains.lean:343:  | zero => rw [map_zero, map_zero, nbhd, Finsupp.filter_zero]
+lean/Taut/Chains.lean:349:        if_neg (Finset.notMem_erase x s), sgn_erase_self,
+lean/Taut/Chains.lean:350:        Finset.insert_erase hxs, sgn_smul_sgn_smul,
+lean/Taut/Chains.lean:375:            exact hxs (Finset.mem_of_mem_erase (h ▸ hxu))
+lean/Taut/Chains.lean:409:        exact (Finset.notMem_erase x s) (h ▸ hxu)
+lean/Taut/Chains.lean:424:      Finset.erase_insert hxt, Finsupp.coe_zero, Pi.zero_apply] at hc
+lean/Taut/Chains.lean:463:      Finset.subset_union_left,
+lean/Taut/Chains.lean:465:      Finset.subset_union_right,
+lean/Taut/Chains.lean:471:lemma nrm_filter_add_nrm_filter_neg (p : Finset V → Prop) [DecidablePred p]
+lean/Taut/Chains.lean:473:    nrm (M.filter p) + nrm (M.filter fun s => ¬ p s) = nrm M := by
+lean/Taut/Chains.lean:474:  have h1 : (M.filter p).support ⊆ M.support := by
+lean/Taut/Chains.lean:475:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:476:  have h2 : (M.filter fun s => ¬ p s).support ⊆ M.support := by
+lean/Taut/Chains.lean:477:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:480:  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Chains.lean:496:  set F := M.filter (fun s => ¬ x ∈ s) with hF
+lean/Taut/Chains.lean:501:    · rw [nbhd_apply, if_neg (Finset.notMem_erase x u), mul_zero]
+lean/Taut/Chains.lean:505:    conv_lhs => rw [← Finsupp.filter_pos_add_filter_neg M (fun s => x ∈ s)]
+lean/Taut/Chains.lean:509:    rw [hF, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Chains.lean:516:      have hFu : F (u.erase x) ≠ 0 := fun h => hu (by rw [h, mul_zero])
+lean/Taut/Chains.lean:517:      exact Finset.mem_image.mpr ⟨u.erase x, Finsupp.mem_support_iff.mpr hFu,
+lean/Taut/Chains.lean:518:        Finset.insert_erase hxu⟩
+lean/Taut/Chains.lean:523:    rw [← Finset.erase_insert (hfree t₁ h₁), h, Finset.erase_insert (hfree t₂ h₂)]
+lean/Taut/Chains.lean:528:      Finset.erase_insert (hfree t ht), Int.natAbs_mul, natAbs_sgn, one_mul]
+lean/Taut/Chains.lean:529:  have hsplit := nrm_filter_add_nrm_filter_neg (fun s => x ∈ s) M
+lean/Taut/Zvol.lean:62:lemma subChain_filter (p : Finset V → Prop) [DecidablePred p] (M : Chain V) :
+lean/Taut/Zvol.lean:63:    SubChain (M.filter p) M := by
+lean/Taut/Zvol.lean:65:  rw [Finsupp.filter_apply]
+lean/Taut/Zvol.lean:71:  subChain_filter _ M
+lean/Taut/Zvol.lean:164:  have hne : (s.erase x).Nonempty := by
+lean/Taut/Zvol.lean:165:    rw [← Finset.card_pos, Finset.card_erase_of_mem hxs]
+lean/Taut/Zvol.lean:169:    -- (cone x W) s = M s ≠ 0 forces W (s.erase x) ≠ 0
+lean/Taut/Zvol.lean:173:    have hWne : W (s.erase x) ≠ 0 := by
+lean/Taut/Zvol.lean:177:    exact mem_vert.mpr ⟨s.erase x, Finsupp.mem_support_iff.mpr hWne, hy⟩
+lean/Taut/Homology2.lean:70:    ((edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)).card = if x ∈ f then 2 else 0 := by
+lean/Taut/Homology2.lean:72:  -- the filter over edgesOf is the filter of card-2 subsets of `f` through `x`
+lean/Taut/Homology2.lean:73:  have hrw : (edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)
+lean/Taut/Homology2.lean:74:      = (f.powersetCard 2).filter (fun e => x ∈ e) := by
+lean/Taut/Homology2.lean:76:    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+lean/Taut/Homology2.lean:85:    -- card-2 subsets of `f` through `x`  ↔  `f.erase x`  via  `y ↦ {x, y}`
+lean/Taut/Homology2.lean:86:    have himg : (f.powersetCard 2).filter (fun e => x ∈ e)
+lean/Taut/Homology2.lean:87:        = (f.erase x).image (fun y => {x, y}) := by
+lean/Taut/Homology2.lean:89:      simp only [Finset.mem_filter, Finset.mem_powersetCard, Finset.mem_image,
+lean/Taut/Homology2.lean:90:        Finset.mem_erase]
+lean/Taut/Homology2.lean:93:        have h1 : (e.erase x).card = 1 := by rw [Finset.card_erase_of_mem hxe, hc]
+lean/Taut/Homology2.lean:95:        have hymem : y ∈ e.erase x := hy ▸ Finset.mem_singleton_self y
+lean/Taut/Homology2.lean:96:        have hye : y ∈ e := Finset.mem_of_mem_erase hymem
+lean/Taut/Homology2.lean:97:        have hyx : y ≠ x := Finset.ne_of_mem_erase hymem
+lean/Taut/Homology2.lean:99:        rw [← Finset.insert_erase hxe, hy]
+lean/Taut/Homology2.lean:107:    have hinj : Set.InjOn (fun y => ({x, y} : Finset V)) (f.erase x) := by
+lean/Taut/Homology2.lean:113:      · exact absurd rfl (Finset.mem_erase.mp h1).1
+lean/Taut/Homology2.lean:115:    rw [Finset.card_image_of_injOn hinj, Finset.card_erase_of_mem hx, hf3]
+lean/Taut/Homology2.lean:117:    rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+lean/Taut/Homology2.lean:167:  have : (σ.filter (fun f => (e : Finset V) ⊆ f)).card = 2 := hclosed e e.2
+lean/Taut/Homology2.lean:182:  rw [← Finset.sum_filter]
+lean/Taut/Homology2.lean:183:  have hfilter : (Finset.univ.filter (fun f : σ => (e : Finset V) ⊆ (f : Finset V)))
+lean/Taut/Homology2.lean:186:    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
+lean/Taut/Homology2.lean:196:  rw [hfilter, Finset.sum_pair (by simp only [ne_eq, Subtype.mk.injEq]; exact hne)]
+lean/Taut/Homology2.lean:314:  obtain ⟨a, ha⟩ : (((f : Finset V).erase v)).Nonempty := by
+lean/Taut/Homology2.lean:315:    rw [← Finset.card_pos, Finset.card_erase_of_mem hvf, h.pure _ f.2]; omega
+lean/Taut/Homology2.lean:316:  obtain ⟨c, hc⟩ : (((g : Finset V).erase v)).Nonempty := by
+lean/Taut/Homology2.lean:317:    rw [← Finset.card_pos, Finset.card_erase_of_mem hvg, h.pure _ g.2]; omega
+lean/Taut/Homology2.lean:318:  have hav : a ≠ v := Finset.ne_of_mem_erase ha
+lean/Taut/Homology2.lean:319:  have hcv : c ≠ v := Finset.ne_of_mem_erase hc
+lean/Taut/Homology2.lean:320:  have haf : a ∈ (f : Finset V) := Finset.mem_of_mem_erase ha
+lean/Taut/Homology2.lean:321:  have hcg : c ∈ (g : Finset V) := Finset.mem_of_mem_erase hc
+lean/Taut/Homology2.lean:520:      show (vertsOf σ).filter (fun x => x ∈ (e : Finset V)) = (e : Finset V) from by
+lean/Taut/Homology2.lean:522:        simp only [Finset.mem_filter]
+lean/Taut/Projection.lean:12:  replaces `z` by `p`, with the sign `sgn z s • coneGen p (s.erase z)`
+lean/Taut/Projection.lean:13:  (the composite sign `(-1)^(cnt z s + cnt p (s.erase z))`);
+lean/Taut/Projection.lean:40:    ∑ z ∈ s \ A, sgn z s • coneGen p (s.erase z)
+lean/Taut/Projection.lean:57:lemma not_subset_of_sdiff_singleton {A s : Finset V} {z : V}
+lean/Taut/Projection.lean:60:  rw [Finset.sdiff_eq_empty_iff_subset.mpr hsub] at h
+lean/Taut/Projection.lean:63:lemma mem_of_sdiff_singleton {A s : Finset V} {z : V}
+lean/Taut/Projection.lean:66:  exact Finset.mem_sdiff.mp this
+lean/Taut/Projection.lean:71:    KGen A p s = sgn z s • coneGen p (s.erase z) := by
+lean/Taut/Projection.lean:72:  rw [KGen, if_neg (not_subset_of_sdiff_singleton hz),
+lean/Taut/Projection.lean:84:    rw [Finset.sdiff_eq_empty_iff_subset.mpr hsub] at h
+lean/Taut/Projection.lean:94:lemma erase_sdiff (s A : Finset V) (w : V) :
+lean/Taut/Projection.lean:95:    (s.erase w) \ A = (s \ A).erase w := by
+lean/Taut/Projection.lean:97:  simp only [Finset.mem_sdiff, Finset.mem_erase]
+lean/Taut/Projection.lean:110:    KGen_of_subset ((Finset.erase_subset w s).trans hsub)]
+lean/Taut/Projection.lean:118:  have hterm : ∀ w ∈ s, Kmap A p (sgn w s • Finsupp.single (s.erase w) 1)
+lean/Taut/Projection.lean:119:      = sgn w s • KGen A p (s.erase w) := fun w _ => by
+lean/Taut/Projection.lean:128:      exact Finset.mem_sdiff.mp this
+lean/Taut/Projection.lean:132:      exact Finset.mem_sdiff.mp this
+lean/Taut/Projection.lean:133:    have herase₁ : (s.erase z₁) \ A = {z₂} := by
+lean/Taut/Projection.lean:134:      rw [erase_sdiff, hz12, Finset.erase_insert (by simp [hne])]
+lean/Taut/Projection.lean:135:    have herase₂ : (s.erase z₂) \ A = {z₁} := by
+lean/Taut/Projection.lean:136:      rw [erase_sdiff, hz12]
+lean/Taut/Projection.lean:138:      simp only [Finset.mem_erase, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/Projection.lean:150:        rw [KGen_of_mem (not_subset_of_sdiff_singleton herase₁)
+lean/Taut/Projection.lean:151:          (Finset.mem_erase_of_ne_of_mem
+lean/Taut/Projection.lean:155:          rw [KGen_of_mem (not_subset_of_sdiff_singleton herase₂)
+lean/Taut/Projection.lean:156:            (Finset.mem_erase_of_ne_of_mem
+lean/Taut/Projection.lean:158:        · have h2' : 2 ≤ ((s.erase w) \ A).card := by
+lean/Taut/Projection.lean:159:            rw [erase_sdiff, hz12,
+lean/Taut/Projection.lean:160:              Finset.erase_eq_of_notMem (by simp [hw₁, hw₂]),
+lean/Taut/Projection.lean:165:          sgn w s • KGen A p (s.erase w) = 0 := by
+lean/Taut/Projection.lean:167:        have h2' : 2 ≤ ((s.erase w) \ A).card := by
+lean/Taut/Projection.lean:168:          rw [erase_sdiff, hz12, Finset.erase_eq_of_notMem (by simpa using hwn),
+lean/Taut/Projection.lean:174:        KGen_of_one herase₁ (fun h => hps (Finset.mem_of_mem_erase h)),
+lean/Taut/Projection.lean:175:        KGen_of_one herase₂ (fun h => hps (Finset.mem_of_mem_erase h)),
+lean/Taut/Projection.lean:176:        Finset.erase_right_comm (a := z₂) (b := z₁), smul_smul, smul_smul,
+lean/Taut/Projection.lean:177:        ← add_smul, sgn_erase_cancel hz₁s.1 hz₂s.1 hne, neg_add_cancel,
+lean/Taut/Projection.lean:181:    have h2' : 2 ≤ ((s.erase w) \ A).card := by
+lean/Taut/Projection.lean:182:      rw [erase_sdiff]
+lean/Taut/Projection.lean:183:      have h := Finset.pred_card_le_card_erase (a := w) (s := s \ A)
+lean/Taut/Projection.lean:192:  obtain ⟨hz₀s, hz₀A⟩ := mem_of_sdiff_singleton hz
+lean/Taut/Projection.lean:194:  rw [KGen_of_mem (not_subset_of_sdiff_singleton hz) hps, map_zero, bdryGen,
+lean/Taut/Projection.lean:196:  have hterm : ∀ w ∈ s, Kmap A p (sgn w s • Finsupp.single (s.erase w) 1)
+lean/Taut/Projection.lean:197:      = sgn w s • KGen A p (s.erase w) := fun w _ => by
+lean/Taut/Projection.lean:200:      sgn w s • KGen A p (s.erase w) = 0 := by
+lean/Taut/Projection.lean:206:    have herase : (s.erase w) \ A = {z₀} := by
+lean/Taut/Projection.lean:207:      rw [erase_sdiff, hz, Finset.erase_eq_of_notMem (by simp [hwz])]
+lean/Taut/Projection.lean:208:    rw [KGen_of_mem (not_subset_of_sdiff_singleton herase)
+lean/Taut/Projection.lean:209:      (Finset.mem_erase_of_ne_of_mem (Ne.symm hwp) hps), smul_zero]
+lean/Taut/Projection.lean:216:  have hsub₀ : s.erase z₀ ⊆ A := by
+lean/Taut/Projection.lean:217:    rw [← Finset.sdiff_eq_empty_iff_subset, erase_sdiff, hz,
+lean/Taut/Projection.lean:218:      Finset.erase_singleton]
+lean/Taut/Projection.lean:219:  have heraseP : (s.erase p) \ A = {z₀} := by
+lean/Taut/Projection.lean:220:    rw [erase_sdiff, hz, Finset.erase_eq_of_notMem (by simp [hpz])]
+lean/Taut/Projection.lean:222:    KGen_of_one heraseP (Finset.notMem_erase p s), coneGen,
+lean/Taut/Projection.lean:223:    if_neg (fun h => (Finset.notMem_erase p s) (Finset.mem_of_mem_erase h)),
+lean/Taut/Projection.lean:224:    Finset.erase_right_comm (a := p) (b := z₀),
+lean/Taut/Projection.lean:225:    Finset.insert_erase
+lean/Taut/Projection.lean:226:      (Finset.mem_erase_of_ne_of_mem hpz hps),
+lean/Taut/Projection.lean:228:  have hc := sgn_erase_cancel hps hz₀s hpz
+lean/Taut/Projection.lean:229:  have h2 := sgn_erase_self p (s.erase z₀)
+lean/Taut/Projection.lean:230:  have h3 := sgn_mul_self p (s.erase z₀)
+lean/Taut/Projection.lean:231:  have hcoef : sgn z₀ s + sgn p s * sgn z₀ (s.erase p) *
+lean/Taut/Projection.lean:232:      sgn p ((s.erase z₀).erase p) = 0 := by
+lean/Taut/Projection.lean:234:    linear_combination sgn p (s.erase z₀) * hc - sgn z₀ s * h3
+lean/Taut/Projection.lean:242:  obtain ⟨hz₀s, hz₀A⟩ := mem_of_sdiff_singleton hz
+lean/Taut/Projection.lean:243:  set u := s.erase z₀ with hu
+lean/Taut/Projection.lean:244:  have hpu : p ∉ u := fun h => hps (Finset.mem_of_mem_erase h)
+lean/Taut/Projection.lean:246:    rw [hu, ← Finset.sdiff_eq_empty_iff_subset, erase_sdiff, hz,
+lean/Taut/Projection.lean:247:      Finset.erase_singleton]
+lean/Taut/Projection.lean:263:  have hterm : ∀ w ∈ s, Kmap A p (sgn w s • Finsupp.single (s.erase w) 1)
+lean/Taut/Projection.lean:264:      = sgn w s • KGen A p (s.erase w) := fun w _ => by
+lean/Taut/Projection.lean:266:  rw [Finset.sum_congr rfl hterm, ← Finset.add_sum_erase _ _ hz₀s, ← hu,
+lean/Taut/Projection.lean:269:  have hrest : ∀ w ∈ u, sgn w s • KGen A p (s.erase w)
+lean/Taut/Projection.lean:270:      = (sgn w s * sgn z₀ (s.erase w)) • coneGen p (u.erase w) := by
+lean/Taut/Projection.lean:272:    have hwz : w ≠ z₀ := Finset.ne_of_mem_erase hw
+lean/Taut/Projection.lean:273:    have herase : (s.erase w) \ A = {z₀} := by
+lean/Taut/Projection.lean:274:      rw [erase_sdiff, hz, Finset.erase_eq_of_notMem (by simp [hwz])]
+lean/Taut/Projection.lean:275:    rw [KGen_of_one herase (fun h => hps (Finset.mem_of_mem_erase h)),
+lean/Taut/Projection.lean:276:      smul_smul, hu, Finset.erase_right_comm (a := z₀) (b := w)]
+lean/Taut/Projection.lean:278:      = ∑ w ∈ u, (sgn w u) • coneGen p (u.erase w) := by
+lean/Taut/Projection.lean:286:  have hws : w ∈ s := Finset.mem_of_mem_erase (hu ▸ hw)
+lean/Taut/Projection.lean:287:  have hwz : w ≠ z₀ := Finset.ne_of_mem_erase (hu ▸ hw)
+lean/Taut/Projection.lean:290:  have hc := sgn_erase_cancel hz₀s hws (Ne.symm hwz)
+lean/Taut/Projection.lean:300:        (Finset.sdiff_eq_empty_iff_subset.mp (Finset.card_eq_zero.mp hc))
+lean/Taut/Projection.lean:361:    nrm (Kmap A p M) + nrm (M.filter (Kkills A p)) ≤ nrm M := by
+lean/Taut/Projection.lean:364:      ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:369:      _ = (∑ s ∈ M.support.filter (fun s => Kkills A p s),
+lean/Taut/Projection.lean:371:          + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s),
+lean/Taut/Projection.lean:373:          rw [Finset.sum_filter_add_sum_filter_not]
+lean/Taut/Projection.lean:374:      _ = ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s),
+lean/Taut/Projection.lean:377:          rw [KGen_of_kills (Finset.mem_filter.mp hs).2, nrm_zero, mul_zero]
+lean/Taut/Projection.lean:378:      _ ≤ ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:384:  have h2 : nrm (M.filter (Kkills A p)) =
+lean/Taut/Projection.lean:385:      ∑ s ∈ M.support.filter (fun s => Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:386:    rw [nrm, Finsupp.support_filter]
+lean/Taut/Projection.lean:388:      rw [Finsupp.filter_apply, if_pos (Finset.mem_filter.mp hs).2]
+lean/Taut/Projection.lean:389:  have h3 : nrm M = (∑ s ∈ M.support.filter (fun s => Kkills A p s),
+lean/Taut/Projection.lean:391:      + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:392:    rw [nrm, Finset.sum_filter_add_sum_filter_not]
+lean/Taut/Projection.lean:422:  have hbW : bdryGen W (W.erase x) = sgn x W := by
+lean/Taut/Projection.lean:429:        if_neg (fun h => hyx ((Finset.erase_inj W hy).mp h)), smul_zero]
+lean/Taut/Projection.lean:431:    have := DFunLike.congr_fun hM (W.erase x)
+lean/Taut/Projection.lean:434:    calc M W * bdryGen W (W.erase x)
+lean/Taut/Projection.lean:435:        = (M W • bdryGen W) (W.erase x) := by
+lean/Taut/Projection.lean:437:      _ = bdry M (W.erase x) := by rw [← bdry_single, ← hMeq]
+lean/Taut/Separation.lean:62:  (Finset.univ.filter (fun f : σ => W f = 1)).image Subtype.val
+lean/Taut/Separation.lean:66:  simp only [cutSet, Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and]
+lean/Taut/Separation.lean:103:      = (if e ⊆ γ then 1 else 0) + ((cutSet σ W).filter (fun f => e ⊆ f)).card := by
+lean/Taut/Separation.lean:104:  rw [edgeDeg, Finset.filter_insert]
+lean/Taut/Separation.lean:107:      (fun hγf => hγσ (cutSet_subset (Finset.mem_of_mem_filter _ hγf))), if_pos heγ, add_comm]
+lean/Taut/Separation.lean:121:  have hfilter : (cutSet σ W).filter (fun f => e ⊆ f)
+lean/Taut/Separation.lean:122:      = ({f₁, f₂} : Finset (Finset V)).filter (fun f => f ∈ cutSet σ W) := by
+lean/Taut/Separation.lean:124:    simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/Separation.lean:133:  rw [edgeDeg_cut hγσ, hfilter, Finset.card_filter, Finset.sum_pair hne]
+lean/Taut/Separation.lean:626:  obtain ⟨a, ha⟩ : ((f : Finset V).erase v).Nonempty := by
+lean/Taut/Separation.lean:627:    rw [← Finset.card_pos, Finset.card_erase_of_mem hvf, h.pure _ f.2]; omega
+lean/Taut/Separation.lean:628:  obtain ⟨c, hc⟩ : ((g : Finset V).erase v).Nonempty := by
+lean/Taut/Separation.lean:629:    rw [← Finset.card_pos, Finset.card_erase_of_mem hvg, h.pure _ g.2]; omega
+lean/Taut/Separation.lean:630:  have haf := Finset.mem_of_mem_erase ha
+lean/Taut/Separation.lean:631:  have hcg := Finset.mem_of_mem_erase hc
+lean/Taut/Separation.lean:632:  have hav := Finset.ne_of_mem_erase ha
+lean/Taut/Separation.lean:633:  have hcv := Finset.ne_of_mem_erase hc
+lean/Taut/Theorem1.lean:16:vertices, edge-unions share 2).  The disjoint-union case `|A ∩ B| ≤ 1`
+lean/Taut/Theorem1.lean:43:  rw [Finset.mem_union] at this ⊢
+lean/Taut/Theorem1.lean:61:  M.filter (fun s => s.card = k)
+lean/Taut/Theorem1.lean:65:  simp [dimPart, Finsupp.filter_apply]
+lean/Taut/Theorem1.lean:74:  rw [dimPart, Finsupp.filter_zero]
+lean/Taut/Theorem1.lean:78:  Finsupp.filter_single_of_pos (p := fun u : Finset V => u.card = k) h
+lean/Taut/Theorem1.lean:82:  Finsupp.filter_single_of_neg (p := fun u : Finset V => u.card = k) h
+lean/Taut/Theorem1.lean:103:      -- all facets have size k, so the filter keeps everything
+lean/Taut/Theorem1.lean:116:          rw [← h, Finset.card_erase_of_mem hz, hs]
+lean/Taut/Theorem1.lean:132:          have hcard := Finset.card_erase_of_mem hz
+lean/Taut/Theorem1.lean:145:  have hPM : SubChain P M := subChain_filter _ M
+lean/Taut/Theorem1.lean:155:  rw [dimPart, Finsupp.support_filter, Finset.mem_filter] at hs
+lean/Taut/Theorem1.lean:176:lemma inter_eq_erase_of_sdiff_singleton {A s : Finset V} {z : V}
+lean/Taut/Theorem1.lean:177:    (hz : s \ A = {z}) : s ∩ A = s.erase z := by
+lean/Taut/Theorem1.lean:179:  simp only [Finset.mem_inter, Finset.mem_erase]
+lean/Taut/Theorem1.lean:184:    exact (Finset.mem_sdiff.mp this).2 hyA
+lean/Taut/Theorem1.lean:188:    have : y ∈ s \ A := Finset.mem_sdiff.mpr ⟨hys, hyA⟩
+lean/Taut/Theorem1.lean:203:    exact ⟨fun x hx => Finset.mem_union_left _
+lean/Taut/Theorem1.lean:210:      obtain ⟨hzs, hzA⟩ := mem_of_sdiff_singleton hz
+lean/Taut/Theorem1.lean:211:      have hpz : p ∉ s.erase z := fun h => hps (Finset.mem_of_mem_erase h)
+lean/Taut/Theorem1.lean:221:        · exact Finset.mem_union_right _ (Finset.mem_singleton_self _)
+lean/Taut/Theorem1.lean:222:        · exact Finset.mem_union_left _
+lean/Taut/Theorem1.lean:223:            (inter_eq_erase_of_sdiff_singleton hz ▸ hx)
+lean/Taut/Theorem1.lean:225:          Finset.card_erase_of_mem hzs]
+lean/Taut/Theorem1.lean:247:      rcases Finset.mem_union.mp (hsub hx) with h | h
+lean/Taut/Theorem1.lean:274:  have hdisj : Disjoint (t \ A) (t \ B) := by
+lean/Taut/Theorem1.lean:277:    rcases Finset.mem_union.mp (htAB (Finset.mem_sdiff.mp hxA).1) with h | h
+lean/Taut/Theorem1.lean:278:    · exact (Finset.mem_sdiff.mp hxA).2 h
+lean/Taut/Theorem1.lean:279:    · exact (Finset.mem_sdiff.mp hxB).2 h
+lean/Taut/Theorem1.lean:282:    simp only [Finset.mem_sdiff, Finset.mem_inter, Finset.mem_union]
+lean/Taut/Theorem1.lean:285:    have h1 := Finset.card_inter_add_card_sdiff t (A ∩ B)
+lean/Taut/Theorem1.lean:286:    rw [hsplit, Finset.card_union_of_disjoint hdisj] at h1
+lean/Taut/Theorem1.lean:298:      Finset.card_eq_zero.mpr (Finset.sdiff_eq_empty_iff_subset.mpr hA)
+lean/Taut/Theorem1.lean:305:      Finset.card_eq_zero.mpr (Finset.sdiff_eq_empty_iff_subset.mpr hB)
+lean/Taut/Theorem1.lean:343:    nrm M ≤ nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) := by
+lean/Taut/Theorem1.lean:345:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Theorem1.lean:346:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:347:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Theorem1.lean:348:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:352:  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem1.lean:359:/-- **Theorem 1, additivity** (Ellison): for an almost disjoint union
+lean/Taut/Theorem1.lean:390:      rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Theorem1.lean:403:      exact Finset.union_subset_union
+lean/Taut/Theorem1.lean:421:    have h3 : nrm M ≤ nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) :=
+lean/Taut/Splitting.lean:21:4. so generators are pure and the filter along `· ⊆ A` splits `M`.
+lean/Taut/Splitting.lean:33:  have hdisj : Disjoint (t \ A) (t \ B) := by
+lean/Taut/Splitting.lean:36:    rcases Finset.mem_union.mp (htAB (Finset.mem_sdiff.mp hxA).1) with h | h
+lean/Taut/Splitting.lean:37:    · exact (Finset.mem_sdiff.mp hxA).2 h
+lean/Taut/Splitting.lean:38:    · exact (Finset.mem_sdiff.mp hxB).2 h
+lean/Taut/Splitting.lean:41:    simp only [Finset.mem_sdiff, Finset.mem_inter, Finset.mem_union]
+lean/Taut/Splitting.lean:43:  have h1 := Finset.card_inter_add_card_sdiff t (A ∩ B)
+lean/Taut/Splitting.lean:44:  rw [hsplit, Finset.card_union_of_disjoint hdisj] at h1
+lean/Taut/Splitting.lean:55:    (h : bdryGen t s ≠ 0) : ∃ w ∈ t, s = t.erase w := by
+lean/Taut/Splitting.lean:81:  exact ⟨(Finset.erase_subset w t).trans h1,
+lean/Taut/Splitting.lean:82:    by rw [Finset.card_erase_of_mem hw, h2]; omega⟩
+lean/Taut/Splitting.lean:107:lemma kills_of_two_sdiff {A : Finset V} (p : V) {t : Finset V}
+lean/Taut/Splitting.lean:111:    rw [Finset.sdiff_eq_empty_iff_subset.mpr hsub] at h
+lean/Taut/Splitting.lean:120:    rw [Finset.sdiff_eq_empty_iff_subset.mpr hsub] at h1
+lean/Taut/Splitting.lean:133:      nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) := by
+lean/Taut/Splitting.lean:135:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:136:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:137:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:138:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:146:  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Splitting.lean:173:    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Splitting.lean:184:    exact (vert_add_subset X Y).trans (Finset.union_subset_union
+lean/Taut/Splitting.lean:232:  · exact Or.inl (Finset.sdiff_eq_empty_iff_subset.mp
+lean/Taut/Splitting.lean:235:  · exact Or.inr (Or.inl (Finset.sdiff_eq_empty_iff_subset.mp
+lean/Taut/Splitting.lean:246:      (kills_of_two_sdiff p (by omega))
+lean/Taut/Splitting.lean:247:      (kills_of_two_sdiff q (by omega))).elim
+lean/Taut/Splitting.lean:277:          (kills_of_two_sdiff q' (by omega))).elim
+lean/Taut/Splitting.lean:292:          (kills_of_two_sdiff p' (by omega))
+lean/Taut/Splitting.lean:296:          (kills_of_two_sdiff p (by omega))
+lean/Taut/Splitting.lean:297:          (kills_of_two_sdiff q (by omega))).elim
+lean/Taut/Splitting.lean:318:  obtain ⟨hy₀t, hy₀A⟩ := mem_of_sdiff_singleton hy
+lean/Taut/Splitting.lean:320:  set U := M.filter (fun t => y₀ ∈ t ∧ 2 ≤ (t \ B).card) with hU
+lean/Taut/Splitting.lean:321:  have hUsub : SubChain U M := subChain_filter _ M
+lean/Taut/Splitting.lean:328:      rw [hU, Finsupp.filter_apply, if_neg (fun h => hyt h.1)]
+lean/Taut/Splitting.lean:333:    rw [hU, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:338:    · rw [Finset.sdiff_eq_empty_iff_subset.mpr h] at h2t
+lean/Taut/Splitting.lean:341:      have hyy' : y₀ ∈ t \ A := Finset.mem_sdiff.mpr ⟨hyt, hy₀A⟩
+lean/Taut/Splitting.lean:356:    rw [hU, Finsupp.filter_apply, if_pos ⟨hy₀t, by omega⟩]
+lean/Taut/Splitting.lean:374:            have hst : s ⊆ t := hsw ▸ Finset.erase_subset w t
+lean/Taut/Splitting.lean:376:              rw [Finsupp.sub_apply, hU, Finsupp.filter_apply,
+lean/Taut/Splitting.lean:378:                  (Finset.sdiff_subset_sdiff hst (Finset.Subset.refl B)))⟩,
+lean/Taut/Splitting.lean:389:            rw [Finset.sdiff_eq_empty_iff_subset.mpr hsB] at hs2
+lean/Taut/Splitting.lean:404:            rw [hsw, erase_sdiff]
+lean/Taut/Splitting.lean:405:            have hle := Finset.pred_card_le_card_erase (a := w) (s := t \ B)
+lean/Taut/Splitting.lean:414:  have hWne : lk y₀ U (t₀.erase y₀) ≠ 0 := by
+lean/Taut/Splitting.lean:419:  have hne : (t₀.erase y₀).Nonempty := by
+lean/Taut/Splitting.lean:420:    rw [← Finset.card_pos, Finset.card_erase_of_mem hy₀t, hpure t₀ ht₀]
+lean/Taut/Splitting.lean:426:      (mem_vert.mpr ⟨t₀.erase y₀, Finsupp.mem_support_iff.mpr hWne, hx'⟩)
+lean/Taut/Splitting.lean:433:filling `M` of an almost disjoint union `X + Y` splits: filtering `M`
+lean/Taut/Splitting.lean:443:    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+lean/Taut/Splitting.lean:444:    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+lean/Taut/Splitting.lean:445:    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+lean/Taut/Splitting.lean:446:    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+lean/Taut/Splitting.lean:447:    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+lean/Taut/Splitting.lean:454:    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Splitting.lean:465:    exact (vert_add_subset X Y).trans (Finset.union_subset_union
+lean/Taut/Splitting.lean:483:        rw [Finset.union_comm]
+lean/Taut/Splitting.lean:490:  set Mx := M.filter (fun t => t ⊆ A) with hMx
+lean/Taut/Splitting.lean:491:  set My := M.filter (fun t => ¬ t ⊆ A) with hMy
+lean/Taut/Splitting.lean:492:  have hsum : Mx + My = M := Finsupp.filter_pos_add_filter_neg M _
+lean/Taut/Splitting.lean:495:    rw [hMx, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:499:    rw [hMy, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:517:  have hnrm : nrm Mx + nrm My = nrm M := nrm_filter_add_nrm_filter_neg _ M
+
+exec
+/bin/zsh -lc "cat > /tmp/check_iscycles.lean <<'EOF'
+import Mathlib.Combinatorics.SimpleGraph.Matching
+#check SimpleGraph.IsCycles
+#check SimpleGraph.IsCycles.other_adj_of_adj
+#check SimpleGraph.IsCycles.existsUnique_ne_adj
+#check SimpleGraph.IsCycles.exists_cycle_toSubgraph_verts_eq_connectedComponentSupp
+#check SimpleGraph.Walk
+#check SimpleGraph.Reachable
+#check SimpleGraph.ConnectedComponent
+EOF
+cd lean && lake env lean /tmp/check_iscycles.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 8288ms:
+SimpleGraph.IsCycles.{u_1} {V : Type u_1} (G : SimpleGraph V) : Prop
+SimpleGraph.IsCycles.other_adj_of_adj.{u_1} {V : Type u_1} {G : SimpleGraph V} {v w : V} (h : G.IsCycles)
+  (hadj : G.Adj v w) : ∃ w', w ≠ w' ∧ G.Adj v w'
+SimpleGraph.IsCycles.existsUnique_ne_adj.{u_1} {V : Type u_1} {G : SimpleGraph V} {v w : V} (h : G.IsCycles)
+  (hadj : G.Adj v w) : ∃! w', w ≠ w' ∧ G.Adj v w'
+SimpleGraph.IsCycles.exists_cycle_toSubgraph_verts_eq_connectedComponentSupp.{u_1} {V : Type u_1} {G : SimpleGraph V}
+  {v : V} [Finite V] {c : G.ConnectedComponent} (h : G.IsCycles) (hv : v ∈ c.supp) (hn : (G.neighborSet v).Nonempty) :
+  ∃ p, p.IsCycle ∧ p.toSubgraph.verts = c.supp
+SimpleGraph.Walk.{u} {V : Type u} (G : SimpleGraph V) : V → V → Type u
+SimpleGraph.Reachable.{u} {V : Type u} (G : SimpleGraph V) (u v : V) : Prop
+SimpleGraph.ConnectedComponent.{u} {V : Type u} (G : SimpleGraph V) : Type u
+
+codex
+The `IsCycles` API confirms my concern: its strongest theorem gives a cycle per connected component, not a way to identify the chosen side as one component. I’m checking whether a homological/cut-chain certificate can replace explicit arc traversal.
+exec
+/bin/zsh -lc "sed -n '700,980p' lean/Taut/Separation.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+exec
+/bin/zsh -lc "cat > /tmp/print_iscycles.lean <<'EOF'
+import Mathlib.Combinatorics.SimpleGraph.Matching
+#print SimpleGraph.IsCycles
+#print SimpleGraph.IsCycles.other_adj_of_adj
+#print SimpleGraph.IsCycles.exists_cycle_toSubgraph_verts_eq_connectedComponentSupp
+#check SimpleGraph.Walk.map
+#check SimpleGraph.Walk.append
+#check SimpleGraph.Walk.reverse
+#check SimpleGraph.Walk.length
+#check SimpleGraph.Walk.support
+#check SimpleGraph.Walk.bypass
+#check SimpleGraph.Walk.dropUntil
+#check SimpleGraph.Walk.takeUntil
+EOF
+cd lean && lake env lean /tmp/print_iscycles.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "cat > /tmp/check_graph.lean <<'EOF'
+import Mathlib
+#check SimpleGraph.Subgraph
+#check SimpleGraph.toSubgraph
+#check SimpleGraph.ConnectedComponent.supp
+#check SimpleGraph.connectedComponent
+#check SimpleGraph.connectedComponent_eq
+#check SimpleGraph.connectedComponent_mk
+#check SimpleGraph.neighborSet
+#check SimpleGraph.degree
+#check SimpleGraph.incidenceFinset
+#check SimpleGraph.edgeFinset
+EOF
+cd lean && lake env lean /tmp/check_graph.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 1650ms:
+def SimpleGraph.IsCycles.{u_1} : {V : Type u_1} → SimpleGraph V → Prop :=
+fun {V} G => ∀ ⦃v : V⦄, (G.neighborSet v).Nonempty → (G.neighborSet v).ncard = 2
+theorem SimpleGraph.IsCycles.other_adj_of_adj.{u_1} : ∀ {V : Type u_1} {G : SimpleGraph V} {v w : V},
+  G.IsCycles → G.Adj v w → ∃ w', w ≠ w' ∧ G.Adj v w' :=
+fun {V} {G} {v w} h hadj =>
+  Eq.mpr
+    (id
+      (congrArg Exists
+        (funext fun w' => congrArg (And (w ≠ w')) (SimpleGraph.IsCycles.other_adj_of_adj._simp_1_1✝ G v w'))))
+    (have this := h (Exists.intro w (Eq.mp (SimpleGraph.IsCycles.other_adj_of_adj._simp_1_1✝¹ G v w) hadj));
+    Exists.casesOn (Set.exists_ne_of_one_lt_ncard (SimpleGraph.IsCycles.other_adj_of_adj._proof_1_2✝ this) w)
+      fun w' hww' => Exists.intro w' ⟨Ne.symm hww'.right, hww'.left⟩)
+theorem SimpleGraph.IsCycles.exists_cycle_toSubgraph_verts_eq_connectedComponentSupp.{u_1} : ∀ {V : Type u_1}
+  {G : SimpleGraph V} {v : V} [Finite V] {c : G.ConnectedComponent},
+  G.IsCycles → v ∈ c.supp → (G.neighborSet v).Nonempty → ∃ p, p.IsCycle ∧ p.toSubgraph.verts = c.supp :=
+fun {V} {G} {v} [Finite V] {c} h hv hn =>
+  Exists.casesOn hn fun w hw =>
+    Exists.casesOn
+      (SimpleGraph.adj_and_reachable_delete_edges_iff_exists_cycle.mp
+        ⟨hw, SimpleGraph.IsCycles.reachable_deleteEdges hw h⟩)
+      fun u h_1 =>
+      Exists.casesOn h_1 fun p hp =>
+        have hvp := SimpleGraph.Walk.fst_mem_support_of_mem_edges p hp.right;
+        have this :=
+          Exists.casesOn
+            (SimpleGraph.Subgraph.Connected.exists_verts_eq_connectedComponentSupp
+              (SimpleGraph.Walk.toSubgraph_connected p) fun v_1 hv w_1 hadj =>
+              (SimpleGraph.Subgraph.adj_iff_of_neighborSet_equiv
+                    (have this :=
+                      Set.Nonempty.mono (SimpleGraph.Subgraph.neighborSet_subset p.toSubgraph v_1)
+                        (Set.nonempty_of_ncard_ne_zero
+                          (Eq.mpr
+                            (id
+                              (congrArg (fun _a => _a ≠ 0)
+                                (SimpleGraph.Walk.IsCycle.ncard_neighborSet_toSubgraph_eq_two hp.left
+                                  (Eq.mp (congrArg (fun _a => _a) (propext (SimpleGraph.Walk.mem_verts_toSubgraph p)))
+                                    hv))))
+                            SimpleGraph.IsCycles.exists_cycle_toSubgraph_verts_eq_connectedComponentSupp._proof_1_1✝));
+                    Classical.ofNonempty)
+                    (Set.toFinite (G.neighborSet v_1))).mpr
+                hadj)
+            fun c' hc' =>
+            Eq.mpr (id (congrArg (fun _a => _a = c.supp) hc'))
+              (have this :=
+                Eq.mpr (id (congrArg (fun _a => v ∈ _a) (Eq.symm hc')))
+                  (Eq.mpr (id (congrArg (fun _a => _a) (propext (SimpleGraph.Walk.mem_verts_toSubgraph p)))) hvp);
+              of_eq_true
+                (Eq.trans
+                  (congrArg (Eq c'.supp)
+                    (congrArg SimpleGraph.ConnectedComponent.supp
+                      (id
+                        (Eq.mp
+                          (Eq.trans (SimpleGraph.ConnectedComponent.mem_supp_iff._simp_1 c' v)
+                            (congrFun'
+                              (congrArg Eq (id (Eq.mp (SimpleGraph.ConnectedComponent.mem_supp_iff._simp_1 c v) hv)))
+                              c'))
+                          this))))
+                  (eq_self c'.supp)));
+        Exists.intro (p.rotate v hvp)
+          (Eq.mpr
+            (id (congrArg (fun _a => (p.rotate v hvp).IsCycle ∧ (p.rotate v hvp).toSubgraph.verts = _a) (Eq.symm this)))
+            ⟨SimpleGraph.Walk.IsCycle.rotate hp.left hvp,
+              of_eq_true
+                (Eq.trans
+                  (congr
+                    (congrArg Eq
+                      (Eq.trans (congrArg SimpleGraph.Subgraph.verts (SimpleGraph.Walk.toSubgraph_rotate p hvp))
+                        (SimpleGraph.Walk.verts_toSubgraph p)))
+                    (SimpleGraph.Walk.verts_toSubgraph p))
+                  (eq_self {w | w ∈ p.support}))⟩)
+SimpleGraph.Walk.map.{u, v} {V : Type u} {V' : Type v} {G : SimpleGraph V} {G' : SimpleGraph V'} (f : G →g G')
+  {u v : V} : G.Walk u v → G'.Walk (f u) (f v)
+SimpleGraph.Walk.append.{u} {V : Type u} {G : SimpleGraph V} {u v w : V} : G.Walk u v → G.Walk v w → G.Walk u w
+SimpleGraph.Walk.reverse.{u} {V : Type u} {G : SimpleGraph V} {u v : V} (w : G.Walk u v) : G.Walk v u
+SimpleGraph.Walk.length.{u} {V : Type u} {G : SimpleGraph V} {u v : V} : G.Walk u v → ℕ
+SimpleGraph.Walk.support.{u} {V : Type u} {G : SimpleGraph V} {u v : V} : G.Walk u v → List V
+SimpleGraph.Walk.bypass.{u} {V : Type u} {G : SimpleGraph V} [DecidableEq V] {u v : V} : G.Walk u v → G.Walk u v
+SimpleGraph.Walk.dropUntil.{u} {V : Type u} {G : SimpleGraph V} [DecidableEq V] {v w : V} (p : G.Walk v w) (u : V) :
+  u ∈ p.support → G.Walk u w
+SimpleGraph.Walk.takeUntil.{u} {V : Type u} {G : SimpleGraph V} [DecidableEq V] {v w : V} (p : G.Walk v w) (u : V) :
+  u ∈ p.support → G.Walk v u
+
+codex
+The API printout shows `IsCycles` is just “every non-isolated vertex has neighbor ncard 2.” Since your links are represented by `linkVerts` inside a graph on all of `V`, that definition has an immediate nuisance: vertices outside the finite support must be handled as isolated/no neighbor, and component support lives in `Set`, not your `Finset`.
+ exited 1 in 18080ms:
+SimpleGraph.Subgraph.{u} {V : Type u} (G : SimpleGraph V) : Type u
+SimpleGraph.toSubgraph.{u} {V : Type u} {G : SimpleGraph V} (H : SimpleGraph V) (h : H ≤ G) : G.Subgraph
+SimpleGraph.ConnectedComponent.supp.{u} {V : Type u} {G : SimpleGraph V} (C : G.ConnectedComponent) : Set V
+/tmp/check_graph.lean:5:7: error(lean.unknownIdentifier): Unknown constant `SimpleGraph.connectedComponent`
+/tmp/check_graph.lean:6:7: error(lean.unknownIdentifier): Unknown constant `SimpleGraph.connectedComponent_eq`
+/tmp/check_graph.lean:7:7: error(lean.unknownIdentifier): Unknown constant `SimpleGraph.connectedComponent_mk`
+SimpleGraph.neighborSet.{u} {V : Type u} (G : SimpleGraph V) (v : V) : Set V
+SimpleGraph.degree.{u_1} {V : Type u_1} (G : SimpleGraph V) (v : V) [Fintype ↑(G.neighborSet v)] : ℕ
+SimpleGraph.incidenceFinset.{u_1} {V : Type u_1} (G : SimpleGraph V) (v : V) [Fintype ↑(G.neighborSet v)]
+  [DecidableEq V] : Finset (Sym2 V)
+SimpleGraph.edgeFinset.{u_1} {V : Type u_1} (G : SimpleGraph V) [Fintype ↑G.edgeSet] : Finset (Sym2 V)
+
+codex
+**Q1 Route Choice**
+
+Use a Route B/C hybrid: reroute along `h.linkConn σ`, but avoid proving an explicit “single arc” theorem. Do **not** lead with `SimpleGraph.IsCycles`.
+
+`IsCycles` is more friction than value here. Its definition is global on `V`:
+
+```lean
+G.IsCycles := ∀ ⦃v⦄, (G.neighborSet v).Nonempty → (G.neighborSet v).ncard = 2
+```
+
+Your links are finite supports inside a graph on all `V`, so every use drags in `Set` neighbor sets, outside-support isolation, connected components as `Set V`, and conversion back to `linkVerts`. It also only gives cycles per component, so it does not solve the hard part.
+
+Cleanest proof: prove direct reachability to one endpoint `a` using the original `h.linkConn v`.
+
+Core lemmas:
+
+1. `gamma_endpoints_at`
+   From `hγ3` and `hvγ : v ∈ γ`, obtain `a b` with:
+   `γ = {v, a, b}`, `a ≠ b`, `a ≠ v`, `b ≠ v`.
+
+2. `gamma_chord_adj`
+   For `τ := insert γ (cutSet σ W)`:
+   ```lean
+   (linkGraph τ v).Adj a b
+   ```
+   by `a ≠ b` and `{v,a,b}=γ ∈ τ`.
+
+3. `cut_link_closure_nonendpoint`
+   If `x ∈ linkVerts τ v`, `x ∉ γ`, and
+   ```lean
+   (linkGraph σ v).Adj x y
+   ```
+   then
+   ```lean
+   (linkGraph τ v).Adj x y
+   ```
+   Proof: `x ∈ linkVerts τ v` cannot be witnessed by `γ`, so it gives a cut face through `{v,x}`. Since `{v,x} ⊄ γ`, `W_eq_of_share_edge` forces every σ-face through `{v,x}`, including `{v,x,y}`, onto the same side.
+
+4. `reroute_to_gamma_endpoint`
+   Given `p : (linkGraph σ v).Walk x a` and `hxτ : x ∈ linkVerts τ v`, produce:
+   ```lean
+   (linkGraph τ v).Reachable x a
+   ```
+   Induct on `p`. At current vertex:
+   - if current is `a`, stop;
+   - if current is `b`, use the chord `b -- a`;
+   - otherwise current is not in `γ`, so lift the next σ-link edge using `cut_link_closure_nonendpoint`.
+
+5. `linkConn_cut_at_gamma`
+   For arbitrary `x y ∈ linkVerts τ v`, connect each to `a` and compose. For non-endpoints, first show `x ∈ linkVerts σ v`; endpoints are in `linkVerts σ v` from `hγe` and `mem_linkVerts_iff_edge`.
+
+This fits the existing style in [Separation.lean](/Users/doyle/Dropbox/taut/lean/Taut/Separation.lean:574), especially `W_eq_along_link`.
+
+**Q2 Single Arc**
+
+Do not prove “flips at exactly `a,b` ⇒ one arc” as a standalone traversal theorem. Prove the stronger local closure lemma above and use the reroute induction. It encodes the same math but avoids building an ordered cycle or handling `IsCycles` component APIs.
+
+The key invariant is:
+
+```lean
+x ∈ linkVerts τ v ∧ x ∉ γ
+  ⇒ every σ-link edge out of x is also a τ-link edge
+```
+
+So any attempted extra component not containing `a` or `b` would be closed under the connected σ-link. The walk induction is the Lean-friendly version of that argument.
+
+**Q3 Hidden Traps**
+
+No false-math trap found. Main Lean traps:
+
+- Be precise: for fixed `v ∈ γ`, the flip vertices in `linkGraph σ v` are the other two vertices `a,b`, not all three vertices of `γ`.
+- `γ.card = 3` plus `v ∈ γ` is enough to rule out `a=b`, `a=v`, `b=v`, but package this early.
+- When `x ∈ linkVerts τ v` and `x ∉ γ`, the witness face cannot be the inserted `γ`; this is the critical bridge to a cut face with `W=1`.
+- `v ∈ vertsOf σ` must be derived from `hγe`, e.g. edge `{v,a} ∈ edgesOf σ`.
+- The tetrahedron boundary is not a smoke test for a non-face triangle: every 3-subset of its 4 vertices is already a face.
+
+**Q4 Euler**
+
+Use χ-additivity/inclusion-exclusion, not direct individual counting.
+
+State explicit finite-set lemmas first:
+
+```lean
+vertsOf τ₁ ∪ vertsOf τ₂ = vertsOf σ
+vertsOf τ₁ ∩ vertsOf τ₂ = γ
+
+edgesOf τ₁ ∪ edgesOf τ₂ = edgesOf σ
+edgesOf τ₁ ∩ edgesOf τ₂ = γ.powersetCard 2
+
+τ₁ ∩ τ₂ = {γ}
+```
+
+Then get:
+
+```lean
+χ τ₁ + χ τ₂ = 4
+```
+
+Direct counting each side individually is higher risk; it needs the same “no extra topology” content indirectly. The additivity route is clean, but it does require a generalized `χ ≤ 2` lemma for connected closed pure 2-complexes with connected links. Current homology lemmas are mostly tied to `IsSphere2`, so expect a small refactor/generalization of the `dualGraph_preconnected` / rank machinery rather than reusing them directly before `euler`.
+
+**Q5 σ₂ Side**
+
+It should mirror. The only required packet is:
+
+```lean
+have hW₂ : bd2 σ (W + fun _ => 1) = gammaChain σ γ := by
+  rw [map_add, hW, bd2_one σ h.closed]
+  simp
+```
+
+Then apply the same `closed_cut`, `conn_cut`, and new `linkConn_cut` to `W + 1`. Avoid relying on a complement equality unless needed; over `ZMod 2` it is easy, but unnecessary for most mirrored arguments.
+
+APPROVED: use the walk-reroute/local-closure proof, avoid `IsCycles`, and plan a small homology-generalization step for Euler.
+tokens used
+67,995
+**Q1 Route Choice**
+
+Use a Route B/C hybrid: reroute along `h.linkConn σ`, but avoid proving an explicit “single arc” theorem. Do **not** lead with `SimpleGraph.IsCycles`.
+
+`IsCycles` is more friction than value here. Its definition is global on `V`:
+
+```lean
+G.IsCycles := ∀ ⦃v⦄, (G.neighborSet v).Nonempty → (G.neighborSet v).ncard = 2
+```
+
+Your links are finite supports inside a graph on all `V`, so every use drags in `Set` neighbor sets, outside-support isolation, connected components as `Set V`, and conversion back to `linkVerts`. It also only gives cycles per component, so it does not solve the hard part.
+
+Cleanest proof: prove direct reachability to one endpoint `a` using the original `h.linkConn v`.
+
+Core lemmas:
+
+1. `gamma_endpoints_at`
+   From `hγ3` and `hvγ : v ∈ γ`, obtain `a b` with:
+   `γ = {v, a, b}`, `a ≠ b`, `a ≠ v`, `b ≠ v`.
+
+2. `gamma_chord_adj`
+   For `τ := insert γ (cutSet σ W)`:
+   ```lean
+   (linkGraph τ v).Adj a b
+   ```
+   by `a ≠ b` and `{v,a,b}=γ ∈ τ`.
+
+3. `cut_link_closure_nonendpoint`
+   If `x ∈ linkVerts τ v`, `x ∉ γ`, and
+   ```lean
+   (linkGraph σ v).Adj x y
+   ```
+   then
+   ```lean
+   (linkGraph τ v).Adj x y
+   ```
+   Proof: `x ∈ linkVerts τ v` cannot be witnessed by `γ`, so it gives a cut face through `{v,x}`. Since `{v,x} ⊄ γ`, `W_eq_of_share_edge` forces every σ-face through `{v,x}`, including `{v,x,y}`, onto the same side.
+
+4. `reroute_to_gamma_endpoint`
+   Given `p : (linkGraph σ v).Walk x a` and `hxτ : x ∈ linkVerts τ v`, produce:
+   ```lean
+   (linkGraph τ v).Reachable x a
+   ```
+   Induct on `p`. At current vertex:
+   - if current is `a`, stop;
+   - if current is `b`, use the chord `b -- a`;
+   - otherwise current is not in `γ`, so lift the next σ-link edge using `cut_link_closure_nonendpoint`.
+
+5. `linkConn_cut_at_gamma`
+   For arbitrary `x y ∈ linkVerts τ v`, connect each to `a` and compose. For non-endpoints, first show `x ∈ linkVerts σ v`; endpoints are in `linkVerts σ v` from `hγe` and `mem_linkVerts_iff_edge`.
+
+This fits the existing style in [Separation.lean](/Users/doyle/Dropbox/taut/lean/Taut/Separation.lean:574), especially `W_eq_along_link`.
+
+**Q2 Single Arc**
+
+Do not prove “flips at exactly `a,b` ⇒ one arc” as a standalone traversal theorem. Prove the stronger local closure lemma above and use the reroute induction. It encodes the same math but avoids building an ordered cycle or handling `IsCycles` component APIs.
+
+The key invariant is:
+
+```lean
+x ∈ linkVerts τ v ∧ x ∉ γ
+  ⇒ every σ-link edge out of x is also a τ-link edge
+```
+
+So any attempted extra component not containing `a` or `b` would be closed under the connected σ-link. The walk induction is the Lean-friendly version of that argument.
+
+**Q3 Hidden Traps**
+
+No false-math trap found. Main Lean traps:
+
+- Be precise: for fixed `v ∈ γ`, the flip vertices in `linkGraph σ v` are the other two vertices `a,b`, not all three vertices of `γ`.
+- `γ.card = 3` plus `v ∈ γ` is enough to rule out `a=b`, `a=v`, `b=v`, but package this early.
+- When `x ∈ linkVerts τ v` and `x ∉ γ`, the witness face cannot be the inserted `γ`; this is the critical bridge to a cut face with `W=1`.
+- `v ∈ vertsOf σ` must be derived from `hγe`, e.g. edge `{v,a} ∈ edgesOf σ`.
+- The tetrahedron boundary is not a smoke test for a non-face triangle: every 3-subset of its 4 vertices is already a face.
+
+**Q4 Euler**
+
+Use χ-additivity/inclusion-exclusion, not direct individual counting.
+
+State explicit finite-set lemmas first:
+
+```lean
+vertsOf τ₁ ∪ vertsOf τ₂ = vertsOf σ
+vertsOf τ₁ ∩ vertsOf τ₂ = γ
+
+edgesOf τ₁ ∪ edgesOf τ₂ = edgesOf σ
+edgesOf τ₁ ∩ edgesOf τ₂ = γ.powersetCard 2
+
+τ₁ ∩ τ₂ = {γ}
+```
+
+Then get:
+
+```lean
+χ τ₁ + χ τ₂ = 4
+```
+
+Direct counting each side individually is higher risk; it needs the same “no extra topology” content indirectly. The additivity route is clean, but it does require a generalized `χ ≤ 2` lemma for connected closed pure 2-complexes with connected links. Current homology lemmas are mostly tied to `IsSphere2`, so expect a small refactor/generalization of the `dualGraph_preconnected` / rank machinery rather than reusing them directly before `euler`.
+
+**Q5 σ₂ Side**
+
+It should mirror. The only required packet is:
+
+```lean
+have hW₂ : bd2 σ (W + fun _ => 1) = gammaChain σ γ := by
+  rw [map_add, hW, bd2_one σ h.closed]
+  simp
+```
+
+Then apply the same `closed_cut`, `conn_cut`, and new `linkConn_cut` to `W + 1`. Avoid relying on a complement equality unless needed; over `ZMod 2` it is easy, but unnecessary for most mirrored arguments.
+
+APPROVED: use the walk-reroute/local-closure proof, avoid `IsCycles`, and plan a small homology-generalization step for Euler.

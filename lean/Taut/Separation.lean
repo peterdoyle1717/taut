@@ -637,4 +637,189 @@ lemma W_const_at {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : F
   obtain ⟨p⟩ := h.linkConn v hvV a haL c hcL
   exact W_eq_along_link h hW hvγ p hvf haf hav hvg hcg hcv
 
+/-! ### linkConn at a γ-vertex (local-closure + reroute, per G1 2026-06-13) -/
+
+/-- A face `{v,x,y}` of a sphere has its non-`v` vertices distinct from `v`. -/
+lemma face_two_ne {σ : Finset (Finset V)} (h : IsSphere2 σ) {v x y : V}
+    (hf : ({v, x, y} : Finset V) ∈ σ) : x ≠ v ∧ y ≠ v := by
+  refine ⟨?_, ?_⟩ <;> intro hev <;> rw [hev] at hf <;> have h3 := h.pure _ hf
+  · have hsub : ({v, v, y} : Finset V) ⊆ {v, y} := by
+      intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+    have hle : ({v, y} : Finset V).card ≤ 2 := le_trans (Finset.card_insert_le _ _) (by simp)
+    have := Finset.card_le_card hsub; omega
+  · have hsub : ({v, x, v} : Finset V) ⊆ {v, x} := by
+      intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+    have hle : ({v, x} : Finset V).card ≤ 2 := le_trans (Finset.card_insert_le _ _) (by simp)
+    have := Finset.card_le_card hsub; omega
+
+/-- The two non-`v` vertices of `γ` at a γ-vertex `v`. -/
+lemma gamma_endpoints_at {γ : Finset V} (hγ3 : γ.card = 3) {v : V} (hvγ : v ∈ γ) :
+    ∃ a b, a ≠ b ∧ a ≠ v ∧ b ≠ v ∧ γ = {v, a, b} := by
+  have he2 : (γ.erase v).card = 2 := by rw [Finset.card_erase_of_mem hvγ, hγ3]
+  obtain ⟨a, b, hab, hpair⟩ := Finset.card_eq_two.mp he2
+  have ha : a ∈ γ.erase v := hpair ▸ (by simp)
+  have hb : b ∈ γ.erase v := hpair ▸ (by simp)
+  refine ⟨a, b, hab, Finset.ne_of_mem_erase ha, Finset.ne_of_mem_erase hb, ?_⟩
+  have : γ = insert v (γ.erase v) := (Finset.insert_erase hvγ).symm
+  rw [hpair] at this; exact this
+
+/-- The γ-chord `a — b` is an edge of the capped link at `v`. -/
+lemma gamma_chord_adj {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} {v a b : V}
+    (hab : a ≠ b) (hγeq : γ = {v, a, b}) :
+    (linkGraph (insert γ (cutSet σ W)) v).Adj a b :=
+  ⟨hab, by rw [← hγeq]; exact Finset.mem_insert_self γ _⟩
+
+/-- **Local closure** at a non-γ link vertex: if `x ∈ linkVerts τ v`, `x ∉ γ`,
+and `x — y` is an edge of the σ-link at `v`, then it is also an edge of the
+capped link `τ = insert γ (cutSet σ W)`. The shared edge `{v,x}` is non-γ
+(as `x ∉ γ`), so `W_eq_of_share_edge` puts the σ-face `{v,x,y}` on the same cut
+side as the witness cut-face through `{v,x}` — namely the `W = 1` side. -/
+lemma cut_link_closure_nonendpoint {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {v x y : V}
+    (hxτ : x ∈ linkVerts (insert γ (cutSet σ W)) v) (hxγ : x ∉ γ)
+    (hadj : (linkGraph σ v).Adj x y) :
+    (linkGraph (insert γ (cutSet σ W)) v).Adj x y := by
+  obtain ⟨hxy, hface⟩ := hadj
+  obtain ⟨hxv, F, hFτ, hvF, hxF⟩ := mem_linkVerts.mp hxτ
+  have hFne : F ≠ γ := by rintro rfl; exact hxγ hxF
+  have hFcut : F ∈ cutSet σ W := (Finset.mem_insert.mp hFτ).resolve_left hFne
+  obtain ⟨hFσ, hWF⟩ := mem_cutSet.mp hFcut
+  have hev : ({v, x} : Finset V) ∈ edgesOf σ :=
+    mem_edgesOf.mpr ⟨{v, x, y}, hface,
+      (by intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto),
+      Finset.card_pair (Ne.symm hxv)⟩
+  have hevγ : ¬ ({v, x} : Finset V) ⊆ γ := fun hsub => hxγ (hsub (by simp))
+  have hsub1 : ({v, x} : Finset V) ⊆ ({v, x, y} : Finset V) := by
+    intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+  have hsub2 : ({v, x} : Finset V) ⊆ F :=
+    Finset.insert_subset hvF (Finset.singleton_subset_iff.mpr hxF)
+  have hWxy : W ⟨{v, x, y}, hface⟩ = W ⟨F, hFσ⟩ :=
+    W_eq_of_share_edge h hW hev hevγ hsub1 hsub2
+  rw [hWF] at hWxy
+  exact ⟨hxy, Finset.mem_insert_of_mem (mem_cutSet.mpr ⟨hface, hWxy⟩)⟩
+
+/-- **Reroute.** A σ-link walk from `x` to *any* γ-vertex `z` lifts to a
+reachability `x → a` in the capped link: follow the walk, lifting each edge via
+`cut_link_closure_nonendpoint`, until the current vertex is a γ-endpoint —
+then jump to `a` (refl if it is `a`, the γ-chord if it is `b`). The walk's
+endpoint `z` is kept generic (decoupled from the reach-target `a`) so the walk
+induction does not pin the target. -/
+lemma reroute_to_gamma_endpoint {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {v a b : V}
+    (hab : a ≠ b) (hγeq : γ = {v, a, b}) :
+    ∀ {x z : V}, (linkGraph σ v).Walk x z →
+      x ∈ linkVerts (insert γ (cutSet σ W)) v → z ∈ γ →
+      (linkGraph (insert γ (cutSet σ W)) v).Reachable x a := by
+  -- reaching `a` from a γ-endpoint `w` of the link: refl (w=a) or chord (w=b)
+  have endpoint : ∀ {w : V}, w ∈ linkVerts (insert γ (cutSet σ W)) v → w ∈ γ →
+      (linkGraph (insert γ (cutSet σ W)) v).Reachable w a := by
+    intro w hwτ hwγ
+    have hwv : w ≠ v := (mem_linkVerts.mp hwτ).1
+    rw [hγeq] at hwγ; simp only [Finset.mem_insert, Finset.mem_singleton] at hwγ
+    rcases hwγ with rfl | rfl | rfl
+    · exact absurd rfl hwv
+    · exact SimpleGraph.Reachable.refl _
+    · exact (gamma_chord_adj hab hγeq).symm.reachable
+  intro x z p
+  induction p with
+  | nil => intro hxτ hxγ; exact endpoint hxτ hxγ
+  | @cons x x' z hadjσ _ ih =>
+      intro hxτ hzγ
+      by_cases hxγ : x ∈ γ
+      · exact endpoint hxτ hxγ
+      · have hadjτ := cut_link_closure_nonendpoint h hW hxτ hxγ hadjσ
+        have hx'τ : x' ∈ linkVerts (insert γ (cutSet σ W)) v :=
+          mem_linkVerts.mpr ⟨(face_two_ne h hadjσ.2).2, {v, x, x'}, hadjτ.2, by simp, by simp⟩
+        exact hadjτ.reachable.trans (ih hx'τ hzγ)
+
+/-- **linkConn at a γ-vertex.** For `v ∈ γ`, the capped link at `v` is
+connected: every link vertex reaches the γ-endpoint `a` (off-γ vertices via the
+reroute, the other γ-endpoint `b` via the chord). -/
+lemma linkConn_cut_at_gamma {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+    {γ : Finset V} (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+    (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∈ γ) :
+    ConnOn (linkGraph (insert γ (cutSet σ W)) v)
+      (linkVerts (insert γ (cutSet σ W)) v) := by
+  obtain ⟨a, b, hab, hav, hbv, hγeq⟩ := gamma_endpoints_at hγ3 hvγ
+  have hva_edge : ({v, a} : Finset V) ∈ edgesOf σ := hγe (by
+    rw [Finset.mem_powersetCard]
+    exact ⟨by rw [hγeq]; intro z hz;
+                simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto,
+           Finset.card_pair (Ne.symm hav)⟩)
+  have hvV : v ∈ vertsOf σ := edge_mem_vertsOf hva_edge (by simp)
+  have haσ : a ∈ linkVerts σ v := (mem_linkVerts_iff_edge h hav).mpr hva_edge
+  have reach_a : ∀ z, z ∈ linkVerts (insert γ (cutSet σ W)) v →
+      (linkGraph (insert γ (cutSet σ W)) v).Reachable z a := by
+    intro z hz
+    by_cases hza : z = a
+    · exact hza ▸ SimpleGraph.Reachable.refl _
+    by_cases hzb : z = b
+    · subst hzb; exact (gamma_chord_adj hab hγeq).symm.reachable
+    · have hzv : z ≠ v := (mem_linkVerts.mp hz).1
+      have hzγ : z ∉ γ := by
+        rw [hγeq]; simp only [Finset.mem_insert, Finset.mem_singleton]; tauto
+      have hzσ : z ∈ linkVerts σ v := by
+        obtain ⟨_, F, hFτ, hvF, hzF⟩ := mem_linkVerts.mp hz
+        have hFne : F ≠ γ := by rintro rfl; exact hzγ hzF
+        exact mem_linkVerts.mpr ⟨hzv, F,
+          cutSet_subset ((Finset.mem_insert.mp hFτ).resolve_left hFne), hvF, hzF⟩
+      obtain ⟨p⟩ := h.linkConn v hvV _ hzσ _ haσ
+      exact reroute_to_gamma_endpoint h hW hab hγeq p hz (by rw [hγeq]; simp)
+  intro x hx y hy
+  exact (reach_a x hx).trans (reach_a y hy).symm
+
+/-- For `v ∉ γ` with a cut-face through `v`, the σ-link at `v` is a *subgraph*
+of the capped link: every σ-face through `v` lies on the (single) cut side. -/
+lemma linkGraph_le_cut_nonendpoint {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∉ γ)
+    {F : Finset V} (hFσ : F ∈ σ) (hvF : v ∈ F) (hWF : W ⟨F, hFσ⟩ = 1) :
+    linkGraph σ v ≤ linkGraph (insert γ (cutSet σ W)) v := by
+  intro x y hadj
+  obtain ⟨hxy, hface⟩ := hadj
+  refine ⟨hxy, Finset.mem_insert_of_mem (mem_cutSet.mpr ⟨hface, ?_⟩)⟩
+  have key : W (⟨{v, x, y}, hface⟩ : σ) = W (⟨F, hFσ⟩ : σ) :=
+    W_const_at h hW hvγ (by simp) hvF
+  rw [key, hWF]
+
+/-- **linkConn off γ.** For `v ∉ γ` (but `v ∈ vertsOf τ`), the capped link at
+`v` coincides with the σ-link, whose connectivity is inherited from `σ`. -/
+lemma linkConn_cut_off_gamma {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+    {γ : Finset V} (hW : bd2 σ W = gammaChain σ γ) {v : V} (hvγ : v ∉ γ)
+    (hvτ : v ∈ vertsOf (insert γ (cutSet σ W))) :
+    ConnOn (linkGraph (insert γ (cutSet σ W)) v)
+      (linkVerts (insert γ (cutSet σ W)) v) := by
+  obtain ⟨F, hFτ, hvF⟩ := mem_vertsOf.mp hvτ
+  have hFne : F ≠ γ := fun he => hvγ (he ▸ hvF)
+  obtain ⟨hFσ, hWF⟩ := mem_cutSet.mp ((Finset.mem_insert.mp hFτ).resolve_left hFne)
+  have hvV : v ∈ vertsOf σ := mem_vertsOf.mpr ⟨F, hFσ, hvF⟩
+  have hle := linkGraph_le_cut_nonendpoint h hW hvγ hFσ hvF hWF
+  have hLeq : linkVerts (insert γ (cutSet σ W)) v = linkVerts σ v := by
+    apply Finset.Subset.antisymm
+    · intro x hx
+      obtain ⟨hxv, G, hGτ, hvG, hxG⟩ := mem_linkVerts.mp hx
+      have hGne : G ≠ γ := fun he => hvγ (he ▸ hvG)
+      exact mem_linkVerts.mpr ⟨hxv, G,
+        cutSet_subset ((Finset.mem_insert.mp hGτ).resolve_left hGne), hvG, hxG⟩
+    · intro x hx
+      obtain ⟨hxv, G, hGσ, hvG, hxG⟩ := mem_linkVerts.mp hx
+      have key : W (⟨G, hGσ⟩ : σ) = W (⟨F, hFσ⟩ : σ) := W_const_at h hW hvγ hvG hvF
+      have hWG : W ⟨G, hGσ⟩ = 1 := by rw [key, hWF]
+      exact mem_linkVerts.mpr ⟨hxv, G,
+        Finset.mem_insert_of_mem (mem_cutSet.mpr ⟨hGσ, hWG⟩), hvG, hxG⟩
+  intro x hx y hy
+  rw [hLeq] at hx hy
+  exact (h.linkConn v hvV x hx y hy).mono hle
+
+/-- **`linkConn` for the capped sides of the cut.** Both cases assembled. -/
+lemma linkConn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
+    {γ : Finset V} (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+    (hW : bd2 σ W = gammaChain σ γ) :
+    ∀ v ∈ vertsOf (insert γ (cutSet σ W)),
+      ConnOn (linkGraph (insert γ (cutSet σ W)) v)
+        (linkVerts (insert γ (cutSet σ W)) v) := by
+  intro v hvτ
+  by_cases hvγ : v ∈ γ
+  · exact linkConn_cut_at_gamma h hγ3 hγe hW hvγ
+  · exact linkConn_cut_off_gamma h hW hvγ hvτ
+
 end Taut
