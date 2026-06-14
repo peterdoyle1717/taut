@@ -378,10 +378,30 @@ sphere/ball definitions.
   no-degree-3 taut filling — NOT yet "prime"; prime⟹no-deg-3 is M24). Build green
   (8260), no sorry, standard three (walk helper: just
   propext+Quot.sound). M25 (eligible-tet existence, single tet) is COMPLETE.
-- THEN: M25b (the disjoint eligible PAIR, for case-1's multiplicity-2 arg — M26 can
-  take it as a hypothesis meanwhile), M24 (establish NoDegree3Vertex from primality
-  via the connected-sum split), M26 (the strong induction + Th2+3 wrapper); M22b
-  (relShelling_of_separated_cap) on the case-2 path.
+- ARCHITECT (codex 019ec44f): M24 design APPROVED + staged, AND "write the M26
+  skeleton now". Q1 non-face: `linkVerts_not_mem_of_card_three_of_four_lt_verts`
+  (deg-3 vertex's link-triangle γ is a non-face when 4 < vertsOf σ.card — via the
+  M25a' closure pattern, showing γ∈σ ⟹ vertsOf σ ⊆ insert v γ ⟹ card 4). Q2 the
+  TRIANGLE-cut oriented bridge `oriented_split_chains_of_cut` (cap the side-filter
+  with `single γ c`: X₁ = X.filter(·∈σ₁) − single γ c, X₂ = X.filter(·∈σ₂) + single
+  γ c, where bdry(X.filter)=c•bdryGen γ; needs `closed_one_chain_supported_on_
+  triangle`: a closed 1-chain on γ's edges = c•bdryGen γ) → IsTaut.splits (n=2,
+  A∩B=γ card 3). Q3 deg-3 side = vertex star = tetraBdry(insert v γ), single tet,
+  reassemble via insert_of_glueStep (1-face glue, case-1). Q4 interface = standalone
+  `deg3_split`. ORDER (Q5): M26 skeleton → M24a(Q1) → M24b(Q2 bridge, own commit,
+  the UnitOn capped-cycle is the time sink) → M24c(deg3_split) → M22b.
+- M26 SKELETON (DONE, Theorem23.lean, building): **`theorem2_core` — Theorem 2's
+  core (IsBall M.support σ) by strong induction on nrm M, reduced to THREE named
+  HYPOTHESES (unproven holes): `base` (vertsOf σ ≤ 4 ⟹ ball), `deg3_split` (M24c
+  interface), `prime_step` (the no-deg-3 branch, consuming the IH).** Pure
+  induction plumbing; case split = vertsOf≤4 / HasDeg3 / NoDeg3. Compiles, no
+  sorry, standard three. This VALIDATES the interfaces compose (the IH shape, the
+  norm-drop, the reassembly implication). NOT a proof of Theorem 2 — the 3 steps
+  are holes.
+- THEN (fill the holes): M24a (Q1 non-face), M24b (Q2 capped triangle bridge),
+  M24c (deg3_split → discharges `deg3_split`), the eligible-tet branch (→ `prime_
+  step`: M25b disjoint pair + M22b relShelling + M23 edge-join bridge + case-1/2),
+  `base` (minimal sphere = single tet).
 - Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.

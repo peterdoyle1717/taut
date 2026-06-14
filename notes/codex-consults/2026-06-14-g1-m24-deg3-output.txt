@@ -1,0 +1,3812 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019ec44f-ab66-72c0-9e43-6a868dee8de4
+--------
+user
+You are the ARCHITECT (Fable away) for the taut-fillings Lean 4 formalization. Design milestone M24 — the degree-3 / connected-sum reduction — in implementable detail; I implement what you specify. This is milestone 5/7 of your Theorem 2+3 audit (019ec265). Since that audit, DONE & committed: M20-M23, M22a, M25a, M25a' (the full eligible-tet existence including the deg-3 lemma you flagged as biggest risk). Read notes/codex-consults/2026-06-14-g1-m24-deg3-spec.md in full, then READ THE ACTUAL API: lean/Taut/Separation.lean (separates, exists_cut, cutSet, gammaChain, the cut lemmas), lean/Taut/Splitting.lean (IsTaut.splits and its exact hypotheses), lean/Taut/Theorem2.lean (UnitOn, SimplicialChain, removeTet, EligibleTet, the M23 closed-filter lemmas bdry_filter_apply_eq_bdry_of_no_cross + bdry_filter_subset_eq_zero_of_inter_card_two), lean/Taut/Eligible.lean (exists_eligibleTet_of_noDegree3, NoDegree3Vertex, HasDegree3Vertex), lean/Taut/Ball.lean (IsBall, GlueStep, IsBall.insert_of_glueStep, isBall_singleton, RelShelling), lean/Taut/Complex2.lean (IsSphere2, linkVerts, link_two_regular, three_le_card_linkVerts, tetraBdry, isSphere2_powersetCard3). Cross-check paper taut/taut.tex 809-813. Answer Q1-Q6 with concrete Lean. Be RUTHLESSLY HONEST about feasibility. The two hardest pieces are Q1 (deg-3 vertex ⟹ the link-triangle is a non-face when v>4, via closedness saturating the tetrahedron edges) and Q2 (the TRIANGLE-cut oriented bridge — the |A∩B|=3 analog of M23, where the side-filter must be CAPPED with γ so its boundary vanishes; give the exact integral X1,X2 construction and the sign that makes bdry Xi = 0, OR show that IsTaut.splits applied to M.filter directly already yields the capped pieces once γ∈A∩B). Also Q5: recommend whether to write the M26 strong-induction skeleton now (taking deg3_split, M25b disjoint-pair, M22b relShelling as hypotheses) or strictly M24→M22b→M25b→M26. If any piece is not tractable as one milestone, say so and recommend staging (as you did for M22/M25). End with a line that is exactly APPROVED: <one-line> or BLOCKED: <one-line reason>.
+codex
+I’ll use the repo and paper context directly here, then give you a spec rather than editing. First I’m reading the M24 note and the Lean APIs you named so the answer matches what actually exists.
+exec
+/bin/zsh -lc "sed -n '1,240p' lean/Taut/Splitting.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '1,240p' notes/codex-consults/2026-06-14-g1-m24-deg3-spec.md" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '1,260p' lean/Taut/Separation.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Theorem1
+
+/-!
+# Theorem 1 of "Taut fillings", part 2: taut fillings split
+
+Same setting as `Taut/Theorem1.lean` (`p ≠ q ∈ A ∩ B`,
+`(A ∩ B).card ≤ n+1`, `X`/`Y` closed pure `n`-chains on `A`/`B`), now with
+`n ≥ 2`: ANY taut filling `M` of `X + Y` splits as `M = M_X + M_Y` with
+`M_X` a taut filling of `X` and `M_Y` of `Y` (`IsTaut.splits`).
+
+Proof skeleton (the paper's, in general dimension):
+1. no generator of `M` is killed by both projections, for ANY admissible
+   pair `(p', q')` — else `M` would beat `Zvol X + Zvol Y`
+   (`no_double_kill`);
+2. hence every generator is pure (`⊆ A` or `⊆ B`) or extreme-hybrid
+   (`n+1` vertices on one pure side, one vertex on the other, none
+   shared) (`hybrid_structure`);
+3. extreme hybrids form a complete cone over their lone vertex, which a
+   taut chain cannot contain — the coefficient-level vanishing argument
+   flagged by the G1 auditor (`no_extreme_hybrid`);
+4. so generators are pure and the filter along `· ⊆ A` splits `M`.
+-/
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-! ## Helpers -/
+
+/-- The three-part vertex count of a simplex in `A ∪ B`. -/
+lemma card_three_part {A B t : Finset V} (htAB : t ⊆ A ∪ B) :
+    (t ∩ (A ∩ B)).card + ((t \ A).card + (t \ B).card) = t.card := by
+  have hdisj : Disjoint (t \ A) (t \ B) := by
+    rw [Finset.disjoint_left]
+    intro x hxA hxB
+    rcases Finset.mem_union.mp (htAB (Finset.mem_sdiff.mp hxA).1) with h | h
+    · exact (Finset.mem_sdiff.mp hxA).2 h
+    · exact (Finset.mem_sdiff.mp hxB).2 h
+  have hsplit : t \ (A ∩ B) = (t \ A) ∪ (t \ B) := by
+    ext x
+    simp only [Finset.mem_sdiff, Finset.mem_inter, Finset.mem_union]
+    tauto
+  have h1 := Finset.card_inter_add_card_sdiff t (A ∩ B)
+  rw [hsplit, Finset.card_union_of_disjoint hdisj] at h1
+  omega
+
+/-- The boundary as a sum over the support. -/
+lemma bdry_eq_sum (M : Chain V) :
+    bdry M = ∑ t ∈ M.support, M t • bdryGen t := by
+  rw [bdry, Finsupp.lsum_apply, Finsupp.sum]
+  exact Finset.sum_congr rfl fun s _ => LinearMap.toSpanSingleton_apply ..
+
+/-- A simplex in the support of `bdryGen t` is a facet of `t`. -/
+lemma exists_facet_of_bdryGen_ne_zero {t s : Finset V}
+    (h : bdryGen t s ≠ 0) : ∃ w ∈ t, s = t.erase w := by
+  by_contra hcon
+  push_neg at hcon
+  apply h
+  rw [bdryGen, Finset.sum_apply']
+  refine Finset.sum_eq_zero fun w hw => ?_
+  rw [Finsupp.smul_apply, Finsupp.single_apply,
+    if_neg (fun he => hcon w hw he.symm), smul_zero]
+
+/-- Pointwise boundary formula over the support. -/
+lemma bdry_apply_eq_sum (M : Chain V) (s : Finset V) :
+    bdry M s = ∑ t ∈ M.support, M t * bdryGen t s := by
+  rw [bdry_eq_sum, Finset.sum_apply']
+  exact Finset.sum_congr rfl fun t _ => by
+    rw [Finsupp.smul_apply, smul_eq_mul]
+
+/-- Supports and dimensions pass to the boundary. -/
+lemma bdry_supp_of_supp {B : Finset V} {k : ℕ} {M : Chain V}
+    (h : ∀ t ∈ M.support, t ⊆ B ∧ t.card = k + 1) :
+    ∀ s ∈ (bdry M).support, s ⊆ B ∧ s.card = k := by
+  intro s hs
+  rw [Finsupp.mem_support_iff, bdry_apply_eq_sum] at hs
+  obtain ⟨t, ht, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hs
+  have hgen : bdryGen t s ≠ 0 := fun h0 => hne (by rw [h0, mul_zero])
+  obtain ⟨w, hw, rfl⟩ := exists_facet_of_bdryGen_ne_zero hgen
+  obtain ⟨h1, h2⟩ := h t ht
+  exact ⟨(Finset.erase_subset w t).trans h1,
+    by rw [Finset.card_erase_of_mem hw, h2]; omega⟩
+
+/-- The closedness of the link, extracted from the no-internal-vertex
+argument: if `U` is supported on simplices containing `x` and its
+boundary has no `x`-part, then `lk x U` is closed. -/
+lemma bdry_lk_eq_zero {x : V} {U : Chain V} (hU : nbhd x U = U)
+    (hbU : nbhd x (bdry U) = 0) : bdry (lk x U) = 0 := by
+  have hWfree : nbhd x (lk x U) = 0 := nbhd_lk x U
+  have hWb : nbhd x (bdry (lk x U)) = 0 := nbhd_bdry_eq_zero hWfree
+  have hconeU : cone x (lk x U) = U := by rw [cone_lk, hU]
+  have hhom := bdry_cone_add_cone_bdry x (lk x U)
+  rw [hconeU] at hhom
+  have happ := congrArg (nbhd x) hhom
+  rw [nbhd_add, hbU, zero_add, nbhd_cone, hWfree] at happ
+  have h := eq_nbhd_of_cone_eq_zero happ
+  rw [hWb] at h
+  exact h
+
+/-- Two distinct elements of a set with at least two elements. -/
+lemma exists_pair_of_one_lt_card {s : Finset V} (h : 2 ≤ s.card) :
+    ∃ a ∈ s, ∃ b ∈ s, a ≠ b := by
+  obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp (show 1 < s.card by omega)
+  exact ⟨a, ha, b, hb, hab⟩
+
+/-- Kill certificates. -/
+lemma kills_of_two_sdiff {A : Finset V} (p : V) {t : Finset V}
+    (h : 2 ≤ (t \ A).card) : Kkills A p t := by
+  constructor
+  · intro hsub
+    rw [Finset.sdiff_eq_empty_iff_subset.mpr hsub] at h
+    simp at h
+  · intro hc
+    omega
+
+lemma kills_of_mem {A : Finset V} {p : V} {t : Finset V}
+    (h1 : (t \ A).card = 1) (h2 : p ∈ t) : Kkills A p t := by
+  constructor
+  · intro hsub
+    rw [Finset.sdiff_eq_empty_iff_subset.mpr hsub] at h1
+    simp at h1
+  · exact fun hc => hc.2 h2
+
+/-! ## Step 1: no generator is killed on both sides -/
+
+/-- The strengthened mass bound: a doubly-killed generator contributes
+twice. -/
+lemma nrm_add_le_killed_add_killed {A B : Finset V} {p q : V} {M : Chain V}
+    (hkill : ∀ t ∈ M.support, Kkills A p t ∨ Kkills B q t)
+    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support)
+    (hkA : Kkills A p t₀) (hkB : Kkills B q t₀) :
+    nrm M + (M t₀).natAbs ≤
+      nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) := by
+  classical
+  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+  rw [nrm_eq_sum_subset hsubA, nrm_eq_sum_subset hsubB,
+    ← Finset.sum_add_distrib, nrm]
+  have hsplit : (M t₀).natAbs
+      = ∑ s ∈ M.support, if s = t₀ then (M t₀).natAbs else 0 := by
+    rw [Finset.sum_ite_eq' M.support t₀ fun _ => (M t₀).natAbs, if_pos ht₀]
+  rw [hsplit, ← Finset.sum_add_distrib]
+  refine Finset.sum_le_sum fun s hs => ?_
+  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+  by_cases hst : s = t₀
+  · subst hst
+    rw [if_pos hkA, if_pos hkB, if_pos rfl]
+  · rw [if_neg hst, add_zero]
+    rcases hkill s hs with h | h
+    · rw [if_pos h]
+      omega
+    · rw [if_pos h]
+      split <;> omega
+
+/-- No generator of a taut filling of `X + Y` is killed by both
+projections, for ANY admissible pair of base points. -/
+lemma no_double_kill {A B : Finset V} {n : ℕ}
+    (hn : 1 ≤ n) {p q : V} (hp : p ∈ A ∩ B) (hq : q ∈ A ∩ B) (hpq : p ≠ q)
+    (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+    {p' q' : V} (hp' : p' ∈ A ∩ B) (hq' : q' ∈ A ∩ B) (hpq' : p' ≠ q')
+    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support)
+    (hkA : Kkills A p' t₀) (hkB : Kkills B q' t₀) : False := by
+  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+    intro s hs
+    rw [hM1] at hs
+    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+    · exact (hX s h).2
+    · exact (hY s h).2
+  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+    fun s hs => hMt.dim_pure hbdsupp s hs
+  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+    intro s hs; rw [hpure s hs]; omega
+  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+    intro t ht
+    refine (supp_subset_vert ht).trans ((hMt.vert_subset hdim2).trans ?_)
+    rw [hM1]
+    exact (vert_add_subset X Y).trans (Finset.union_subset_union
+      (vert_subset_of_supp fun s hs => (hX s hs).1)
+      (vert_subset_of_supp fun s hs => (hY s hs).1))
+  have hbx : bdry (Kmap A p' M) = X := by
+    rw [bdry_Kmap A (Finset.mem_inter.mp hp').1, hM1, map_add,
+      Kmap_eq_self (fun s hs => (hX s hs).1),
+      Kmap_eq_zero_of_closed hn hp' hC hY hYc, add_zero]
+  have hby : bdry (Kmap B q' M) = Y := by
+    rw [bdry_Kmap B (Finset.mem_inter.mp hq').2, hM1, map_add,
+      Kmap_eq_self (fun s hs => (hY s hs).1),
+      Kmap_eq_zero_of_closed hn (Finset.inter_comm A B ▸ hq')
+        (Finset.inter_comm A B ▸ hC) hX hXc, zero_add]
+  have h1 := nrm_Kmap_add_killed_le A p' M
+  have h2 := nrm_Kmap_add_killed_le B q' M
+  have h3 := nrm_add_le_killed_add_killed
+    (fun t ht => Kkills_or_Kkills hp' hq' hpq' hC (hsuppAB t ht) (hpure t ht))
+    ht₀ hkA hkB
+  have h4 : Zvol X ≤ nrm (Kmap A p' M) := Zvol_le hbx
+  have h5 : Zvol Y ≤ nrm (Kmap B q' M) := Zvol_le hby
+  have hadd := Zvol_add_of_almost_disjoint hn hp hq hpq hC hX hY hXc hYc
+  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+  have ht0ne : (M t₀).natAbs ≠ 0 :=
+    Int.natAbs_ne_zero.mpr (Finsupp.mem_support_iff.mp ht₀)
+  omega
+
+/-! ## Step 2: generators are pure or extreme hybrids -/
+
+/-- With `n ≥ 2`, every generator of a taut filling of `X + Y` is pure
+(`⊆ A` or `⊆ B`) or an extreme hybrid: exactly one vertex on the
+opposite pure side and no shared vertices. -/
+lemma hybrid_structure {A B : Finset V} {n : ℕ}
+    (hn : 2 ≤ n) {p q : V} (hp : p ∈ A ∩ B) (hq : q ∈ A ∩ B) (hpq : p ≠ q)
+    (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+    (hpure : ∀ s ∈ M.support, s.card = n + 2)
+    (hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B)
+    {t : Finset V} (ht : t ∈ M.support) :
+    t ⊆ A ∨ t ⊆ B ∨
+    ((t \ A).card = 1 ∧ t ∩ (A ∩ B) = ∅) ∨
+    ((t \ B).card = 1 ∧ t ∩ (A ∩ B) = ∅) := by
+  have hn1 : 1 ≤ n := by omega
+  have hpart := card_three_part (hsuppAB t ht)
+  rw [hpure t ht] at hpart
+  by_cases hxa : (t \ A).card = 0
+  · exact Or.inl (Finset.sdiff_eq_empty_iff_subset.mp
+      (Finset.card_eq_zero.mp hxa))
+  by_cases hxb : (t \ B).card = 0
+  · exact Or.inr (Or.inl (Finset.sdiff_eq_empty_iff_subset.mp
+      (Finset.card_eq_zero.mp hxb)))
+  -- both parts nonempty: a hybrid
+  by_cases hc0 : (t ∩ (A ∩ B)).card = 0
+  · -- no shared vertices: must be extreme on one side
+    by_cases hxa1 : (t \ A).card = 1
+
+ succeeded in 0ms:
+import Taut.Homology2
+
+/-!
+# The separation theorem
+
+H₁ = 0 (`range_bd2_eq_ker_bd1`) turned into the geometric cut: a non-face
+triangle γ in a combinatorial 2-sphere σ partitions the faces into two sides,
+each of which caps with γ to a sphere.
+
+The γ-edge 1-chain is a cycle (each vertex of γ lies in two of its edges), so by
+H₁ = 0 it bounds a face-set `W`; `σ₁ := W.support`, `σ₂ := σ \ σ₁`. The defining
+identity `∂₂W = vγ` says: every edge has an *even* number of `σ₁`-faces unless it
+is a γ-edge, where the count is *odd* (= 1). With σ's `closed` (≤ 2 faces per
+edge) this pins the cut and drives the sphere-hood of the pieces.
+-/
+
+namespace Taut
+
+open Module Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-- The 1-chain supported on the edges of `γ`. -/
+def gammaChain (σ : Finset (Finset V)) (γ : Finset V) : C1 σ :=
+  fun e => if (e : Finset V) ⊆ γ then 1 else 0
+
+/-- The γ-edge 1-chain is a cycle: every vertex lies in an even number of γ's
+edges (two, if on γ; none otherwise). -/
+lemma bd1_gammaChain {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) : bd1 σ (gammaChain σ γ) = 0 := by
+  classical
+  funext x
+  show bd1 σ (gammaChain σ γ) x = 0
+  rw [bd1_apply]
+  have hstep : ∀ e : edgesOf σ,
+      (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0) * gammaChain σ γ e
+        = (if (x : V) ∈ (e : Finset V) ∧ (e : Finset V) ⊆ γ then (1 : ZMod 2) else 0) := by
+    intro e
+    simp only [gammaChain]
+    by_cases h1 : (x : V) ∈ (e : Finset V) <;> by_cases h2 : (e : Finset V) ⊆ γ <;>
+      simp [h1, h2]
+  rw [Finset.sum_congr rfl (fun e _ => hstep e),
+    Finset.sum_coe_sort (edgesOf σ)
+      (fun e => if (x : V) ∈ e ∧ e ⊆ γ then (1 : ZMod 2) else 0),
+    Finset.sum_boole, card_edges_through_vertex hγe hγ3 x]
+  split <;> decide
+
+/-- **The cut exists.** A non-face triangle's edge-cycle bounds a face-set `W`
+(this is exactly where H₁ = 0 is spent). -/
+theorem exists_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
+    ∃ W : C2 σ, bd2 σ W = gammaChain σ γ := by
+  have hcyc : gammaChain σ γ ∈ LinearMap.ker (bd1 σ) :=
+    LinearMap.mem_ker.mpr (bd1_gammaChain hγ3 hγe)
+  rw [← range_bd2_eq_ker_bd1 h] at hcyc
+  exact LinearMap.mem_range.mp hcyc
+
+/-! ## The two sides -/
+
+/-- One side of the cut: the faces on which the bounding chain `W` is `1`. -/
+noncomputable def cutSet (σ : Finset (Finset V)) (W : C2 σ) : Finset (Finset V) :=
+  (Finset.univ.filter (fun f : σ => W f = 1)).image Subtype.val
+
+lemma mem_cutSet {σ : Finset (Finset V)} {W : C2 σ} {g : Finset V} :
+    g ∈ cutSet σ W ↔ ∃ hg : g ∈ σ, W ⟨g, hg⟩ = 1 := by
+  simp only [cutSet, Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and]
+  constructor
+  · rintro ⟨⟨g', hg'⟩, hW, rfl⟩; exact ⟨hg', hW⟩
+  · rintro ⟨hg, hW⟩; exact ⟨⟨g, hg⟩, hW, rfl⟩
+
+lemma cutSet_subset {σ : Finset (Finset V)} {W : C2 σ} : cutSet σ W ⊆ σ := by
+  intro g hg; obtain ⟨hg', _⟩ := mem_cutSet.mp hg; exact hg'
+
+/-- The defining parity of the cut: across each edge, the two faces' `W`-values
+sum to `1` iff the edge lies on `γ`. -/
+lemma edge_cut_parity {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) {e : Finset V} (he : e ∈ edgesOf σ)
+    {f₁ f₂ : Finset V} (h1 : f₁ ∈ σ) (h2 : f₂ ∈ σ) (hne : f₁ ≠ f₂)
+    (he1 : e ⊆ f₁) (he2 : e ⊆ f₂) (huniq : ∀ f ∈ σ, e ⊆ f → f = f₁ ∨ f = f₂) :
+    W ⟨f₁, h1⟩ + W ⟨f₂, h2⟩ = if e ⊆ γ then 1 else 0 := by
+  have hb := bd2_at_edge W he h1 h2 hne he1 he2 huniq
+  rw [hW] at hb
+  rw [← hb]
+  simp only [gammaChain]
+
+/-! ## The pieces are closed pseudomanifolds -/
+
+variable {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+
+/-- Edges of a capped side are edges of σ. -/
+lemma edgesOf_cut_subset (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
+    edgesOf (insert γ (cutSet σ W)) ⊆ edgesOf σ := by
+  intro e he
+  obtain ⟨f, hf, hef, hc⟩ := mem_edgesOf.mp he
+  rcases Finset.mem_insert.mp hf with rfl | hf
+  · exact hγe (Finset.mem_powersetCard.mpr ⟨hef, hc⟩)
+  · exact mem_edgesOf.mpr ⟨f, cutSet_subset hf, hef, hc⟩
+
+/-- The edge-degree in a capped side splits into the γ-contribution and the
+cut-faces through the edge. -/
+lemma edgeDeg_cut (hγσ : γ ∉ σ) (e : Finset V) :
+    edgeDeg (insert γ (cutSet σ W)) e
+      = (if e ⊆ γ then 1 else 0) + ((cutSet σ W).filter (fun f => e ⊆ f)).card := by
+  rw [edgeDeg, Finset.filter_insert]
+  by_cases heγ : e ⊆ γ
+  · rw [if_pos heγ, Finset.card_insert_of_notMem
+      (fun hγf => hγσ (cutSet_subset (Finset.mem_of_mem_filter _ hγf))), if_pos heγ, add_comm]
+  · rw [if_neg heγ, if_neg heγ, zero_add]
+
+/-- **`closed` for the pieces.** Every edge of a capped side lies in exactly two
+of its faces, by the cut parity. -/
+lemma closed_cut (h : IsSphere2 σ) (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ) (hW : bd2 σ W = gammaChain σ γ) :
+    ∀ e ∈ edgesOf (insert γ (cutSet σ W)),
+      edgeDeg (insert γ (cutSet σ W)) e = 2 := by
+  classical
+  intro e he
+  have heσ : e ∈ edgesOf σ := edgesOf_cut_subset hγe he
+  obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h.toClosedSurface heσ
+  -- the cut-faces through e are exactly those of {f₁,f₂} in the cut set
+  have hfilter : (cutSet σ W).filter (fun f => e ⊆ f)
+      = ({f₁, f₂} : Finset (Finset V)).filter (fun f => f ∈ cutSet σ W) := by
+    ext g
+    simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+    constructor
+    · rintro ⟨hg, heg⟩; exact ⟨huniq g (cutSet_subset hg) heg, hg⟩
+    · rintro ⟨hg12, hgc⟩; exact ⟨hgc, by rcases hg12 with rfl | rfl; exacts [he1, he2]⟩
+  have hpar := edge_cut_parity hW heσ h1 h2 hne he1 he2 huniq
+  have hmem1 : f₁ ∈ cutSet σ W ↔ W ⟨f₁, h1⟩ = 1 := by
+    rw [mem_cutSet]; exact ⟨fun ⟨_, hh⟩ => hh, fun hh => ⟨h1, hh⟩⟩
+  have hmem2 : f₂ ∈ cutSet σ W ↔ W ⟨f₂, h2⟩ = 1 := by
+    rw [mem_cutSet]; exact ⟨fun ⟨_, hh⟩ => hh, fun hh => ⟨h2, hh⟩⟩
+  rw [edgeDeg_cut hγσ, hfilter, Finset.card_filter, Finset.sum_pair hne]
+  simp only [hmem1, hmem2]
+  have hzo : ∀ a : ZMod 2, a = 0 ∨ a = 1 := by decide
+  by_cases heγ : e ⊆ γ
+  · -- parity = 1: exactly one face in the cut
+    rw [if_pos heγ] at hpar ⊢
+    obtain h1' | h1' := hzo (W ⟨f₁, h1⟩) <;> obtain h2' | h2' := hzo (W ⟨f₂, h2⟩) <;>
+      rw [h1', h2'] at hpar ⊢ <;> simp_all
+  · -- parity = 0: zero or two; `e ∈ edgesOf` of the piece rules out zero
+    rw [if_neg heγ] at hpar ⊢
+    have hone : W ⟨f₁, h1⟩ = 1 ∨ W ⟨f₂, h2⟩ = 1 := by
+      obtain ⟨g, hg, heg, _⟩ := mem_edgesOf.mp he
+      rcases Finset.mem_insert.mp hg with rfl | hg
+      · exact absurd heg heγ
+      · rcases huniq g (cutSet_subset hg) heg with rfl | rfl
+        · exact Or.inl (hmem1.mp hg)
+        · exact Or.inr (hmem2.mp hg)
+    obtain h1' | h1' := hzo (W ⟨f₁, h1⟩) <;> obtain h2' | h2' := hzo (W ⟨f₂, h2⟩) <;>
+      rw [h1', h2'] at hpar hone ⊢ <;> simp_all
+
+/-! ## The pieces are connected -/
+
+/-- `∂₁c` at a vertex `x` lying on exactly the two support-edges `e₁, e₂` equals
+`c e₁ + c e₂`. -/
+lemma bd1_eval_two {σ : Finset (Finset V)} {c : C1 σ} {x : V} (hx : x ∈ vertsOf σ)
+    {e₁ e₂ : edgesOf σ} (hne : e₁ ≠ e₂) (hx1 : x ∈ (e₁ : Finset V)) (hx2 : x ∈ (e₂ : Finset V))
+    (honly : ∀ e : edgesOf σ, x ∈ (e : Finset V) → c e ≠ 0 → e = e₁ ∨ e = e₂) :
+    bd1 σ c ⟨x, hx⟩ = c e₁ + c e₂ := by
+  classical
+  rw [bd1_apply]
+  rw [← Finset.sum_subset (Finset.subset_univ {e₁, e₂}) (fun e _ hes => ?_)]
+  · rw [Finset.sum_pair hne, if_pos hx1, if_pos hx2, one_mul, one_mul]
+  · -- terms off {e₁,e₂} vanish
+    by_cases hxe : x ∈ (e : Finset V)
+    · by_cases hce : c e = 0
+      · rw [hce, mul_zero]
+      · rcases honly e hxe hce with rfl | rfl <;> simp_all
+    · rw [if_neg hxe, zero_mul]
+
+/-- A 1-cycle supported on the edges of `γ` (a triangle whose 2-subsets are
+edges) is `0` or the whole γ-cycle: `∂₁ = 0` forces the three coefficients
+equal. -/
+lemma gammaCycle_dichotomy {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) {c : C1 σ} (hc : bd1 σ c = 0)
+    (hsupp : ∀ e : edgesOf σ, c e ≠ 0 → (e : Finset V) ⊆ γ) :
+    c = 0 ∨ c = gammaChain σ γ := by
+  classical
+  obtain ⟨a, b, d, hab, had, hbd, hγ⟩ := Finset.card_eq_three.mp hγ3
+  have mk : ∀ {p q : V}, p ≠ q → ({p, q} : Finset V) ⊆ γ → ({p, q} : Finset V) ∈ edgesOf σ :=
+    fun hpq hsub => hγe (Finset.mem_powersetCard.mpr ⟨hsub, Finset.card_pair hpq⟩)
+  have sab : ({a, b} : Finset V) ⊆ γ := by
+    rw [hγ]; intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+  have sad : ({a, d} : Finset V) ⊆ γ := by
+    rw [hγ]; intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+  have sbd : ({b, d} : Finset V) ⊆ γ := by
+    rw [hγ]; intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢; tauto
+  set eab : edgesOf σ := ⟨{a, b}, mk hab sab⟩ with heab
+  set ead : edgesOf σ := ⟨{a, d}, mk had sad⟩ with head
+  set ebd : edgesOf σ := ⟨{b, d}, mk hbd sbd⟩ with hebd
+  -- every γ-edge is one of the three
+  have tri : ∀ e : edgesOf σ, (e : Finset V) ⊆ γ → e = eab ∨ e = ead ∨ e = ebd := by
+    intro e hsub
+    obtain ⟨p, q, hpq, hpqe⟩ := Finset.card_eq_two.mp (card_of_mem_edgesOf e.2)
+    rw [hγ] at hsub
+    have hp : p ∈ ({a, b, d} : Finset V) := hsub (hpqe ▸ by simp)
+    have hq : q ∈ ({a, b, d} : Finset V) := hsub (hpqe ▸ by simp)
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hp hq
+    have key : (e : Finset V) = {a, b} ∨ (e : Finset V) = {a, d} ∨ (e : Finset V) = {b, d} := by
+      rw [hpqe]
+      rcases hp with rfl | rfl | rfl <;> rcases hq with rfl | rfl | rfl <;>
+        first
+          | exact absurd rfl hpq
+          | exact Or.inl rfl
+          | exact Or.inl (Finset.pair_comm _ _)
+          | exact Or.inr (Or.inl rfl)
+          | exact Or.inr (Or.inl (Finset.pair_comm _ _))
+          | exact Or.inr (Or.inr rfl)
+          | exact Or.inr (Or.inr (Finset.pair_comm _ _))
+    rcases key with h | h | h
+    · exact Or.inl (Subtype.ext h)
+    · exact Or.inr (Or.inl (Subtype.ext h))
+    · exact Or.inr (Or.inr (Subtype.ext h))
+  have ha : a ∈ vertsOf σ := edge_mem_vertsOf (mk hab sab) (by simp)
+  have hb : b ∈ vertsOf σ := edge_mem_vertsOf (mk hab sab) (by simp)
+  have hd : d ∈ vertsOf σ := edge_mem_vertsOf (mk had sad) (by simp)
+  have ne_ab_ad : eab ≠ ead := by
+    rw [heab, head, ne_eq, Subtype.mk.injEq]; intro h
+    have : b ∈ ({a, d} : Finset V) := h ▸ by simp
+    simp only [Finset.mem_insert, Finset.mem_singleton] at this; tauto
+  have ne_ab_bd : eab ≠ ebd := by
+    rw [heab, hebd, ne_eq, Subtype.mk.injEq]; intro h
+    have : a ∈ ({b, d} : Finset V) := h ▸ by simp
+    simp only [Finset.mem_insert, Finset.mem_singleton] at this; tauto
+  have ne_ad_bd : ead ≠ ebd := by
+    rw [head, hebd, ne_eq, Subtype.mk.injEq]; intro h
+    have : a ∈ ({b, d} : Finset V) := h ▸ by simp
+    simp only [Finset.mem_insert, Finset.mem_singleton] at this; tauto
+  -- the three vertex equations
+  have hva : c eab + c ead = 0 := by
+    have honly : ∀ e : edgesOf σ, a ∈ (e : Finset V) → c e ≠ 0 → e = eab ∨ e = ead := by
+      intro e hxe hce
+      rcases hone : tri e (hsupp e hce) with h | h | h
+      · exact Or.inl h
+      · exact Or.inr h
+      · exact absurd (h ▸ hxe) (by rw [hebd]; simp only [Finset.mem_insert, Finset.mem_singleton]; tauto)
+    rw [← bd1_eval_two ha ne_ab_ad (by rw [heab]; simp) (by rw [head]; simp) honly, hc]; rfl
+  have hvb : c eab + c ebd = 0 := by
+    have honly : ∀ e : edgesOf σ, b ∈ (e : Finset V) → c e ≠ 0 → e = eab ∨ e = ebd := by
+      intro e hxe hce
+      rcases tri e (hsupp e hce) with h | h | h
+      · exact Or.inl h
+      · exact absurd (h ▸ hxe) (by rw [head]; simp only [Finset.mem_insert, Finset.mem_singleton]; tauto)
+      · exact Or.inr h
+    rw [← bd1_eval_two hb ne_ab_bd (by rw [heab]; simp) (by rw [hebd]; simp) honly, hc]; rfl
+  -- so the three coefficients are equal
+  have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
+  have e1 : c ead = c eab := (c2 _ _ hva).symm
+  have e2 : c ebd = c eab := (c2 _ _ hvb).symm
+  -- c = (c eab) • gammaChain
+  have hrep : c = (c eab) • gammaChain σ γ := by
+    funext e
+    simp only [Pi.smul_apply, gammaChain, smul_eq_mul]
+    by_cases hsub : (e : Finset V) ⊆ γ
+    · rw [if_pos hsub, mul_one]
+      rcases tri e hsub with h | h | h
+      · rw [h]
+      · rw [h, e1]
+      · rw [h, e2]
+
+ succeeded in 0ms:
+# Architect request (codex): M24 — degree-3 / connected-sum reduction
+
+Role: codex architect (Fable away). Design M24 in implementable Lean detail; I
+implement what you specify. M24 is milestone 5/7 of your Theorem 2+3 audit
+(019ec265). DONE & committed since: M20–M23, M22a, M25a, M25a' (the full eligible-
+tet existence incl. the deg-3 lemma you flagged as the biggest risk).
+
+## The paper (taut.tex 809-813)
+"Because taut fillings split under connected sum, we can assume that σ is prime
+(not a connected sum along a triangle), and in particular that there is no vertex
+of degree 3." So the induction's FIRST branch handles a degree-3 vertex: split σ
+along the link-triangle and recurse. (M25's `NoDegree3Vertex σ` is the hypothesis
+this branch DISCHARGES — M24 establishes "may assume no-degree-3" by handling the
+deg-3 case via splitting.)
+
+## Existing Lean (all committed, building, no sorry)
+- `separates` (Separation.lean): a non-face triangle γ (card 3, edges ⊆ edgesOf σ,
+  γ∉σ) of `IsSphere2 σ` cuts into `IsSphere2 (insert γ σ₁)` and `IsSphere2 (insert
+  γ σ₂)`, where σ₁ = `cutSet σ W`, σ₂ = `σ \ cutSet σ W` (the W from `exists_cut`).
+- `IsTaut.splits` (Splitting.lean): for n≥2, `p≠q∈A∩B`, `(A∩B).card ≤ n+1`, closed
+  pure X on A / Y on B, `bdry M = X+Y`, `IsTaut M` ⟹ M splits as taut M_X + M_Y
+  (filter along `·⊆A`).
+- M23 (Theorem2.lean): the EDGE-join (|A∩B|=2) closed-filter core
+  `bdry_filter_subset_eq_zero_of_inter_card_two` — for an edge-join the side-filter
+  is already closed (no cap). For a TRIANGLE-join (|A∩B|=3) the side-filter has
+  boundary ±γ and must be CAPPED with γ — this is the new piece.
+- M25 (Eligible.lean): `exists_eligibleTet_of_noDegree3`, `NoDegree3Vertex σ :=
+  ∀ v∈vertsOf σ, (linkVerts σ v).card ≠ 3`, `HasDegree3Vertex`, `link_two_regular`,
+  `three_le_card_linkVerts`.
+- M22a (Ball.lean): `IsBall.insert_of_glueStep` (grow a ball by a 1-or-2-face
+  GlueStep tet), `RelShelling`, `IsBall.bridge_of_relShelling`. `isBall_singleton`
+  (one tet is a ball). `GlueStep` shared = 1 or 2 faces.
+- `UnitOn`, `SimplicialChain`, `removeTet`, `EligibleTet` (Theorem2.lean).
+
+## Design questions
+Q1. **Deg-3 vertex ⟹ a non-face link-triangle.** For `v ∈ vertsOf σ` with
+    `(linkVerts σ v).card = 3` and `σ ≠ tetraBdry` (v>4), show the link-triangle
+    γ = (the 3 link vertices) is a non-face of σ with `γ.powersetCard 2 ⊆ edgesOf
+    σ` (so `separates` applies). Sketch: the 3 faces at v are {v}∪(pairs of γ);
+    the 3 γ-edges are present; if γ∈σ then σ = ∂(tet on v∪γ) (closedness saturates
+    every edge among the 4 vertices) ⟹ σ = tetraBdry, contradiction. State the
+    precise lemma(s) and which `IsSphere2`/link facts to use (`link_two_regular`,
+    closed, the 3 faces). Is `σ ≠ tetraBdry` the right v>4 hypothesis, or should I
+    phrase it as `4 < (vertsOf σ).card`?
+Q2. **The triangle-cut oriented bridge** (the M23 analog for |A∩B|=3). I need: from
+    `bdry M = X` a unit cycle on σ, the separation `σ = σ₁ ⊔ σ₂` along γ, produce
+    integral closed `X₁, X₂` with `X₁` supported on `insert γ σ₁`, `X₂` on `insert
+    γ σ₂`, `X₁ + X₂ = X`, each `bdry Xᵢ = 0`. Unlike the edge-join, the side-filter
+    `X.filter (·⊆A)` has boundary ±(γ-cycle); cap it: `X₁ = X.filter(·∈σ₁) ± gamma
+    Chain-as-2chain`? Give the exact construction — what is the γ-cap (a `±single
+    γ 1`?), what fixes its sign (orientation coherence so `bdry X₁ = 0`), and how
+    `X₁+X₂ = X` (the two caps cancel). This is your Q4 `oriented_split_chains_of_
+    separates`. Is it cleaner to build X₁,X₂ via `IsTaut.splits` directly (filter M,
+    not X) — i.e. does splits' `M.filter(·⊆A)` already give the capped pieces once
+    γ∈A∩B? Recommend the minimal route.
+Q3. **The deg-3 side is a single tet.** One side σ₁ = {the 3 faces at v}; capped
+    with γ it is `tetraBdry (v,a,b,c) = (insert v γ).powersetCard 3`, whose taut
+    filling is the single tet `insert v γ` (`isBall_singleton`, Zvol = 1).
+    Reassembly: gluing tet `insert v γ` onto the other ball B₂ shares exactly the
+    one face γ ⟹ a 1-face `GlueStep` ⟹ `IsBall.insert_of_glueStep`. Confirm this
+    is case-1 reassembly (reuses M22a), and state how M24 hands the recursion the
+    "other side is a strictly smaller taut filling".
+Q4. **M24 vs M26 boundary.** Should M24 deliver a standalone lemma `deg3_split`
+    (σ has a deg-3 vertex ⟹ ∃ the two sphere pieces + the chain split + nrm drop),
+    consumed by M26's induction? Or fold the recursion into M26 and have M24
+    provide only the non-face fact (Q1) + the triangle bridge (Q2)? Recommend the
+    cleanest interface so M26 stays a clean strong-induction.
+Q5. **Should I skeleton M26 first?** Given M23+M25 are done and the bridge (Q2) is
+    the last shared piece, would it be cleaner to write the M26 strong-induction
+    SKELETON now (taking `deg3_split`, the disjoint pair M25b, and `relShelling_of_
+    separated_cap` M22b as explicit hypotheses), so the remaining work becomes
+    named holes? Or strictly M24 → M22b → M25b → M26? Recommend the order.
+Q6. Decompose M24 into named lemmas + dependency order. Flag new primitives.
+
+End with `APPROVED: <one-line>` or `BLOCKED: <one-line reason>`.
+
+codex
+The separation file already contains the mod-2 geometric cut and capped sphere proof. I’m now checking the exact integer chain API and the post-M23 filter lemmas, because Q2 lives or dies on the signs and on what `IsTaut.splits` expects.
+exec
+/bin/zsh -lc "sed -n '760,840p' taut/taut.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+In this case $\sigma$ is necessarily a clean complex.
+Secretly we imagine that we've prescribed a specific homeomorphism,
+at least up to the point of picking out one particular orientation
+$X(\sigma) \in C_n$ if $M$ is oriented,
+but we don't insist upon this because nothing will depend on which
+orientation we pick.
+
+This notion of triangulation is not as general as you might want
+for some purposes.
+The double cover of a triangle is not a simplicial triangulation
+of $S^2$,
+because that would requires two distinct
+$2$-simplices to have the same three edges.
+Nor can any $2$-simplex have two of its edges
+glued to one another.
+Thurston
+\cite{thurston:shapes}
+allows such triangulations,
+but it is unclear how important these are to
+his theory of shapes of surfaces.
+We don't allow them.
+
+We continue to think of a chain $M \in C_n$ as a multiset of
+oriented $n$-simplices.
+If this is only nominally a multiset (all multiplicites are $1$)
+we'll call $M$ \emph{simplicial},
+and view it as arising from a pure simplicial complex.
+\end{comment}
+
+\section{Filling a triangulation of the 2-sphere}
+
+\begin{theorem} \label{th2}
+Let $\sigma$ be a simplicial triangulation of $S^2$.
+Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$.
+\end{theorem}
+
+\proofstart
+
+Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial triangulation
+of $S^2$ with $M$ a taut filling of $\sigma$.
+Call a filling pair \emph{good}
+if $X$ arises from a simplicial triangulation of $B^3$.
+We aim to show that all filling pairs are good.
+
+We will argue by contradiction.
+Let $(\sigma,M)$ be a bad filling pair for which
+$|M|$ is minimal over all filling pairs.
+Let $v,e=3v-6,f=2v-4$ count vertices, edges, and faces of $\sigma$.
+Obviously $v>4$.
+Because taut fillings split under connected sum,
+we can assume that $\sigma$ is prime
+(not a connected sum along a triangle),
+and in particular (this is all we will need) that there is no
+vertex of degree $3$.
+
+Call a tet $t \in M$ \emph{eligible} if it shares two of its oriented faces
+with $\sigma$. (It can't share more that 2 faces,
+since $\sigma$ has no vertex of
+degree $3$.)
+By Proposition \ref{maxdeg}
+\[
+|M| = \Zvol(\sigma) \leq f-\maxdeg(\sigma)
+.
+\]
+Regarding $M$ as a multiset of tets, associate to every 2-simplex $\alpha$ of
+$\sigma$ some element of $M$ of which $\alpha$ is a properly oriented face.
+This map is at most 2-to-1, because no tet of $M$ has more than two faces
+on the boundary,
+so there must be at least $\maxdeg$ elements of $M$ where this map is 2-to-1,
+giving us at least $\maxdeg$ disjointly eligible tets,
+meaning eligible tets  whose pairs of boundary faces
+are mutually disjoint.
+For the nonce we will only need two such tets.
+
+Consider an eligible tet $t$ with boundary faces
+$s_1=[a,b,c],s_2=[b,a,d]$.
+Removing $t$ from $M$ produces a filling $M-t$
+of a 2-complex $\sigma_t$, where the faces $s_1,s_2$ have been replaced
+by faces $[c,d,b],[d,c,a]$,
+with the unoriented edge $ab$ having been `flipped' to become edge $cd$.
+There are two possibilities for the simplicial complex $\sigma_t$:
+
+exec
+/bin/zsh -lc "sed -n '1,260p' lean/Taut/Eligible.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Theorem2
+
+/-!
+# Eligible tets (M25, architect: codex 019ec428)
+
+For the Theorem-2 induction we need, in a no-degree-3 taut filling, an *eligible*
+tet — one sharing two oriented faces with the boundary.
+The route (paper §"Filling a triangulation of the 2-sphere", the 2-to-1 count):
+
+* every boundary face `α` (`∂M α = ±1`) is a *properly oriented* face of some tet
+  of `M` — `∂M α` is a sum of `{-1,0,1}` tet contributions, so one of them equals
+  `∂M α`. The tet is chosen, not unique;
+* the choice map `σ → M.support` has fibers `⊆ sharedFaces`, hence (no deg-3)
+  `≤ 2`; a *double* fiber is an eligible tet;
+* a count + Prop 2 (`Zvol_add_deg_le`) forces a double fiber to exist.
+
+M25a here: the face→tet layer and `exists_eligibleTet` modulo the
+`sharedFaces ≤ 2` bound (the hard deg-3 lemma is M25a').
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-- The tet's contribution at a face, unfolded: `M t · ∂(t)` at that face. -/
+lemma tetContribution_apply (M : Chain V) (t α : Finset V) :
+    tetContribution M t α = M t * bdryGen t α := by
+  rw [tetContribution, bdry_single, Finsupp.smul_apply, smul_eq_mul]
+
+/-- `∂(t)` evaluated at any face is `-1`, `0`, or `1` (a sign, or absent). -/
+lemma bdryGen_apply_mem_pm (t α : Finset V) :
+    bdryGen t α = -1 ∨ bdryGen t α = 0 ∨ bdryGen t α = 1 := by
+  by_cases h : ∃ x ∈ t, α = t.erase x
+  · obtain ⟨x, hx, rfl⟩ := h
+    rw [bdryGen_apply_erase_of_mem hx]
+    rcases mul_self_eq_one_iff.mp (sgn_mul_self x t) with h1 | h1
+    · exact Or.inr (Or.inr h1)
+    · exact Or.inl h1
+  · push_neg at h
+    refine Or.inr (Or.inl ?_)
+    rw [bdryGen, Finset.sum_apply']
+    refine Finset.sum_eq_zero fun x hx => ?_
+    rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne (h x hx), smul_zero]
+
+/-- `α` is a *properly oriented boundary face* of the tet `t`: a genuine tet of
+`M` whose contribution at `α` accounts for the whole boundary coefficient. -/
+def ProperBoundaryFaceTet (M : Chain V) (α t : Finset V) : Prop :=
+  t ∈ M.support ∧ α ∈ tetFaces t ∧ (bdry M) α = tetContribution M t α
+
+/-- **Every boundary face is properly oriented by some tet.** `∂M α = ±1` is a
+sum of `{-1,0,1}` tet contributions, so one of them equals `∂M α`. -/
+lemma exists_properBoundaryFaceTet {M : Chain V} (hS : SimplicialChain M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) {α : Finset V}
+    (hαpm : (bdry M) α = 1 ∨ (bdry M) α = -1) :
+    ∃ t, ProperBoundaryFaceTet M α t := by
+  have hbound : ∀ t ∈ M.support, M t * bdryGen t α = -1 ∨ M t * bdryGen t α = 0
+      ∨ M t * bdryGen t α = 1 := by
+    intro t _
+    rcases hS t with hm | hm | hm <;> rcases bdryGen_apply_mem_pm t α with hg | hg | hg <;>
+      rw [hm, hg] <;> decide
+  have hsum : bdry M α = ∑ t ∈ M.support, M t * bdryGen t α := bdry_apply_eq_sum M α
+  have hkey : ∃ t ∈ M.support, M t * bdryGen t α = bdry M α := by
+    by_contra hcon
+    push_neg at hcon
+    rcases hαpm with hp | hp
+    · have hle : (∑ t ∈ M.support, M t * bdryGen t α) ≤ 0 := by
+        refine Finset.sum_nonpos fun t ht => ?_
+        rcases hbound t ht with h | h | h
+        · rw [h]; decide
+        · rw [h]
+        · exact absurd (h.trans hp.symm) (hcon t ht)
+      rw [← hsum, hp] at hle; exact absurd hle (by decide)
+    · have hge : (0 : ℤ) ≤ ∑ t ∈ M.support, M t * bdryGen t α := by
+        refine Finset.sum_nonneg fun t ht => ?_
+        rcases hbound t ht with h | h | h
+        · exact absurd (h.trans hp.symm) (hcon t ht)
+        · rw [h]
+        · rw [h]; decide
+      rw [← hsum, hp] at hge; exact absurd hge (by decide)
+  obtain ⟨t, ht, hval⟩ := hkey
+  refine ⟨t, ht, ?_, ?_⟩
+  · -- α ∈ tetFaces t : bdryGen t α ≠ 0
+    have hgne : bdryGen t α ≠ 0 := by
+      intro h0; rw [h0, mul_zero] at hval
+      rcases hαpm with hp | hp <;> rw [hp] at hval <;> exact absurd hval.symm (by decide)
+    obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero hgne
+    exact hαe ▸ erase_mem_tetFaces (hPure t ht) hw
+  · rw [tetContribution_apply, hval]
+
+/-- **One eligible tet exists** (M25a), given the no-degree-3 face bound
+`sharedFaces ≤ 2`. Two boundary faces collide under the face→tet choice map
+(there are more faces than tets, by Prop 2), so their common tet has two shared,
+coefficient-matched faces — an eligible tet. -/
+theorem exists_eligibleTet {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2) :
+    ∃ t, EligibleTet M t := by
+  classical
+  have hcov : ∀ α ∈ σ, ∃ t, ProperBoundaryFaceTet M α t := fun α hα =>
+    exists_properBoundaryFaceTet hS hPure (hU.2 α hα)
+  let f : {α // α ∈ σ} → {t // t ∈ M.support} := fun α =>
+    ⟨Classical.choose (hcov α.1 α.2), (Classical.choose_spec (hcov α.1 α.2)).1⟩
+  have hfspec : ∀ α : {α // α ∈ σ}, ProperBoundaryFaceTet M α.1 (f α).1 := fun α =>
+    Classical.choose_spec (hcov α.1 α.2)
+  -- Prop 2: more boundary faces than tets
+  have hcard : M.support.card < σ.card := by
+    obtain ⟨x, hx⟩ : ∃ x, x ∈ vert (bdry M) := by
+      obtain ⟨s, hs⟩ := hσ.nonempty
+      obtain ⟨y, hy⟩ : s.Nonempty := by rw [← Finset.card_pos, hσ.pure s hs]; omega
+      exact ⟨y, mem_vert.mpr ⟨s, hU.1 ▸ hs, hy⟩⟩
+    have hdeg : 1 ≤ deg x (bdry M) := Nat.pos_of_ne_zero fun h => (deg_eq_zero_iff.mp h) hx
+    have h2 := Zvol_add_deg_le x (bdry_bdry M)
+    rw [← hT, UnitOn.nrm_eq hU, nrm_eq_support_card_of_simplicial hS] at h2
+    omega
+  -- two faces collide
+  obtain ⟨α₁, _, α₂, _, hne, heq⟩ :=
+    Finset.exists_ne_map_eq_of_card_lt_of_maps_to
+      (s := (Finset.univ : Finset {α // α ∈ σ}))
+      (t := (Finset.univ : Finset {t // t ∈ M.support})) (f := f)
+      (by rw [Finset.card_univ, Finset.card_univ, Fintype.card_coe, Fintype.card_coe]; exact hcard)
+      (fun a _ => Finset.mem_univ _)
+  have ht : (f α₁).1 ∈ M.support := (f α₁).2
+  have hαne : (α₁ : Finset V) ≠ (α₂ : Finset V) := fun h => hne (Subtype.ext h)
+  have htt : (f α₁).1 = (f α₂).1 := congrArg Subtype.val heq
+  have hα₁sh : (α₁ : Finset V) ∈ sharedFaces M (f α₁).1 :=
+    Finset.mem_inter.mpr ⟨(hfspec α₁).2.1, hU.1 ▸ α₁.2⟩
+  have hα₂sh : (α₂ : Finset V) ∈ sharedFaces M (f α₁).1 :=
+    Finset.mem_inter.mpr ⟨htt ▸ (hfspec α₂).2.1, hU.1 ▸ α₂.2⟩
+  have hsub : ({(α₁ : Finset V), (α₂ : Finset V)} : Finset (Finset V)) ⊆ sharedFaces M (f α₁).1 := by
+    intro s hs; rw [Finset.mem_insert, Finset.mem_singleton] at hs
+    rcases hs with rfl | rfl; exacts [hα₁sh, hα₂sh]
+  have hc2 : (sharedFaces M (f α₁).1).card = 2 := by
+    have hge : 2 ≤ (sharedFaces M (f α₁).1).card :=
+      (Finset.card_pair hαne).symm.le.trans (Finset.card_le_card hsub)
+    have := hShared2 _ ht; omega
+  refine ⟨(f α₁).1, hPure _ ht, ht, hc2, fun s hs => ?_⟩
+  have hsharedEq : sharedFaces M (f α₁).1 = {(α₁ : Finset V), (α₂ : Finset V)} :=
+    (Finset.eq_of_subset_of_card_le hsub (by rw [hc2, Finset.card_pair hαne])).symm
+  rw [hsharedEq, Finset.mem_insert, Finset.mem_singleton] at hs
+  rcases hs with rfl | rfl
+  · exact (hfspec α₁).2.2
+  · rw [htt]; exact (hfspec α₂).2.2
+
+/-! ## M25a': the no-degree-3 face bound (architect: codex 019ec428, Q2)
+
+The hard combinatorial step: a tet with three boundary faces forces a degree-3
+vertex. Those three faces of `t` share a common vertex `d`; the three σ-faces
+make the other three vertices of `t` a 3-cycle in the link of `d`; 2-regularity
+(`link_two_regular`) pins each cycle vertex's neighbours to the cycle, and
+`linkConn` then traps the whole link inside it — so `d` has link exactly 3. -/
+
+/-- A vertex of `σ` whose link has exactly three vertices (degree 3). -/
+def HasDegree3Vertex (σ : Finset (Finset V)) : Prop :=
+  ∃ v ∈ vertsOf σ, (linkVerts σ v).card = 3
+
+/-- `σ` has no degree-3 vertex (the primality consequence the count needs). -/
+def NoDegree3Vertex (σ : Finset (Finset V)) : Prop :=
+  ∀ v ∈ vertsOf σ, (linkVerts σ v).card ≠ 3
+
+/-- Reachability stays inside a vertex set closed under taking neighbours. -/
+lemma walk_mem_of_adj_closed {G : SimpleGraph V} {S : Finset V}
+    (hclosed : ∀ u ∈ S, ∀ v, G.Adj u v → v ∈ S) {a x : V} (w : G.Walk a x) :
+    a ∈ S → x ∈ S := by
+  induction w with
+  | nil => exact id
+  | cons hadj _ ih => exact fun ha => ih (hclosed _ ha _ hadj)
+
+/-- **Three boundary faces force a degree-3 vertex.** If three of an eligible
+tet's four faces lie on `σ`, the shared vertex `d` of those faces has link
+exactly the opposite triangle. -/
+lemma exists_degree3Vertex_of_three_sharedFaces {σ : Finset (Finset V)}
+    {M : Chain V} {t : Finset V} (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (ht4 : t.card = 4) (h3 : 3 ≤ (sharedFaces M t).card) :
+    HasDegree3Vertex σ := by
+  classical
+  -- a common vertex `d` whose three opposite faces are all shared
+  obtain ⟨d, hd, hdshared⟩ :
+      ∃ d ∈ t, ∀ x ∈ t, x ≠ d → t.erase x ∈ sharedFaces M t := by
+    have hexp1 : (exposedFaces M t).card ≤ 1 := by
+      rw [exposedFaces, Finset.card_sdiff_of_subset (sharedFaces_subset_tetFaces M t),
+        card_tetFaces ht4]; omega
+    rcases Finset.eq_empty_or_nonempty (exposedFaces M t) with hemp | ⟨F, hF⟩
+    · obtain ⟨d, hd⟩ : t.Nonempty := Finset.card_pos.mp (by rw [ht4]; omega)
+      refine ⟨d, hd, fun x hx _ => ?_⟩
+      by_contra hns
+      have : t.erase x ∈ exposedFaces M t :=
+        Finset.mem_sdiff.mpr ⟨erase_mem_tetFaces ht4 hx, hns⟩
+      rw [hemp] at this; exact absurd this (by simp)
+    · obtain ⟨e, he, hFe⟩ :=
+        exists_erase_eq_of_mem_tetFaces ht4 (exposedFaces_subset_tetFaces M t hF)
+      refine ⟨e, he, fun x hx hxe => ?_⟩
+      by_contra hns
+      have hxexp : t.erase x ∈ exposedFaces M t :=
+        Finset.mem_sdiff.mpr ⟨erase_mem_tetFaces ht4 hx, hns⟩
+      have h1card : (exposedFaces M t).card = 1 :=
+        le_antisymm hexp1 (Finset.card_pos.mpr ⟨F, hF⟩)
+      obtain ⟨G, hG⟩ := Finset.card_eq_one.mp h1card
+      have hxeq : t.erase x = t.erase e := by
+        rw [hG, Finset.mem_singleton] at hxexp hF; rw [hxexp, ← hF, hFe]
+      apply hxe
+      by_contra hxene
+      have : x ∈ t.erase e := Finset.mem_erase.mpr ⟨hxene, hx⟩
+      rw [← hxeq] at this; exact Finset.notMem_erase x t this
+  -- the three shared faces are σ-faces
+  have hface : ∀ x ∈ t, x ≠ d → t.erase x ∈ σ := fun x hx hxd => by
+    have := hdshared x hx hxd
+    rw [sharedFaces, Finset.mem_inter] at this; exact hU.1 ▸ this.2
+  have hcardL : (t.erase d).card = 3 := by rw [Finset.card_erase_of_mem hd, ht4]
+  -- d is a vertex of σ
+  have hdv : d ∈ vertsOf σ := by
+    obtain ⟨x, hx⟩ : (t.erase d).Nonempty := Finset.card_pos.mp (by rw [hcardL]; omega)
+    have hxt := Finset.mem_of_mem_erase hx
+    have hxd := Finset.ne_of_mem_erase hx
+    exact mem_vertsOf.mpr ⟨t.erase x, hface x hxt hxd, Finset.mem_erase.mpr ⟨Ne.symm hxd, hd⟩⟩
+  -- the opposite triangle is a 3-cycle in the link of d
+  have hcyc : ∀ y ∈ t.erase d, ∀ z ∈ t.erase d, y ≠ z → (linkGraph σ d).Adj y z := by
+    intro y hy z hz hyz
+    have hyt := Finset.mem_of_mem_erase hy
+    have hzt := Finset.mem_of_mem_erase hz
+    have hyd := Finset.ne_of_mem_erase hy
+    have hzd := Finset.ne_of_mem_erase hz
+    have hsub : ({d, y, z} : Finset V) ⊆ t := by
+      intro u hu; simp only [Finset.mem_insert, Finset.mem_singleton] at hu
+      rcases hu with rfl | rfl | rfl; exacts [hd, hyt, hzt]
+    have hc3 : ({d, y, z} : Finset V).card = 3 :=
+      Finset.card_eq_three.mpr ⟨d, y, z, fun h => hyd h.symm, fun h => hzd h.symm, hyz, rfl⟩
+    obtain ⟨w, hwt, hweq⟩ :=
+      exists_erase_eq_of_mem_tetFaces ht4 (Finset.mem_powersetCard.mpr ⟨hsub, hc3⟩)
+    have hwd : w ≠ d := by
+      rintro rfl
+      exact (Finset.notMem_erase w t) (hweq ▸ Finset.mem_insert_self w {y, z})
+    exact ⟨hyz, by rw [hweq]; exact hface w hwt hwd⟩
+  -- the opposite triangle lies in the link
+  have hL_sub_link : t.erase d ⊆ linkVerts σ d := by
+    intro y hy
+    have hyt := Finset.mem_of_mem_erase hy
+    have hyd := Finset.ne_of_mem_erase hy
+    obtain ⟨x, hx, hxd, hxy⟩ : ∃ x ∈ t, x ≠ d ∧ x ≠ y := by
+      have h2 : 2 ≤ ((t.erase d).erase y).card := by
+        rw [Finset.card_erase_of_mem (Finset.mem_erase.mpr ⟨hyd, hyt⟩), hcardL]
+      obtain ⟨x, hx⟩ := Finset.card_pos.mp (by omega : 0 < ((t.erase d).erase y).card)
+      exact ⟨x, Finset.mem_of_mem_erase (Finset.mem_of_mem_erase hx),
+        Finset.ne_of_mem_erase (Finset.mem_of_mem_erase hx), Finset.ne_of_mem_erase hx⟩
+    exact mem_linkVerts.mpr ⟨hyd, t.erase x, hface x hx hxd,
+      Finset.mem_erase.mpr ⟨Ne.symm hxd, hd⟩, Finset.mem_erase.mpr ⟨Ne.symm hxy, hyt⟩⟩
+  -- a link-neighbour is itself a link vertex
+  have hadj_mem : ∀ {u v}, (linkGraph σ d).Adj u v → v ∈ linkVerts σ d := by
+    intro u v hadjuv
+    obtain ⟨_, hf⟩ := hadjuv
+    have hc3 := hσ.pure _ hf
+    have hvd : v ≠ d := by
+      intro h
+      have hsub : ({d, u, v} : Finset V) ⊆ {d, u} := by
+        intro a ha
+        simp only [Finset.mem_insert, Finset.mem_singleton] at ha ⊢
+        rcases ha with rfl | rfl | rfl
+        exacts [Or.inl rfl, Or.inr rfl, Or.inl h]
+
+exec
+/bin/zsh -lc 'rg -n "def UnitOn|def SimplicialChain|def removeTet|structure EligibleTet|bdry_filter|filter_subset|IsTaut.splits|theorem .*splits|lemma .*splits|def IsTaut|def Chain|bdryGen|def bdry" lean/Taut/Theorem2.lean lean/Taut/Theorem1.lean lean/Taut/Homology.lean lean/Taut/Homology2.lean lean/Taut/Basic.lean lean/Taut/Eligible.lean' in /Users/doyle/Dropbox/taut
+ exited 2 in 0ms:
+rg: lean/Taut/Homology.lean: No such file or directory (os error 2)
+rg: lean/Taut/Basic.lean: No such file or directory (os error 2)
+lean/Taut/Eligible.lean:29:    tetContribution M t α = M t * bdryGen t α := by
+lean/Taut/Eligible.lean:33:lemma bdryGen_apply_mem_pm (t α : Finset V) :
+lean/Taut/Eligible.lean:34:    bdryGen t α = -1 ∨ bdryGen t α = 0 ∨ bdryGen t α = 1 := by
+lean/Taut/Eligible.lean:37:    rw [bdryGen_apply_erase_of_mem hx]
+lean/Taut/Eligible.lean:43:    rw [bdryGen, Finset.sum_apply']
+lean/Taut/Eligible.lean:58:  have hbound : ∀ t ∈ M.support, M t * bdryGen t α = -1 ∨ M t * bdryGen t α = 0
+lean/Taut/Eligible.lean:59:      ∨ M t * bdryGen t α = 1 := by
+lean/Taut/Eligible.lean:61:    rcases hS t with hm | hm | hm <;> rcases bdryGen_apply_mem_pm t α with hg | hg | hg <;>
+lean/Taut/Eligible.lean:63:  have hsum : bdry M α = ∑ t ∈ M.support, M t * bdryGen t α := bdry_apply_eq_sum M α
+lean/Taut/Eligible.lean:64:  have hkey : ∃ t ∈ M.support, M t * bdryGen t α = bdry M α := by
+lean/Taut/Eligible.lean:68:    · have hle : (∑ t ∈ M.support, M t * bdryGen t α) ≤ 0 := by
+lean/Taut/Eligible.lean:75:    · have hge : (0 : ℤ) ≤ ∑ t ∈ M.support, M t * bdryGen t α := by
+lean/Taut/Eligible.lean:84:  · -- α ∈ tetFaces t : bdryGen t α ≠ 0
+lean/Taut/Eligible.lean:85:    have hgne : bdryGen t α ≠ 0 := by
+lean/Taut/Eligible.lean:88:    obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero hgne
+lean/Taut/Theorem2.lean:19:oriented separation bridge to `IsTaut.splits` (M23), the connected-sum/degree-3
+lean/Taut/Theorem2.lean:32:def UnitOn (X : Chain V) (σ : Finset (Finset V)) : Prop :=
+lean/Taut/Theorem2.lean:38:def SimplicialChain (M : Chain V) : Prop :=
+lean/Taut/Theorem2.lean:83:noncomputable def removeTet (M : Chain V) (t : Finset V) : Chain V :=
+lean/Taut/Theorem2.lean:132:    bdry (M - Finsupp.single t c) = bdry M - c • bdryGen t := by
+lean/Taut/Theorem2.lean:180:lemma bdryGen_apply_erase_of_mem {t : Finset V} {x : V} (hx : x ∈ t) :
+lean/Taut/Theorem2.lean:181:    bdryGen t (t.erase x) = sgn x t := by
+lean/Taut/Theorem2.lean:182:  rw [bdryGen, Finset.sum_apply']
+lean/Taut/Theorem2.lean:198:  rw [tetContribution, bdry_single, Finsupp.smul_apply, bdryGen_apply_erase_of_mem hx,
+lean/Taut/Theorem2.lean:204:  have hz : bdryGen t s = 0 := by
+lean/Taut/Theorem2.lean:205:    rw [bdryGen, Finset.sum_apply']
+lean/Taut/Theorem2.lean:317:the paper hides; it is what lets `IsTaut.splits` apply to the integral split. -/
+lean/Taut/Theorem2.lean:321:lemma bdry_filter_apply_eq_bdry_of_no_cross {X : Chain V} {P : Finset V → Prop}
+lean/Taut/Theorem2.lean:323:    (hvanish : ∀ s ∈ X.support, ¬ P s → bdryGen s u = 0) :
+lean/Taut/Theorem2.lean:340:lemma bdry_filter_subset_eq_zero_of_inter_card_two {X : Chain V} {A B : Finset V}
+lean/Taut/Theorem2.lean:356:      refine bdry_filter_apply_eq_bdry_of_no_cross fun s hsX hsA => ?_
+lean/Taut/Theorem2.lean:358:      obtain ⟨w, _, hue⟩ := exists_facet_of_bdryGen_ne_zero hbg
+lean/Taut/Homology2.lean:24:fundamental cycle when packaging the split for `IsTaut.splits`.
+lean/Taut/Theorem1.lean:110:        have hgen : bdryGen s u = 0 := by
+lean/Taut/Theorem1.lean:111:          rw [bdryGen, Finset.sum_apply']
+lean/Taut/Theorem1.lean:126:        have hgen : bdryGen s u = 0 := by
+lean/Taut/Theorem1.lean:127:          rw [bdryGen, Finset.sum_apply']
+lean/Taut/Theorem1.lean:346:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:348:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+
+exec
+/bin/zsh -lc "sed -n '1,260p' lean/Taut/Complex2.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Splitting
+
+/-!
+# Combinatorial 2-spheres
+
+The definitional layer for Theorems 2–4 of "Taut fillings".  A pure
+2-complex is identified with its facet set `σ : Finset (Finset V)`
+(members are the 2-simplices, of card 3); edges and vertices are derived.
+
+`IsSphere2 σ` is the combinatorial replacement for "simplicial
+triangulation of S²": pure, closed pseudomanifold (every edge in exactly
+two faces), connected vertex links, connected, Euler characteristic 2.
+With χ in the definition, the Euler counting relations (`3f = 2e`,
+`3v = e + 6`, `2v = f + 4`) are free arithmetic; "links are single
+cycles" is derivable (closed pm ⟹ links 2-regular; 2-regular and
+connected ⟹ one cycle) rather than assumed.
+
+Validation (build-checked):
+* the counting relations above (`three_mul_card_faces`,
+  `three_mul_card_verts`, `two_mul_card_verts`);
+* the boundary of the tetrahedron on any four distinct vertices is a
+  sphere (`isSphere2_tetraBdry`) — the semantic smoke test against a
+  vacuous or over-strong definition, and the base-case complex of the
+  Theorem 2 induction.
+-/
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-! ## Derived skeleta of a pure 2-complex -/
+
+/-- The edges (1-simplices) of a complex of triangles. -/
+def edgesOf (σ : Finset (Finset V)) : Finset (Finset V) :=
+  σ.biUnion (Finset.powersetCard 2)
+
+/-- The vertices of a complex. -/
+def vertsOf (σ : Finset (Finset V)) : Finset V := σ.biUnion id
+
+/-- The number of faces containing a given edge. -/
+def edgeDeg (σ : Finset (Finset V)) (e : Finset V) : ℕ :=
+  (σ.filter (fun f => e ⊆ f)).card
+
+lemma mem_edgesOf {σ : Finset (Finset V)} {e : Finset V} :
+    e ∈ edgesOf σ ↔ ∃ f ∈ σ, e ⊆ f ∧ e.card = 2 := by
+  simp only [edgesOf, Finset.mem_biUnion, Finset.mem_powersetCard]
+
+lemma card_of_mem_edgesOf {σ : Finset (Finset V)} {e : Finset V}
+    (he : e ∈ edgesOf σ) : e.card = 2 := by
+  obtain ⟨f, _, _, h⟩ := mem_edgesOf.mp he
+  exact h
+
+lemma mem_vertsOf {σ : Finset (Finset V)} {x : V} :
+    x ∈ vertsOf σ ↔ ∃ f ∈ σ, x ∈ f := by
+  simp [vertsOf]
+
+/-- The 1-skeleton, as a simple graph on all of `V`. -/
+def skel (σ : Finset (Finset V)) : SimpleGraph V where
+  Adj a b := a ≠ b ∧ {a, b} ∈ edgesOf σ
+  symm := by
+    intro a b h
+    exact ⟨h.1.symm, by rw [Finset.pair_comm b a]; exact h.2⟩
+  loopless := ⟨fun a h => h.1 rfl⟩
+
+/-- The link of a vertex, as a simple graph: `a ~ b` iff `{v,a,b}` is a
+face. -/
+def linkGraph (σ : Finset (Finset V)) (v : V) : SimpleGraph V where
+  Adj a b := a ≠ b ∧ {v, a, b} ∈ σ
+  symm := by
+    intro a b h
+    refine ⟨h.1.symm, ?_⟩
+    rw [Finset.pair_comm b a]
+    exact h.2
+  loopless := ⟨fun a h => h.1 rfl⟩
+
+instance (σ : Finset (Finset V)) (v : V) : DecidableRel (linkGraph σ v).Adj :=
+  fun a b => decidable_of_iff (a ≠ b ∧ {v, a, b} ∈ σ) Iff.rfl
+
+instance (σ : Finset (Finset V)) : DecidableRel (skel σ).Adj :=
+  fun a b => decidable_of_iff (a ≠ b ∧ {a, b} ∈ edgesOf σ) Iff.rfl
+
+/-- The neighbors of `v`: vertices of the faces at `v`, except `v`. -/
+def linkVerts (σ : Finset (Finset V)) (v : V) : Finset V :=
+  (vertsOf (σ.filter (fun f => v ∈ f))).erase v
+
+/-- Connectivity of a graph on a prescribed finite support. -/
+def ConnOn (G : SimpleGraph V) (s : Finset V) : Prop :=
+  ∀ a ∈ s, ∀ b ∈ s, G.Reachable a b
+
+/-! ## Combinatorial 2-spheres -/
+
+/-- A combinatorial closed surface: pure 2-dimensional, every edge in exactly
+two faces, connected vertex links, connected. This is `IsSphere2` minus the
+`χ = 2` constraint — the geometric content the homology machinery (b₂ = 1,
+r₁ = V−1) actually rests on. Euler enters `IsSphere2` only via nonemptiness. -/
+structure IsClosedSurface (σ : Finset (Finset V)) : Prop where
+  pure : ∀ f ∈ σ, f.card = 3
+  closed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2
+  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+  conn : ConnOn (skel σ) (vertsOf σ)
+
+/-- A combinatorial 2-sphere: a closed surface with Euler characteristic 2.
+This is the paper's "clean complex" (normal pseudomanifold) sharpened by
+`χ = 2`, replacing "simplicial triangulation of S²". -/
+structure IsSphere2 (σ : Finset (Finset V)) : Prop where
+  pure : ∀ f ∈ σ, f.card = 3
+  closed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2
+  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+  conn : ConnOn (skel σ) (vertsOf σ)
+  euler : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2
+
+/-- Forget the Euler constraint: every sphere is a closed surface. -/
+def IsSphere2.toClosedSurface {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    IsClosedSurface σ :=
+  ⟨h.pure, h.closed, h.linkConn, h.conn⟩
+
+/-! ## Euler counting -/
+
+/-- Double counting face–edge incidences: `3f = 2e`. -/
+theorem three_mul_card_faces {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    3 * σ.card = 2 * (edgesOf σ).card := by
+  classical
+  have hfilter : ∀ f ∈ σ, (edgesOf σ).filter (fun e => e ⊆ f)
+      = f.powersetCard 2 := by
+    intro f hf
+    ext e
+    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+    constructor
+    · rintro ⟨he, hef⟩
+      exact ⟨hef, card_of_mem_edgesOf he⟩
+    · rintro ⟨hef, hcard⟩
+      exact ⟨mem_edgesOf.mpr ⟨f, hf, hef, hcard⟩, hef⟩
+  have key : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+      = ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card := by
+    simp_rw [Finset.card_filter]
+    exact Finset.sum_comm
+  have hcongr : ∀ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card = 3 := by
+    intro f hf
+    rw [hfilter f hf, Finset.card_powersetCard, h.pure f hf]
+    rfl
+  have hcl : ∀ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card = 2 :=
+    h.closed
+  have hleft : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+      = 3 * σ.card := by
+    rw [Finset.sum_congr rfl hcongr, Finset.sum_const, smul_eq_mul, mul_comm]
+  have hright : ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card
+      = 2 * (edgesOf σ).card := by
+    rw [Finset.sum_congr rfl hcl, Finset.sum_const, smul_eq_mul, mul_comm]
+  rw [← hleft, key, hright]
+
+/-- `3v = e + 6`. -/
+theorem three_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    3 * (vertsOf σ).card = (edgesOf σ).card + 6 := by
+  have h1 := three_mul_card_faces h
+  have h2 := h.euler
+  omega
+
+/-- `2v = f + 4`. -/
+theorem two_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    2 * (vertsOf σ).card = σ.card + 4 := by
+  have h1 := three_mul_card_faces h
+  have h2 := h.euler
+  omega
+
+/-! ## Local structure: edges and links -/
+
+/-- The third vertex of a triangle over an edge. -/
+lemma exists_third {e f : Finset V} (hef : e ⊆ f) (he : e.card = 2)
+    (hf : f.card = 3) : ∃ z, z ∉ e ∧ f = insert z e := by
+  have hd : (f \ e).card = 1 := by
+    rw [Finset.card_sdiff_of_subset hef, hf, he]
+  obtain ⟨z, hz⟩ := Finset.card_eq_one.mp hd
+  have hzf : z ∈ f \ e := hz ▸ Finset.mem_singleton_self z
+  obtain ⟨hzf', hze⟩ := Finset.mem_sdiff.mp hzf
+  refine ⟨z, hze, ?_⟩
+  ext x
+  simp only [Finset.mem_insert]
+  constructor
+  · intro hx
+    by_cases hxe : x ∈ e
+    · exact Or.inr hxe
+    · left
+      have hxd : x ∈ f \ e := Finset.mem_sdiff.mpr ⟨hx, hxe⟩
+      rw [hz, Finset.mem_singleton] at hxd
+      exact hxd
+  · rintro (rfl | hx)
+    · exact hzf'
+    · exact hef hx
+
+/-- The two faces over an edge of a sphere, by name. -/
+lemma exists_two_faces {σ : Finset (Finset V)} (h : IsClosedSurface σ)
+    {e : Finset V} (he : e ∈ edgesOf σ) :
+    ∃ f₁ ∈ σ, ∃ f₂ ∈ σ, f₁ ≠ f₂ ∧ e ⊆ f₁ ∧ e ⊆ f₂ ∧
+      ∀ f ∈ σ, e ⊆ f → f = f₁ ∨ f = f₂ := by
+  have h2 := h.closed e he
+  rw [edgeDeg] at h2
+  obtain ⟨f₁, f₂, hne, hpair⟩ := Finset.card_eq_two.mp h2
+  have hf₁ : f₁ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+  have hf₂ : f₂ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+  obtain ⟨hf₁σ, hef₁⟩ := Finset.mem_filter.mp hf₁
+  obtain ⟨hf₂σ, hef₂⟩ := Finset.mem_filter.mp hf₂
+  refine ⟨f₁, hf₁σ, f₂, hf₂σ, hne, hef₁, hef₂, fun f hf hef => ?_⟩
+  have hmem : f ∈ σ.filter (fun f => e ⊆ f) := Finset.mem_filter.mpr ⟨hf, hef⟩
+  rw [hpair] at hmem
+  simpa using hmem
+
+/-- Two distinct triangles over a common edge meet exactly in it. -/
+lemma inter_eq_edge_of_two_faces {f₁ f₂ e : Finset V}
+    (h3₁ : f₁.card = 3) (h3₂ : f₂.card = 3) (hne : f₁ ≠ f₂)
+    (he : e.card = 2) (h1 : e ⊆ f₁) (h2 : e ⊆ f₂) : f₁ ∩ f₂ = e := by
+  have hsub : e ⊆ f₁ ∩ f₂ := Finset.subset_inter h1 h2
+  have hcap : (f₁ ∩ f₂).card ≤ 3 :=
+    h3₁ ▸ Finset.card_le_card Finset.inter_subset_left
+  have hne3 : (f₁ ∩ f₂).card ≠ 3 := by
+    intro h3
+    have hi : f₁ ∩ f₂ = f₁ :=
+      Finset.eq_of_subset_of_card_le Finset.inter_subset_left (by omega)
+    have hsub12 : f₁ ⊆ f₂ := hi ▸ Finset.inter_subset_right
+    exact hne (Finset.eq_of_subset_of_card_le hsub12 (by omega))
+  have h2le := Finset.card_le_card hsub
+  exact (Finset.eq_of_subset_of_card_le hsub (by omega)).symm
+
+/-- Membership in the link of a vertex. -/
+lemma mem_linkVerts {σ : Finset (Finset V)} {v x : V} :
+    x ∈ linkVerts σ v ↔ x ≠ v ∧ ∃ f ∈ σ, v ∈ f ∧ x ∈ f := by
+  rw [linkVerts, Finset.mem_erase, mem_vertsOf]
+  constructor
+  · rintro ⟨hxv, f, hf, hxf⟩
+    exact ⟨hxv, f, Finset.mem_of_mem_filter f hf,
+      (Finset.mem_filter.mp hf).2, hxf⟩
+  · rintro ⟨hxv, f, hf, hvf, hxf⟩
+    exact ⟨hxv, f, Finset.mem_filter.mpr ⟨hf, hvf⟩, hxf⟩
+
+/-- In a sphere, link membership is edge membership. -/
+lemma mem_linkVerts_iff_edge {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {v x : V} (hxv : x ≠ v) :
+    x ∈ linkVerts σ v ↔ {v, x} ∈ edgesOf σ := by
+  constructor
+  · intro hx
+    obtain ⟨_, f, hf, hvf, hxf⟩ := mem_linkVerts.mp hx
+    refine mem_edgesOf.mpr ⟨f, hf, ?_, Finset.card_pair (Ne.symm hxv)⟩
+    intro u hu
+    rcases Finset.mem_insert.mp hu with rfl | hu
+    · exact hvf
+    · rw [Finset.mem_singleton] at hu
+      exact hu ▸ hxf
+  · intro hx
+    obtain ⟨f, hf, hef, _⟩ := mem_edgesOf.mp hx
+    exact mem_linkVerts.mpr ⟨hxv, f, hf,
+      hef (Finset.mem_insert_self v _),
+      hef (by simp)⟩
+
+/-- In a sphere, every link vertex has exactly two neighbors in the
+link: the links are 2-regular. -/
+theorem link_two_regular {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {v x : V} (hx : x ∈ linkVerts σ v) :
+    ((linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y)).card = 2 := by
+  classical
+  have hxv : x ≠ v := (Finset.mem_erase.mp hx).1
+  have hedge : {v, x} ∈ edgesOf σ := (mem_linkVerts_iff_edge h hxv).mp hx
+
+exec
+/bin/zsh -lc "rg -n \"theorem IsTaut\\.splits|lemma IsTaut\\.splits|def IsTaut\\.splits|splits\" lean/Taut/Splitting.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+8:`n ≥ 2`: ANY taut filling `M` of `X + Y` splits as `M = M_X + M_Y` with
+9:`M_X` a taut filling of `X` and `M_Y` of `Y` (`IsTaut.splits`).
+21:4. so generators are pure and the filter along `· ⊆ A` splits `M`.
+433:filling `M` of an almost disjoint union `X + Y` splits: filtering `M`
+435:theorem IsTaut.splits {A B : Finset V} {n : ℕ}
+
+exec
+/bin/zsh -lc "sed -n '1,120p' lean/Taut/Theorem2.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Separation
+import Taut.Ball
+
+/-!
+# Theorem 2 + 3: a taut filling of a triangulated S² is a freely shellable B³
+
+This file builds toward the central theorem (taut filling of `IsSphere2 σ`
+arises from a freely shellable simplicial triangulation of B³) by the
+minimal-counterexample induction of the paper (§"Filling a triangulation of the
+2-sphere"). Per the G1 audit (codex 019ec265) the packet is staged:
+
+* **M20 (here): the chain/facet bridge.** `UnitOn` (a `±1`-chain supported on
+  σ), `SimplicialChain` (coefficients in `{-1,0,1}`), and the bridge
+  `nrm_eq_support_card_of_simplicial` (`|M| = #support` when simplicial). These
+  connect the integral chain `M` (a multiset of oriented tets) to the facet set
+  `M.support` that the `IsBall`/`FreelyShellable` certificates live on.
+
+Later milestones: the tet-removal/flip API (M21), ball reassembly (M22), the
+oriented separation bridge to `IsTaut.splits` (M23), the connected-sum/degree-3
+reduction (M24), eligible-tet existence (M25), and the main induction (M26).
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-- A chain `X` is a *unit chain on `σ`* if it is supported exactly on `σ` with
+every coefficient `±1`. The boundary `X(σ)` of a triangulated sphere is such a
+chain (some choice of orientation); nothing downstream depends on the choice. -/
+def UnitOn (X : Chain V) (σ : Finset (Finset V)) : Prop :=
+  X.support = σ ∧ ∀ s ∈ σ, X s = 1 ∨ X s = -1
+
+/-- A chain is *simplicial* if every coefficient is `-1`, `0`, or `1` — i.e. it
+is a genuine multiset of oriented simplices with no repeats. A taut filling that
+"arises from a triangulation" is such a chain on the tets of a ball. -/
+def SimplicialChain (M : Chain V) : Prop :=
+  ∀ t, M t = -1 ∨ M t = 0 ∨ M t = 1
+
+lemma SimplicialChain.natAbs_eq_one {M : Chain V} (h : SimplicialChain M) {s : Finset V}
+    (hs : s ∈ M.support) : (M s).natAbs = 1 := by
+  have hne : M s ≠ 0 := Finsupp.mem_support_iff.mp hs
+  rcases h s with h1 | h0 | h1
+  · rw [h1]; decide
+  · exact absurd h0 hne
+  · rw [h1]; decide
+
+/-- **The norm/support bridge.** For a simplicial chain the norm `|M|` counts
+its support: `nrm M = #(M.support)`. This is what lets the induction on `|M|`
+(`nrm`) talk to the ball's facet count (`M.support.card`). -/
+lemma nrm_eq_support_card_of_simplicial {M : Chain V} (h : SimplicialChain M) :
+    nrm M = M.support.card := by
+  rw [nrm, Finset.card_eq_sum_ones]
+  exact Finset.sum_congr rfl fun s hs => h.natAbs_eq_one hs
+
+/-- A unit chain on `σ` is simplicial. -/
+lemma UnitOn.simplicialChain {X : Chain V} {σ : Finset (Finset V)} (h : UnitOn X σ) :
+    SimplicialChain X := by
+  intro t
+  by_cases ht : t ∈ X.support
+  · rcases h.2 t (h.1 ▸ ht) with h1 | h1
+    · exact Or.inr (Or.inr h1)
+    · exact Or.inl h1
+  · exact Or.inr (Or.inl (Finsupp.notMem_support_iff.mp ht))
+
+/-- A unit chain on `σ` has `nrm = #σ` (each face carries weight one). -/
+lemma UnitOn.nrm_eq {X : Chain V} {σ : Finset (Finset V)} (h : UnitOn X σ) :
+    nrm X = σ.card := by
+  rw [nrm_eq_support_card_of_simplicial h.simplicialChain, h.1]
+
+/-! ## M21: tet removal and the edge flip (architect: codex 019ec271)
+
+Removing an *eligible* tet `t` from a simplicial filling `M` flips two boundary
+faces to the tet's other two — the paper's `ab → cd` edge flip. We work over ℤ
+with the canonical-orientation signs of `Chains.lean`. -/
+
+/-- The boundary contribution of the single tet `t` (with `M`'s coefficient). -/
+noncomputable def tetContribution (M : Chain V) (t : Finset V) : Chain V :=
+  bdry (Finsupp.single t (M t))
+
+/-- Remove the tet `t` from the filling `M`. -/
+noncomputable def removeTet (M : Chain V) (t : Finset V) : Chain V :=
+  M - Finsupp.single t (M t)
+
+/-- The tet faces currently on the boundary of `M`. -/
+noncomputable def sharedFaces (M : Chain V) (t : Finset V) : Finset (Finset V) :=
+  tetFaces t ∩ (bdry M).support
+
+/-- The tet faces NOT on the boundary of `M` (they become new boundary faces). -/
+noncomputable def exposedFaces (M : Chain V) (t : Finset V) : Finset (Finset V) :=
+  tetFaces t \ sharedFaces M t
+
+/-- A tet `t` is *eligible*: a genuine `4`-simplex of `M` with exactly two of its
+faces on the boundary, those two carrying `t`'s own oriented coefficient. The
+other two faces are then absent from the boundary (so removal cannot create a
+`±2` coefficient — this is why eligibility is stronger than "two matching
+faces"). -/
+def EligibleTet (M : Chain V) (t : Finset V) : Prop :=
+  t.card = 4 ∧ t ∈ M.support ∧ (sharedFaces M t).card = 2 ∧
+    ∀ s ∈ sharedFaces M t, (bdry M) s = tetContribution M t s
+
+/-- The flipped edge `cd` is already present in `σ` (the case-2 hook). -/
+def FlipEdgePresent (σ : Finset (Finset V)) (f₃ f₄ : Finset V) : Prop :=
+  f₃ ∩ f₄ ∈ edgesOf σ
+
+/-! ### Tet-face combinatorics -/
+
+lemma card_tetFaces {t : Finset V} (ht : t.card = 4) : (tetFaces t).card = 4 := by
+  rw [tetFaces, Finset.card_powersetCard, ht]; decide
+
+lemma erase_mem_tetFaces {t : Finset V} {x : V} (ht : t.card = 4) (hx : x ∈ t) :
+    t.erase x ∈ tetFaces t := by
+  refine Finset.mem_powersetCard.mpr ⟨?_, ?_⟩
+  · intro y hy; exact Finset.mem_of_mem_erase hy
+  · rw [Finset.card_erase_of_mem hx, ht]
+
+lemma sharedFaces_subset_tetFaces (M : Chain V) (t : Finset V) :
+    sharedFaces M t ⊆ tetFaces t := fun _ hs => (Finset.mem_inter.mp hs).1
+
+
+exec
+/bin/zsh -lc "sed -n '300,390p' lean/Taut/Theorem2.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  rcases hs with hs | hs
+  · rw [Finset.mem_sdiff] at hs
+    have hssupp : s ∈ (bdry M).support := by rw [hU.1]; exact hs.1
+    have hsf : s ∉ tetFaces t := fun hcon =>
+      hs.2 (Finset.mem_inter.mpr ⟨hcon, hssupp⟩)
+    rw [bdry_removeTet, Finsupp.sub_apply, tetContribution_apply_of_not_mem_tetFaces ht4 hsf,
+      sub_zero]
+    exact hU.2 s hs.1
+  · rw [bdry_removeTet, Finsupp.sub_apply, bdry_apply_eq_zero_of_mem_exposedFaces hs, zero_sub]
+    rcases tetContribution_eq_pm_one_of_mem_tetFaces ht4 hpm
+      (exposedFaces_subset_tetFaces M t hs) with h1 | h1 <;> rw [h1] <;> decide
+
+/-! ## M23: the oriented separation bridge (architect: codex 019ec2e0)
+
+For the *edge-join* case-2 of the induction, the side-filter of a closed unit
+cycle is again closed — because the two sides share a single edge, and a closed
+chain supported on one edge must vanish. This is the orientation/coherence fact
+the paper hides; it is what lets `IsTaut.splits` apply to the integral split. -/
+
+/-- Filtering a chain by `P` does not change a boundary coefficient `u` for which
+no `¬P` generator contributes. -/
+lemma bdry_filter_apply_eq_bdry_of_no_cross {X : Chain V} {P : Finset V → Prop}
+    [DecidablePred P] {u : Finset V}
+    (hvanish : ∀ s ∈ X.support, ¬ P s → bdryGen s u = 0) :
+    bdry (X.filter P) u = bdry X u := by
+  have hz : bdry (X.filter (fun s => ¬ P s)) u = 0 := by
+    rw [bdry_apply_eq_sum]
+    refine Finset.sum_eq_zero fun t ht => ?_
+    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+    rw [hvanish t ht.1 ht.2, mul_zero]
+  have hsum : bdry (X.filter P) u + bdry (X.filter (fun s => ¬ P s)) u = bdry X u := by
+    rw [← Finsupp.add_apply, ← map_add, Finsupp.filter_pos_add_filter_neg]
+  rw [hz, add_zero] at hsum; exact hsum
+
+/-- **The edge-join closed-filter lemma.** If `X` is a closed chain whose faces
+are triangles each lying on the `A`-side or the `B`-side, and `A ∩ B` is a single
+edge, then the `A`-side filter of `X` is again closed — its boundary is a closed
+chain supported on the single shared edge `A ∩ B`, hence zero
+(`eq_zero_of_closed_supp_card_eq`). A *triangle* cut would instead leave the
+filter open; the edge-join is exactly what makes case 2 work. -/
+lemma bdry_filter_subset_eq_zero_of_inter_card_two {X : Chain V} {A B : Finset V}
+    (hXc : bdry X = 0) (hXsupp : ∀ s ∈ X.support, s.card = 3 ∧ (s ⊆ A ∨ s ⊆ B))
+    (hAB2 : (A ∩ B).card = 2) :
+    bdry (X.filter (fun s => s ⊆ A)) = 0 := by
+  classical
+  refine eq_zero_of_closed_supp_card_eq (W := A ∩ B) (k := 2) (by norm_num) ?_ hAB2
+    (bdry_bdry _)
+  intro u hu
+  have hfaces : ∀ s ∈ (X.filter (fun s => s ⊆ A)).support, s ⊆ A ∧ s.card = 2 + 1 := by
+    intro s hs
+    rw [Finsupp.support_filter, Finset.mem_filter] at hs
+    exact ⟨hs.2, by rw [(hXsupp s hs.1).1]⟩
+  obtain ⟨huA, huc⟩ := bdry_supp_of_supp hfaces u hu
+  have huB : u ⊆ B := by
+    by_contra hcon
+    have hcross : bdry (X.filter (fun s => s ⊆ A)) u = bdry X u := by
+      refine bdry_filter_apply_eq_bdry_of_no_cross fun s hsX hsA => ?_
+      by_contra hbg
+      obtain ⟨w, _, hue⟩ := exists_facet_of_bdryGen_ne_zero hbg
+      exact hcon (hue ▸ (Finset.erase_subset w s).trans (((hXsupp s hsX).2).resolve_left hsA))
+    rw [hXc, Finsupp.coe_zero, Pi.zero_apply] at hcross
+    exact Finsupp.mem_support_iff.mp hu hcross
+  exact ⟨Finset.subset_inter huA huB, huc⟩
+
+end Taut
+
+exec
+/bin/zsh -lc "sed -n '520,680p' lean/Taut/Splitting.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  have h4 : Zvol X ≤ nrm Mx := Zvol_le hbx
+  have h5 : Zvol Y ≤ nrm My := Zvol_le hby
+  have hMxt : IsTaut Mx := by rw [IsTaut, hbx]; omega
+  have hMyt : IsTaut My := by rw [IsTaut, hby]; omega
+  exact ⟨hbx, hby, hMxt, hMyt, hsum⟩
+
+end Taut
+
+exec
+/bin/zsh -lc "rg -n \"theorem separates|def separates|lemma separates|insert γ|IsSphere2 \\(insert\" lean/Taut/Separation.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+92:    edgesOf (insert γ (cutSet σ W)) ⊆ edgesOf σ := by
+102:    edgeDeg (insert γ (cutSet σ W)) e
+114:    ∀ e ∈ edgesOf (insert γ (cutSet σ W)),
+115:      edgeDeg (insert γ (cutSet σ W)) e = 2 := by
+466:complex `insert γ (cutSet σ W)`. -/
+470:      (skel (insert γ (cutSet σ W))).Reachable u w := by
+482:/-- **`conn` for the capped side.** The skeleton of `insert γ (cutSet σ W)` is
+488:    ConnOn (skel (insert γ (cutSet σ W))) (vertsOf (insert γ (cutSet σ W))) := by
+514:      (skel (insert γ (cutSet σ W))).Reachable x c₀ := by
+533:  have reachγ : (skel (insert γ (cutSet σ W))).Reachable v₀ c₀ := by
+538:  have reachAll : ∀ x ∈ vertsOf (insert γ (cutSet σ W)),
+539:      (skel (insert γ (cutSet σ W))).Reachable x c₀ := by
+669:    (linkGraph (insert γ (cutSet σ W)) v).Adj a b :=
+674:capped link `τ = insert γ (cutSet σ W)`. The shared edge `{v,x}` is non-γ
+679:    (hxτ : x ∈ linkVerts (insert γ (cutSet σ W)) v) (hxγ : x ∉ γ)
+681:    (linkGraph (insert γ (cutSet σ W)) v).Adj x y := by
+711:      x ∈ linkVerts (insert γ (cutSet σ W)) v → z ∈ γ →
+712:      (linkGraph (insert γ (cutSet σ W)) v).Reachable x a := by
+714:  have endpoint : ∀ {w : V}, w ∈ linkVerts (insert γ (cutSet σ W)) v → w ∈ γ →
+715:      (linkGraph (insert γ (cutSet σ W)) v).Reachable w a := by
+731:        have hx'τ : x' ∈ linkVerts (insert γ (cutSet σ W)) v :=
+741:    ConnOn (linkGraph (insert γ (cutSet σ W)) v)
+742:      (linkVerts (insert γ (cutSet σ W)) v) := by
+751:  have reach_a : ∀ z, z ∈ linkVerts (insert γ (cutSet σ W)) v →
+752:      (linkGraph (insert γ (cutSet σ W)) v).Reachable z a := by
+776:    linkGraph σ v ≤ linkGraph (insert γ (cutSet σ W)) v := by
+788:    (hvτ : v ∈ vertsOf (insert γ (cutSet σ W))) :
+789:    ConnOn (linkGraph (insert γ (cutSet σ W)) v)
+790:      (linkVerts (insert γ (cutSet σ W)) v) := by
+796:  have hLeq : linkVerts (insert γ (cutSet σ W)) v = linkVerts σ v := by
+817:    ∀ v ∈ vertsOf (insert γ (cutSet σ W)),
+818:      ConnOn (linkGraph (insert γ (cutSet σ W)) v)
+819:        (linkVerts (insert γ (cutSet σ W)) v) := by
+862:    (hγ3 : γ.card = 3) : ∀ f ∈ insert γ (cutSet σ W), f.card = 3 := by
+871:    (insert γ (cutSet σ W)).card + (insert γ (cutSet σ (W + fun _ => 1))).card
+901:    vertsOf (insert γ (cutSet σ W)) ∪ vertsOf (insert γ (cutSet σ (W + fun _ => 1)))
+922:    vertsOf (insert γ (cutSet σ W)) ∩ vertsOf (insert γ (cutSet σ (W + fun _ => 1)))
+947:    edgesOf (insert γ (cutSet σ W)) ∪ edgesOf (insert γ (cutSet σ (W + fun _ => 1)))
+964:    edgesOf (insert γ (cutSet σ W)) ∩ edgesOf (insert γ (cutSet σ (W + fun _ => 1)))
+996:    (vertsOf (insert γ (cutSet σ W))).card + (insert γ (cutSet σ W)).card
+997:      = (edgesOf (insert γ (cutSet σ W))).card + 2 := by
+999:  have hcs1 : IsClosedSurface (insert γ (cutSet σ W)) :=
+1002:  have hcs2 : IsClosedSurface (insert γ (cutSet σ (W + fun _ => 1))) :=
+1006:  have hne1 : (vertsOf (insert γ (cutSet σ W))).Nonempty :=
+1008:  have hne2 : (vertsOf (insert γ (cutSet σ (W + fun _ => 1)))).Nonempty :=
+1014:    (vertsOf (insert γ (cutSet σ W))) (vertsOf (insert γ (cutSet σ (W + fun _ => 1))))
+1017:    (edgesOf (insert γ (cutSet σ W))) (edgesOf (insert γ (cutSet σ (W + fun _ => 1))))
+1027:    (hW : bd2 σ W = gammaChain σ γ) : IsSphere2 (insert γ (cutSet σ W)) :=
+1034:theorem separates {σ : Finset (Finset V)} (h : IsSphere2 σ) {γ : Finset V}
+1037:      IsSphere2 (insert γ σ₁) ∧ IsSphere2 (insert γ σ₂) := by
+
+exec
+/bin/zsh -lc "sed -n '430,470p' lean/Taut/Splitting.lean && sed -n '1020,1055p' lean/Taut/Separation.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+/-! ## Theorem 1, part 2: taut fillings split -/
+
+/-- **Theorem 1, splitting** (Doyle–Ellison–Wang): for `n ≥ 2`, ANY taut
+filling `M` of an almost disjoint union `X + Y` splits: filtering `M`
+along `· ⊆ A` yields taut fillings of `X` and of `Y` summing to `M`. -/
+theorem IsTaut.splits {A B : Finset V} {n : ℕ}
+    (hn : 2 ≤ n) {p q : V} (hp : p ∈ A ∩ B) (hq : q ∈ A ∩ B) (hpq : p ≠ q)
+    (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+  classical
+  have hn1 : 1 ≤ n := by omega
+  -- context facts
+  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+    intro s hs
+    rw [hM1] at hs
+    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+    · exact (hX s h).2
+    · exact (hY s h).2
+  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+    fun s hs => hMt.dim_pure hbdsupp s hs
+  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+    intro s hs; rw [hpure s hs]; omega
+  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+    intro t ht
+    refine (supp_subset_vert ht).trans ((hMt.vert_subset hdim2).trans ?_)
+    rw [hM1]
+    exact (vert_add_subset X Y).trans (Finset.union_subset_union
+      (vert_subset_of_supp fun s hs => (hX s hs).1)
+      (vert_subset_of_supp fun s hs => (hY s hs).1))
+  -- every generator is pure
+  have hdich : ∀ t ∈ M.support, t ⊆ A ∨ t ⊆ B := by
+    intro t ht
+  have hFadd := card_faces_cut_add (W := W) hγσ
+  have he := h.euler
+  omega
+
+/-- **A capped side of the cut is a sphere.** All five `IsSphere2` fields. -/
+theorem isSphere2_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ)
+    (hW : bd2 σ W = gammaChain σ γ) : IsSphere2 (insert γ (cutSet σ W)) :=
+  ⟨pure_cut h hγ3, closed_cut h hγ3 hγe hγσ hW, linkConn_cut h hγ3 hγe hW,
+    conn_cut h hγ3 hγe hW, euler_cut h hγ3 hγe hγσ hW⟩
+
+/-- **The separation theorem (sphere halves).** A non-face triangle `γ` of a
+combinatorial 2-sphere splits it into two sides, each capping with `γ` to a
+combinatorial 2-sphere. -/
+theorem separates {σ : Finset (Finset V)} (h : IsSphere2 σ) {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ) :
+    ∃ σ₁ σ₂ : Finset (Finset V),
+      IsSphere2 (insert γ σ₁) ∧ IsSphere2 (insert γ σ₂) := by
+  obtain ⟨W, hW⟩ := exists_cut h hγ3 hγe
+  exact ⟨cutSet σ W, cutSet σ (W + fun _ => 1),
+    isSphere2_cut h hγ3 hγe hγσ hW,
+    isSphere2_cut h hγ3 hγe hγσ (bd2_W_add_one h hW)⟩
+
+end Taut
+
+codex
+`IsTaut.splits` is the key simplifier: it splits a taut 3-chain once you provide closed 2-cycles `X` and `Y` on the two vertex sides. So M24 still needs the capped boundary cycles; `splits` will not synthesize the cap from raw `bdry M` by itself.
+exec
+/bin/zsh -lc "sed -n '1,240p' lean/Taut/Ball.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Complex2
+
+/-!
+# Shelling-certified combinatorial 3-balls
+
+The combinatorial replacement for "simplicial triangulation of `B³`",
+following the paper's *Shelling* section.  A *shelling* of a ball is an
+ordering `(t₁, …, t_k)` of its tetrahedra such that gluing them on one at a
+time always maintains a ball; the type of a glued tet is the number of its
+faces shared with what is already built (type 1 or 2; type 3 — which would
+create an interior vertex — never occurs here).
+
+Following the G1 audit (Q2/Q3 APPROVED, `notes/codex-consults/
+2026-06-12-g1-sphere-ball-*`), a ball is encoded as an **explicit shelling
+certificate** (a `List` of tets), not an inductive `Prop`: the Theorem 2
+reassembly grafts shellings by list concatenation, and free shellability
+quantifies over the first element.  `IsSphere2` of every intermediate
+boundary is **baked into** the gluing step, so the induction has sphere-hood
+available at every stage.
+
+`IsBall τ B` is, by design, a *shelling-certified* ball — not a general
+combinatorial-ball definition.  It is exactly the object the merged
+Theorem 2+3 induction constructs.
+
+Faces of a tetrahedron `t` (a 4-element set) are its card-3 subsets,
+`t.powersetCard 3`.  When tet `t` is glued onto a ball whose boundary is the
+2-sphere `B`, the faces of `t` already present in `B` become interior and the
+new faces are exposed: the new boundary is the symmetric difference
+`(B \ t.powersetCard 3) ∪ (t.powersetCard 3 \ B)`.
+
+Validation (build-checked):
+* a single tet is a (freely shellable) ball with the tetrahedron-boundary
+  sphere as its boundary (`isBall_singleton`, `freelyShellable_singleton`);
+* the boundary of a shelling-certified ball is a combinatorial 2-sphere
+  (`IsBall.isSphere2`) — the structural invariant carried by the certificate.
+-/
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-- The four triangular faces of a tetrahedron `t` (the card-3 subsets). -/
+abbrev tetFaces (t : Finset V) : Finset (Finset V) := t.powersetCard 3
+
+/-- One gluing step of a shelling: tet `t` is glued onto a ball whose
+boundary 2-sphere is `B`, producing the ball with boundary `B'`.
+
+* `card4` — `t` is a tetrahedron (4 vertices);
+* `shared` — `t` meets the current boundary in **one or two** of its faces
+  (type 1 or 2; type 3 is excluded, as it would create an interior vertex);
+* `newBdry` — the new boundary is the symmetric difference of `B` and the
+  faces of `t`: shared faces become interior, the rest are exposed;
+* `sphere` — the new boundary is again a combinatorial 2-sphere (the
+  invariant baked into the certificate).
+-/
+structure GlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop where
+  card4 : t.card = 4
+  shared : (tetFaces t ∩ B).card = 1 ∨ (tetFaces t ∩ B).card = 2
+  newBdry : B' = (B \ tetFaces t) ∪ (tetFaces t \ B)
+  sphere : IsSphere2 B'
+
+/-- Starting from a ball with boundary `B₀`, gluing on the tets of `l` in
+order yields a ball with boundary `B`. -/
+def ShellFrom : Finset (Finset V) → List (Finset V) → Finset (Finset V) → Prop
+  | B₀, [],     B => B = B₀
+  | B₀, t :: l, B => ∃ B₁, GlueStep t B₀ B₁ ∧ ShellFrom B₁ l B
+
+/-- `l` is a shelling with final boundary `B`: the head tet is the initial
+tetrahedron (its boundary is the tetrahedron-boundary sphere) and the
+remaining tets are glued on in order. -/
+def IsShelling : List (Finset V) → Finset (Finset V) → Prop
+  | [],     _ => False
+  | t :: l, B => t.card = 4 ∧ ShellFrom (tetFaces t) l B
+
+/-- A *shelling-certified ball*: a facet set `τ` admitting a shelling (a
+nodup ordering of its tets gluing up to boundary `B`). -/
+def IsBall (τ B : Finset (Finset V)) : Prop :=
+  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+
+/-- `τ` is *freely shellable* with boundary `B` if **any** of its tets can
+serve as the initial tet of a shelling (the paper's "freely shellable":
+shucking in reverse can remove any prescribed tet last). -/
+def FreelyShellable (τ B : Finset (Finset V)) : Prop :=
+  ∀ t ∈ τ, ∃ l : List (Finset V),
+    l.head? = some t ∧ l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+
+/-! ## The boundary of a ball is a sphere -/
+
+/-- Gluing preserves sphere-hood of the boundary: if the starting boundary
+`B₀` is a sphere, so is the final boundary `B`. -/
+lemma ShellFrom.isSphere2 {l : List (Finset V)} :
+    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B → IsSphere2 B₀ → IsSphere2 B := by
+  induction l with
+  | nil =>
+      intro B₀ B h h0
+      simp only [ShellFrom] at h
+      exact h ▸ h0
+  | cons t l ih =>
+      intro B₀ B h _
+      simp only [ShellFrom] at h
+      obtain ⟨B₁, hg, hrest⟩ := h
+      exact ih hrest hg.sphere
+
+/-- The final boundary of a shelling is a combinatorial 2-sphere. -/
+lemma IsShelling.isSphere2 {l : List (Finset V)} {B : Finset (Finset V)}
+    (h : IsShelling l B) : IsSphere2 B := by
+  cases l with
+  | nil => simp only [IsShelling] at h
+  | cons t l =>
+      simp only [IsShelling] at h
+      exact h.2.isSphere2 (isSphere2_powersetCard3 h.1)
+
+/-- The boundary of a shelling-certified ball is a combinatorial 2-sphere. -/
+theorem IsBall.isSphere2 {τ B : Finset (Finset V)} (h : IsBall τ B) :
+    IsSphere2 B := by
+  obtain ⟨_, _, _, hsh⟩ := h
+  exact hsh.isSphere2
+
+/-! ## Reassembly (M22a): appending tets and bridging two balls
+
+Architect: codex 019ec2cc. `ShellFrom`/`IsShelling` are closed under appending
+tets at the end; a ball with a `GlueStep` tet on its boundary grows by that tet
+(case-1 of the Theorem-2 induction). Gluing two balls through a bridging tet
+needs *relative* shellability (`RelShelling`) — that is the genuine hidden-
+topology fact (M22b), here reduced to a tautological bridge given the relative
+shelling. -/
+
+/-- `ShellFrom` composes: glue `l₁` then `l₂`. -/
+lemma ShellFrom_append {B₀ B₁ B₂ : Finset (Finset V)} {l₁ l₂ : List (Finset V)}
+    (h₁ : ShellFrom B₀ l₁ B₁) (h₂ : ShellFrom B₁ l₂ B₂) :
+    ShellFrom B₀ (l₁ ++ l₂) B₂ := by
+  induction l₁ generalizing B₀ with
+  | nil => simp only [ShellFrom, List.nil_append] at h₁ ⊢; exact h₁ ▸ h₂
+  | cons t l ih =>
+      simp only [ShellFrom, List.cons_append] at h₁ ⊢
+      obtain ⟨B', hg, hrest⟩ := h₁
+      exact ⟨B', hg, ih hrest⟩
+
+/-- Append one `GlueStep` tet to a `ShellFrom`. -/
+lemma ShellFrom_snoc {B₀ B B' : Finset (Finset V)} {l : List (Finset V)} {t : Finset V}
+    (h : ShellFrom B₀ l B) (hg : GlueStep t B B') : ShellFrom B₀ (l ++ [t]) B' :=
+  ShellFrom_append h ⟨B', hg, rfl⟩
+
+/-- Glue a `ShellFrom` of `l₂` onto the end of a shelling `l`. -/
+lemma IsShelling_append {l l₂ : List (Finset V)} {B₁ B : Finset (Finset V)}
+    (h : IsShelling l B₁) (hf : ShellFrom B₁ l₂ B) : IsShelling (l ++ l₂) B := by
+  cases l with
+  | nil => simp only [IsShelling] at h
+  | cons t r => simp only [IsShelling, List.cons_append] at h ⊢; exact ⟨h.1, ShellFrom_append h.2 hf⟩
+
+/-- Append one `GlueStep` tet to a shelling. -/
+lemma IsShelling_snoc {B B' : Finset (Finset V)} {l : List (Finset V)} {t : Finset V}
+    (h : IsShelling l B) (hg : GlueStep t B B') : IsShelling (l ++ [t]) B' :=
+  IsShelling_append h ⟨B', hg, rfl⟩
+
+/-- **Case-1 reassembly.** A ball whose boundary admits a `GlueStep` for a fresh
+tet `t` grows to the ball with `t` adjoined. -/
+theorem IsBall.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Finset V}
+    (h : IsBall τ B) (hg : GlueStep t B B') (ht : t ∉ τ) : IsBall (insert t τ) B' := by
+  obtain ⟨l, hlτ, hnodup, hsh⟩ := h
+  have htl : t ∉ l := fun hc => ht (hlτ ▸ List.mem_toFinset.mpr hc)
+  refine ⟨l ++ [t], ?_, ?_, IsShelling_snoc hsh hg⟩
+  · rw [List.toFinset_append, hlτ]
+    ext s
+    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+    tauto
+  · refine hnodup.append (List.nodup_singleton t) ?_
+    rw [List.disjoint_left]; intro a ha
+    simp only [List.mem_singleton]; rintro rfl; exact htl ha
+
+/-- A *relative shelling*: glue the tets of `τ` onto an ambient boundary `B₀`,
+ending at `B`. (`IsBall` is the special case `B₀ = tetFaces (head)`.) This is the
+invariant the case-2 bridge needs but `IsBall` does not supply. -/
+def RelShelling (τ B₀ B : Finset (Finset V)) : Prop :=
+  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ ShellFrom B₀ l B
+
+/-- **Case-2 bridge (tautological given the relative shelling).** A ball `τ₁`,
+a `GlueStep` tet `t` onto its boundary, and a relative shelling of `τ₂` onto the
+resulting boundary, assemble into one ball. The hard part — that the separated
+ball actually supplies the `RelShelling` — is M22b. -/
+theorem IsBall.bridge_of_relShelling {τ₁ τ₂ B₁ Bmid B : Finset (Finset V)} {t : Finset V}
+    (h₁ : IsBall τ₁ B₁) (hg : GlueStep t B₁ Bmid) (h₂ : RelShelling τ₂ Bmid B)
+    (ht₁ : t ∉ τ₁) (ht₂ : t ∉ τ₂) (hdisj : Disjoint τ₁ τ₂) :
+    IsBall (insert t (τ₁ ∪ τ₂)) B := by
+  obtain ⟨l₁, hl₁, hn₁, hsh₁⟩ := h₁
+  obtain ⟨l₂, hl₂, hn₂, hsf₂⟩ := h₂
+  have htl₁ : t ∉ l₁ := fun hc => ht₁ (hl₁ ▸ List.mem_toFinset.mpr hc)
+  have htl₂ : t ∉ l₂ := fun hc => ht₂ (hl₂ ▸ List.mem_toFinset.mpr hc)
+  have hdl : l₁.Disjoint l₂ := by
+    intro a ha ha₂
+    exact Finset.disjoint_left.mp hdisj (hl₁ ▸ List.mem_toFinset.mpr ha)
+      (hl₂ ▸ List.mem_toFinset.mpr ha₂)
+  refine ⟨(l₁ ++ [t]) ++ l₂, ?_, ?_, IsShelling_append (IsShelling_snoc hsh₁ hg) hsf₂⟩
+  · rw [List.toFinset_append, List.toFinset_append, hl₁, hl₂]
+    ext s
+    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+    tauto
+  · refine (hn₁.append (List.nodup_singleton t) ?_).append hn₂ ?_
+    · rw [List.disjoint_left]; intro a ha
+      simp only [List.mem_singleton]; rintro rfl; exact htl₁ ha
+    · rw [List.disjoint_left]; intro a ha
+      rw [List.mem_append, List.mem_singleton] at ha
+      rcases ha with ha | rfl
+      · exact List.disjoint_left.mp hdl ha
+      · exact htl₂
+
+/-! ## A single tetrahedron is a ball -/
+
+/-- A single tetrahedron `t` is a shelling-certified ball whose boundary is
+the tetrahedron-boundary sphere. -/
+theorem isBall_singleton {t : Finset V} (ht : t.card = 4) :
+    IsBall {t} (tetFaces t) := by
+  refine ⟨[t], by simp, by simp, ?_⟩
+  simp only [IsShelling, ShellFrom]
+  exact ⟨ht, trivial⟩
+
+/-- A single tetrahedron is freely shellable. -/
+theorem freelyShellable_singleton {t : Finset V} (ht : t.card = 4) :
+    FreelyShellable {t} (tetFaces t) := by
+  intro t' ht'
+  rw [Finset.mem_singleton] at ht'
+  subst t'
+  refine ⟨[t], by simp, by simp, by simp, ?_⟩
+  simp only [IsShelling, ShellFrom]
+  exact ⟨ht, trivial⟩
+
+end Taut
+
+exec
+/bin/zsh -lc "sed -n '260,620p' lean/Taut/Complex2.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  have hedge : {v, x} ∈ edgesOf σ := (mem_linkVerts_iff_edge h hxv).mp hx
+  have himg : ((linkVerts σ v).filter
+        (fun y => (linkGraph σ v).Adj x y)).image (fun y => {v, x, y})
+      = σ.filter (fun f => {v, x} ⊆ f) := by
+    ext f
+    rw [Finset.mem_image, Finset.mem_filter]
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      obtain ⟨hyL, hxy, hface⟩ := Finset.mem_filter.mp hy
+      refine ⟨hface, ?_⟩
+      intro u hu
+      rcases Finset.mem_insert.mp hu with rfl | hu
+      · exact Finset.mem_insert_self _ _
+      · rw [Finset.mem_singleton] at hu
+        subst hu
+        exact Finset.mem_insert_of_mem (Finset.mem_insert_self _ _)
+    · rintro ⟨hf, hef⟩
+      obtain ⟨z, hze, hfz⟩ := exists_third hef
+        (Finset.card_pair (Ne.symm hxv)) (h.pure f hf)
+      have hzv : z ≠ v := fun hzv => hze (by rw [hzv]; simp)
+      have hzx : z ≠ x := fun hzx => hze (by simp [hzx])
+      have hfz' : f = {v, x, z} := by
+        rw [hfz]
+        ext u
+        simp only [Finset.mem_insert, Finset.mem_singleton]
+        tauto
+      refine ⟨z, Finset.mem_filter.mpr ⟨?_, ?_⟩, hfz'.symm⟩
+      · exact mem_linkVerts.mpr ⟨hzv, f, hf,
+          hef (Finset.mem_insert_self v _), hfz' ▸ (by simp)⟩
+      · exact ⟨Ne.symm hzx, hfz' ▸ hf⟩
+  have hinj : ∀ y₁ ∈ (linkVerts σ v).filter
+        (fun y => (linkGraph σ v).Adj x y),
+      ∀ y₂ ∈ (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y),
+      (fun y => ({v, x, y} : Finset V)) y₁
+        = (fun y => ({v, x, y} : Finset V)) y₂ → y₁ = y₂ := by
+    intro y₁ h₁ y₂ h₂ heq
+    have hy₁v : y₁ ≠ v := (Finset.mem_erase.mp (Finset.mem_filter.mp h₁).1).1
+    have hy₁x : y₁ ≠ x := Ne.symm (Finset.mem_filter.mp h₁).2.1
+    have heq' : ({v, x, y₁} : Finset V) = {v, x, y₂} := heq
+    have hy₁ : y₁ ∈ ({v, x, y₂} : Finset V) := heq' ▸ (by simp)
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hy₁
+    rcases hy₁ with rfl | rfl | hy
+    · exact absurd rfl hy₁v
+    · exact absurd rfl hy₁x
+    · exact hy
+  have hcard := Finset.card_image_of_injOn hinj
+  rw [himg] at hcard
+  rw [← hcard]
+  exact h.closed _ hedge
+
+/-- Minimum degree three: every vertex of a sphere has at least three
+neighbors. -/
+theorem three_le_card_linkVerts {σ : Finset (Finset V)} (h : IsSphere2 σ)
+    {v : V} (hv : v ∈ vertsOf σ) : 3 ≤ (linkVerts σ v).card := by
+  obtain ⟨f, hf, hvf⟩ := mem_vertsOf.mp hv
+  have hf3 := h.pure f hf
+  have he2 : (f.erase v).card = 2 := by
+    rw [Finset.card_erase_of_mem hvf, hf3]
+  obtain ⟨x, y, hxy, hpair⟩ := Finset.card_eq_two.mp he2
+  have hxe : x ∈ f.erase v := by rw [hpair]; simp
+  have hye : y ∈ f.erase v := by rw [hpair]; simp
+  have hxf : x ∈ f := Finset.mem_of_mem_erase hxe
+  have hyf : y ∈ f := Finset.mem_of_mem_erase hye
+  have hxv : x ≠ v := Finset.ne_of_mem_erase hxe
+  have hyv : y ≠ v := Finset.ne_of_mem_erase hye
+  have hvx_sub : ({v, x} : Finset V) ⊆ f := by
+    intro u hu
+    rcases Finset.mem_insert.mp hu with rfl | hu
+    · exact hvf
+    · rw [Finset.mem_singleton] at hu
+      exact hu ▸ hxf
+  have hedge : {v, x} ∈ edgesOf σ :=
+    mem_edgesOf.mpr ⟨f, hf, hvx_sub, Finset.card_pair (Ne.symm hxv)⟩
+  obtain ⟨f₁, hf₁, f₂, hf₂, hne, he₁, he₂, huniq⟩ := exists_two_faces h.toClosedSurface hedge
+  obtain ⟨f', hf', hef', hff'⟩ : ∃ f' ∈ σ, {v, x} ⊆ f' ∧ f' ≠ f := by
+    rcases huniq f hf hvx_sub with rfl | rfl
+    · exact ⟨f₂, hf₂, he₂, hne.symm⟩
+    · exact ⟨f₁, hf₁, he₁, hne⟩
+  obtain ⟨z, hze, hfz⟩ := exists_third hef'
+    (Finset.card_pair (Ne.symm hxv)) (h.pure f' hf')
+  have hzv : z ≠ v := fun hzv => hze (by rw [hzv]; simp)
+  have hzx : z ≠ x := fun hzx => hze (by simp [hzx])
+  have hzy : z ≠ y := by
+    intro hzy
+    apply hff'
+    have hfeq : f = insert v {x, y} := by
+      rw [← hpair, Finset.insert_erase hvf]
+    rw [hfz, hzy, hfeq]
+    ext u
+    simp only [Finset.mem_insert, Finset.mem_singleton]
+    tauto
+  have hxL : x ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hxv, f, hf, hvf, hxf⟩
+  have hyL : y ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hyv, f, hf, hvf, hyf⟩
+  have hzL : z ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hzv, f', hf',
+    hef' (Finset.mem_insert_self v _), by rw [hfz]; exact Finset.mem_insert_self z _⟩
+  calc 3 = ({x, y, z} : Finset V).card :=
+        (Finset.card_eq_three.mpr ⟨x, y, z, hxy, Ne.symm hzx, Ne.symm hzy,
+          rfl⟩).symm
+    _ ≤ (linkVerts σ v).card := by
+        refine Finset.card_le_card ?_
+        intro u hu
+        rcases Finset.mem_insert.mp hu with rfl | hu
+        · exact hxL
+        · rcases Finset.mem_insert.mp hu with rfl | hu
+          · exact hyL
+          · rw [Finset.mem_singleton] at hu
+            exact hu ▸ hzL
+
+/-! ## The boundary of the tetrahedron -/
+
+/-- The boundary complex of the tetrahedron on `a, b, c, d`. -/
+def tetraBdry (a b c d : V) : Finset (Finset V) :=
+  {{a, b, c}, {a, b, d}, {a, c, d}, {b, c, d}}
+
+section Tetra
+
+variable {a b c d : V} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d)
+  (hbc : b ≠ c) (hbd : b ≠ d) (hcd : c ≠ d)
+
+include hab hac had hbc hbd hcd
+
+private lemma tetra_T_card : ({a, b, c, d} : Finset V).card = 4 := by
+  rw [Finset.card_insert_of_notMem (by simp [hab, hac, had]),
+    Finset.card_insert_of_notMem (by simp [hbc, hbd]),
+    Finset.card_insert_of_notMem (by simp [hcd]),
+    Finset.card_singleton]
+
+/-- Membership in `tetraBdry` is "card-3 subset of the vertex set". -/
+private lemma tetra_mem :
+    ∀ f : Finset V, f ∈ tetraBdry a b c d ↔
+      f ⊆ {a, b, c, d} ∧ f.card = 3 := by
+  intro f
+  constructor
+  · intro hf
+    rw [tetraBdry] at hf
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hf
+    rcases hf with rfl | rfl | rfl | rfl
+    · exact ⟨by intro x hx; simp at hx ⊢; tauto,
+        Finset.card_eq_three.mpr ⟨a, b, c, hab, hac, hbc, rfl⟩⟩
+    · exact ⟨by intro x hx; simp at hx ⊢; tauto,
+        Finset.card_eq_three.mpr ⟨a, b, d, hab, had, hbd, rfl⟩⟩
+    · exact ⟨by intro x hx; simp at hx ⊢; tauto,
+        Finset.card_eq_three.mpr ⟨a, c, d, hac, had, hcd, rfl⟩⟩
+    · exact ⟨by intro x hx; simp at hx ⊢; tauto,
+        Finset.card_eq_three.mpr ⟨b, c, d, hbc, hbd, hcd, rfl⟩⟩
+  · rintro ⟨hsub, hcard⟩
+    have hT := tetra_T_card hab hac had hbc hbd hcd
+    have hdiff : (({a, b, c, d} : Finset V) \ f).card = 1 := by
+      rw [Finset.card_sdiff_of_subset hsub, hT, hcard]
+    obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hdiff
+    have hf : f = ({a, b, c, d} : Finset V) \ {w} := by
+      rw [← hw, Finset.sdiff_sdiff_self_left,
+        Finset.inter_eq_right.mpr hsub]
+    have hwT : w ∈ ({a, b, c, d} : Finset V) := by
+      have : w ∈ ({a, b, c, d} : Finset V) \ f := by
+        rw [hw]; exact Finset.mem_singleton_self w
+      exact (Finset.mem_sdiff.mp this).1
+    rw [tetraBdry]
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hwT ⊢
+    rcases hwT with rfl | rfl | rfl | rfl
+    · refine Or.inr (Or.inr (Or.inr ?_))
+      rw [hf]
+      ext x
+      simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+      constructor
+      · rintro ⟨h1 | h1 | h1 | h1, h2⟩ <;> first | exact absurd h1 h2 | tauto
+      · rintro (rfl | rfl | rfl)
+        · exact ⟨by tauto, Ne.symm hab⟩
+        · exact ⟨by tauto, Ne.symm hac⟩
+        · exact ⟨by tauto, Ne.symm had⟩
+    · refine Or.inr (Or.inr (Or.inl ?_))
+      rw [hf]
+      ext x
+      simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+      constructor
+      · rintro ⟨h1 | h1 | h1 | h1, h2⟩ <;> first | exact absurd h1 h2 | tauto
+      · rintro (rfl | rfl | rfl)
+        · exact ⟨by tauto, hab⟩
+        · exact ⟨by tauto, Ne.symm hbc⟩
+        · exact ⟨by tauto, Ne.symm hbd⟩
+    · refine Or.inr (Or.inl ?_)
+      rw [hf]
+      ext x
+      simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+      constructor
+      · rintro ⟨h1 | h1 | h1 | h1, h2⟩ <;> first | exact absurd h1 h2 | tauto
+      · rintro (rfl | rfl | rfl)
+        · exact ⟨by tauto, hac⟩
+        · exact ⟨by tauto, hbc⟩
+        · exact ⟨by tauto, Ne.symm hcd⟩
+    · refine Or.inl ?_
+      rw [hf]
+      ext x
+      simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+      constructor
+      · rintro ⟨h1 | h1 | h1 | h1, h2⟩ <;> first | exact absurd h1 h2 | tauto
+      · rintro (rfl | rfl | rfl)
+        · exact ⟨by tauto, had⟩
+        · exact ⟨by tauto, hbd⟩
+        · exact ⟨by tauto, hcd⟩
+
+private lemma tetra_verts :
+    vertsOf (tetraBdry a b c d) = {a, b, c, d} := by
+  ext x
+  rw [mem_vertsOf]
+  constructor
+  · rintro ⟨f, hf, hxf⟩
+    exact ((tetra_mem hab hac had hbc hbd hcd f).mp hf).1 hxf
+  · intro hx
+    -- pick two other vertices of T to complete a face
+    have h2 : 2 ≤ (({a, b, c, d} : Finset V).erase x).card := by
+      rw [Finset.card_erase_of_mem hx, tetra_T_card hab hac had hbc hbd hcd]
+      omega
+    obtain ⟨y, hy, z, hz, hyz⟩ := exists_pair_of_one_lt_card h2
+    refine ⟨{x, y, z}, (tetra_mem hab hac had hbc hbd hcd _).mpr
+      ⟨?_, Finset.card_eq_three.mpr
+        ⟨x, y, z, Ne.symm (Finset.ne_of_mem_erase hy),
+          Ne.symm (Finset.ne_of_mem_erase hz), hyz, rfl⟩⟩,
+      Finset.mem_insert_self x _⟩
+    intro u hu
+    rcases Finset.mem_insert.mp hu with rfl | hu
+    · exact hx
+    · rcases Finset.mem_insert.mp hu with rfl | hu
+      · exact Finset.mem_of_mem_erase hy
+      · rw [Finset.mem_singleton] at hu
+        exact hu ▸ Finset.mem_of_mem_erase hz
+
+private lemma tetra_edges :
+    edgesOf (tetraBdry a b c d) = ({a, b, c, d} : Finset V).powersetCard 2 := by
+  ext e
+  rw [mem_edgesOf, Finset.mem_powersetCard]
+  constructor
+  · rintro ⟨f, hf, hef, hcard⟩
+    exact ⟨hef.trans ((tetra_mem hab hac had hbc hbd hcd f).mp hf).1, hcard⟩
+  · rintro ⟨hsub, hcard⟩
+    -- complete the edge to a face with any third vertex
+    have h1 : 1 ≤ (({a, b, c, d} : Finset V) \ e).card := by
+      rw [Finset.card_sdiff_of_subset hsub, tetra_T_card hab hac had hbc hbd hcd, hcard]
+      omega
+    obtain ⟨z, hz⟩ := Finset.card_pos.mp
+      (show 0 < (({a, b, c, d} : Finset V) \ e).card by omega)
+    obtain ⟨hzT, hze⟩ := Finset.mem_sdiff.mp hz
+    refine ⟨insert z e, (tetra_mem hab hac had hbc hbd hcd _).mpr
+      ⟨Finset.insert_subset hzT hsub, ?_⟩,
+      Finset.subset_insert z e, hcard⟩
+    rw [Finset.card_insert_of_notMem hze, hcard]
+
+/-- Faces containing a fixed edge of the tetrahedron boundary: exactly
+the two completions by a vertex outside the edge. -/
+private lemma tetra_closed :
+    ∀ e ∈ edgesOf (tetraBdry a b c d), edgeDeg (tetraBdry a b c d) e = 2 := by
+  intro e he
+  rw [tetra_edges hab hac had hbc hbd hcd, Finset.mem_powersetCard] at he
+  obtain ⟨hsub, hcard⟩ := he
+  have hfilter : (tetraBdry a b c d).filter (fun f => e ⊆ f)
+      = (({a, b, c, d} : Finset V) \ e).image (fun z => insert z e) := by
+    ext f
+    rw [Finset.mem_filter, Finset.mem_image]
+    constructor
+    · rintro ⟨hf, hef⟩
+      obtain ⟨hfT, hf3⟩ := (tetra_mem hab hac had hbc hbd hcd f).mp hf
+      have hd : (f \ e).card = 1 := by
+        rw [Finset.card_sdiff_of_subset hef, hf3, hcard]
+      obtain ⟨z, hz⟩ := Finset.card_eq_one.mp hd
+      have hzf : z ∈ f \ e := by rw [hz]; exact Finset.mem_singleton_self z
+      obtain ⟨hzf', hze⟩ := Finset.mem_sdiff.mp hzf
+      refine ⟨z, Finset.mem_sdiff.mpr ⟨hfT hzf', hze⟩, ?_⟩
+      have : f = e ∪ (f \ e) := by
+        rw [Finset.union_sdiff_of_subset hef]
+      rw [this, hz]
+      ext x
+      simp only [Finset.mem_union, Finset.mem_singleton, Finset.mem_insert]
+      tauto
+    · rintro ⟨z, hz, rfl⟩
+      obtain ⟨hzT, hze⟩ := Finset.mem_sdiff.mp hz
+      refine ⟨(tetra_mem hab hac had hbc hbd hcd _).mpr
+        ⟨Finset.insert_subset hzT hsub, ?_⟩, Finset.subset_insert z e⟩
+      rw [Finset.card_insert_of_notMem hze, hcard]
+  rw [edgeDeg, hfilter, Finset.card_image_of_injOn, Finset.card_sdiff_of_subset hsub,
+    tetra_T_card hab hac had hbc hbd hcd, hcard]
+  intro z₁ h₁ z₂ h₂ hins
+  have hins' : insert z₁ e = insert z₂ e := hins
+  have hz₁ : z₁ ∈ insert z₂ e := hins' ▸ Finset.mem_insert_self z₁ e
+  rcases Finset.mem_insert.mp hz₁ with h | h
+  · exact h
+  · exact absurd h (Finset.mem_sdiff.mp h₁).2
+
+/-- Validation instance: the boundary of the tetrahedron is a
+combinatorial 2-sphere. -/
+theorem isSphere2_tetraBdry :
+    IsSphere2 (tetraBdry a b c d) := by
+  have hmem := tetra_mem hab hac had hbc hbd hcd
+  have hverts := tetra_verts hab hac had hbc hbd hcd
+  have hT := tetra_T_card hab hac had hbc hbd hcd
+  constructor
+  · exact fun f hf => ((hmem f).mp hf).2
+  · exact tetra_closed hab hac had hbc hbd hcd
+  · -- links: every pair of neighbours of v spans a face with v
+    intro v hv x hx y hy
+    rw [hverts] at hv
+    have hmemT : ∀ w, w ∈ linkVerts (tetraBdry a b c d) v →
+        w ∈ ({a, b, c, d} : Finset V) ∧ w ≠ v := by
+      intro w hw
+      have hwv := Finset.ne_of_mem_erase hw
+      have hw' := Finset.mem_of_mem_erase hw
+      rw [mem_vertsOf] at hw'
+      obtain ⟨f, hf, hwf⟩ := hw'
+      have hfσ := Finset.mem_of_mem_filter f hf
+      exact ⟨hverts ▸ mem_vertsOf.mpr ⟨f, hfσ, hwf⟩, hwv⟩
+    obtain ⟨hxT, hxv⟩ := hmemT x hx
+    obtain ⟨hyT, hyv⟩ := hmemT y hy
+    by_cases hxy : x = y
+    · subst hxy; exact ⟨SimpleGraph.Walk.nil⟩
+    refine SimpleGraph.Adj.reachable ⟨hxy, ?_⟩
+    refine (hmem _).mpr ⟨?_, Finset.card_eq_three.mpr
+      ⟨v, x, y, Ne.symm hxv, Ne.symm hyv, hxy, rfl⟩⟩
+    intro u hu
+    rcases Finset.mem_insert.mp hu with rfl | hu
+    · exact hv
+    · rcases Finset.mem_insert.mp hu with rfl | hu
+      · exact hxT
+      · rw [Finset.mem_singleton] at hu
+        exact hu ▸ hyT
+  · -- the 1-skeleton is complete on the four vertices
+    intro x hx y hy
+    rw [hverts] at hx hy
+    by_cases hxy : x = y
+    · subst hxy; exact ⟨SimpleGraph.Walk.nil⟩
+    refine SimpleGraph.Adj.reachable ⟨hxy, ?_⟩
+    rw [tetra_edges hab hac had hbc hbd hcd, Finset.mem_powersetCard]
+    refine ⟨?_, Finset.card_eq_two.mpr ⟨x, y, hxy, rfl⟩⟩
+    intro u hu
+    rcases Finset.mem_insert.mp hu with rfl | hu
+    · exact hx
+    · rw [Finset.mem_singleton] at hu
+      exact hu ▸ hy
+  · -- Euler: 4 + 4 = 6 + 2
+    have hS : tetraBdry a b c d = ({a, b, c, d} : Finset V).powersetCard 3 := by
+      ext f
+      rw [hmem f, Finset.mem_powersetCard]
+    rw [hverts, tetra_edges hab hac had hbc hbd hcd, hS,
+      Finset.card_powersetCard, Finset.card_powersetCard, hT]
+    rfl
+
+end Tetra
+
+/-- The boundary of any 4-element set (its card-3 subsets) is a combinatorial
+2-sphere.  This is the base-case sphere of the Theorem 2 induction and the
+initial boundary of a one-tet ball. -/
+theorem isSphere2_powersetCard3 {t : Finset V} (ht : t.card = 4) :
+    IsSphere2 (t.powersetCard 3) := by
+  obtain ⟨a, b, c, d, hab, hac, had, hbc, hbd, hcd, rfl⟩ := Finset.card_eq_four.mp ht
+  have heq : ({a, b, c, d} : Finset V).powersetCard 3 = tetraBdry a b c d := by
+    ext f
+    rw [Finset.mem_powersetCard, tetra_mem hab hac had hbc hbd hcd f]
+  rw [heq]
+  exact isSphere2_tetraBdry hab hac had hbc hbd hcd
+
+end Taut
+
+exec
+/bin/zsh -lc "rg -n \"def Chain|def bdry|def bdryGen|def sgn|tetraBdry|powersetCard 3|isSphere2_tetraBdry|isSphere2_powersetCard3\" lean/Taut -g'*.lean'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Complex2.lean:22:  sphere (`isSphere2_tetraBdry`) — the semantic smoke test against a
+lean/Taut/Complex2.lean:371:def tetraBdry (a b c d : V) : Finset (Finset V) :=
+lean/Taut/Complex2.lean:387:/-- Membership in `tetraBdry` is "card-3 subset of the vertex set". -/
+lean/Taut/Complex2.lean:389:    ∀ f : Finset V, f ∈ tetraBdry a b c d ↔
+lean/Taut/Complex2.lean:394:    rw [tetraBdry] at hf
+lean/Taut/Complex2.lean:417:    rw [tetraBdry]
+lean/Taut/Complex2.lean:462:    vertsOf (tetraBdry a b c d) = {a, b, c, d} := by
+lean/Taut/Complex2.lean:488:    edgesOf (tetraBdry a b c d) = ({a, b, c, d} : Finset V).powersetCard 2 := by
+lean/Taut/Complex2.lean:510:    ∀ e ∈ edgesOf (tetraBdry a b c d), edgeDeg (tetraBdry a b c d) e = 2 := by
+lean/Taut/Complex2.lean:514:  have hfilter : (tetraBdry a b c d).filter (fun f => e ⊆ f)
+lean/Taut/Complex2.lean:549:theorem isSphere2_tetraBdry :
+lean/Taut/Complex2.lean:550:    IsSphere2 (tetraBdry a b c d) := by
+lean/Taut/Complex2.lean:560:    have hmemT : ∀ w, w ∈ linkVerts (tetraBdry a b c d) v →
+lean/Taut/Complex2.lean:597:    have hS : tetraBdry a b c d = ({a, b, c, d} : Finset V).powersetCard 3 := by
+lean/Taut/Complex2.lean:609:theorem isSphere2_powersetCard3 {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Complex2.lean:610:    IsSphere2 (t.powersetCard 3) := by
+lean/Taut/Complex2.lean:612:  have heq : ({a, b, c, d} : Finset V).powersetCard 3 = tetraBdry a b c d := by
+lean/Taut/Complex2.lean:616:  exact isSphere2_tetraBdry hab hac had hbc hbd hcd
+lean/Taut/Ball.lean:26:`t.powersetCard 3`.  When tet `t` is glued onto a ball whose boundary is the
+lean/Taut/Ball.lean:29:`(B \ t.powersetCard 3) ∪ (t.powersetCard 3 \ B)`.
+lean/Taut/Ball.lean:43:abbrev tetFaces (t : Finset V) : Finset (Finset V) := t.powersetCard 3
+lean/Taut/Ball.lean:111:      exact h.2.isSphere2 (isSphere2_powersetCard3 h.1)
+lean/Taut/Chains.lean:47:def sgn (x : V) (s : Finset V) : ℤ := (-1) ^ cnt x s
+lean/Taut/Chains.lean:123:noncomputable def bdryGen (s : Finset V) : Chain V :=
+lean/Taut/Chains.lean:127:noncomputable def bdry : Chain V →ₗ[ℤ] Chain V :=
+
+codex
+The ball side confirms Q3 is a plain type-1 `GlueStep`: one shared face, symmetric-difference boundary, then `IsBall.insert_of_glueStep`. I’m checking existing chain orientation primitives next so the cap lemma can be stated with the least sign machinery.
+exec
+/bin/zsh -lc "sed -n '1,170p' lean/Taut/Chains.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Mathlib
+
+/-!
+# Simplicial chains on a full simplex
+
+Foundation for formalizing Doyle–Ellison–Wang, "Taut fillings".
+
+We work with the AUGMENTED, dimension-mixed simplicial chain group of the
+full simplex on a linearly ordered vertex type `V`: a chain is a finitely
+supported function `Finset V →₀ ℤ`, a generator being an unoriented simplex
+`s : Finset V` carrying its canonical orientation (vertices in increasing
+order).  `∅` is the (−1)-simplex; its presence makes the contracting
+homotopy `∂ ∘ cone + cone ∘ ∂ = id` exact and global, which is what gives
+filling-existence for closed chains.
+
+Sign bookkeeping is via `cnt x s = #{y ∈ s | y < x}` and
+`sgn x s = (-1) ^ cnt x s`: the `i`-th vertex of a sorted simplex has
+exactly `i` smaller members, so `sgn` is the classical `(-1)^i`.
+
+Main definitions: `bdry` (boundary), `cone`, `lk` (link/strip), `nbhd`
+(restriction to simplices containing a vertex), `vert`, `nrm` (L¹ norm),
+`deg`, `SubChain`.
+
+Main results (the validation invariants of the G1 spec):
+* `bdry_bdry` : ∂∂ = 0;
+* `bdry_cone_add_cone_bdry` : ∂(cone x M) + cone x (∂M) = M;
+* `cone_lk` : cone x (lk x M) = nbhd x M;
+* `nrm_cone_add_deg` : nrm (cone x M) + deg x M = nrm M.
+-/
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-- Augmented, dimension-mixed simplicial chains on the full simplex with
+vertex type `V`. -/
+abbrev Chain (V : Type*) := Finset V →₀ ℤ
+
+/-! ## Counting below, and signs -/
+
+/-- The number of vertices of `s` strictly below `x`: the position `x` takes
+(or would take) in the sorted listing of `insert x s`. -/
+def cnt (x : V) (s : Finset V) : ℕ := (s.filter (· < x)).card
+
+/-- The sign `(-1) ^ cnt x s`: the sign of the permutation sorting `x`
+into `s`. -/
+def sgn (x : V) (s : Finset V) : ℤ := (-1) ^ cnt x s
+
+lemma sgn_mul_self (x : V) (s : Finset V) : sgn x s * sgn x s = 1 := by
+  simp only [sgn, ← pow_add]
+  exact Even.neg_one_pow ⟨_, rfl⟩
+
+lemma natAbs_sgn (x : V) (s : Finset V) : (sgn x s).natAbs = 1 := by
+  simp [sgn, Int.natAbs_pow]
+
+lemma sgn_smul_sgn_smul (x : V) (s : Finset V) (M : Chain V) :
+    sgn x s • sgn x s • M = M := by
+  rw [smul_smul, sgn_mul_self, one_smul]
+
+lemma cnt_insert (x z : V) (t : Finset V) (hz : z ∉ t) :
+    cnt x (insert z t) = cnt x t + if z < x then 1 else 0 := by
+  unfold cnt
+  rw [Finset.filter_insert]
+  split
+  · rw [Finset.card_insert_of_notMem (fun h => hz (Finset.mem_of_mem_filter z h))]
+  · rw [add_zero]
+
+lemma cnt_self_insert (x : V) (t : Finset V) (hx : x ∉ t) :
+    cnt x (insert x t) = cnt x t := by
+  rw [cnt_insert x x t hx, if_neg (lt_irrefl x), add_zero]
+
+lemma sgn_insert (x z : V) (t : Finset V) (hz : z ∉ t) :
+    sgn x (insert z t) = (if z < x then -1 else 1) * sgn x t := by
+  rw [sgn, sgn, cnt_insert x z t hz]
+  split <;> simp [pow_add]
+
+lemma sgn_self_insert (x : V) (t : Finset V) (hx : x ∉ t) :
+    sgn x (insert x t) = sgn x t := by
+  rw [sgn, sgn, cnt_self_insert x t hx]
+
+/-- Express the sign on `s` via the sign on `s.erase z`. -/
+lemma sgn_eq_erase (x z : V) (s : Finset V) (hz : z ∈ s) :
+    sgn x s = (if z < x then -1 else 1) * sgn x (s.erase z) := by
+  conv_lhs => rw [← Finset.insert_erase hz]
+  exact sgn_insert x z _ (Finset.notMem_erase z s)
+
+lemma sgn_erase_self (x : V) (s : Finset V) : sgn x (s.erase x) = sgn x s := by
+  by_cases hx : x ∈ s
+  · rw [sgn_eq_erase x x s hx, if_neg (lt_irrefl x), one_mul]
+  · rw [Finset.erase_eq_of_notMem hx]
+
+/-- The fundamental parity fact: for `x ≠ z` exactly one of the two
+order-comparisons fires. -/
+lemma if_lt_mul_if_lt {x z : V} (h : x ≠ z) :
+    (if z < x then (-1 : ℤ) else 1) * (if x < z then -1 else 1) = -1 := by
+  rcases h.lt_or_gt with h' | h'
+  · rw [if_neg (asymm h'), if_pos h', one_mul]
+  · rw [if_pos h', if_neg (asymm h'), mul_one]
+
+/-- Sign cancellation for `∂∂ = 0`: removing `x` then `z` versus removing
+`z` then `x`. -/
+lemma sgn_erase_cancel {x z : V} {s : Finset V} (hx : x ∈ s) (hz : z ∈ s)
+    (hne : x ≠ z) :
+    sgn x s * sgn z (s.erase x) = -(sgn z s * sgn x (s.erase z)) := by
+  rw [sgn_eq_erase x z s hz, sgn_eq_erase z x s hx]
+  rcases hne.lt_or_gt with h' | h'
+  · rw [if_neg (asymm h'), if_pos h']; ring
+  · rw [if_pos h', if_neg (asymm h')]; ring
+
+/-- Sign cancellation for the homotopy identity: adjoining `x` versus
+removing `z`, for `x ∉ s`, `z ∈ s`. -/
+lemma sgn_insert_cancel {x z : V} {s : Finset V} (hx : x ∉ s) (hz : z ∈ s) :
+    sgn x s * sgn z (insert x s) = -(sgn z s * sgn x (s.erase z)) := by
+  have hne : x ≠ z := fun h => hx (h ▸ hz)
+  rw [sgn_insert z x s hx, sgn_eq_erase x z s hz]
+  rcases hne.lt_or_gt with h' | h'
+  · rw [if_pos h', if_neg (asymm h')]; ring
+  · rw [if_neg (asymm h'), if_pos h']; ring
+
+/-! ## The operators -/
+
+/-- Boundary of one generator: the alternating sum of its facets. -/
+noncomputable def bdryGen (s : Finset V) : Chain V :=
+  ∑ x ∈ s, sgn x s • Finsupp.single (s.erase x) 1
+
+/-- The boundary operator. -/
+noncomputable def bdry : Chain V →ₗ[ℤ] Chain V :=
+  Finsupp.lsum ℤ fun s => LinearMap.toSpanSingleton ℤ (Chain V) (bdryGen s)
+
+@[simp] lemma bdry_single (s : Finset V) (c : ℤ) :
+    bdry (Finsupp.single s c) = c • bdryGen s := by
+  simp [bdry, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+
+/-- Cone of one generator: adjoin `x`, with the sign that sorts `x` into
+place; kill simplices already containing `x`. -/
+noncomputable def coneGen (x : V) (s : Finset V) : Chain V :=
+  if x ∈ s then 0 else sgn x s • Finsupp.single (insert x s) 1
+
+/-- The cone operator `M ↦ x ∗ M`. -/
+noncomputable def cone (x : V) : Chain V →ₗ[ℤ] Chain V :=
+  Finsupp.lsum ℤ fun s => LinearMap.toSpanSingleton ℤ (Chain V) (coneGen x s)
+
+@[simp] lemma cone_single (x : V) (s : Finset V) (c : ℤ) :
+    cone x (Finsupp.single s c) = c • coneGen x s := by
+  simp [cone, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+
+/-- Link (strip) of one generator: remove `x`, with the matching sign;
+kill simplices not containing `x`. -/
+noncomputable def lkGen (x : V) (s : Finset V) : Chain V :=
+  if x ∈ s then sgn x s • Finsupp.single (s.erase x) 1 else 0
+
+/-- The link/strip operator: inverse to `cone x` on simplices containing
+`x`. -/
+noncomputable def lk (x : V) : Chain V →ₗ[ℤ] Chain V :=
+  Finsupp.lsum ℤ fun s => LinearMap.toSpanSingleton ℤ (Chain V) (lkGen x s)
+
+@[simp] lemma lk_single (x : V) (s : Finset V) (c : ℤ) :
+    lk x (Finsupp.single s c) = c • lkGen x s := by
+  simp [lk, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+
+/-- Restriction of a chain to the simplices containing `x`
+(the paper's `nbhd`). -/
+noncomputable def nbhd (x : V) (M : Chain V) : Chain V :=
+  M.filter (fun s => x ∈ s)
+
+@[simp] lemma nbhd_apply (x : V) (M : Chain V) (s : Finset V) :
+    nbhd x M s = if x ∈ s then M s else 0 := by
+  simp [nbhd, Finsupp.filter_apply]
+
+lemma nbhd_add (x : V) (M N : Chain V) :
+
+exec
+/bin/zsh -lc "rg -n \"filter_pos_add_filter_neg|support_filter|Finsupp.single|single_add|support_add|nrm_filter|filter\" lean/Taut -g'*.lean'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Complex2.lean:42:  (σ.filter (fun f => e ⊆ f)).card
+lean/Taut/Complex2.lean:84:  (vertsOf (σ.filter (fun f => v ∈ f))).erase v
+lean/Taut/Complex2.lean:123:  have hfilter : ∀ f ∈ σ, (edgesOf σ).filter (fun e => e ⊆ f)
+lean/Taut/Complex2.lean:127:    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+lean/Taut/Complex2.lean:133:  have key : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+lean/Taut/Complex2.lean:134:      = ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card := by
+lean/Taut/Complex2.lean:135:    simp_rw [Finset.card_filter]
+lean/Taut/Complex2.lean:137:  have hcongr : ∀ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card = 3 := by
+lean/Taut/Complex2.lean:139:    rw [hfilter f hf, Finset.card_powersetCard, h.pure f hf]
+lean/Taut/Complex2.lean:141:  have hcl : ∀ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card = 2 :=
+lean/Taut/Complex2.lean:143:  have hleft : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+lean/Taut/Complex2.lean:146:  have hright : ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card
+lean/Taut/Complex2.lean:198:  have hf₁ : f₁ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+lean/Taut/Complex2.lean:199:  have hf₂ : f₂ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+lean/Taut/Complex2.lean:200:  obtain ⟨hf₁σ, hef₁⟩ := Finset.mem_filter.mp hf₁
+lean/Taut/Complex2.lean:201:  obtain ⟨hf₂σ, hef₂⟩ := Finset.mem_filter.mp hf₂
+lean/Taut/Complex2.lean:203:  have hmem : f ∈ σ.filter (fun f => e ⊆ f) := Finset.mem_filter.mpr ⟨hf, hef⟩
+lean/Taut/Complex2.lean:229:    exact ⟨hxv, f, Finset.mem_of_mem_filter f hf,
+lean/Taut/Complex2.lean:230:      (Finset.mem_filter.mp hf).2, hxf⟩
+lean/Taut/Complex2.lean:232:    exact ⟨hxv, f, Finset.mem_filter.mpr ⟨hf, hvf⟩, hxf⟩
+lean/Taut/Complex2.lean:257:    ((linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y)).card = 2 := by
+lean/Taut/Complex2.lean:261:  have himg : ((linkVerts σ v).filter
+lean/Taut/Complex2.lean:263:      = σ.filter (fun f => {v, x} ⊆ f) := by
+lean/Taut/Complex2.lean:265:    rw [Finset.mem_image, Finset.mem_filter]
+lean/Taut/Complex2.lean:268:      obtain ⟨hyL, hxy, hface⟩ := Finset.mem_filter.mp hy
+lean/Taut/Complex2.lean:286:      refine ⟨z, Finset.mem_filter.mpr ⟨?_, ?_⟩, hfz'.symm⟩
+lean/Taut/Complex2.lean:290:  have hinj : ∀ y₁ ∈ (linkVerts σ v).filter
+lean/Taut/Complex2.lean:292:      ∀ y₂ ∈ (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y),
+lean/Taut/Complex2.lean:296:    have hy₁v : y₁ ≠ v := (Finset.mem_erase.mp (Finset.mem_filter.mp h₁).1).1
+lean/Taut/Complex2.lean:297:    have hy₁x : y₁ ≠ x := Ne.symm (Finset.mem_filter.mp h₁).2.1
+lean/Taut/Complex2.lean:514:  have hfilter : (tetraBdry a b c d).filter (fun f => e ⊆ f)
+lean/Taut/Complex2.lean:517:    rw [Finset.mem_filter, Finset.mem_image]
+lean/Taut/Complex2.lean:538:  rw [edgeDeg, hfilter, Finset.card_image_of_injOn, Finset.card_sdiff_of_subset hsub,
+lean/Taut/Complex2.lean:567:      have hfσ := Finset.mem_of_mem_filter f hf
+lean/Taut/Eligible.lean:45:    rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne (h x hx), smul_zero]
+lean/Taut/Eligible.lean:270:        ⊆ (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w) := by
+lean/Taut/Eligible.lean:272:      exact Finset.mem_filter.mpr ⟨hL_sub_link (Finset.mem_of_mem_erase hz),
+lean/Taut/Eligible.lean:274:    have hNeq : (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w)
+lean/Taut/Eligible.lean:278:    have : v ∈ (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w) :=
+lean/Taut/Eligible.lean:279:      Finset.mem_filter.mpr ⟨hadj_mem hadjuv, hadjuv⟩
+lean/Taut/Chains.lean:43:def cnt (x : V) (s : Finset V) : ℕ := (s.filter (· < x)).card
+lean/Taut/Chains.lean:63:  rw [Finset.filter_insert]
+lean/Taut/Chains.lean:65:  · rw [Finset.card_insert_of_notMem (fun h => hz (Finset.mem_of_mem_filter z h))]
+lean/Taut/Chains.lean:124:  ∑ x ∈ s, sgn x s • Finsupp.single (s.erase x) 1
+lean/Taut/Chains.lean:131:    bdry (Finsupp.single s c) = c • bdryGen s := by
+lean/Taut/Chains.lean:137:  if x ∈ s then 0 else sgn x s • Finsupp.single (insert x s) 1
+lean/Taut/Chains.lean:144:    cone x (Finsupp.single s c) = c • coneGen x s := by
+lean/Taut/Chains.lean:150:  if x ∈ s then sgn x s • Finsupp.single (s.erase x) 1 else 0
+lean/Taut/Chains.lean:158:    lk x (Finsupp.single s c) = c • lkGen x s := by
+lean/Taut/Chains.lean:164:  M.filter (fun s => x ∈ s)
+lean/Taut/Chains.lean:168:  simp [nbhd, Finsupp.filter_apply]
+lean/Taut/Chains.lean:175:    nbhd x (Finsupp.single s c) = Finsupp.single s c :=
+lean/Taut/Chains.lean:176:  Finsupp.filter_single_of_pos (p := fun u => x ∈ u) h
+lean/Taut/Chains.lean:179:    nbhd x (Finsupp.single s c) = 0 :=
+lean/Taut/Chains.lean:180:  Finsupp.filter_single_of_neg (p := fun u => x ∈ u) h
+lean/Taut/Chains.lean:183:  rw [nbhd, Finsupp.filter_zero]
+lean/Taut/Chains.lean:221:      simp only [smul_zero, Finsupp.coe_zero, Pi.zero_apply, Finsupp.single_apply]
+lean/Taut/Chains.lean:226:      simp only [Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul]
+lean/Taut/Chains.lean:242:  have step : ∀ x ∈ s, bdry (sgn x s • Finsupp.single (s.erase x) 1)
+lean/Taut/Chains.lean:245:            Finsupp.single ((s.erase x).erase z) (1 : ℤ)) := by
+lean/Taut/Chains.lean:250:          Finsupp.single ((s.erase x).erase z) (1 : ℤ)) s (if_pos rfl)]
+lean/Taut/Chains.lean:293:      have key : cone x (bdryGen s) = Finsupp.single s 1 := by
+lean/Taut/Chains.lean:305:      have h1 : bdry (sgn x s • Finsupp.single (insert x s) (1 : ℤ))
+lean/Taut/Chains.lean:306:          = Finsupp.single s 1 + ∑ z ∈ s,
+lean/Taut/Chains.lean:308:                Finsupp.single (insert x (s.erase z)) (1 : ℤ) := by
+lean/Taut/Chains.lean:318:            Finsupp.single (insert x (s.erase z)) (1 : ℤ) := by
+lean/Taut/Chains.lean:327:              Finsupp.single (insert x (s.erase z)) (1 : ℤ)
+lean/Taut/Chains.lean:329:              Finsupp.single (insert x (s.erase z)) (1 : ℤ) = 0 := by
+lean/Taut/Chains.lean:343:  | zero => rw [map_zero, map_zero, nbhd, Finsupp.filter_zero]
+lean/Taut/Chains.lean:364:    · have hz : nbhd x (bdry (Finsupp.single s c)) = 0 := by
+lean/Taut/Chains.lean:373:            rw [Finsupp.smul_apply, Finsupp.single_apply, if_neg, smul_zero]
+lean/Taut/Chains.lean:406:        rw [Finsupp.smul_apply, Finsupp.smul_apply, Finsupp.single_apply,
+lean/Taut/Chains.lean:450:    nrm (Finsupp.single s c) = c.natAbs := by
+lean/Taut/Chains.lean:454:      Finsupp.single_eq_same]
+lean/Taut/Chains.lean:461:  rw [nrm_eq_sum_subset (Finsupp.support_add),
+lean/Taut/Chains.lean:471:lemma nrm_filter_add_nrm_filter_neg (p : Finset V → Prop) [DecidablePred p]
+lean/Taut/Chains.lean:473:    nrm (M.filter p) + nrm (M.filter fun s => ¬ p s) = nrm M := by
+lean/Taut/Chains.lean:474:  have h1 : (M.filter p).support ⊆ M.support := by
+lean/Taut/Chains.lean:475:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:476:  have h2 : (M.filter fun s => ¬ p s).support ⊆ M.support := by
+lean/Taut/Chains.lean:477:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:480:  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Chains.lean:496:  set F := M.filter (fun s => ¬ x ∈ s) with hF
+lean/Taut/Chains.lean:505:    conv_lhs => rw [← Finsupp.filter_pos_add_filter_neg M (fun s => x ∈ s)]
+lean/Taut/Chains.lean:509:    rw [hF, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Chains.lean:529:  have hsplit := nrm_filter_add_nrm_filter_neg (fun s => x ∈ s) M
+lean/Taut/Zvol.lean:62:lemma subChain_filter (p : Finset V → Prop) [DecidablePred p] (M : Chain V) :
+lean/Taut/Zvol.lean:63:    SubChain (M.filter p) M := by
+lean/Taut/Zvol.lean:65:  rw [Finsupp.filter_apply]
+lean/Taut/Zvol.lean:71:  subChain_filter _ M
+lean/Taut/Homology2.lean:70:    ((edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)).card = if x ∈ f then 2 else 0 := by
+lean/Taut/Homology2.lean:72:  -- the filter over edgesOf is the filter of card-2 subsets of `f` through `x`
+lean/Taut/Homology2.lean:73:  have hrw : (edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)
+lean/Taut/Homology2.lean:74:      = (f.powersetCard 2).filter (fun e => x ∈ e) := by
+lean/Taut/Homology2.lean:76:    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+lean/Taut/Homology2.lean:86:    have himg : (f.powersetCard 2).filter (fun e => x ∈ e)
+lean/Taut/Homology2.lean:89:      simp only [Finset.mem_filter, Finset.mem_powersetCard, Finset.mem_image,
+lean/Taut/Homology2.lean:117:    rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+lean/Taut/Homology2.lean:167:  have : (σ.filter (fun f => (e : Finset V) ⊆ f)).card = 2 := hclosed e e.2
+lean/Taut/Homology2.lean:182:  rw [← Finset.sum_filter]
+lean/Taut/Homology2.lean:183:  have hfilter : (Finset.univ.filter (fun f : σ => (e : Finset V) ⊆ (f : Finset V)))
+lean/Taut/Homology2.lean:186:    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
+lean/Taut/Homology2.lean:196:  rw [hfilter, Finset.sum_pair (by simp only [ne_eq, Subtype.mk.injEq]; exact hne)]
+lean/Taut/Homology2.lean:520:      show (vertsOf σ).filter (fun x => x ∈ (e : Finset V)) = (e : Finset V) from by
+lean/Taut/Homology2.lean:522:        simp only [Finset.mem_filter]
+lean/Taut/Projection.lean:38:  if s ⊆ A then Finsupp.single s 1
+lean/Taut/Projection.lean:48:    Kmap A p (Finsupp.single s c) = c • KGen A p s := by
+lean/Taut/Projection.lean:54:    KGen A p s = Finsupp.single s 1 := by
+lean/Taut/Projection.lean:118:  have hterm : ∀ w ∈ s, Kmap A p (sgn w s • Finsupp.single (s.erase w) 1)
+lean/Taut/Projection.lean:196:  have hterm : ∀ w ∈ s, Kmap A p (sgn w s • Finsupp.single (s.erase w) 1)
+lean/Taut/Projection.lean:249:  have hcone : coneGen p u = cone p (Finsupp.single u 1) := by
+lean/Taut/Projection.lean:251:  have hstep : bdry (cone p (Finsupp.single u (1 : ℤ)))
+lean/Taut/Projection.lean:252:      = Finsupp.single u 1 - cone p (bdryGen u) := by
+lean/Taut/Projection.lean:253:    have hhom := bdry_cone_add_cone_bdry p (Finsupp.single u (1 : ℤ))
+lean/Taut/Projection.lean:258:      = sgn z₀ s • Finsupp.single u 1
+lean/Taut/Projection.lean:263:  have hterm : ∀ w ∈ s, Kmap A p (sgn w s • Finsupp.single (s.erase w) 1)
+lean/Taut/Projection.lean:361:    nrm (Kmap A p M) + nrm (M.filter (Kkills A p)) ≤ nrm M := by
+lean/Taut/Projection.lean:364:      ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:369:      _ = (∑ s ∈ M.support.filter (fun s => Kkills A p s),
+lean/Taut/Projection.lean:371:          + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s),
+lean/Taut/Projection.lean:373:          rw [Finset.sum_filter_add_sum_filter_not]
+lean/Taut/Projection.lean:374:      _ = ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s),
+lean/Taut/Projection.lean:377:          rw [KGen_of_kills (Finset.mem_filter.mp hs).2, nrm_zero, mul_zero]
+lean/Taut/Projection.lean:378:      _ ≤ ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:384:  have h2 : nrm (M.filter (Kkills A p)) =
+lean/Taut/Projection.lean:385:      ∑ s ∈ M.support.filter (fun s => Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:386:    rw [nrm, Finsupp.support_filter]
+lean/Taut/Projection.lean:388:      rw [Finsupp.filter_apply, if_pos (Finset.mem_filter.mp hs).2]
+lean/Taut/Projection.lean:389:  have h3 : nrm M = (∑ s ∈ M.support.filter (fun s => Kkills A p s),
+lean/Taut/Projection.lean:391:      + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:392:    rw [nrm, Finset.sum_filter_add_sum_filter_not]
+lean/Taut/Projection.lean:419:  have hMeq : M = Finsupp.single W (M W) :=
+lean/Taut/Projection.lean:425:    · rw [Finsupp.smul_apply, Finsupp.single_apply, if_pos rfl, smul_eq_mul,
+lean/Taut/Projection.lean:428:      rw [Finsupp.smul_apply, Finsupp.single_apply,
+lean/Taut/Projection.lean:443:  rw [hMeq, hMW, Finsupp.single_zero]
+lean/Taut/Separation.lean:62:  (Finset.univ.filter (fun f : σ => W f = 1)).image Subtype.val
+lean/Taut/Separation.lean:66:  simp only [cutSet, Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and]
+lean/Taut/Separation.lean:103:      = (if e ⊆ γ then 1 else 0) + ((cutSet σ W).filter (fun f => e ⊆ f)).card := by
+lean/Taut/Separation.lean:104:  rw [edgeDeg, Finset.filter_insert]
+lean/Taut/Separation.lean:107:      (fun hγf => hγσ (cutSet_subset (Finset.mem_of_mem_filter _ hγf))), if_pos heγ, add_comm]
+lean/Taut/Separation.lean:121:  have hfilter : (cutSet σ W).filter (fun f => e ⊆ f)
+lean/Taut/Separation.lean:122:      = ({f₁, f₂} : Finset (Finset V)).filter (fun f => f ∈ cutSet σ W) := by
+lean/Taut/Separation.lean:124:    simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/Separation.lean:133:  rw [edgeDeg_cut hγσ, hfilter, Finset.card_filter, Finset.sum_pair hne]
+lean/Taut/Theorem1.lean:42:  have := Finsupp.support_add hs
+lean/Taut/Theorem1.lean:61:  M.filter (fun s => s.card = k)
+lean/Taut/Theorem1.lean:65:  simp [dimPart, Finsupp.filter_apply]
+lean/Taut/Theorem1.lean:74:  rw [dimPart, Finsupp.filter_zero]
+lean/Taut/Theorem1.lean:77:    dimPart k (Finsupp.single s c) = Finsupp.single s c :=
+lean/Taut/Theorem1.lean:78:  Finsupp.filter_single_of_pos (p := fun u : Finset V => u.card = k) h
+lean/Taut/Theorem1.lean:81:    dimPart k (Finsupp.single s c) = 0 :=
+lean/Taut/Theorem1.lean:82:  Finsupp.filter_single_of_neg (p := fun u : Finset V => u.card = k) h
+lean/Taut/Theorem1.lean:103:      -- all facets have size k, so the filter keeps everything
+lean/Taut/Theorem1.lean:113:          rw [Finsupp.smul_apply, Finsupp.single_apply, if_neg, smul_zero]
+lean/Taut/Theorem1.lean:129:          rw [Finsupp.smul_apply, Finsupp.single_apply, if_neg, smul_zero]
+lean/Taut/Theorem1.lean:145:  have hPM : SubChain P M := subChain_filter _ M
+lean/Taut/Theorem1.lean:155:  rw [dimPart, Finsupp.support_filter, Finset.mem_filter] at hs
+lean/Taut/Theorem1.lean:343:    nrm M ≤ nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) := by
+lean/Taut/Theorem1.lean:345:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Theorem1.lean:346:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:347:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Theorem1.lean:348:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:352:  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem1.lean:390:      rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Theorem1.lean:421:    have h3 : nrm M ≤ nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) :=
+lean/Taut/Theorem2.lean:80:  bdry (Finsupp.single t (M t))
+lean/Taut/Theorem2.lean:84:  M - Finsupp.single t (M t)
+lean/Taut/Theorem2.lean:132:    bdry (M - Finsupp.single t c) = bdry M - c • bdryGen t := by
+lean/Taut/Theorem2.lean:142:  simp [removeTet, Finsupp.single_eq_same]
+lean/Taut/Theorem2.lean:146:  simp [removeTet, Finsupp.single_eq_of_ne h]
+lean/Taut/Theorem2.lean:184:      (sgn y t • Finsupp.single (t.erase y) (1 : ℤ)) (t.erase x) = 0 := by
+lean/Taut/Theorem2.lean:191:    rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne hne, smul_zero]
+lean/Taut/Theorem2.lean:192:  rw [Finset.sum_eq_single_of_mem x hx key, Finsupp.smul_apply, Finsupp.single_eq_same,
+lean/Taut/Theorem2.lean:208:    rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne
+lean/Taut/Theorem2.lean:314:For the *edge-join* case-2 of the induction, the side-filter of a closed unit
+lean/Taut/Theorem2.lean:321:lemma bdry_filter_apply_eq_bdry_of_no_cross {X : Chain V} {P : Finset V → Prop}
+lean/Taut/Theorem2.lean:324:    bdry (X.filter P) u = bdry X u := by
+lean/Taut/Theorem2.lean:325:  have hz : bdry (X.filter (fun s => ¬ P s)) u = 0 := by
+lean/Taut/Theorem2.lean:328:    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Theorem2.lean:330:  have hsum : bdry (X.filter P) u + bdry (X.filter (fun s => ¬ P s)) u = bdry X u := by
+lean/Taut/Theorem2.lean:331:    rw [← Finsupp.add_apply, ← map_add, Finsupp.filter_pos_add_filter_neg]
+lean/Taut/Theorem2.lean:334:/-- **The edge-join closed-filter lemma.** If `X` is a closed chain whose faces
+lean/Taut/Theorem2.lean:336:edge, then the `A`-side filter of `X` is again closed — its boundary is a closed
+lean/Taut/Theorem2.lean:339:filter open; the edge-join is exactly what makes case 2 work. -/
+lean/Taut/Theorem2.lean:340:lemma bdry_filter_subset_eq_zero_of_inter_card_two {X : Chain V} {A B : Finset V}
+lean/Taut/Theorem2.lean:343:    bdry (X.filter (fun s => s ⊆ A)) = 0 := by
+lean/Taut/Theorem2.lean:348:  have hfaces : ∀ s ∈ (X.filter (fun s => s ⊆ A)).support, s ⊆ A ∧ s.card = 2 + 1 := by
+lean/Taut/Theorem2.lean:350:    rw [Finsupp.support_filter, Finset.mem_filter] at hs
+lean/Taut/Theorem2.lean:355:    have hcross : bdry (X.filter (fun s => s ⊆ A)) u = bdry X u := by
+lean/Taut/Theorem2.lean:356:      refine bdry_filter_apply_eq_bdry_of_no_cross fun s hsX hsA => ?_
+lean/Taut/Splitting.lean:21:4. so generators are pure and the filter along `· ⊆ A` splits `M`.
+lean/Taut/Splitting.lean:61:  rw [Finsupp.smul_apply, Finsupp.single_apply,
+lean/Taut/Splitting.lean:133:      nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) := by
+lean/Taut/Splitting.lean:135:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:136:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:137:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:138:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:146:  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Splitting.lean:173:    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Splitting.lean:320:  set U := M.filter (fun t => y₀ ∈ t ∧ 2 ≤ (t \ B).card) with hU
+lean/Taut/Splitting.lean:321:  have hUsub : SubChain U M := subChain_filter _ M
+lean/Taut/Splitting.lean:328:      rw [hU, Finsupp.filter_apply, if_neg (fun h => hyt h.1)]
+lean/Taut/Splitting.lean:333:    rw [hU, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:356:    rw [hU, Finsupp.filter_apply, if_pos ⟨hy₀t, by omega⟩]
+lean/Taut/Splitting.lean:376:              rw [Finsupp.sub_apply, hU, Finsupp.filter_apply,
+lean/Taut/Splitting.lean:433:filling `M` of an almost disjoint union `X + Y` splits: filtering `M`
+lean/Taut/Splitting.lean:443:    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+lean/Taut/Splitting.lean:444:    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+lean/Taut/Splitting.lean:445:    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+lean/Taut/Splitting.lean:446:    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+lean/Taut/Splitting.lean:447:    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+lean/Taut/Splitting.lean:454:    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Splitting.lean:490:  set Mx := M.filter (fun t => t ⊆ A) with hMx
+lean/Taut/Splitting.lean:491:  set My := M.filter (fun t => ¬ t ⊆ A) with hMy
+lean/Taut/Splitting.lean:492:  have hsum : Mx + My = M := Finsupp.filter_pos_add_filter_neg M _
+lean/Taut/Splitting.lean:495:    rw [hMx, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:499:    rw [hMy, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:517:  have hnrm : nrm Mx + nrm My = nrm M := nrm_filter_add_nrm_filter_neg _ M
+
+exec
+/bin/zsh -lc "sed -n '240,360p' lean/Taut/Homology2.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  rw [hwg]
+  exact (CharTwo.neg_eq (w f)).symm
+
+/-! ### Dual-graph connectivity (from `conn` + `linkConn` + `closed`) -/
+
+/-- Two faces that share an edge are dual-reachable. -/
+lemma dualReach_of_common_edge {σ : Finset (Finset V)} {f g : σ} {e : Finset V}
+    (he : e ∈ edgesOf σ) (hef : e ⊆ (f : Finset V)) (heg : e ⊆ (g : Finset V)) :
+    (dualGraph σ).Reachable f g := by
+  by_cases hfg : f = g
+  · exact hfg ▸ SimpleGraph.Reachable.refl f
+  · exact SimpleGraph.Adj.reachable (by rw [dualGraph_adj]; exact ⟨hfg, e, he, hef, heg⟩)
+
+/-- Two faces meeting in the edge `{v, a}` (`a ≠ v`) are dual-reachable. -/
+lemma dualReach_of_pair {σ : Finset (Finset V)} {f g : σ} {v a : V} (hav : a ≠ v)
+    (hvf : v ∈ (f : Finset V)) (haf : a ∈ (f : Finset V))
+    (hvg : v ∈ (g : Finset V)) (hag : a ∈ (g : Finset V)) :
+    (dualGraph σ).Reachable f g := by
+  have hsub : ∀ {h : σ}, v ∈ (h : Finset V) → a ∈ (h : Finset V) →
+      ({v, a} : Finset V) ⊆ (h : Finset V) := by
+    intro h hvh hah z hz
+    rcases Finset.mem_insert.mp hz with rfl | hz
+    · exact hvh
+    · rw [Finset.mem_singleton] at hz; exact hz ▸ hah
+  have he : ({v, a} : Finset V) ∈ edgesOf σ :=
+    mem_edgesOf.mpr ⟨f, f.2, hsub hvf haf, Finset.card_pair (Ne.symm hav)⟩
+  exact dualReach_of_common_edge he (hsub hvf haf) (hsub hvg hag)
+
+/-- Faces along a link-walk at `v` are dual-reachable: induction transporting a
+walk in `linkGraph σ v` to a dual path. -/
+lemma linkwalk_dual {σ : Finset (Finset V)} (h : IsClosedSurface σ) {v : V} :
+    ∀ {a a' : V} (_ : (linkGraph σ v).Walk a a') {f f' : σ},
+      v ∈ (f : Finset V) → a ∈ (f : Finset V) → a ≠ v →
+      v ∈ (f' : Finset V) → a' ∈ (f' : Finset V) → a' ≠ v →
+      (dualGraph σ).Reachable f f' := by
+  intro a a' p
+  induction p with
+  | nil =>
+      intro f f' hvf haf hav hvf' haf' _
+      exact dualReach_of_pair hav hvf haf hvf' haf'
+  | @cons a x a' hadj q ih =>
+      intro f f' hvf haf hav hvf' haf' ha'v
+      -- the head edge `a — x` of the link walk is the face `{v, a, x}`
+      rw [linkGraph] at hadj
+      obtain ⟨hax, hface⟩ := hadj
+      have hmem : ({v, a, x} : Finset V) ∈ σ := hface
+      have hxv : x ≠ v := by
+        intro hxv
+        have h3 := h.pure _ hmem
+        have hle : ({v, a, x} : Finset V).card ≤ 2 := by
+          have hsub : ({v, a, x} : Finset V) ⊆ {v, a} := by
+            intro z hz
+            simp only [Finset.mem_insert, Finset.mem_singleton] at hz ⊢
+            rcases hz with rfl | rfl | rfl
+            · exact Or.inl rfl
+            · exact Or.inr rfl
+            · exact Or.inl hxv
+          exact le_trans (Finset.card_le_card hsub)
+            (le_trans (Finset.card_insert_le _ _) (by simp))
+        omega
+      set hf : σ := ⟨{v, a, x}, hmem⟩ with hhf
+      have hvh : v ∈ (hf : Finset V) := by rw [hhf]; exact Finset.mem_insert_self v _
+      have hah : a ∈ (hf : Finset V) := by
+        rw [hhf]; exact Finset.mem_insert_of_mem (Finset.mem_insert_self a _)
+      have hxh : x ∈ (hf : Finset V) := by
+        rw [hhf]; exact Finset.mem_insert_of_mem (Finset.mem_insert_of_mem
+          (Finset.mem_singleton_self x))
+      exact (dualReach_of_pair hav hvf haf hvh hah).trans
+        (ih hvh hxh hxv hvf' haf' ha'v)
+
+/-- Two faces sharing a vertex are dual-reachable (uses `linkConn`). -/
+lemma dual_reach_shared_vertex {σ : Finset (Finset V)} (h : IsClosedSurface σ) {f g : σ} {v : V}
+    (hvf : v ∈ (f : Finset V)) (hvg : v ∈ (g : Finset V)) :
+    (dualGraph σ).Reachable f g := by
+  obtain ⟨a, ha⟩ : (((f : Finset V).erase v)).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_erase_of_mem hvf, h.pure _ f.2]; omega
+  obtain ⟨c, hc⟩ : (((g : Finset V).erase v)).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_erase_of_mem hvg, h.pure _ g.2]; omega
+  have hav : a ≠ v := Finset.ne_of_mem_erase ha
+  have hcv : c ≠ v := Finset.ne_of_mem_erase hc
+  have haf : a ∈ (f : Finset V) := Finset.mem_of_mem_erase ha
+  have hcg : c ∈ (g : Finset V) := Finset.mem_of_mem_erase hc
+  have hvV : v ∈ vertsOf σ := mem_vertsOf.mpr ⟨f, f.2, hvf⟩
+  have haL : a ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hav, f, f.2, hvf, haf⟩
+  have hcL : c ∈ linkVerts σ v := mem_linkVerts.mpr ⟨hcv, g, g.2, hvg, hcg⟩
+  obtain ⟨p⟩ := h.linkConn v hvV a haL c hcL
+  exact linkwalk_dual h p hvf haf hav hvg hcg hcv
+
+/-- Faces along a skeleton walk are dual-reachable: induction transporting a
+walk in `skel σ` to a dual path, jumping between vertex-stars. -/
+lemma skelwalk_dual {σ : Finset (Finset V)} (h : IsClosedSurface σ) :
+    ∀ {u w : V} (_ : (skel σ).Walk u w) {f f' : σ},
+      u ∈ (f : Finset V) → w ∈ (f' : Finset V) → (dualGraph σ).Reachable f f' := by
+  intro u w p
+  induction p with
+  | nil =>
+      intro f f' huf huf'
+      exact dual_reach_shared_vertex h huf huf'
+  | @cons u x w hadj q ih =>
+      intro f f' huf hwf'
+      rw [skel] at hadj
+      obtain ⟨hux, hedge⟩ := hadj
+      -- a face containing the edge `{u, x}`
+      obtain ⟨hf, hhf, hsub, _⟩ := mem_edgesOf.mp hedge
+      have huh : u ∈ hf := hsub (Finset.mem_insert_self u _)
+      have hxh : x ∈ hf := hsub (Finset.mem_insert_of_mem (Finset.mem_singleton_self x))
+      exact (dual_reach_shared_vertex h huf huh).trans
+        (ih (f := ⟨hf, hhf⟩) hxh hwf')
+
+/-- **Dual connectivity.** The dual graph of a sphere is connected. -/
+theorem dualGraph_preconnected {σ : Finset (Finset V)} (h : IsClosedSurface σ) :
+    (dualGraph σ).Preconnected := by
+  intro f g
+  obtain ⟨u, hu⟩ : (f : Finset V).Nonempty := by
+    rw [← Finset.card_pos, h.pure _ f.2]; omega
+  obtain ⟨w, hw⟩ : (g : Finset V).Nonempty := by
+    rw [← Finset.card_pos, h.pure _ g.2]; omega
+  have huV : u ∈ vertsOf σ := mem_vertsOf.mpr ⟨f, f.2, hu⟩
+  have hwV : w ∈ vertsOf σ := mem_vertsOf.mpr ⟨g, g.2, hw⟩
+  obtain ⟨p⟩ := h.conn u huV w hwV
+  exact skelwalk_dual h p hu hw
+
+codex
+There is a useful mirror of Q1 already in `Eligible.lean`: the three-shared-faces lemma traps a link inside a 3-cycle using 2-regularity plus link connectivity. M24’s Q1 should reuse that exact pattern in reverse, not invent a new global argument.
+exec
+/bin/zsh -lc "sed -n '240,360p' lean/Taut/Eligible.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    have hyd := Finset.ne_of_mem_erase hy
+    obtain ⟨x, hx, hxd, hxy⟩ : ∃ x ∈ t, x ≠ d ∧ x ≠ y := by
+      have h2 : 2 ≤ ((t.erase d).erase y).card := by
+        rw [Finset.card_erase_of_mem (Finset.mem_erase.mpr ⟨hyd, hyt⟩), hcardL]
+      obtain ⟨x, hx⟩ := Finset.card_pos.mp (by omega : 0 < ((t.erase d).erase y).card)
+      exact ⟨x, Finset.mem_of_mem_erase (Finset.mem_of_mem_erase hx),
+        Finset.ne_of_mem_erase (Finset.mem_of_mem_erase hx), Finset.ne_of_mem_erase hx⟩
+    exact mem_linkVerts.mpr ⟨hyd, t.erase x, hface x hx hxd,
+      Finset.mem_erase.mpr ⟨Ne.symm hxd, hd⟩, Finset.mem_erase.mpr ⟨Ne.symm hxy, hyt⟩⟩
+  -- a link-neighbour is itself a link vertex
+  have hadj_mem : ∀ {u v}, (linkGraph σ d).Adj u v → v ∈ linkVerts σ d := by
+    intro u v hadjuv
+    obtain ⟨_, hf⟩ := hadjuv
+    have hc3 := hσ.pure _ hf
+    have hvd : v ≠ d := by
+      intro h
+      have hsub : ({d, u, v} : Finset V) ⊆ {d, u} := by
+        intro a ha
+        simp only [Finset.mem_insert, Finset.mem_singleton] at ha ⊢
+        rcases ha with rfl | rfl | rfl
+        exacts [Or.inl rfl, Or.inr rfl, Or.inl h]
+      have hle : ({d, u, v} : Finset V).card ≤ 2 := (Finset.card_le_card hsub).trans
+        ((Finset.card_insert_le d {u}).trans (by simp))
+      omega
+    exact mem_linkVerts.mpr ⟨hvd, {d, u, v}, hf, by simp, by simp⟩
+  -- the opposite triangle is closed under taking link-neighbours
+  have hclosed : ∀ u ∈ t.erase d, ∀ v, (linkGraph σ d).Adj u v → v ∈ t.erase d := by
+    intro u hu v hadjuv
+    have hreg := link_two_regular hσ (hL_sub_link hu)
+    have hsub : (t.erase d).erase u
+        ⊆ (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w) := by
+      intro z hz
+      exact Finset.mem_filter.mpr ⟨hL_sub_link (Finset.mem_of_mem_erase hz),
+        hcyc u hu z (Finset.mem_of_mem_erase hz) (Ne.symm (Finset.ne_of_mem_erase hz))⟩
+    have hNeq : (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w)
+        = (t.erase d).erase u :=
+      (Finset.eq_of_subset_of_card_le hsub
+        (by rw [Finset.card_erase_of_mem hu, hcardL, hreg])).symm
+    have : v ∈ (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w) :=
+      Finset.mem_filter.mpr ⟨hadj_mem hadjuv, hadjuv⟩
+    rw [hNeq] at this; exact Finset.mem_of_mem_erase this
+  -- linkConn traps the link inside the triangle
+  have hlink_sub : linkVerts σ d ⊆ t.erase d := by
+    intro x hx
+    obtain ⟨y₀, hy₀⟩ : (t.erase d).Nonempty := Finset.card_pos.mp (by rw [hcardL]; omega)
+    obtain ⟨w⟩ := hσ.linkConn d hdv y₀ (hL_sub_link hy₀) x hx
+    exact walk_mem_of_adj_closed hclosed w hy₀
+  exact ⟨d, hdv, by rw [Finset.Subset.antisymm hlink_sub hL_sub_link, hcardL]⟩
+
+/-- **The no-degree-3 face bound** (discharges `exists_eligibleTet`'s hypothesis):
+if `σ` has no degree-3 vertex, no tet has more than two boundary faces. -/
+lemma sharedFaces_card_le_two_of_noDegree3 {σ : Finset (Finset V)} {M : Chain V}
+    {t : Finset V} (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (hNo3 : NoDegree3Vertex σ) (ht4 : t.card = 4) :
+    (sharedFaces M t).card ≤ 2 := by
+  by_contra h
+  obtain ⟨v, hv, hcard⟩ := exists_degree3Vertex_of_three_sharedFaces hσ hU ht4 (by omega)
+  exact hNo3 v hv hcard
+
+/-- **One eligible tet exists in a no-degree-3 taut filling** (M25, combining M25a
+and M25a'): the `sharedFaces ≤ 2` bound is now discharged from `NoDegree3Vertex
+σ`. (Deriving `NoDegree3Vertex` from primality is M24, separate.) -/
+theorem exists_eligibleTet_of_noDegree3 {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+    ∃ t, EligibleTet M t :=
+  exists_eligibleTet hσ hU hS hT hPure
+    (fun t ht => sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht))
+
+end Taut
+
+exec
+/bin/zsh -lc "rg -n \"cutSet.*add|partition|card_faces_cut|verts_cut_union|edges_cut_union|cutSet.*compl|W \\+ fun _ => 1|cutSet_disjoint|cutSet_union\" lean/Taut/Separation.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+7:triangle γ in a combinatorial 2-sphere σ partitions the faces into two sides,
+107:      (fun hγf => hγσ (cutSet_subset (Finset.mem_of_mem_filter _ hγf))), if_pos heγ, add_comm]
+830:    bd2 σ (W + fun _ => 1) = gammaChain σ γ := by
+834:lemma mem_cutSet_add_one {σ : Finset (Finset V)} {W : C2 σ} {g : Finset V} (hg : g ∈ σ) :
+835:    g ∈ cutSet σ (W + fun _ => 1) ↔ W ⟨g, hg⟩ = 0 := by
+842:/-- The two sides partition the faces of `σ`. -/
+843:lemma cutSet_add_one_eq_sdiff {σ : Finset (Finset V)} (W : C2 σ) :
+844:    cutSet σ (W + fun _ => 1) = σ \ cutSet σ W := by
+850:    rw [mem_cutSet_add_one hgσ] at hg2
+855:    rw [mem_cutSet_add_one hgσ]
+868:/-- **Face additivity.** `Fτ₁ + Fτ₂ = Fσ + 2` (the two sides partition σ; each
+870:lemma card_faces_cut_add {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} (hγσ : γ ∉ σ) :
+871:    (insert γ (cutSet σ W)).card + (insert γ (cutSet σ (W + fun _ => 1))).card
+873:  have hd : Disjoint (cutSet σ W) (cutSet σ (W + fun _ => 1)) := by
+874:    rw [cutSet_add_one_eq_sdiff]; exact Finset.disjoint_sdiff
+875:  have hu : cutSet σ W ∪ cutSet σ (W + fun _ => 1) = σ := by
+876:    rw [cutSet_add_one_eq_sdiff, Finset.union_sdiff_of_subset cutSet_subset]
+878:  have hγ2 : γ ∉ cutSet σ (W + fun _ => 1) := fun hc => hγσ (cutSet_subset hc)
+901:    vertsOf (insert γ (cutSet σ W)) ∪ vertsOf (insert γ (cutSet σ (W + fun _ => 1)))
+914:        (mem_vertsOf.mpr ⟨f, Finset.mem_insert_of_mem ((mem_cutSet_add_one hf).mpr h0), hvf⟩)
+922:    vertsOf (insert γ (cutSet σ W)) ∩ vertsOf (insert γ (cutSet σ (W + fun _ => 1)))
+932:    have hf2c : f2 ∈ cutSet σ (W + fun _ => 1) :=
+936:    have hW2 : W ⟨f2, hf2σ⟩ = 0 := (mem_cutSet_add_one hf2σ).mp hf2c
+947:    edgesOf (insert γ (cutSet σ W)) ∪ edgesOf (insert γ (cutSet σ (W + fun _ => 1)))
+956:        ⟨f, Finset.mem_insert_of_mem ((mem_cutSet_add_one hf).mpr h0), hef, hc⟩)
+964:    edgesOf (insert γ (cutSet σ W)) ∩ edgesOf (insert γ (cutSet σ (W + fun _ => 1)))
+977:    have hf2c : f2 ∈ cutSet σ (W + fun _ => 1) :=
+981:    have hW2 : W ⟨f2, hf2σ⟩ = 0 := (mem_cutSet_add_one hf2σ).mp hf2c
+998:  have hW2 : bd2 σ (W + fun _ => 1) = gammaChain σ γ := bd2_W_add_one h hW
+1002:  have hcs2 : IsClosedSurface (insert γ (cutSet σ (W + fun _ => 1))) :=
+1008:  have hne2 : (vertsOf (insert γ (cutSet σ (W + fun _ => 1)))).Nonempty :=
+1014:    (vertsOf (insert γ (cutSet σ W))) (vertsOf (insert γ (cutSet σ (W + fun _ => 1))))
+1017:    (edgesOf (insert γ (cutSet σ W))) (edgesOf (insert γ (cutSet σ (W + fun _ => 1))))
+1020:  have hFadd := card_faces_cut_add (W := W) hγσ
+1039:  exact ⟨cutSet σ W, cutSet σ (W + fun _ => 1),
+
+codex
+The cut API already has the partition lemmas for `cutSet W` and `cutSet (W + 1)`. For M24 I would expose the W-based cut package, not just the existential `separates`, because the chain split and strict-size proof need those definitional sides.
+exec
+/bin/zsh -lc "sed -n '820,990p' lean/Taut/Separation.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  intro v hvτ
+  by_cases hvγ : v ∈ γ
+  · exact linkConn_cut_at_gamma h hγ3 hγe hW hvγ
+  · exact linkConn_cut_off_gamma h hW hvγ hvτ
+
+/-! ## euler for the pieces, and assembling `IsSphere2` -/
+
+/-- The complementary side `W + 𝟙` is also a cut for `γ` (`∂₂𝟙 = 0`). -/
+lemma bd2_W_add_one {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) :
+    bd2 σ (W + fun _ => 1) = gammaChain σ γ := by
+  rw [map_add, hW, bd2_one σ h.closed, add_zero]
+
+/-- A face is on the `W+𝟙` side iff it is off the `W` side. -/
+lemma mem_cutSet_add_one {σ : Finset (Finset V)} {W : C2 σ} {g : Finset V} (hg : g ∈ σ) :
+    g ∈ cutSet σ (W + fun _ => 1) ↔ W ⟨g, hg⟩ = 0 := by
+  rw [mem_cutSet]
+  have key : ∀ x : ZMod 2, (x + 1 = 1) ↔ x = 0 := by decide
+  constructor
+  · rintro ⟨hg', hWg'⟩; exact (key _).mp hWg'
+  · intro h0; exact ⟨hg, by show W ⟨g, hg⟩ + 1 = 1; rw [h0]; decide⟩
+
+/-- The two sides partition the faces of `σ`. -/
+lemma cutSet_add_one_eq_sdiff {σ : Finset (Finset V)} (W : C2 σ) :
+    cutSet σ (W + fun _ => 1) = σ \ cutSet σ W := by
+  ext g
+  simp only [Finset.mem_sdiff]
+  constructor
+  · intro hg2
+    have hgσ : g ∈ σ := cutSet_subset hg2
+    rw [mem_cutSet_add_one hgσ] at hg2
+    refine ⟨hgσ, fun hc => ?_⟩
+    obtain ⟨_, hW1⟩ := mem_cutSet.mp hc
+    rw [hg2] at hW1; exact one_ne_zero hW1.symm
+  · rintro ⟨hgσ, hgnc⟩
+    rw [mem_cutSet_add_one hgσ]
+    rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W ⟨g, hgσ⟩) with h0 | h1
+    · exact h0
+    · exact absurd (mem_cutSet.mpr ⟨hgσ, h1⟩) hgnc
+
+/-- `pure` for a capped side: faces are `γ` (card 3) or σ-faces (card 3). -/
+lemma pure_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hγ3 : γ.card = 3) : ∀ f ∈ insert γ (cutSet σ W), f.card = 3 := by
+  intro f hf
+  rcases Finset.mem_insert.mp hf with rfl | hf
+  · exact hγ3
+  · exact h.pure f (cutSet_subset hf)
+
+/-- **Face additivity.** `Fτ₁ + Fτ₂ = Fσ + 2` (the two sides partition σ; each
+caps with the one extra face γ). -/
+lemma card_faces_cut_add {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} (hγσ : γ ∉ σ) :
+    (insert γ (cutSet σ W)).card + (insert γ (cutSet σ (W + fun _ => 1))).card
+      = σ.card + 2 := by
+  have hd : Disjoint (cutSet σ W) (cutSet σ (W + fun _ => 1)) := by
+    rw [cutSet_add_one_eq_sdiff]; exact Finset.disjoint_sdiff
+  have hu : cutSet σ W ∪ cutSet σ (W + fun _ => 1) = σ := by
+    rw [cutSet_add_one_eq_sdiff, Finset.union_sdiff_of_subset cutSet_subset]
+  have hγ1 : γ ∉ cutSet σ W := fun hc => hγσ (cutSet_subset hc)
+  have hγ2 : γ ∉ cutSet σ (W + fun _ => 1) := fun hc => hγσ (cutSet_subset hc)
+  rw [Finset.card_insert_of_notMem hγ1, Finset.card_insert_of_notMem hγ2]
+  have hcard := Finset.card_union_of_disjoint hd
+  rw [hu] at hcard
+  omega
+
+/-- A vertex of `γ` is a vertex of `σ` (its γ-edges are edges of σ). -/
+lemma gamma_vert_mem_verts {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) {v : V} (hv : v ∈ γ) : v ∈ vertsOf σ := by
+  obtain ⟨w, hw⟩ : (γ.erase v).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_erase_of_mem hv, hγ3]; omega
+  have hwv : w ≠ v := Finset.ne_of_mem_erase hw
+  have hsub : ({v, w} : Finset V) ⊆ γ := by
+    intro z hz; simp only [Finset.mem_insert, Finset.mem_singleton] at hz
+    rcases hz with rfl | rfl
+    · exact hv
+    · exact Finset.mem_of_mem_erase hw
+  exact edge_mem_vertsOf
+    (hγe (Finset.mem_powersetCard.mpr ⟨hsub, Finset.card_pair (Ne.symm hwv)⟩)) (by simp)
+
+/-- **Vertex union.** The two capped sides cover σ's vertices. -/
+lemma vertsOf_cut_union {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
+    vertsOf (insert γ (cutSet σ W)) ∪ vertsOf (insert γ (cutSet σ (W + fun _ => 1)))
+      = vertsOf σ := by
+  apply Finset.Subset.antisymm
+  · intro v hv
+    rcases Finset.mem_union.mp hv with hv | hv <;>
+      · obtain ⟨f, hf, hvf⟩ := mem_vertsOf.mp hv
+        rcases Finset.mem_insert.mp hf with rfl | hf
+        · exact gamma_vert_mem_verts hγ3 hγe hvf
+        · exact mem_vertsOf.mpr ⟨f, cutSet_subset hf, hvf⟩
+  · intro v hv
+    obtain ⟨f, hf, hvf⟩ := mem_vertsOf.mp hv
+    rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W ⟨f, hf⟩) with h0 | h1
+    · exact Finset.mem_union_right _
+        (mem_vertsOf.mpr ⟨f, Finset.mem_insert_of_mem ((mem_cutSet_add_one hf).mpr h0), hvf⟩)
+    · exact Finset.mem_union_left _
+        (mem_vertsOf.mpr ⟨f, Finset.mem_insert_of_mem (mem_cutSet.mpr ⟨hf, h1⟩), hvf⟩)
+
+/-- **Vertex intersection.** The two capped sides share exactly γ's vertices
+(off-γ vertices lie on a single side, by `W_const_at`). -/
+lemma vertsOf_cut_inter {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hW : bd2 σ W = gammaChain σ γ) :
+    vertsOf (insert γ (cutSet σ W)) ∩ vertsOf (insert γ (cutSet σ (W + fun _ => 1)))
+      = γ := by
+  apply Finset.Subset.antisymm
+  · intro v hv
+    rw [Finset.mem_inter] at hv
+    by_contra hvγ
+    obtain ⟨f1, hf1, hvf1⟩ := mem_vertsOf.mp hv.1
+    obtain ⟨f2, hf2, hvf2⟩ := mem_vertsOf.mp hv.2
+    have hf1c : f1 ∈ cutSet σ W :=
+      (Finset.mem_insert.mp hf1).resolve_left (fun he => hvγ (he ▸ hvf1))
+    have hf2c : f2 ∈ cutSet σ (W + fun _ => 1) :=
+      (Finset.mem_insert.mp hf2).resolve_left (fun he => hvγ (he ▸ hvf2))
+    obtain ⟨hf1σ, hW1⟩ := mem_cutSet.mp hf1c
+    have hf2σ : f2 ∈ σ := cutSet_subset hf2c
+    have hW2 : W ⟨f2, hf2σ⟩ = 0 := (mem_cutSet_add_one hf2σ).mp hf2c
+    have key : W (⟨f1, hf1σ⟩ : σ) = W (⟨f2, hf2σ⟩ : σ) := W_const_at h hW hvγ hvf1 hvf2
+    rw [hW1, hW2] at key; exact one_ne_zero key
+  · intro v hv
+    exact Finset.mem_inter.mpr
+      ⟨mem_vertsOf.mpr ⟨γ, Finset.mem_insert_self _ _, hv⟩,
+       mem_vertsOf.mpr ⟨γ, Finset.mem_insert_self _ _, hv⟩⟩
+
+/-- **Edge union.** The two capped sides cover σ's edges. -/
+lemma edgesOf_cut_union {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
+    edgesOf (insert γ (cutSet σ W)) ∪ edgesOf (insert γ (cutSet σ (W + fun _ => 1)))
+      = edgesOf σ := by
+  apply Finset.Subset.antisymm
+  · intro e he
+    rcases Finset.mem_union.mp he with he | he <;> exact edgesOf_cut_subset hγe he
+  · intro e he
+    obtain ⟨f, hf, hef, hc⟩ := mem_edgesOf.mp he
+    rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W ⟨f, hf⟩) with h0 | h1
+    · exact Finset.mem_union_right _ (mem_edgesOf.mpr
+        ⟨f, Finset.mem_insert_of_mem ((mem_cutSet_add_one hf).mpr h0), hef, hc⟩)
+    · exact Finset.mem_union_left _ (mem_edgesOf.mpr
+        ⟨f, Finset.mem_insert_of_mem (mem_cutSet.mpr ⟨hf, h1⟩), hef, hc⟩)
+
+/-- **Edge intersection.** The two capped sides share exactly γ's edges
+(a non-γ edge's two faces lie on the same side, by `W_eq_of_share_edge`). -/
+lemma edgesOf_cut_inter {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hW : bd2 σ W = gammaChain σ γ) :
+    edgesOf (insert γ (cutSet σ W)) ∩ edgesOf (insert γ (cutSet σ (W + fun _ => 1)))
+      = γ.powersetCard 2 := by
+  apply Finset.Subset.antisymm
+  · intro e he
+    rw [Finset.mem_inter] at he
+    rw [Finset.mem_powersetCard]
+    have heσ : e ∈ edgesOf σ := edgesOf_cut_subset hγe he.1
+    refine ⟨?_, card_of_mem_edgesOf heσ⟩
+    by_contra heγ
+    obtain ⟨f1, hf1, hef1, _⟩ := mem_edgesOf.mp he.1
+    obtain ⟨f2, hf2, hef2, _⟩ := mem_edgesOf.mp he.2
+    have hf1c : f1 ∈ cutSet σ W :=
+      (Finset.mem_insert.mp hf1).resolve_left (fun h' => heγ (h' ▸ hef1))
+    have hf2c : f2 ∈ cutSet σ (W + fun _ => 1) :=
+      (Finset.mem_insert.mp hf2).resolve_left (fun h' => heγ (h' ▸ hef2))
+    obtain ⟨hf1σ, hW1⟩ := mem_cutSet.mp hf1c
+    have hf2σ : f2 ∈ σ := cutSet_subset hf2c
+    have hW2 : W ⟨f2, hf2σ⟩ = 0 := (mem_cutSet_add_one hf2σ).mp hf2c
+    have key : W (⟨f1, hf1σ⟩ : σ) = W (⟨f2, hf2σ⟩ : σ) :=
+      W_eq_of_share_edge h hW heσ heγ hef1 hef2
+    rw [hW1, hW2] at key; exact one_ne_zero key
+  · intro e he
+    rw [Finset.mem_powersetCard] at he
+    exact Finset.mem_inter.mpr
+      ⟨mem_edgesOf.mpr ⟨γ, Finset.mem_insert_self _ _, he.1, he.2⟩,
+       mem_edgesOf.mpr ⟨γ, Finset.mem_insert_self _ _, he.1, he.2⟩⟩
+
+
+codex
+The feasibility risk is not the deg-3 non-face anymore; it is medium-sized but follows a pattern already present. The real staging risk is Q2 plus proving the capped cycles are `UnitOn`, because recursion needs unit boundary chains, not just closed chains for `splits`.
+exec
+/bin/zsh -lc "rg -n \"Zvol.*tet|tetFaces|powersetCard 3|isBall_singleton|Zvol_le|def Zvol|theorem Zvol|lemma Zvol\" lean/Taut -g'*.lean'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Complex2.lean:597:    have hS : tetraBdry a b c d = ({a, b, c, d} : Finset V).powersetCard 3 := by
+lean/Taut/Complex2.lean:610:    IsSphere2 (t.powersetCard 3) := by
+lean/Taut/Complex2.lean:612:  have heq : ({a, b, c, d} : Finset V).powersetCard 3 = tetraBdry a b c d := by
+lean/Taut/Eligible.lean:50:  t ∈ M.support ∧ α ∈ tetFaces t ∧ (bdry M) α = tetContribution M t α
+lean/Taut/Eligible.lean:84:  · -- α ∈ tetFaces t : bdryGen t α ≠ 0
+lean/Taut/Eligible.lean:89:    exact hαe ▸ erase_mem_tetFaces (hPure t ht) hw
+lean/Taut/Eligible.lean:183:      rw [exposedFaces, Finset.card_sdiff_of_subset (sharedFaces_subset_tetFaces M t),
+lean/Taut/Eligible.lean:184:        card_tetFaces ht4]; omega
+lean/Taut/Eligible.lean:190:        Finset.mem_sdiff.mpr ⟨erase_mem_tetFaces ht4 hx, hns⟩
+lean/Taut/Eligible.lean:193:        exists_erase_eq_of_mem_tetFaces ht4 (exposedFaces_subset_tetFaces M t hF)
+lean/Taut/Eligible.lean:197:        Finset.mem_sdiff.mpr ⟨erase_mem_tetFaces ht4 hx, hns⟩
+lean/Taut/Eligible.lean:231:      exists_erase_eq_of_mem_tetFaces ht4 (Finset.mem_powersetCard.mpr ⟨hsub, hc3⟩)
+lean/Taut/Zvol.lean:76:noncomputable def Zvol (X : Chain V) : ℕ :=
+lean/Taut/Zvol.lean:82:lemma Zvol_le {X M : Chain V} (h : bdry M = X) : Zvol X ≤ nrm M :=
+lean/Taut/Zvol.lean:110:    le_trans (Zvol_le hbd) (nrm_add_le _ _)
+lean/Taut/Zvol.lean:112:  have h1 : Zvol (bdry U) ≤ nrm U := Zvol_le rfl
+lean/Taut/Zvol.lean:118:theorem Zvol_add_deg_le (x : V) {X : Chain V} (hX : bdry X = 0) :
+lean/Taut/Zvol.lean:120:  have h1 : Zvol X ≤ nrm (cone x X) := Zvol_le (bdry_cone_of_closed hX)
+lean/Taut/Ball.lean:26:`t.powersetCard 3`.  When tet `t` is glued onto a ball whose boundary is the
+lean/Taut/Ball.lean:29:`(B \ t.powersetCard 3) ∪ (t.powersetCard 3 \ B)`.
+lean/Taut/Ball.lean:33:  sphere as its boundary (`isBall_singleton`, `freelyShellable_singleton`);
+lean/Taut/Ball.lean:43:abbrev tetFaces (t : Finset V) : Finset (Finset V) := t.powersetCard 3
+lean/Taut/Ball.lean:58:  shared : (tetFaces t ∩ B).card = 1 ∨ (tetFaces t ∩ B).card = 2
+lean/Taut/Ball.lean:59:  newBdry : B' = (B \ tetFaces t) ∪ (tetFaces t \ B)
+lean/Taut/Ball.lean:73:  | t :: l, B => t.card = 4 ∧ ShellFrom (tetFaces t) l B
+lean/Taut/Ball.lean:172:ending at `B`. (`IsBall` is the special case `B₀ = tetFaces (head)`.) This is the
+lean/Taut/Ball.lean:211:theorem isBall_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Ball.lean:212:    IsBall {t} (tetFaces t) := by
+lean/Taut/Ball.lean:219:    FreelyShellable {t} (tetFaces t) := by
+lean/Taut/Theorem1.lean:148:  have h1 : Zvol (bdry M) ≤ nrm P := Zvol_le hbdP
+lean/Taut/Theorem1.lean:364:theorem Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n : ℕ}
+lean/Taut/Theorem1.lean:382:    calc Zvol (X + Y) ≤ nrm (Mx + My) := Zvol_le hbd
+lean/Taut/Theorem1.lean:424:    have h4 : Zvol X ≤ nrm (Kmap A p M) := Zvol_le hbx
+lean/Taut/Theorem1.lean:425:    have h5 : Zvol Y ≤ nrm (Kmap B q M) := Zvol_le hby
+lean/Taut/Theorem2.lean:88:  tetFaces t ∩ (bdry M).support
+lean/Taut/Theorem2.lean:92:  tetFaces t \ sharedFaces M t
+lean/Taut/Theorem2.lean:109:lemma card_tetFaces {t : Finset V} (ht : t.card = 4) : (tetFaces t).card = 4 := by
+lean/Taut/Theorem2.lean:110:  rw [tetFaces, Finset.card_powersetCard, ht]; decide
+lean/Taut/Theorem2.lean:112:lemma erase_mem_tetFaces {t : Finset V} {x : V} (ht : t.card = 4) (hx : x ∈ t) :
+lean/Taut/Theorem2.lean:113:    t.erase x ∈ tetFaces t := by
+lean/Taut/Theorem2.lean:118:lemma sharedFaces_subset_tetFaces (M : Chain V) (t : Finset V) :
+lean/Taut/Theorem2.lean:119:    sharedFaces M t ⊆ tetFaces t := fun _ hs => (Finset.mem_inter.mp hs).1
+lean/Taut/Theorem2.lean:121:lemma exposedFaces_subset_tetFaces (M : Chain V) (t : Finset V) :
+lean/Taut/Theorem2.lean:122:    exposedFaces M t ⊆ tetFaces t := fun _ hs => (Finset.mem_sdiff.mp hs).1
+lean/Taut/Theorem2.lean:126:  rw [exposedFaces, Finset.card_sdiff_of_subset (sharedFaces_subset_tetFaces M t),
+lean/Taut/Theorem2.lean:127:    card_tetFaces h.1, h.2.2.1]
+lean/Taut/Theorem2.lean:202:lemma tetContribution_apply_of_not_mem_tetFaces {M : Chain V} {t s : Finset V}
+lean/Taut/Theorem2.lean:203:    (ht : t.card = 4) (hs : s ∉ tetFaces t) : tetContribution M t s = 0 := by
+lean/Taut/Theorem2.lean:209:      (fun hc => (hc ▸ hs) (erase_mem_tetFaces ht hy)), smul_zero]
+lean/Taut/Theorem2.lean:213:lemma exists_erase_eq_of_mem_tetFaces {t s : Finset V} (ht : t.card = 4)
+lean/Taut/Theorem2.lean:214:    (hs : s ∈ tetFaces t) : ∃ y, y ∈ t ∧ s = t.erase y := by
+lean/Taut/Theorem2.lean:226:lemma tetContribution_ne_zero_of_mem_tetFaces {M : Chain V} {t s : Finset V}
+lean/Taut/Theorem2.lean:227:    (ht : t.card = 4) (htM : M t ≠ 0) (hs : s ∈ tetFaces t) : tetContribution M t s ≠ 0 := by
+lean/Taut/Theorem2.lean:228:  obtain ⟨y, hyt, rfl⟩ := exists_erase_eq_of_mem_tetFaces ht hs
+lean/Taut/Theorem2.lean:249:  by_cases hsf : s ∈ tetFaces t
+lean/Taut/Theorem2.lean:261:      · intro _; exact tetContribution_ne_zero_of_mem_tetFaces ht4 htM' hsf
+lean/Taut/Theorem2.lean:262:  · rw [tetContribution_apply_of_not_mem_tetFaces ht4 hsf, sub_zero]
+lean/Taut/Theorem2.lean:263:    have hns : s ∉ sharedFaces M t := fun hc => hsf (sharedFaces_subset_tetFaces M t hc)
+lean/Taut/Theorem2.lean:264:    have hne : s ∉ exposedFaces M t := fun hc => hsf (exposedFaces_subset_tetFaces M t hc)
+lean/Taut/Theorem2.lean:281:lemma tetContribution_eq_pm_one_of_mem_tetFaces {M : Chain V} {t s : Finset V}
+lean/Taut/Theorem2.lean:282:    (ht : t.card = 4) (hpm : M t = 1 ∨ M t = -1) (hs : s ∈ tetFaces t) :
+lean/Taut/Theorem2.lean:284:  obtain ⟨y, hyt, rfl⟩ := exists_erase_eq_of_mem_tetFaces ht hs
+lean/Taut/Theorem2.lean:303:    have hsf : s ∉ tetFaces t := fun hcon =>
+lean/Taut/Theorem2.lean:305:    rw [bdry_removeTet, Finsupp.sub_apply, tetContribution_apply_of_not_mem_tetFaces ht4 hsf,
+lean/Taut/Theorem2.lean:309:    rcases tetContribution_eq_pm_one_of_mem_tetFaces ht4 hpm
+lean/Taut/Theorem2.lean:310:      (exposedFaces_subset_tetFaces M t hs) with h1 | h1 <;> rw [h1] <;> decide
+lean/Taut/Splitting.lean:201:  have h4 : Zvol X ≤ nrm (Kmap A p' M) := Zvol_le hbx
+lean/Taut/Splitting.lean:202:  have h5 : Zvol Y ≤ nrm (Kmap B q' M) := Zvol_le hby
+lean/Taut/Splitting.lean:520:  have h4 : Zvol X ≤ nrm Mx := Zvol_le hbx
+lean/Taut/Splitting.lean:521:  have h5 : Zvol Y ≤ nrm My := Zvol_le hby
+
+codex
+**Q1. Deg-3 Vertex To Non-Face**
+
+Use `4 < (vertsOf σ).card`, not `σ ≠ tetraBdry ...`. It is invariant and avoids choosing names/order for tetra vertices.
+
+Add these lemmas, probably in `Eligible.lean` or new `Degree3.lean` imported by `Theorem2.lean`:
+
+```lean
+lemma linkGraph_complete_of_linkVerts_card_three
+    {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {v x y : V}
+    (hx : x ∈ linkVerts σ v) (hy : y ∈ linkVerts σ v) (hxy : x ≠ y)
+    (h3 : (linkVerts σ v).card = 3) :
+    (linkGraph σ v).Adj x y
+```
+
+Proof: `link_two_regular hσ hx` says `x` has exactly two link-neighbors. The two other vertices in the 3-element set are forced to be exactly those neighbors.
+
+Then:
+
+```lean
+lemma linkVerts_powersetCard_two_subset_edgesOf_of_card_three
+    {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {v : V} (hv : v ∈ vertsOf σ)
+    (h3 : (linkVerts σ v).card = 3) :
+    (linkVerts σ v).powersetCard 2 ⊆ edgesOf σ
+```
+
+For each pair `{x,y} ⊆ linkVerts σ v`, use the previous lemma to get `{v,x,y} ∈ σ`, hence `{x,y} ∈ edgesOf σ`.
+
+Harder non-face lemma:
+
+```lean
+lemma linkVerts_not_mem_of_card_three_of_four_lt_verts
+    {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {v : V} (hv : v ∈ vertsOf σ)
+    (h3 : (linkVerts σ v).card = 3)
+    (hbig : 4 < (vertsOf σ).card) :
+    linkVerts σ v ∉ σ
+```
+
+Proof route:
+
+1. Let `γ := linkVerts σ v`, `T := insert v γ`.
+2. Assume `γ ∈ σ`.
+3. Prove the tetra component `T.powersetCard 3 ⊆ σ`:
+   the three faces `{v} ∪ e` come from `linkGraph_complete_of_linkVerts_card_three`; the fourth is `γ`.
+4. Prove `vertsOf σ ⊆ T`.
+   For every `y ∈ T`, prove `linkVerts σ y ⊆ T.erase y` by the same closure argument already used in [Eligible.lean](/Users/doyle/Dropbox/taut/lean/Taut/Eligible.lean:240): the three known link vertices form a 3-cycle, `link_two_regular` makes it neighbor-closed, and `linkConn` traps the whole link.
+5. Convert this to skeleton-neighbor closure of `T`, then use `hσ.conn v hv x hx` and a `walk_mem_of_adj_closed` style lemma for `skel σ` to show every vertex is in `T`.
+6. Since `T.card = 4`, contradiction with `hbig`.
+
+Package Q1 as:
+
+```lean
+lemma degree3_link_triangle_cut_data
+    {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {v : V} (hv : v ∈ vertsOf σ)
+    (h3 : (linkVerts σ v).card = 3)
+    (hbig : 4 < (vertsOf σ).card) :
+    let γ := linkVerts σ v
+    γ.card = 3 ∧ γ.powersetCard 2 ⊆ edgesOf σ ∧ γ ∉ σ
+```
+
+This is tractable. It is not tiny, but it reuses the exact M25a′ pattern.
+
+**Q2. Triangle-Cut Oriented Bridge**
+
+Do not try to apply `IsTaut.splits` to raw `bdry M`. `splits` needs two closed chains `X Y` first. The cap must be built explicitly.
+
+Use W-based sides, not opaque `separates`:
+
+```lean
+σ₁ := cutSet σ W
+σ₂ := cutSet σ (W + fun _ => 1)
+τ₁ := insert γ σ₁
+τ₂ := insert γ σ₂
+A := vertsOf τ₁
+B := vertsOf τ₂
+X₁₀ := X.filter (fun s => s ∈ σ₁)
+X₂₀ := X.filter (fun s => s ∈ σ₂)
+```
+
+New primitive:
+
+```lean
+lemma closed_one_chain_supported_on_triangle
+    {γ : Finset V} (hγ3 : γ.card = 3)
+    {C : Chain V}
+    (hCclosed : bdry C = 0)
+    (hCsupp : ∀ e ∈ C.support, e ∈ γ.powersetCard 2) :
+    ∃ c : ℤ, C = c • bdryGen γ
+```
+
+Then choose `c` from:
+
+```lean
+have hc : ∃ c : ℤ, bdry X₁₀ = c • bdryGen γ := ...
+```
+
+Define with this exact sign:
+
+```lean
+noncomputable def cappedSide₁ := X₁₀ - Finsupp.single γ c
+noncomputable def cappedSide₂ := X₂₀ + Finsupp.single γ c
+```
+
+Because:
+
+```lean
+bdry (Finsupp.single γ c) = c • bdryGen γ
+```
+
+we get:
+
+```lean
+bdry cappedSide₁ = 0
+bdry cappedSide₂ = 0
+cappedSide₁ + cappedSide₂ = X
+```
+
+The signs are therefore:
+
+```lean
+X₁ = X₁₀ - single γ c
+X₂ = X₂₀ + single γ c
+```
+
+where `bdry X₁₀ = c • bdryGen γ`.
+
+Also prove the recursion-strength version, not just closedness:
+
+```lean
+lemma oriented_split_chains_of_cut
+    {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {γ : Finset V} (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ)
+    {W : C2 σ} (hW : bd2 σ W = gammaChain σ γ)
+    {X : Chain V} (hU : UnitOn X σ) (hXc : bdry X = 0) :
+    ∃ X₁ X₂ c,
+      X₁ = X.filter (fun s => s ∈ cutSet σ W) - Finsupp.single γ c ∧
+      X₂ = X.filter (fun s => s ∈ cutSet σ (W + fun _ => 1)) + Finsupp.single γ c ∧
+      UnitOn X₁ (insert γ (cutSet σ W)) ∧
+      UnitOn X₂ (insert γ (cutSet σ (W + fun _ => 1))) ∧
+      bdry X₁ = 0 ∧ bdry X₂ = 0 ∧
+      X₁ + X₂ = X
+```
+
+This is the real M24 bridge. The `UnitOn` clauses are important; otherwise M26 cannot recurse cleanly.
+
+Then feed `X₁ X₂` into:
+
+```lean
+hMt.splits
+  (A := vertsOf τ₁) (B := vertsOf τ₂) (n := 2)
+```
+
+Use existing:
+
+```lean
+vertsOf_cut_inter hσ hW
+```
+
+to get `(A ∩ B).card = 3`, and pick two distinct vertices from `γ.card = 3`.
+
+**Q3. Deg-3 Side Is Single Tet**
+
+Yes, this is case-1 reassembly using M22a.
+
+For `γ = linkVerts σ v`, the deg-3 side is the vertex star:
+
+```lean
+star3 σ v := σ.filter (fun f => v ∈ f)
+```
+
+Prove one of the cut sides equals that star, after possibly swapping sides:
+
+```lean
+lemma degree3_cut_has_star_side :
+  ∃ W, bd2 σ W = gammaChain σ γ ∧
+    (cutSet σ W = star3 σ v ∨
+     cutSet σ (W + fun _ => 1) = star3 σ v)
+```
+
+But since `exists_cut` gives arbitrary `W`, better prove for any cut:
+
+```lean
+lemma degree3_cut_side_is_star_or_complement
+    ... :
+    cutSet σ W = star3 σ v ∨
+    cutSet σ (W + fun _ => 1) = star3 σ v
+```
+
+The capped star is:
+
+```lean
+insert γ (star3 σ v) = (insert v γ).powersetCard 3
+```
+
+Then the tet is:
+
+```lean
+t₀ := insert v γ
+```
+
+Add:
+
+```lean
+lemma degree3_star_capped_eq_tetFaces
+    ... :
+    insert γ (star3 σ v) = tetFaces (insert v γ)
+```
+
+For the filling side, either recurse on the non-star side and use base for the star side, or prove directly:
+
+```lean
+lemma taut_filling_of_unit_tet_boundary_has_nrm_one
+    {t : Finset V} (ht : t.card = 4)
+    {X M : Chain V}
+    (hU : UnitOn X (tetFaces t))
+    (hM : bdry M = X)
+    (hT : IsTaut M) :
+    nrm M = 1
+```
+
+This needs a small primitive: any unit orientation of `tetFaces t` is `± bdryGen t`, or at least has a one-tet filling. Then `Zvol X ≤ 1`, `X ≠ 0`, so `Zvol X = 1`.
+
+Reassembly:
+
+```lean
+have hsingle : IsBall {t₀} (tetFaces t₀) := isBall_singleton ht₀
+```
+
+If the recursive other side gives:
+
+```lean
+hB₂ : IsBall τ₂ (insert γ σ₂)
+```
+
+then glue `t₀` onto it along exactly `γ`:
+
+```lean
+GlueStep t₀ (insert γ σ₂) σ
+```
+
+with:
+
+```lean
+(tetFaces t₀ ∩ insert γ σ₂).card = 1
+```
+
+and:
+
+```lean
+σ = ((insert γ σ₂) \ tetFaces t₀) ∪ (tetFaces t₀ \ insert γ σ₂)
+```
+
+Then:
+
+```lean
+IsBall.insert_of_glueStep hB₂ hg ht₀_notin
+```
+
+This is exactly case-1 M22a.
+
+**Q4. M24 Interface**
+
+Deliver a standalone `deg3_split`, not just Q1+Q2.
+
+Recommended shape:
+
+```lean
+structure Deg3SplitData (σ : Finset (Finset V)) (X M : Chain V) where
+  γ σsmall : Finset (Finset V) -- or store γ : Finset V separately
+  Xsmall Msmall : Chain V
+  tet : Finset V
+  sphere_small : IsSphere2 σsmall
+  unit_small : UnitOn Xsmall σsmall
+  bdry_small : bdry Msmall = Xsmall
+  taut_small : IsTaut Msmall
+  nrm_small_lt : nrm Msmall < nrm M
+  star_tet_card : tet.card = 4
+  reassemble :
+    IsBall Msmall.support σsmall → IsBall M.support σ
+```
+
+In Lean, avoid overpacking if it gets painful, but M26 wants one theorem:
+
+```lean
+theorem deg3_split
+    {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card)
+    (hU : UnitOn X σ) (hXc : bdry X = 0)
+    (hM : bdry M = X) (hT : IsTaut M)
+    (hDeg3 : HasDegree3Vertex σ) :
+    ∃ σ' X' M',
+      IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧
+      bdry M' = X' ∧ IsTaut M' ∧ nrm M' < nrm M ∧
+      (IsBall M'.support σ' → IsBall M.support σ)
+```
+
+This keeps M26 clean.
+
+**Q5. M26 Skeleton Now?**
+
+Yes, write the M26 strong-induction skeleton now, with `deg3_split`, M25b disjoint-pair, and M22b relative-shelling as explicit hypotheses.
+
+Do not wait for M22b/M25b. A compiling skeleton with hypothesis parameters will validate that M24 exposes the right boundary, norm-drop, and reassembly interface. Otherwise you risk implementing Q2 in a shape that proves something true but unusable by induction.
+
+Order:
+
+1. M26 skeleton with abstract hypotheses.
+2. M24a Q1 non-face.
+3. M24b capped triangle bridge.
+4. M24c `deg3_split`.
+5. M22b.
+6. M25b.
+7. Discharge M26 hypotheses.
+
+**Q6. M24 Lemma Dependency Order**
+
+Implement in this order:
+
+1. `linkGraph_complete_of_linkVerts_card_three`
+2. `linkVerts_powersetCard_two_subset_edgesOf_of_card_three`
+3. `linkVerts_not_mem_of_card_three_of_four_lt_verts`
+4. `degree3_link_triangle_cut_data`
+5. `closed_one_chain_supported_on_triangle`
+6. `bdry_filter_cut_supported_on_gamma_edges`
+7. `oriented_split_chains_of_cut`
+8. `oriented_taut_split_of_cut`, wrapping `IsTaut.splits`
+9. `degree3_star_capped_eq_tetFaces`
+10. `degree3_cut_side_is_star_or_complement`
+11. `taut_filling_of_unit_tet_boundary_has_nrm_one`
+12. `deg3_split`
+
+New primitives to expect:
+
+```lean
+closed_one_chain_supported_on_triangle
+UnitOn_capped_cut_side
+Zvol/unit filling of tetra boundary
+skel-walk closure lemma, analogous to walk_mem_of_adj_closed
+```
+
+Ruthless feasibility: Q1 is tractable. Q2 is tractable but should be its own staged commit; the `UnitOn` capped-cycle proof is the likely time sink. Full `deg3_split` is implementable after Q2, but I would not mix it into the same commit as the oriented bridge.
+
+APPROVED: stage M24 as Q1 non-face, Q2 capped triangle bridge, then `deg3_split`, and write the M26 hypothesis skeleton now.
+tokens used
+132,951
+**Q1. Deg-3 Vertex To Non-Face**
+
+Use `4 < (vertsOf σ).card`, not `σ ≠ tetraBdry ...`. It is invariant and avoids choosing names/order for tetra vertices.
+
+Add these lemmas, probably in `Eligible.lean` or new `Degree3.lean` imported by `Theorem2.lean`:
+
+```lean
+lemma linkGraph_complete_of_linkVerts_card_three
+    {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {v x y : V}
+    (hx : x ∈ linkVerts σ v) (hy : y ∈ linkVerts σ v) (hxy : x ≠ y)
+    (h3 : (linkVerts σ v).card = 3) :
+    (linkGraph σ v).Adj x y
+```
+
+Proof: `link_two_regular hσ hx` says `x` has exactly two link-neighbors. The two other vertices in the 3-element set are forced to be exactly those neighbors.
+
+Then:
+
+```lean
+lemma linkVerts_powersetCard_two_subset_edgesOf_of_card_three
+    {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {v : V} (hv : v ∈ vertsOf σ)
+    (h3 : (linkVerts σ v).card = 3) :
+    (linkVerts σ v).powersetCard 2 ⊆ edgesOf σ
+```
+
+For each pair `{x,y} ⊆ linkVerts σ v`, use the previous lemma to get `{v,x,y} ∈ σ`, hence `{x,y} ∈ edgesOf σ`.
+
+Harder non-face lemma:
+
+```lean
+lemma linkVerts_not_mem_of_card_three_of_four_lt_verts
+    {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {v : V} (hv : v ∈ vertsOf σ)
+    (h3 : (linkVerts σ v).card = 3)
+    (hbig : 4 < (vertsOf σ).card) :
+    linkVerts σ v ∉ σ
+```
+
+Proof route:
+
+1. Let `γ := linkVerts σ v`, `T := insert v γ`.
+2. Assume `γ ∈ σ`.
+3. Prove the tetra component `T.powersetCard 3 ⊆ σ`:
+   the three faces `{v} ∪ e` come from `linkGraph_complete_of_linkVerts_card_three`; the fourth is `γ`.
+4. Prove `vertsOf σ ⊆ T`.
+   For every `y ∈ T`, prove `linkVerts σ y ⊆ T.erase y` by the same closure argument already used in [Eligible.lean](/Users/doyle/Dropbox/taut/lean/Taut/Eligible.lean:240): the three known link vertices form a 3-cycle, `link_two_regular` makes it neighbor-closed, and `linkConn` traps the whole link.
+5. Convert this to skeleton-neighbor closure of `T`, then use `hσ.conn v hv x hx` and a `walk_mem_of_adj_closed` style lemma for `skel σ` to show every vertex is in `T`.
+6. Since `T.card = 4`, contradiction with `hbig`.
+
+Package Q1 as:
+
+```lean
+lemma degree3_link_triangle_cut_data
+    {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {v : V} (hv : v ∈ vertsOf σ)
+    (h3 : (linkVerts σ v).card = 3)
+    (hbig : 4 < (vertsOf σ).card) :
+    let γ := linkVerts σ v
+    γ.card = 3 ∧ γ.powersetCard 2 ⊆ edgesOf σ ∧ γ ∉ σ
+```
+
+This is tractable. It is not tiny, but it reuses the exact M25a′ pattern.
+
+**Q2. Triangle-Cut Oriented Bridge**
+
+Do not try to apply `IsTaut.splits` to raw `bdry M`. `splits` needs two closed chains `X Y` first. The cap must be built explicitly.
+
+Use W-based sides, not opaque `separates`:
+
+```lean
+σ₁ := cutSet σ W
+σ₂ := cutSet σ (W + fun _ => 1)
+τ₁ := insert γ σ₁
+τ₂ := insert γ σ₂
+A := vertsOf τ₁
+B := vertsOf τ₂
+X₁₀ := X.filter (fun s => s ∈ σ₁)
+X₂₀ := X.filter (fun s => s ∈ σ₂)
+```
+
+New primitive:
+
+```lean
+lemma closed_one_chain_supported_on_triangle
+    {γ : Finset V} (hγ3 : γ.card = 3)
+    {C : Chain V}
+    (hCclosed : bdry C = 0)
+    (hCsupp : ∀ e ∈ C.support, e ∈ γ.powersetCard 2) :
+    ∃ c : ℤ, C = c • bdryGen γ
+```
+
+Then choose `c` from:
+
+```lean
+have hc : ∃ c : ℤ, bdry X₁₀ = c • bdryGen γ := ...
+```
+
+Define with this exact sign:
+
+```lean
+noncomputable def cappedSide₁ := X₁₀ - Finsupp.single γ c
+noncomputable def cappedSide₂ := X₂₀ + Finsupp.single γ c
+```
+
+Because:
+
+```lean
+bdry (Finsupp.single γ c) = c • bdryGen γ
+```
+
+we get:
+
+```lean
+bdry cappedSide₁ = 0
+bdry cappedSide₂ = 0
+cappedSide₁ + cappedSide₂ = X
+```
+
+The signs are therefore:
+
+```lean
+X₁ = X₁₀ - single γ c
+X₂ = X₂₀ + single γ c
+```
+
+where `bdry X₁₀ = c • bdryGen γ`.
+
+Also prove the recursion-strength version, not just closedness:
+
+```lean
+lemma oriented_split_chains_of_cut
+    {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {γ : Finset V} (hγ3 : γ.card = 3)
+    (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ)
+    {W : C2 σ} (hW : bd2 σ W = gammaChain σ γ)
+    {X : Chain V} (hU : UnitOn X σ) (hXc : bdry X = 0) :
+    ∃ X₁ X₂ c,
+      X₁ = X.filter (fun s => s ∈ cutSet σ W) - Finsupp.single γ c ∧
+      X₂ = X.filter (fun s => s ∈ cutSet σ (W + fun _ => 1)) + Finsupp.single γ c ∧
+      UnitOn X₁ (insert γ (cutSet σ W)) ∧
+      UnitOn X₂ (insert γ (cutSet σ (W + fun _ => 1))) ∧
+      bdry X₁ = 0 ∧ bdry X₂ = 0 ∧
+      X₁ + X₂ = X
+```
+
+This is the real M24 bridge. The `UnitOn` clauses are important; otherwise M26 cannot recurse cleanly.
+
+Then feed `X₁ X₂` into:
+
+```lean
+hMt.splits
+  (A := vertsOf τ₁) (B := vertsOf τ₂) (n := 2)
+```
+
+Use existing:
+
+```lean
+vertsOf_cut_inter hσ hW
+```
+
+to get `(A ∩ B).card = 3`, and pick two distinct vertices from `γ.card = 3`.
+
+**Q3. Deg-3 Side Is Single Tet**
+
+Yes, this is case-1 reassembly using M22a.
+
+For `γ = linkVerts σ v`, the deg-3 side is the vertex star:
+
+```lean
+star3 σ v := σ.filter (fun f => v ∈ f)
+```
+
+Prove one of the cut sides equals that star, after possibly swapping sides:
+
+```lean
+lemma degree3_cut_has_star_side :
+  ∃ W, bd2 σ W = gammaChain σ γ ∧
+    (cutSet σ W = star3 σ v ∨
+     cutSet σ (W + fun _ => 1) = star3 σ v)
+```
+
+But since `exists_cut` gives arbitrary `W`, better prove for any cut:
+
+```lean
+lemma degree3_cut_side_is_star_or_complement
+    ... :
+    cutSet σ W = star3 σ v ∨
+    cutSet σ (W + fun _ => 1) = star3 σ v
+```
+
+The capped star is:
+
+```lean
+insert γ (star3 σ v) = (insert v γ).powersetCard 3
+```
+
+Then the tet is:
+
+```lean
+t₀ := insert v γ
+```
+
+Add:
+
+```lean
+lemma degree3_star_capped_eq_tetFaces
+    ... :
+    insert γ (star3 σ v) = tetFaces (insert v γ)
+```
+
+For the filling side, either recurse on the non-star side and use base for the star side, or prove directly:
+
+```lean
+lemma taut_filling_of_unit_tet_boundary_has_nrm_one
+    {t : Finset V} (ht : t.card = 4)
+    {X M : Chain V}
+    (hU : UnitOn X (tetFaces t))
+    (hM : bdry M = X)
+    (hT : IsTaut M) :
+    nrm M = 1
+```
+
+This needs a small primitive: any unit orientation of `tetFaces t` is `± bdryGen t`, or at least has a one-tet filling. Then `Zvol X ≤ 1`, `X ≠ 0`, so `Zvol X = 1`.
+
+Reassembly:
+
+```lean
+have hsingle : IsBall {t₀} (tetFaces t₀) := isBall_singleton ht₀
+```
+
+If the recursive other side gives:
+
+```lean
+hB₂ : IsBall τ₂ (insert γ σ₂)
+```
+
+then glue `t₀` onto it along exactly `γ`:
+
+```lean
+GlueStep t₀ (insert γ σ₂) σ
+```
+
+with:
+
+```lean
+(tetFaces t₀ ∩ insert γ σ₂).card = 1
+```
+
+and:
+
+```lean
+σ = ((insert γ σ₂) \ tetFaces t₀) ∪ (tetFaces t₀ \ insert γ σ₂)
+```
+
+Then:
+
+```lean
+IsBall.insert_of_glueStep hB₂ hg ht₀_notin
+```
+
+This is exactly case-1 M22a.
+
+**Q4. M24 Interface**
+
+Deliver a standalone `deg3_split`, not just Q1+Q2.
+
+Recommended shape:
+
+```lean
+structure Deg3SplitData (σ : Finset (Finset V)) (X M : Chain V) where
+  γ σsmall : Finset (Finset V) -- or store γ : Finset V separately
+  Xsmall Msmall : Chain V
+  tet : Finset V
+  sphere_small : IsSphere2 σsmall
+  unit_small : UnitOn Xsmall σsmall
+  bdry_small : bdry Msmall = Xsmall
+  taut_small : IsTaut Msmall
+  nrm_small_lt : nrm Msmall < nrm M
+  star_tet_card : tet.card = 4
+  reassemble :
+    IsBall Msmall.support σsmall → IsBall M.support σ
+```
+
+In Lean, avoid overpacking if it gets painful, but M26 wants one theorem:
+
+```lean
+theorem deg3_split
+    {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card)
+    (hU : UnitOn X σ) (hXc : bdry X = 0)
+    (hM : bdry M = X) (hT : IsTaut M)
+    (hDeg3 : HasDegree3Vertex σ) :
+    ∃ σ' X' M',
+      IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧
+      bdry M' = X' ∧ IsTaut M' ∧ nrm M' < nrm M ∧
+      (IsBall M'.support σ' → IsBall M.support σ)
+```
+
+This keeps M26 clean.
+
+**Q5. M26 Skeleton Now?**
+
+Yes, write the M26 strong-induction skeleton now, with `deg3_split`, M25b disjoint-pair, and M22b relative-shelling as explicit hypotheses.
+
+Do not wait for M22b/M25b. A compiling skeleton with hypothesis parameters will validate that M24 exposes the right boundary, norm-drop, and reassembly interface. Otherwise you risk implementing Q2 in a shape that proves something true but unusable by induction.
+
+Order:
+
+1. M26 skeleton with abstract hypotheses.
+2. M24a Q1 non-face.
+3. M24b capped triangle bridge.
+4. M24c `deg3_split`.
+5. M22b.
+6. M25b.
+7. Discharge M26 hypotheses.
+
+**Q6. M24 Lemma Dependency Order**
+
+Implement in this order:
+
+1. `linkGraph_complete_of_linkVerts_card_three`
+2. `linkVerts_powersetCard_two_subset_edgesOf_of_card_three`
+3. `linkVerts_not_mem_of_card_three_of_four_lt_verts`
+4. `degree3_link_triangle_cut_data`
+5. `closed_one_chain_supported_on_triangle`
+6. `bdry_filter_cut_supported_on_gamma_edges`
+7. `oriented_split_chains_of_cut`
+8. `oriented_taut_split_of_cut`, wrapping `IsTaut.splits`
+9. `degree3_star_capped_eq_tetFaces`
+10. `degree3_cut_side_is_star_or_complement`
+11. `taut_filling_of_unit_tet_boundary_has_nrm_one`
+12. `deg3_split`
+
+New primitives to expect:
+
+```lean
+closed_one_chain_supported_on_triangle
+UnitOn_capped_cut_side
+Zvol/unit filling of tetra boundary
+skel-walk closure lemma, analogous to walk_mem_of_adj_closed
+```
+
+Ruthless feasibility: Q1 is tractable. Q2 is tractable but should be its own staged commit; the `UnitOn` capped-cycle proof is the likely time sink. Full `deg3_split` is implementable after Q2, but I would not mix it into the same commit as the oriented bridge.
+
+APPROVED: stage M24 as Q1 non-face, Q2 capped triangle bridge, then `deg3_split`, and write the M26 hypothesis skeleton now.
