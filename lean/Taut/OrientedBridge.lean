@@ -63,4 +63,22 @@ lemma closed_one_chain_supported_on_triangle {γ : Finset V} (hγ3 : γ.card = 3
   refine ⟨c, ?_⟩
   rw [hC, hcone, map_smul, bdry_single, one_smul]
 
+/-- **The capping algebra of the triangle cut.** Once the side-filter boundary is
+identified as `bdry X₁ = c • bdryGen γ` (via `closed_one_chain_supported_on_triangle`
+applied to the cut), capping the two sides with `± c • [γ]` makes both closed while
+preserving their sum: `(X₁ − c•[γ]) + (X₂ + c•[γ]) = X`. The cut-machinery half
+(showing `bdry X₁` lands on γ's edges) is the remaining part of M24b. -/
+lemma capped_split_of_side_boundary {X X₁ X₂ : Chain V} {γ : Finset V} {c : ℤ}
+    (hsum : X₁ + X₂ = X) (hXc : bdry X = 0) (hb1 : bdry X₁ = c • bdryGen γ) :
+    bdry (X₁ - Finsupp.single γ c) = 0 ∧ bdry (X₂ + Finsupp.single γ c) = 0 ∧
+      (X₁ - Finsupp.single γ c) + (X₂ + Finsupp.single γ c) = X := by
+  have hbs : bdry (Finsupp.single γ c) = c • bdryGen γ := bdry_single γ c
+  have hb2 : bdry X₂ = -(c • bdryGen γ) := by
+    have h : bdry X₁ + bdry X₂ = 0 := by rw [← map_add, hsum, hXc]
+    rw [hb1] at h; exact eq_neg_of_add_eq_zero_right h
+  refine ⟨?_, ?_, ?_⟩
+  · rw [map_sub, hb1, hbs, sub_self]
+  · rw [map_add, hb2, hbs, neg_add_cancel]
+  · rw [← hsum]; abel
+
 end Taut
