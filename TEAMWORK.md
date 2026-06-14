@@ -345,9 +345,24 @@ sphere/ball definitions.
   the gate caught an initial duplicate of it. Build green (8259 jobs), no sorry,
   standard three axioms. (Full `oriented_split_chains_of_edge_join` + the
   `IsTaut.splits_edge_join` wrapper fold into M26's case-2.)
-- NEXT: M24 (deg-3/connected-sum reduction), M25 (eligible-tet count — architect's
-  biggest-risk flag), M26 (the strong induction + Th2+3 wrapper); M22b
-  (relShelling_of_separated_cap, the ball-side hidden topology) on the case-2 path.
+- ARCHITECT (codex 019ec428): M25 design APPROVED, staged. KEY: `ProperBoundary
+  FaceTet M α t := t∈M.support ∧ α∈tetFaces t ∧ (bdry M) α = tetContribution M t α`
+  (the coeff-match is BUILT IN). `exists_properBoundaryFaceTet`: ∂M α = ±1 is a
+  sum of {-1,0,1} summands, so one summand = ±1 = ∂M α (a same-oriented tet;
+  uniqueness is FALSE, only choice). `faceToTet` (Classical.choose) maps σ-faces
+  to M-tets; fiber ⊆ sharedFaces; with no-deg-3, fiber ≤ 2. A DOUBLE-fiber tet is
+  eligible (sharedFaces = fiber = the 2 coeff-matched faces). Count: ≥ σ.card −
+  M.support.card double fibers; Prop 2 (Zvol_add_deg_le) + a vertex with ≥2 faces
+  ⟹ ≥ 2. TAKE `NoDegree3Vertex σ := ∀ v∈vertsOf σ, (linkVerts σ v).card ≠ 3` as a
+  hypothesis (defer "prime ⟹ no-deg-3" to M24). HARD piece (M25a'):
+  `exists_degree3Vertex_of_three_sharedFaces` (3 tet-faces in σ ⟹ deg-3 vertex,
+  via tetra combinatorics + link_two_regular + linkConn). Staging: M25a = one
+  eligible (taking the sharedFaces≤2 bound), M25a' = the deg-3 lemma, M25b = the
+  disjoint pair (M26 takes the pair as a hypothesis until M25b lands).
+- IMPLEMENTING: new file `Taut/Eligible.lean`. M25a foundational layer first
+  (tetContribution_apply, bdryGen∈{-1,0,1}, exists_properBoundaryFaceTet), then
+  the counting + exists_eligibleTet (modulo the sharedFaces≤2 bound).
+- THEN: M24 (deg-3 reduction), M26 (induction + wrapper); M22b on the case-2 path.
 - Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
