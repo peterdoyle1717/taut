@@ -398,10 +398,24 @@ sphere/ball definitions.
   sorry, standard three. This VALIDATES the interfaces compose (the IH shape, the
   norm-drop, the reassembly implication). NOT a proof of Theorem 2 — the 3 steps
   are holes.
-- THEN (fill the holes): M24a (Q1 non-face), M24b (Q2 capped triangle bridge),
-  M24c (deg3_split → discharges `deg3_split`), the eligible-tet branch (→ `prime_
-  step`: M25b disjoint pair + M22b relShelling + M23 edge-join bridge + case-1/2),
-  `base` (minimal sphere = single tet).
+- M24a (DONE, Degree3.lean, building): **the degree-3 non-face datum (Q1).**
+  `walk_mem_of_adj_closed'` (Set-/any-vertex-type closure, for the dual graph),
+  `linkGraph_complete_of_linkVerts_card_three` (a deg-3 link is a triangle, via
+  2-regularity), `linkVerts_powersetCard_two_subset_edgesOf` (its 3 edges ∈ σ),
+  **`linkVerts_not_mem_of_card_three_of_four_lt_verts`** (the link triangle γ is a
+  NON-FACE when 4 < vertsOf σ.card — dual route: the 4 tetra faces on insert v γ
+  lie in σ, are dual-closed (closedness gives each tetra edge exactly its 2 tetra
+  faces, via the edgeDeg=2 filter), σ dual-connected (dualGraph_preconnected) ⟹
+  σ = tetraBdry ⟹ only 4 verts, contra), and `degree3_link_triangle_cut_data`
+  (the triple γ.card=3 ∧ γ.pwsCard2 ⊆ edgesOf σ ∧ γ∉σ that `separates` consumes).
+  Build green (8262), no sorry, standard three. NOTE: the link-trapping in the
+  non-face proof partly duplicates M25a' logic — a `triangle_traps_linkVerts`
+  refactor is a possible cleanup, deferred.
+- THEN (fill the holes): M24b (Q2 capped triangle bridge `oriented_split_chains_
+  of_cut` — the time sink), M24c (deg3_split, composing M24a + separates + M24b +
+  the star-side single-tet reassembly → discharges `deg3_split`), the eligible-tet
+  branch (→ `prime_step`: M25b disjoint pair + M22b relShelling + M23 edge-join
+  bridge + case-1/2), `base` (minimal sphere = single tet).
 - Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
