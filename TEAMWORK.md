@@ -411,11 +411,21 @@ sphere/ball definitions.
   Build green (8262), no sorry, standard three. NOTE: the link-trapping in the
   non-face proof partly duplicates M25a' logic — a `triangle_traps_linkVerts`
   refactor is a possible cleanup, deferred.
-- THEN (fill the holes): M24b (Q2 capped triangle bridge `oriented_split_chains_
-  of_cut` — the time sink), M24c (deg3_split, composing M24a + separates + M24b +
-  the star-side single-tet reassembly → discharges `deg3_split`), the eligible-tet
-  branch (→ `prime_step`: M25b disjoint pair + M22b relShelling + M23 edge-join
-  bridge + case-1/2), `base` (minimal sphere = single tet).
+- M24b-part1 (DONE, OrientedBridge.lean, building): **the triangle-cycle
+  primitive** `closed_one_chain_supported_on_triangle` — a closed 1-chain whose
+  support faces are 2-edges of a triangle γ (card 3) is `c • bdryGen γ`. SLICK
+  proof via the contracting homotopy `bdry_cone_add_cone_bdry`: C closed ⟹ C =
+  bdry (cone a C) for a∈γ; coning from a kills the 2 edges through a and sends the
+  opposite edge γ\{a} to ±γ, so `cone a C = c • [γ]` (c = C(γ.erase a)·sgn a) ⟹
+  C = c•bdryGen γ. Avoids all order-dependent vertex-sign bashing. Build green
+  (8263), no sorry, standard three.
+- THEN (fill the holes): M24b-part2 (the full `oriented_split_chains_of_cut` bridge
+  — cap the side-filters with ±c•[γ]; the UnitOn capped-cycle clauses + closedness,
+  intertwined with Separation's cut machinery; THE time sink), M24c (deg3_split,
+  composing M24a + separates + M24b + the star-side single-tet reassembly →
+  discharges `deg3_split`), the eligible-tet branch (→ `prime_step`: M25b disjoint
+  pair + M22b relShelling + M23 edge-join bridge + case-1/2), `base` (minimal
+  sphere = single tet).
 - Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
