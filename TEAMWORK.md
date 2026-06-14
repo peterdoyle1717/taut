@@ -359,10 +359,29 @@ sphere/ball definitions.
   via tetra combinatorics + link_two_regular + linkConn). Staging: M25a = one
   eligible (taking the sharedFaces≤2 bound), M25a' = the deg-3 lemma, M25b = the
   disjoint pair (M26 takes the pair as a hypothesis until M25b lands).
-- IMPLEMENTING: new file `Taut/Eligible.lean`. M25a foundational layer first
-  (tetContribution_apply, bdryGen∈{-1,0,1}, exists_properBoundaryFaceTet), then
-  the counting + exists_eligibleTet (modulo the sharedFaces≤2 bound).
-- THEN: M24 (deg-3 reduction), M26 (induction + wrapper); M22b on the case-2 path.
+- M25a (DONE, Eligible.lean, committed d5ed727): the face→tet layer + `exists_
+  eligibleTet` CONDITIONAL on `hShared2 : sharedFaces ≤ 2`. `ProperBoundaryFaceTet`
+  (coeff-match built in), `exists_properBoundaryFaceTet` (∂M α=±1 ⟹ a same-oriented
+  summand), `exists_eligibleTet` (collision via exists_ne_map_eq + Prop 2 ⟹ double
+  fiber ⟹ eligible). Build green (8260), no sorry, standard three. (G2 gate first
+  BLOCKED the commit MESSAGE for overclaiming "prime taut filling" when the export
+  is conditional on hShared2 — reworded to "conditional on the no-deg-3 bound",
+  re-gated APPROVED. The gate working correctly again.)
+- M25a' (DONE, Eligible.lean, building): **the hard deg-3 lemma — codex's flagged
+  biggest-ballooning-risk, landed with no sorry.** `exists_degree3Vertex_of_three_
+  sharedFaces` (3 tet-faces in σ ⟹ a deg-3 vertex: common vertex d, the 3 σ-faces
+  make the opposite triangle a 3-cycle in link(d), `link_two_regular` pins each
+  cycle vertex's neighbours to the cycle, `linkConn` + `walk_mem_of_adj_closed`
+  traps the whole link inside ⟹ link(d) card = 3), `HasDegree3Vertex`/`NoDegree3
+  Vertex` defs, `sharedFaces_card_le_two_of_noDegree3` (discharges hShared2), and
+  **`exists_eligibleTet_of_noDegree3`** (the full M25: one eligible tet in a
+  no-degree-3 taut filling — NOT yet "prime"; prime⟹no-deg-3 is M24). Build green
+  (8260), no sorry, standard three (walk helper: just
+  propext+Quot.sound). M25 (eligible-tet existence, single tet) is COMPLETE.
+- THEN: M25b (the disjoint eligible PAIR, for case-1's multiplicity-2 arg — M26 can
+  take it as a hypothesis meanwhile), M24 (establish NoDegree3Vertex from primality
+  via the connected-sum split), M26 (the strong induction + Th2+3 wrapper); M22b
+  (relShelling_of_separated_cap) on the case-2 path.
 - Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.

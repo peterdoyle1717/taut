@@ -3,8 +3,8 @@ import Taut.Theorem2
 /-!
 # Eligible tets (M25, architect: codex 019ec428)
 
-For the Theorem-2 induction we need, in a prime (no degree-3 vertex) taut
-filling, an *eligible* tet — one sharing two oriented faces with the boundary.
+For the Theorem-2 induction we need, in a no-degree-3 taut filling, an *eligible*
+tet — one sharing two oriented faces with the boundary.
 The route (paper §"Filling a triangulation of the 2-sphere", the 2-to-1 count):
 
 * every boundary face `α` (`∂M α = ±1`) is a *properly oriented* face of some tet
@@ -143,5 +143,167 @@ theorem exists_eligibleTet {M : Chain V} {σ : Finset (Finset V)}
   rcases hs with rfl | rfl
   · exact (hfspec α₁).2.2
   · rw [htt]; exact (hfspec α₂).2.2
+
+/-! ## M25a': the no-degree-3 face bound (architect: codex 019ec428, Q2)
+
+The hard combinatorial step: a tet with three boundary faces forces a degree-3
+vertex. Those three faces of `t` share a common vertex `d`; the three σ-faces
+make the other three vertices of `t` a 3-cycle in the link of `d`; 2-regularity
+(`link_two_regular`) pins each cycle vertex's neighbours to the cycle, and
+`linkConn` then traps the whole link inside it — so `d` has link exactly 3. -/
+
+/-- A vertex of `σ` whose link has exactly three vertices (degree 3). -/
+def HasDegree3Vertex (σ : Finset (Finset V)) : Prop :=
+  ∃ v ∈ vertsOf σ, (linkVerts σ v).card = 3
+
+/-- `σ` has no degree-3 vertex (the primality consequence the count needs). -/
+def NoDegree3Vertex (σ : Finset (Finset V)) : Prop :=
+  ∀ v ∈ vertsOf σ, (linkVerts σ v).card ≠ 3
+
+/-- Reachability stays inside a vertex set closed under taking neighbours. -/
+lemma walk_mem_of_adj_closed {G : SimpleGraph V} {S : Finset V}
+    (hclosed : ∀ u ∈ S, ∀ v, G.Adj u v → v ∈ S) {a x : V} (w : G.Walk a x) :
+    a ∈ S → x ∈ S := by
+  induction w with
+  | nil => exact id
+  | cons hadj _ ih => exact fun ha => ih (hclosed _ ha _ hadj)
+
+/-- **Three boundary faces force a degree-3 vertex.** If three of an eligible
+tet's four faces lie on `σ`, the shared vertex `d` of those faces has link
+exactly the opposite triangle. -/
+lemma exists_degree3Vertex_of_three_sharedFaces {σ : Finset (Finset V)}
+    {M : Chain V} {t : Finset V} (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (ht4 : t.card = 4) (h3 : 3 ≤ (sharedFaces M t).card) :
+    HasDegree3Vertex σ := by
+  classical
+  -- a common vertex `d` whose three opposite faces are all shared
+  obtain ⟨d, hd, hdshared⟩ :
+      ∃ d ∈ t, ∀ x ∈ t, x ≠ d → t.erase x ∈ sharedFaces M t := by
+    have hexp1 : (exposedFaces M t).card ≤ 1 := by
+      rw [exposedFaces, Finset.card_sdiff_of_subset (sharedFaces_subset_tetFaces M t),
+        card_tetFaces ht4]; omega
+    rcases Finset.eq_empty_or_nonempty (exposedFaces M t) with hemp | ⟨F, hF⟩
+    · obtain ⟨d, hd⟩ : t.Nonempty := Finset.card_pos.mp (by rw [ht4]; omega)
+      refine ⟨d, hd, fun x hx _ => ?_⟩
+      by_contra hns
+      have : t.erase x ∈ exposedFaces M t :=
+        Finset.mem_sdiff.mpr ⟨erase_mem_tetFaces ht4 hx, hns⟩
+      rw [hemp] at this; exact absurd this (by simp)
+    · obtain ⟨e, he, hFe⟩ :=
+        exists_erase_eq_of_mem_tetFaces ht4 (exposedFaces_subset_tetFaces M t hF)
+      refine ⟨e, he, fun x hx hxe => ?_⟩
+      by_contra hns
+      have hxexp : t.erase x ∈ exposedFaces M t :=
+        Finset.mem_sdiff.mpr ⟨erase_mem_tetFaces ht4 hx, hns⟩
+      have h1card : (exposedFaces M t).card = 1 :=
+        le_antisymm hexp1 (Finset.card_pos.mpr ⟨F, hF⟩)
+      obtain ⟨G, hG⟩ := Finset.card_eq_one.mp h1card
+      have hxeq : t.erase x = t.erase e := by
+        rw [hG, Finset.mem_singleton] at hxexp hF; rw [hxexp, ← hF, hFe]
+      apply hxe
+      by_contra hxene
+      have : x ∈ t.erase e := Finset.mem_erase.mpr ⟨hxene, hx⟩
+      rw [← hxeq] at this; exact Finset.notMem_erase x t this
+  -- the three shared faces are σ-faces
+  have hface : ∀ x ∈ t, x ≠ d → t.erase x ∈ σ := fun x hx hxd => by
+    have := hdshared x hx hxd
+    rw [sharedFaces, Finset.mem_inter] at this; exact hU.1 ▸ this.2
+  have hcardL : (t.erase d).card = 3 := by rw [Finset.card_erase_of_mem hd, ht4]
+  -- d is a vertex of σ
+  have hdv : d ∈ vertsOf σ := by
+    obtain ⟨x, hx⟩ : (t.erase d).Nonempty := Finset.card_pos.mp (by rw [hcardL]; omega)
+    have hxt := Finset.mem_of_mem_erase hx
+    have hxd := Finset.ne_of_mem_erase hx
+    exact mem_vertsOf.mpr ⟨t.erase x, hface x hxt hxd, Finset.mem_erase.mpr ⟨Ne.symm hxd, hd⟩⟩
+  -- the opposite triangle is a 3-cycle in the link of d
+  have hcyc : ∀ y ∈ t.erase d, ∀ z ∈ t.erase d, y ≠ z → (linkGraph σ d).Adj y z := by
+    intro y hy z hz hyz
+    have hyt := Finset.mem_of_mem_erase hy
+    have hzt := Finset.mem_of_mem_erase hz
+    have hyd := Finset.ne_of_mem_erase hy
+    have hzd := Finset.ne_of_mem_erase hz
+    have hsub : ({d, y, z} : Finset V) ⊆ t := by
+      intro u hu; simp only [Finset.mem_insert, Finset.mem_singleton] at hu
+      rcases hu with rfl | rfl | rfl; exacts [hd, hyt, hzt]
+    have hc3 : ({d, y, z} : Finset V).card = 3 :=
+      Finset.card_eq_three.mpr ⟨d, y, z, fun h => hyd h.symm, fun h => hzd h.symm, hyz, rfl⟩
+    obtain ⟨w, hwt, hweq⟩ :=
+      exists_erase_eq_of_mem_tetFaces ht4 (Finset.mem_powersetCard.mpr ⟨hsub, hc3⟩)
+    have hwd : w ≠ d := by
+      rintro rfl
+      exact (Finset.notMem_erase w t) (hweq ▸ Finset.mem_insert_self w {y, z})
+    exact ⟨hyz, by rw [hweq]; exact hface w hwt hwd⟩
+  -- the opposite triangle lies in the link
+  have hL_sub_link : t.erase d ⊆ linkVerts σ d := by
+    intro y hy
+    have hyt := Finset.mem_of_mem_erase hy
+    have hyd := Finset.ne_of_mem_erase hy
+    obtain ⟨x, hx, hxd, hxy⟩ : ∃ x ∈ t, x ≠ d ∧ x ≠ y := by
+      have h2 : 2 ≤ ((t.erase d).erase y).card := by
+        rw [Finset.card_erase_of_mem (Finset.mem_erase.mpr ⟨hyd, hyt⟩), hcardL]
+      obtain ⟨x, hx⟩ := Finset.card_pos.mp (by omega : 0 < ((t.erase d).erase y).card)
+      exact ⟨x, Finset.mem_of_mem_erase (Finset.mem_of_mem_erase hx),
+        Finset.ne_of_mem_erase (Finset.mem_of_mem_erase hx), Finset.ne_of_mem_erase hx⟩
+    exact mem_linkVerts.mpr ⟨hyd, t.erase x, hface x hx hxd,
+      Finset.mem_erase.mpr ⟨Ne.symm hxd, hd⟩, Finset.mem_erase.mpr ⟨Ne.symm hxy, hyt⟩⟩
+  -- a link-neighbour is itself a link vertex
+  have hadj_mem : ∀ {u v}, (linkGraph σ d).Adj u v → v ∈ linkVerts σ d := by
+    intro u v hadjuv
+    obtain ⟨_, hf⟩ := hadjuv
+    have hc3 := hσ.pure _ hf
+    have hvd : v ≠ d := by
+      intro h
+      have hsub : ({d, u, v} : Finset V) ⊆ {d, u} := by
+        intro a ha
+        simp only [Finset.mem_insert, Finset.mem_singleton] at ha ⊢
+        rcases ha with rfl | rfl | rfl
+        exacts [Or.inl rfl, Or.inr rfl, Or.inl h]
+      have hle : ({d, u, v} : Finset V).card ≤ 2 := (Finset.card_le_card hsub).trans
+        ((Finset.card_insert_le d {u}).trans (by simp))
+      omega
+    exact mem_linkVerts.mpr ⟨hvd, {d, u, v}, hf, by simp, by simp⟩
+  -- the opposite triangle is closed under taking link-neighbours
+  have hclosed : ∀ u ∈ t.erase d, ∀ v, (linkGraph σ d).Adj u v → v ∈ t.erase d := by
+    intro u hu v hadjuv
+    have hreg := link_two_regular hσ (hL_sub_link hu)
+    have hsub : (t.erase d).erase u
+        ⊆ (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w) := by
+      intro z hz
+      exact Finset.mem_filter.mpr ⟨hL_sub_link (Finset.mem_of_mem_erase hz),
+        hcyc u hu z (Finset.mem_of_mem_erase hz) (Ne.symm (Finset.ne_of_mem_erase hz))⟩
+    have hNeq : (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w)
+        = (t.erase d).erase u :=
+      (Finset.eq_of_subset_of_card_le hsub
+        (by rw [Finset.card_erase_of_mem hu, hcardL, hreg])).symm
+    have : v ∈ (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w) :=
+      Finset.mem_filter.mpr ⟨hadj_mem hadjuv, hadjuv⟩
+    rw [hNeq] at this; exact Finset.mem_of_mem_erase this
+  -- linkConn traps the link inside the triangle
+  have hlink_sub : linkVerts σ d ⊆ t.erase d := by
+    intro x hx
+    obtain ⟨y₀, hy₀⟩ : (t.erase d).Nonempty := Finset.card_pos.mp (by rw [hcardL]; omega)
+    obtain ⟨w⟩ := hσ.linkConn d hdv y₀ (hL_sub_link hy₀) x hx
+    exact walk_mem_of_adj_closed hclosed w hy₀
+  exact ⟨d, hdv, by rw [Finset.Subset.antisymm hlink_sub hL_sub_link, hcardL]⟩
+
+/-- **The no-degree-3 face bound** (discharges `exists_eligibleTet`'s hypothesis):
+if `σ` has no degree-3 vertex, no tet has more than two boundary faces. -/
+lemma sharedFaces_card_le_two_of_noDegree3 {σ : Finset (Finset V)} {M : Chain V}
+    {t : Finset V} (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (hNo3 : NoDegree3Vertex σ) (ht4 : t.card = 4) :
+    (sharedFaces M t).card ≤ 2 := by
+  by_contra h
+  obtain ⟨v, hv, hcard⟩ := exists_degree3Vertex_of_three_sharedFaces hσ hU ht4 (by omega)
+  exact hNo3 v hv hcard
+
+/-- **One eligible tet exists in a no-degree-3 taut filling** (M25, combining M25a
+and M25a'): the `sharedFaces ≤ 2` bound is now discharged from `NoDegree3Vertex
+σ`. (Deriving `NoDegree3Vertex` from primality is M24, separate.) -/
+theorem exists_eligibleTet_of_noDegree3 {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+    ∃ t, EligibleTet M t :=
+  exists_eligibleTet hσ hU hS hT hPure
+    (fun t ht => sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht))
 
 end Taut
