@@ -13,3 +13,4 @@ import Taut.Degree3
 import Taut.Theorem23
 import Taut.OrientedBridge
 import Taut.Theorem2Aleph
+import Taut.Theorem3

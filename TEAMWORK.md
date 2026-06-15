@@ -436,13 +436,35 @@ sphere/ball definitions.
   hypothesis (the other two holes discharged by Aleph's proofs). Full `lake build`
   8264 jobs, no sorry, all four key thms on [propext, Classical.choice, Quot.sound].
   **Theorem 2's core is now reduced from 3 open holes to 1 (prime_step / M22b).**
-- THEN (the one remaining hole): `prime_step` — its hard core is **M22b** (`relShelling
-  _of_separated_cap`, the relative-shelling reassembly "where the paper hides
-  topology"). Aleph couldn't crack it in $500; it needs a proper codex G1 design +
-  hand proof. Once M22b is a lemma, prime_step likely closes (Aleph reached 95/104
-  around it). Remaining sub-pieces of prime_step: M24b-part2 (the full edge-join /
-  `oriented_split_chains_of_cut`; M24b-part1 + capping algebra done), M23 wrapper,
-  the case-1/case-2 reassembly. `base` + `deg3_split` are DONE (Aleph, verified).
+- REFRAME (Peter, 2026-06-15): "shellable" is a bad name — think **sticker ball**
+  (built by sticking tets one at a time). We NEVER form a general triangulation of a
+  ball, so non-shellable-ball pathologies are a category error (no object to certify
+  post hoc; the construction IS the proof). The right inductive invariant is
+  **`FreelyShellable`** (free sticker ball, startable at ANY tet), NOT plain IsBall.
+  Then case-2 reassembly is the DIRECT concatenation (start ball₂ at the bridge-
+  adjacent tet — possible exactly because ball₂ is free); the imagined M22b "hidden
+  topology" wall dissolves. This is why carrying IsBall made Aleph stall on
+  prime_step. G1 design: codex 019ecbfa, APPROVED — restructure around `theorem3_
+  core : FreelyShellable`, derive Theorem 2 via `FreelyShellable.isBall_of_mem`,
+  reuse Aleph split data, add free L1 (free+stick) / L2 (free+bridge+free). FLAGGED
+  RISK: the "ambient-lift" — that ball₂'s free shelling steps stay valid GlueSteps
+  when ball₁+bridge are present (the almost-disjoint geometry + type-3 exclusion
+  supply it); abstracted as hypotheses in L1/L2, discharged by geometry for case-2.
+- M-FS1 (DONE, building & committed): the FreelyShellable foundation. `theorem3_core`
+  (the free-shelling strong induction, mirrors theorem2_core, 3 FreelyShellable
+  holes), `FreelyShellable.isBall_of_mem` (Theorem 2 corollary bridge), **L1**
+  `FreelyShellable.insert_of_glueStep` (free case-1 stick; the new-tet-start case via
+  an explicit `hstart_t` rel-shelling hyp), and **base_free** (base hole discharged,
+  reusing Aleph base lemmas + `freelyShellable_singleton`). Full build 8265 jobs, no
+  sorry, all on standard three.
+- THEN (to tie up Theorem 2+3): L2 `FreelyShellable.bridge` (free+bridge+free, 3
+  target cases) [Ball/FreeShelling]; the **ambient-lift** geometry lemma (discharge
+  L1's hstart_t / L2's rel hyps from free shellability + almost-disjoint geometry —
+  the flagged risk); `deg3_step` (FreelyShellable, reuse Aleph deg3 split + L1, star
+  side single tet); `prime_step` case-1 (L1 + flipped-boundary-is-sphere) and case-2
+  (L2 + M23 edge-join split + the ambient-lift); then `theorem3`/`theorem2` final.
+- `base` + `deg3_split` (IsBall, Aleph) remain committed/downstream; base_free now
+  supersedes for the FreelyShellable induction.
 - Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
