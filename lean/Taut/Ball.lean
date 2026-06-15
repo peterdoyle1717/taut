@@ -14,9 +14,11 @@ Following the G1 audit (Q2/Q3 APPROVED, `notes/codex-consults/
 2026-06-12-g1-sphere-ball-*`), a ball is encoded as an **explicit shelling
 certificate** (a `List` of tets), not an inductive `Prop`: the Theorem 2
 reassembly grafts shellings by list concatenation, and free shellability
-quantifies over the first element.  `IsSphere2` of every intermediate
-boundary is **baked into** the gluing step, so the induction has sphere-hood
-available at every stage.
+quantifies over the first element.  A glue step is a purely combinatorial
+stick (tet glued by one or two faces); intermediate boundaries are **not**
+required to be spheres — that the boundary of a sticker ball is a 2-sphere is
+a separate, deferred fact (`glueStep_preserves_isSphere2`), not needed for the
+main theorem (whose boundary `σ` is given as a sphere).
 
 `IsBall τ B` is, by design, a *shelling-certified* ball — not a general
 combinatorial-ball definition.  It is exactly the object the merged
@@ -30,9 +32,13 @@ new faces are exposed: the new boundary is the symmetric difference
 
 Validation (build-checked):
 * a single tet is a (freely shellable) ball with the tetrahedron-boundary
-  sphere as its boundary (`isBall_singleton`, `freelyShellable_singleton`);
-* the boundary of a shelling-certified ball is a combinatorial 2-sphere
-  (`IsBall.isSphere2`) — the structural invariant carried by the certificate.
+  sphere as its boundary (`isBall_singleton`, `freelyShellable_singleton`).
+
+That the boundary of a sticker ball is a 2-sphere
+(`glueStep_preserves_isSphere2` / `ShellFrom.isSphere2_of_seed`) is true but
+**deferred**: it is the classification-of-surfaces fact (closed + connected +
+orientable + χ = 2), provable fieldwise, and is *not* on the path of the main
+theorem.
 -/
 
 namespace Taut
@@ -43,21 +49,21 @@ variable {V : Type*} [LinearOrder V]
 abbrev tetFaces (t : Finset V) : Finset (Finset V) := t.powersetCard 3
 
 /-- One gluing step of a shelling: tet `t` is glued onto a ball whose
-boundary 2-sphere is `B`, producing the ball with boundary `B'`.
+boundary is `B`, producing the ball with boundary `B'`.
 
 * `card4` — `t` is a tetrahedron (4 vertices);
 * `shared` — `t` meets the current boundary in **one or two** of its faces
   (type 1 or 2; type 3 is excluded, as it would create an interior vertex);
 * `newBdry` — the new boundary is the symmetric difference of `B` and the
-  faces of `t`: shared faces become interior, the rest are exposed;
-* `sphere` — the new boundary is again a combinatorial 2-sphere (the
-  invariant baked into the certificate).
--/
+  faces of `t`: shared faces become interior, the rest are exposed.
+
+A glue step is a **purely combinatorial** stick; it does not assert the new
+boundary is a 2-sphere (that holds, but is the separate, deferred fact
+`glueStep_preserves_isSphere2`, not needed for the main theorem). -/
 structure GlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop where
   card4 : t.card = 4
   shared : (tetFaces t ∩ B).card = 1 ∨ (tetFaces t ∩ B).card = 2
   newBdry : B' = (B \ tetFaces t) ∪ (tetFaces t \ B)
-  sphere : IsSphere2 B'
 
 /-- Starting from a ball with boundary `B₀`, gluing on the tets of `l` in
 order yields a ball with boundary `B`. -/
@@ -84,37 +90,23 @@ def FreelyShellable (τ B : Finset (Finset V)) : Prop :=
   ∀ t ∈ τ, ∃ l : List (Finset V),
     l.head? = some t ∧ l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
 
-/-! ## The boundary of a ball is a sphere -/
+/-! ## The boundary of a sticker ball is a sphere — DEFERRED
 
-/-- Gluing preserves sphere-hood of the boundary: if the starting boundary
-`B₀` is a sphere, so is the final boundary `B`. -/
-lemma ShellFrom.isSphere2 {l : List (Finset V)} :
-    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B → IsSphere2 B₀ → IsSphere2 B := by
-  induction l with
-  | nil =>
-      intro B₀ B h h0
-      simp only [ShellFrom] at h
-      exact h ▸ h0
-  | cons t l ih =>
-      intro B₀ B h _
-      simp only [ShellFrom] at h
-      obtain ⟨B₁, hg, hrest⟩ := h
-      exact ih hrest hg.sphere
+That every intermediate (hence the final) boundary of a sticker ball is a
+combinatorial 2-sphere is true but **off the critical path**, so deferred.
+Mathematically it is the classification of surfaces — a sphere glued to a tet
+along one or two faces stays closed, connected, orientable, with χ = 2, all
+preserved by the surgery — but Mathlib has no usable classification theorem,
+so the Lean route is fieldwise preservation (the only nontrivial field being
+`linkConn`, the manifold/no-pinch condition: an edge subdivision of the vertex
+links for type 1, a contraction-at-2 + subdivision-at-2 for type 2).  Targets
+(to be proved later by a genuine fieldwise argument — never assumed):
 
-/-- The final boundary of a shelling is a combinatorial 2-sphere. -/
-lemma IsShelling.isSphere2 {l : List (Finset V)} {B : Finset (Finset V)}
-    (h : IsShelling l B) : IsSphere2 B := by
-  cases l with
-  | nil => simp only [IsShelling] at h
-  | cons t l =>
-      simp only [IsShelling] at h
-      exact h.2.isSphere2 (isSphere2_powersetCard3 h.1)
+* `glueStep_preserves_isSphere2 (hg : GlueStep t B B') : IsSphere2 B → IsSphere2 B'`
+* `ShellFrom.isSphere2_of_seed (h : ShellFrom B₀ l B) : IsSphere2 B₀ → IsSphere2 B`
 
-/-- The boundary of a shelling-certified ball is a combinatorial 2-sphere. -/
-theorem IsBall.isSphere2 {τ B : Finset (Finset V)} (h : IsBall τ B) :
-    IsSphere2 B := by
-  obtain ⟨_, _, _, hsh⟩ := h
-  exact hsh.isSphere2
+The main theorem (`theorem3_core`) does not use these: the boundary of
+`M.support` is `σ`, which is given as a sphere. -/
 
 /-! ## Reassembly (M22a): appending tets and bridging two balls
 

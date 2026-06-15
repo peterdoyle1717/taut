@@ -1,0 +1,1853 @@
+Reading additional input from stdin...
+2026-06-15T17:00:43.596858Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit
+2026-06-15T17:00:48.602708Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019ecc3a-885d-79e2-a010-b92e7d54605f
+--------
+user
+You are the ARCHITECT for the taut-fillings Lean 4 project (continuing 019ecbfa, the FreelyShellable "sticker ball" restructure). Peter (the paper author) has issued a design directive that removes the sphere-preservation difficulty from the critical path. Read notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md IN FULL — it has his verbatim directive and the proposal. Then read these to ground the answer: lean/Taut/Ball.lean (the GlueStep structure incl. its sphere field, ShellFrom/IsShelling/IsBall, ShellFrom.isSphere2 chain at lines 91-117, IsBall.insert_of_glueStep ~158, RelShelling + IsBall.bridge_of_relShelling ~174-190); lean/Taut/Theorem2Aleph.lean lines 460-790 (the GlueStep statements at 470/472 and the constructor at 576 and its uses at 660/668/753/773); lean/Taut/Theorem3.lean (L1 insert_of_glueStep + base_free); lean/Taut/Theorem23.lean (theorem3_core holes). Answer Q1 (soundness + exact per-site fix for dropping the GlueStep.sphere field), Q2 (the DEFERRED boundary-sphere lemma statement — do NOT put on critical path), Q3 (design L1-hstart_t discharge, L2 FreelyShellable.bridge, deg3_step, prime_step cases 1/2 on the lean GlueStep, pure-combinatorial), Q4 (AlephProver hand-off + milestone order, riskiest flagged). Be concrete and Lean-level, cite exact line numbers / lemma names for the fixes. End with exactly APPROVED: <one-line> or BLOCKED: <one-line reason>.
+2026-06-15T17:01:03.582161Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit
+codex
+I’ll read Peter’s note first, then the relevant Lean files and line ranges before answering at design level. After that I’ll give the concrete per-site edits and milestone order without making code changes.
+exec
+/bin/zsh -lc 'nl -ba notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md' in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc 'nl -ba lean/Taut/Ball.lean' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+     1	# Architect request (codex): drop `GlueStep.sphere`; make "sticker ball" the clean combinatorial object; finish the FreelyShellable reassembly
+     2
+     3	Role: codex architect (continuing 019ecbfa, the FreelyShellable restructure). A
+     4	direct design directive from Peter (the paper's author) resolves the remaining
+     5	"sphere-preservation under glue" difficulty by removing it from the critical path.
+     6	I implement what you vet. Be Lean-level and concrete.
+     7
+     8	## Peter's directive (the design authority)
+     9	Verbatim: "what this comes down to is that we haven't proven that the boundary of a
+    10	sticker ball is a sphere. that is actually very simple if you know the
+    11	classification of surfaces. gluing the edges of a collection of triangles in pairs
+    12	yields a 2-manifold. if it's connected and orientable, and has euler char 2, it's
+    13	the 2-sphere. those conditions are trivially preserved by this surgery. what's hard
+    14	is to prove that the whole thing is a ball. we're going to sidestep that by stating
+    15	the theorem that a taut filling is a sticker ball. that's actually much stronger,
+    16	but that implication sticker ball -> ball is not something we need to prove."
+    17
+    18	Consequences:
+    19	- The theorem is **"a taut filling of a 2-sphere σ is a (free) sticker ball with
+    20	  boundary σ"** — i.e. `FreelyShellable M.support σ`. The gluing sequence IS the
+    21	  certificate. We do NOT prove sticker-ball ⇒ 3-ball (deferred, not needed).
+    22	- The boundary of `M.support` is σ, GIVEN as a sphere (`IsSphere2 σ` is a
+    23	  hypothesis). So per-step sphere-hood of intermediate boundaries is NOT needed to
+    24	  finish the theorem.
+    25	- "Boundary of a sticker ball is a sphere" is a TRUE, easy, but SEPARATE statement
+    26	  (classification: closed+connected+orientable+χ=2). Deferred.
+    27
+    28	## The proposal to vet
+    29	`Ball.lean`'s `GlueStep t B B'` currently bakes in a field `sphere : IsSphere2 B'`
+    30	(the post-glue boundary is a 2-sphere). That field is what forces, at every stick,
+    31	the `linkConn` (manifold-at-vertices) preservation — the field the prior consult
+    32	(019ecc0d) flagged as "genuinely hard." Grep result: `GlueStep.sphere` is consumed
+    33	ONLY at `Ball.lean:102` (inside `ShellFrom.isSphere2` → `IsShelling.isSphere2` →
+    34	`IsBall.isSphere2`), a standalone "boundary of a ball is a sphere" validation lemma
+    35	that nothing in the induction (`theorem2_core`/`theorem3_core`/the reassembly/the
+    36	eligible-tet branches) consumes.
+    37
+    38	**Proposal: delete the `sphere` field from `GlueStep`.** Then
+    39	`GlueStep t B B' := card4 t ∧ (shared = 1 ∨ shared = 2) ∧ B' = (B \ tetFaces t) ∪
+    40	(tetFaces t \ B)` — the clean combinatorial stick.
+    41
+    42	## Questions
+    43	Q1. **Soundness + blast radius.** Confirm dropping the field is sound for the
+    44	    theorem (no induction step needs intermediate sphere-hood; σ is the only
+    45	    boundary and it is given). Enumerate every site that CONSTRUCTS a `GlueStep`
+    46	    (so loses an argument) or CONSUMES `.sphere` (so must be repaired/deleted):
+    47	    candidates are `Ball.lean` `IsBall.insert_of_glueStep`, `RelShelling`/
+    48	    `IsBall.bridge_of_relShelling`, `ShellFrom.isSphere2`/`IsShelling.isSphere2`/
+    49	    `IsBall.isSphere2`, and anything in `Theorem2Aleph.lean` (does
+    50	    `aleph_deg3_split`'s reassembly `IsBall M' → IsBall M` build GlueSteps?). Give
+    51	    the exact fix per site. Confirm `aleph_base`/`base_free` (single tet, empty glue
+    52	    list) and `freelyShellable_singleton` are unaffected.
+    53	Q2. **The deferred boundary-sphere lemma.** State the standalone target precisely
+    54	    against `Ball.lean`/`Complex2.lean`, e.g.
+    55	    `theorem ShellFrom.isSphere2_of_seed : ShellFrom B₀ l B → IsSphere2 B₀ →
+    56	    IsSphere2 B` (induction on `l`, each step a `glueStep_preserves_isSphere2`). Is
+    57	    the cleanest per-step route via the existing `IsSphere2` fields (pure/closed/
+    58	    linkConn/conn/euler — `linkConn` the only nontrivial one, a single-cycle
+    59	    subdivision for type-1 and contraction-at-2 + subdivision-at-2 for type-2), or
+    60	    via a `closed ∧ connected ∧ orientable ∧ χ=2 ⇒ IsSphere2` re-characterisation
+    61	    (does Mathlib/`Complex2.lean` give that, or would it need the surface
+    62	    classification, which is NOT available)? RECOMMEND which, but mark the whole
+    63	    lemma DEFERRED — do not put it on the critical path; do not axiomatise/sorry it.
+    64	Q3. **The now-unblocked reassembly (lean `GlueStep`).** With no per-step sphere
+    65	    obligation, design these so they are pure combinatorics:
+    66	    - L1's `hstart_t` (the `∃ l, ShellFrom (tetFaces t) l B'` re-shelling of τ from
+    67	      the new tet's footprint): how is it discharged from `FreelyShellable τ B` +
+    68	      the attachment geometry, now that no sphere proof rides along?
+    69	    - **L2** `FreelyShellable.bridge`: free ball₁ + bridge tet `t` + free ball₂,
+    70	      almost-disjoint (meeting only through `t`'s shared faces) ⇒ free combined
+    71	      ball, for ANY start target. State the almost-disjointness hypothesis cleanly
+    72	      on the facet/boundary sets; give the concatenation order; show each glue is
+    73	      type-1/2 by disjointness (the shared-count and sym-diff both commute with the
+    74	      disjoint ambient part).
+    75	    - `deg3_step` (FreelyShellable): star tet (single, free) + capped remainder M₂
+    76	      (free by IH) — is this an L1 single-face stick or an L2 bridge? Reuse
+    77	      `aleph_deg3_split`'s chain-split data where possible.
+    78	    - `prime_step` (FreelyShellable): case 1 (L1, stick the flipped eligible tet
+    79	      back; the post-flip boundary is σ, given) and case 2 (L2 bridge; consumes M25b
+    80	      `aleph_disjoint_eligible_pair` + the M23 edge-join split-as-fillings).
+    81	Q4. **Hand-off + milestones.** Which of {L1-discharge, L2, deg3_step, prime_step
+    82	    case1, prime_step case2} are pure-combinatorial and good AlephProver targets,
+    83	    and in what dependency order? Flag the riskiest. Minimise edits to the verified
+    84	    Aleph proofs.
+    85
+    86	End with `APPROVED: <one-line>` or `BLOCKED: <reason>`.
+
+ succeeded in 0ms:
+     1	import Taut.Complex2
+     2
+     3	/-!
+     4	# Shelling-certified combinatorial 3-balls
+     5
+     6	The combinatorial replacement for "simplicial triangulation of `B³`",
+     7	following the paper's *Shelling* section.  A *shelling* of a ball is an
+     8	ordering `(t₁, …, t_k)` of its tetrahedra such that gluing them on one at a
+     9	time always maintains a ball; the type of a glued tet is the number of its
+    10	faces shared with what is already built (type 1 or 2; type 3 — which would
+    11	create an interior vertex — never occurs here).
+    12
+    13	Following the G1 audit (Q2/Q3 APPROVED, `notes/codex-consults/
+    14	2026-06-12-g1-sphere-ball-*`), a ball is encoded as an **explicit shelling
+    15	certificate** (a `List` of tets), not an inductive `Prop`: the Theorem 2
+    16	reassembly grafts shellings by list concatenation, and free shellability
+    17	quantifies over the first element.  `IsSphere2` of every intermediate
+    18	boundary is **baked into** the gluing step, so the induction has sphere-hood
+    19	available at every stage.
+    20
+    21	`IsBall τ B` is, by design, a *shelling-certified* ball — not a general
+    22	combinatorial-ball definition.  It is exactly the object the merged
+    23	Theorem 2+3 induction constructs.
+    24
+    25	Faces of a tetrahedron `t` (a 4-element set) are its card-3 subsets,
+    26	`t.powersetCard 3`.  When tet `t` is glued onto a ball whose boundary is the
+    27	2-sphere `B`, the faces of `t` already present in `B` become interior and the
+    28	new faces are exposed: the new boundary is the symmetric difference
+    29	`(B \ t.powersetCard 3) ∪ (t.powersetCard 3 \ B)`.
+    30
+    31	Validation (build-checked):
+    32	* a single tet is a (freely shellable) ball with the tetrahedron-boundary
+    33	  sphere as its boundary (`isBall_singleton`, `freelyShellable_singleton`);
+    34	* the boundary of a shelling-certified ball is a combinatorial 2-sphere
+    35	  (`IsBall.isSphere2`) — the structural invariant carried by the certificate.
+    36	-/
+    37
+    38	namespace Taut
+    39
+    40	variable {V : Type*} [LinearOrder V]
+    41
+    42	/-- The four triangular faces of a tetrahedron `t` (the card-3 subsets). -/
+    43	abbrev tetFaces (t : Finset V) : Finset (Finset V) := t.powersetCard 3
+    44
+    45	/-- One gluing step of a shelling: tet `t` is glued onto a ball whose
+    46	boundary 2-sphere is `B`, producing the ball with boundary `B'`.
+    47
+    48	* `card4` — `t` is a tetrahedron (4 vertices);
+    49	* `shared` — `t` meets the current boundary in **one or two** of its faces
+    50	  (type 1 or 2; type 3 is excluded, as it would create an interior vertex);
+    51	* `newBdry` — the new boundary is the symmetric difference of `B` and the
+    52	  faces of `t`: shared faces become interior, the rest are exposed;
+    53	* `sphere` — the new boundary is again a combinatorial 2-sphere (the
+    54	  invariant baked into the certificate).
+    55	-/
+    56	structure GlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop where
+    57	  card4 : t.card = 4
+    58	  shared : (tetFaces t ∩ B).card = 1 ∨ (tetFaces t ∩ B).card = 2
+    59	  newBdry : B' = (B \ tetFaces t) ∪ (tetFaces t \ B)
+    60	  sphere : IsSphere2 B'
+    61
+    62	/-- Starting from a ball with boundary `B₀`, gluing on the tets of `l` in
+    63	order yields a ball with boundary `B`. -/
+    64	def ShellFrom : Finset (Finset V) → List (Finset V) → Finset (Finset V) → Prop
+    65	  | B₀, [],     B => B = B₀
+    66	  | B₀, t :: l, B => ∃ B₁, GlueStep t B₀ B₁ ∧ ShellFrom B₁ l B
+    67
+    68	/-- `l` is a shelling with final boundary `B`: the head tet is the initial
+    69	tetrahedron (its boundary is the tetrahedron-boundary sphere) and the
+    70	remaining tets are glued on in order. -/
+    71	def IsShelling : List (Finset V) → Finset (Finset V) → Prop
+    72	  | [],     _ => False
+    73	  | t :: l, B => t.card = 4 ∧ ShellFrom (tetFaces t) l B
+    74
+    75	/-- A *shelling-certified ball*: a facet set `τ` admitting a shelling (a
+    76	nodup ordering of its tets gluing up to boundary `B`). -/
+    77	def IsBall (τ B : Finset (Finset V)) : Prop :=
+    78	  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+    79
+    80	/-- `τ` is *freely shellable* with boundary `B` if **any** of its tets can
+    81	serve as the initial tet of a shelling (the paper's "freely shellable":
+    82	shucking in reverse can remove any prescribed tet last). -/
+    83	def FreelyShellable (τ B : Finset (Finset V)) : Prop :=
+    84	  ∀ t ∈ τ, ∃ l : List (Finset V),
+    85	    l.head? = some t ∧ l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+    86
+    87	/-! ## The boundary of a ball is a sphere -/
+    88
+    89	/-- Gluing preserves sphere-hood of the boundary: if the starting boundary
+    90	`B₀` is a sphere, so is the final boundary `B`. -/
+    91	lemma ShellFrom.isSphere2 {l : List (Finset V)} :
+    92	    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B → IsSphere2 B₀ → IsSphere2 B := by
+    93	  induction l with
+    94	  | nil =>
+    95	      intro B₀ B h h0
+    96	      simp only [ShellFrom] at h
+    97	      exact h ▸ h0
+    98	  | cons t l ih =>
+    99	      intro B₀ B h _
+   100	      simp only [ShellFrom] at h
+   101	      obtain ⟨B₁, hg, hrest⟩ := h
+   102	      exact ih hrest hg.sphere
+   103
+   104	/-- The final boundary of a shelling is a combinatorial 2-sphere. -/
+   105	lemma IsShelling.isSphere2 {l : List (Finset V)} {B : Finset (Finset V)}
+   106	    (h : IsShelling l B) : IsSphere2 B := by
+   107	  cases l with
+   108	  | nil => simp only [IsShelling] at h
+   109	  | cons t l =>
+   110	      simp only [IsShelling] at h
+   111	      exact h.2.isSphere2 (isSphere2_powersetCard3 h.1)
+   112
+   113	/-- The boundary of a shelling-certified ball is a combinatorial 2-sphere. -/
+   114	theorem IsBall.isSphere2 {τ B : Finset (Finset V)} (h : IsBall τ B) :
+   115	    IsSphere2 B := by
+   116	  obtain ⟨_, _, _, hsh⟩ := h
+   117	  exact hsh.isSphere2
+   118
+   119	/-! ## Reassembly (M22a): appending tets and bridging two balls
+   120
+   121	Architect: codex 019ec2cc. `ShellFrom`/`IsShelling` are closed under appending
+   122	tets at the end; a ball with a `GlueStep` tet on its boundary grows by that tet
+   123	(case-1 of the Theorem-2 induction). Gluing two balls through a bridging tet
+   124	needs *relative* shellability (`RelShelling`) — that is the genuine hidden-
+   125	topology fact (M22b), here reduced to a tautological bridge given the relative
+   126	shelling. -/
+   127
+   128	/-- `ShellFrom` composes: glue `l₁` then `l₂`. -/
+   129	lemma ShellFrom_append {B₀ B₁ B₂ : Finset (Finset V)} {l₁ l₂ : List (Finset V)}
+   130	    (h₁ : ShellFrom B₀ l₁ B₁) (h₂ : ShellFrom B₁ l₂ B₂) :
+   131	    ShellFrom B₀ (l₁ ++ l₂) B₂ := by
+   132	  induction l₁ generalizing B₀ with
+   133	  | nil => simp only [ShellFrom, List.nil_append] at h₁ ⊢; exact h₁ ▸ h₂
+   134	  | cons t l ih =>
+   135	      simp only [ShellFrom, List.cons_append] at h₁ ⊢
+   136	      obtain ⟨B', hg, hrest⟩ := h₁
+   137	      exact ⟨B', hg, ih hrest⟩
+   138
+   139	/-- Append one `GlueStep` tet to a `ShellFrom`. -/
+   140	lemma ShellFrom_snoc {B₀ B B' : Finset (Finset V)} {l : List (Finset V)} {t : Finset V}
+   141	    (h : ShellFrom B₀ l B) (hg : GlueStep t B B') : ShellFrom B₀ (l ++ [t]) B' :=
+   142	  ShellFrom_append h ⟨B', hg, rfl⟩
+   143
+   144	/-- Glue a `ShellFrom` of `l₂` onto the end of a shelling `l`. -/
+   145	lemma IsShelling_append {l l₂ : List (Finset V)} {B₁ B : Finset (Finset V)}
+   146	    (h : IsShelling l B₁) (hf : ShellFrom B₁ l₂ B) : IsShelling (l ++ l₂) B := by
+   147	  cases l with
+   148	  | nil => simp only [IsShelling] at h
+   149	  | cons t r => simp only [IsShelling, List.cons_append] at h ⊢; exact ⟨h.1, ShellFrom_append h.2 hf⟩
+   150
+   151	/-- Append one `GlueStep` tet to a shelling. -/
+   152	lemma IsShelling_snoc {B B' : Finset (Finset V)} {l : List (Finset V)} {t : Finset V}
+   153	    (h : IsShelling l B) (hg : GlueStep t B B') : IsShelling (l ++ [t]) B' :=
+   154	  IsShelling_append h ⟨B', hg, rfl⟩
+   155
+   156	/-- **Case-1 reassembly.** A ball whose boundary admits a `GlueStep` for a fresh
+   157	tet `t` grows to the ball with `t` adjoined. -/
+   158	theorem IsBall.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Finset V}
+   159	    (h : IsBall τ B) (hg : GlueStep t B B') (ht : t ∉ τ) : IsBall (insert t τ) B' := by
+   160	  obtain ⟨l, hlτ, hnodup, hsh⟩ := h
+   161	  have htl : t ∉ l := fun hc => ht (hlτ ▸ List.mem_toFinset.mpr hc)
+   162	  refine ⟨l ++ [t], ?_, ?_, IsShelling_snoc hsh hg⟩
+   163	  · rw [List.toFinset_append, hlτ]
+   164	    ext s
+   165	    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+   166	    tauto
+   167	  · refine hnodup.append (List.nodup_singleton t) ?_
+   168	    rw [List.disjoint_left]; intro a ha
+   169	    simp only [List.mem_singleton]; rintro rfl; exact htl ha
+   170
+   171	/-- A *relative shelling*: glue the tets of `τ` onto an ambient boundary `B₀`,
+   172	ending at `B`. (`IsBall` is the special case `B₀ = tetFaces (head)`.) This is the
+   173	invariant the case-2 bridge needs but `IsBall` does not supply. -/
+   174	def RelShelling (τ B₀ B : Finset (Finset V)) : Prop :=
+   175	  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ ShellFrom B₀ l B
+   176
+   177	/-- **Case-2 bridge (tautological given the relative shelling).** A ball `τ₁`,
+   178	a `GlueStep` tet `t` onto its boundary, and a relative shelling of `τ₂` onto the
+   179	resulting boundary, assemble into one ball. The hard part — that the separated
+   180	ball actually supplies the `RelShelling` — is M22b. -/
+   181	theorem IsBall.bridge_of_relShelling {τ₁ τ₂ B₁ Bmid B : Finset (Finset V)} {t : Finset V}
+   182	    (h₁ : IsBall τ₁ B₁) (hg : GlueStep t B₁ Bmid) (h₂ : RelShelling τ₂ Bmid B)
+   183	    (ht₁ : t ∉ τ₁) (ht₂ : t ∉ τ₂) (hdisj : Disjoint τ₁ τ₂) :
+   184	    IsBall (insert t (τ₁ ∪ τ₂)) B := by
+   185	  obtain ⟨l₁, hl₁, hn₁, hsh₁⟩ := h₁
+   186	  obtain ⟨l₂, hl₂, hn₂, hsf₂⟩ := h₂
+   187	  have htl₁ : t ∉ l₁ := fun hc => ht₁ (hl₁ ▸ List.mem_toFinset.mpr hc)
+   188	  have htl₂ : t ∉ l₂ := fun hc => ht₂ (hl₂ ▸ List.mem_toFinset.mpr hc)
+   189	  have hdl : l₁.Disjoint l₂ := by
+   190	    intro a ha ha₂
+   191	    exact Finset.disjoint_left.mp hdisj (hl₁ ▸ List.mem_toFinset.mpr ha)
+   192	      (hl₂ ▸ List.mem_toFinset.mpr ha₂)
+   193	  refine ⟨(l₁ ++ [t]) ++ l₂, ?_, ?_, IsShelling_append (IsShelling_snoc hsh₁ hg) hsf₂⟩
+   194	  · rw [List.toFinset_append, List.toFinset_append, hl₁, hl₂]
+   195	    ext s
+   196	    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+   197	    tauto
+   198	  · refine (hn₁.append (List.nodup_singleton t) ?_).append hn₂ ?_
+   199	    · rw [List.disjoint_left]; intro a ha
+   200	      simp only [List.mem_singleton]; rintro rfl; exact htl₁ ha
+   201	    · rw [List.disjoint_left]; intro a ha
+   202	      rw [List.mem_append, List.mem_singleton] at ha
+   203	      rcases ha with ha | rfl
+   204	      · exact List.disjoint_left.mp hdl ha
+   205	      · exact htl₂
+   206
+   207	/-! ## A single tetrahedron is a ball -/
+   208
+   209	/-- A single tetrahedron `t` is a shelling-certified ball whose boundary is
+   210	the tetrahedron-boundary sphere. -/
+   211	theorem isBall_singleton {t : Finset V} (ht : t.card = 4) :
+   212	    IsBall {t} (tetFaces t) := by
+   213	  refine ⟨[t], by simp, by simp, ?_⟩
+   214	  simp only [IsShelling, ShellFrom]
+   215	  exact ⟨ht, trivial⟩
+   216
+   217	/-- A single tetrahedron is freely shellable. -/
+   218	theorem freelyShellable_singleton {t : Finset V} (ht : t.card = 4) :
+   219	    FreelyShellable {t} (tetFaces t) := by
+   220	  intro t' ht'
+   221	  rw [Finset.mem_singleton] at ht'
+   222	  subst t'
+   223	  refine ⟨[t], by simp, by simp, by simp, ?_⟩
+   224	  simp only [IsShelling, ShellFrom]
+   225	  exact ⟨ht, trivial⟩
+   226
+   227	end Taut
+
+exec
+/bin/zsh -lc 'nl -ba lean/Taut/Theorem3.lean' in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc 'nl -ba lean/Taut/Theorem23.lean' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+     1	import Taut.Theorem2Aleph
+     2
+     3	/-!
+     4	# Theorem 3: free sticker balls (the `FreelyShellable` reassembly)
+     5
+     6	Per Peter's "sticker ball" reframe (codex 019ecbfa): the induction carries
+     7	`FreelyShellable` (a free sticker ball — startable at any tet), and the case-2
+     8	reassembly is a direct concatenation rather than a topological obstruction. This
+     9	file builds the free-shelling reassembly tools and discharges the branch holes of
+    10	`theorem3_core`.
+    11
+    12	This installment: **L1** — the free case-1 stick (a free sticker ball plus a
+    13	`GlueStep` tet is a free sticker ball, given the bridge-start relative shelling) —
+    14	and **base_free** — the minimal-sphere base case as a free sticker ball (reusing
+    15	the Aleph base lemmas, finishing with `freelyShellable_singleton`).
+    16	-/
+    17
+    18	namespace Taut
+    19
+    20	open Finset
+    21
+    22	variable {V : Type*} [LinearOrder V]
+    23
+    24	/-- **L1 (free case-1 stick).** A free sticker ball `τ` (boundary `B`) plus a fresh
+    25	`GlueStep` tet `t` is a free sticker ball with `t` adjoined. For an old target the
+    26	shelling is `(old shelling from target) ++ [t]`; for target `t` the shelling is
+    27	`t :: (a shelling of τ onto the post-glue boundary `B'` starting from `tetFaces t`)`
+    28	— that bridge-start relative shelling is the hypothesis `hstart_t` (supplied by the
+    29	geometry at the call site). -/
+    30	lemma FreelyShellable.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Finset V}
+    31	    (hfree : FreelyShellable τ B) (hg : GlueStep t B B') (ht : t ∉ τ)
+    32	    (hstart_t : ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
+    33	      ShellFrom (tetFaces t) l B') :
+    34	    FreelyShellable (insert t τ) B' := by
+    35	  intro s hs
+    36	  rw [Finset.mem_insert] at hs
+    37	  rcases hs with rfl | hsτ
+    38	  · -- target is the new tet (`rcases rfl` substituted the binder `t := s`)
+    39	    obtain ⟨l, hlτ, hnodup, hsf⟩ := hstart_t
+    40	    refine ⟨s :: l, rfl, ?_, ?_, hg.card4, hsf⟩
+    41	    · rw [List.toFinset_cons, hlτ]
+    42	    · exact List.nodup_cons.mpr ⟨fun hc => ht (hlτ ▸ List.mem_toFinset.mpr hc), hnodup⟩
+    43	  · -- target is an old tet `s ∈ τ`
+    44	    obtain ⟨l, hhead, hlτ, hnodup, hsh⟩ := hfree s hsτ
+    45	    refine ⟨l ++ [t], ?_, ?_, ?_, IsShelling_snoc hsh hg⟩
+    46	    · cases l with
+    47	      | nil => exact absurd hsh (by simp [IsShelling])
+    48	      | cons a r => rw [List.cons_append]; exact hhead
+    49	    · rw [List.toFinset_append, hlτ]
+    50	      ext x
+    51	      simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+    52	      tauto
+    53	    · refine hnodup.append (List.nodup_singleton t) ?_
+    54	      rw [List.disjoint_left]
+    55	      intro a ha
+    56	      simp only [List.mem_singleton]
+    57	      rintro rfl
+    58	      exact ht (hlτ ▸ List.mem_toFinset.mpr ha)
+    59
+    60	/-- **base_free** (the base hole of `theorem3_core`): a taut filling of a 2-sphere on
+    61	≤ 4 vertices is a free sticker ball — it is a single tetrahedron
+    62	(`freelyShellable_singleton`). Reuses the Aleph base lemmas verbatim; only the final
+    63	step changes from `isBall_singleton` to `freelyShellable_singleton`. -/
+    64	theorem base_free (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    65	    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+    66	    (hv : (vertsOf σ).card ≤ 4) : FreelyShellable M.support σ := by
+    67	  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+    68	  have hσeq : σ = (vertsOf σ).powersetCard 3 := aleph_base_sphere_eq_powersetCard3 hσ hcard
+    69	  have hsuppInfo := aleph_base_taut_support_card4_subset_verts hσ hU hMX hT
+    70	  have hne := aleph_base_support_nonempty hσ hU hMX
+    71	  have hsupp : M.support = {vertsOf σ} :=
+    72	    aleph_base_support_eq_singleton_of_four_vertices hcard hsuppInfo hne
+    73	  rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+    74	  exact freelyShellable_singleton hcard
+    75
+    76	end Taut
+
+ succeeded in 0ms:
+     1	import Taut.Eligible
+     2
+     3	/-!
+     4	# Theorem 2 (core): a taut filling of a 2-sphere is a ball — the induction skeleton
+     5
+     6	The central theorem of "Taut fillings": a taut integral filling `M` of a
+     7	combinatorial 2-sphere `σ` arises from a simplicial triangulation of `B³` — here,
+     8	`M.support` is a (shelling-certified) ball with boundary `σ` (`IsBall M.support
+     9	σ`). The paper's proof is a strong induction on `|M| = nrm M`.
+    10
+    11	This file is the **induction skeleton** (architect: codex 019ec44f, Q5): the
+    12	strong-induction plumbing, with the three reduction steps as explicit hypotheses
+    13	— the named holes the remaining milestones fill:
+    14
+    15	* `base` — the minimal sphere `(vertsOf σ).card ≤ 4` (a tetrahedron boundary): its
+    16	  taut filling is a single tet, a ball (M24 base / `isBall_singleton`);
+    17	* `deg3_split` — a sphere with a degree-3 vertex splits (connected sum along the
+    18	  link triangle) into a strictly smaller taut filling whose ball reassembles to
+    19	  the original (M24c `deg3_split`, interface per the codex 019ec44f Q4 design);
+    20	* `prime_step` — a no-degree-3 ("prime") sphere: remove an eligible tet
+    21	  (`exists_eligibleTet_of_noDegree3`, M25 ✓) and reassemble, consuming the
+    22	  induction hypothesis on strictly smaller fillings (the eligible-tet branch =
+    23	  M25b disjoint pair + M22b relative shelling + the M23 edge-join bridge).
+    24
+    25	`theorem2_core` discharges Theorem 2 modulo these three. Free shellability
+    26	(Theorem 3) is a strengthening of the invariant, deferred.
+    27	-/
+    28
+    29	namespace Taut
+    30
+    31	open Finset
+    32
+    33	variable {V : Type*} [LinearOrder V]
+    34
+    35	/-- **Theorem 2 (core), the strong induction.** Given the base case and the two
+    36	reduction steps, every taut filling of a 2-sphere is a ball. The proof is pure
+    37	strong-induction plumbing on `nrm M`; all geometric content lives in the three
+    38	hypotheses (the named holes M24/M25b/M22b fill). -/
+    39	theorem theorem2_core
+    40	    (base : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ → UnitOn X σ →
+    41	      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+    42	      IsBall M.support σ)
+    43	    (deg3_split : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+    44	      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+    45	      SimplicialChain M → HasDegree3Vertex σ →
+    46	      ∃ (σ' : Finset (Finset V)) (X' M' : Chain V),
+    47	        IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
+    48	        SimplicialChain M' ∧ nrm M' < nrm M ∧
+    49	        (IsBall M'.support σ' → IsBall M.support σ))
+    50	    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+    51	      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+    52	      SimplicialChain M → NoDegree3Vertex σ →
+    53	      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+    54	        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+    55	        IsBall M'.support σ') →
+    56	      IsBall M.support σ)
+    57	    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
+    58	    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+    59	    IsBall M.support σ := by
+    60	  -- strong induction on `nrm M`
+    61	  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+    62	      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+    63	      IsBall M.support σ by
+    64	    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+    65	  intro N
+    66	  induction N using Nat.strong_induction_on with
+    67	  | _ N IH =>
+    68	    intro σ X M hN hσ hU hXc hMX hT hS
+    69	    by_cases hv : (vertsOf σ).card ≤ 4
+    70	    · exact base σ X M hσ hU hMX hT hS hv
+    71	    · push_neg at hv
+    72	      by_cases hd3 : HasDegree3Vertex σ
+    73	      · obtain ⟨σ', X', M', hσ', hU', hX'c, hM'X', hT', hS', hlt, hreass⟩ :=
+    74	          deg3_split σ X M hσ hv hU hXc hMX hT hS hd3
+    75	        exact hreass (IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS')
+    76	      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+    77	        refine prime_step σ X M hσ hv hU hXc hMX hT hS hno3 ?_
+    78	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+    79	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+    80
+    81	/-! ## Theorem 3 (core): the free-shelling induction
+    82
+    83	Per Peter's "sticker ball" reframe (and codex 019ecbfa): the right inductive
+    84	invariant is `FreelyShellable` (a free sticker ball — buildable one tet at a time,
+    85	startable at ANY tet), not plain `IsBall`. With it the case-2 reassembly is a
+    86	direct concatenation (start the second piece at the bridge-adjacent tet — possible
+    87	exactly because it is *free*), so no separate relative-shelling "topology" lemma is
+    88	needed at the induction level. Theorem 2 (`IsBall`) is then a corollary. -/
+    89
+    90	/-- A free sticker ball is a ball (forget the freedom). -/
+    91	lemma FreelyShellable.isBall_of_mem {τ B : Finset (Finset V)} {t : Finset V}
+    92	    (h : FreelyShellable τ B) (ht : t ∈ τ) : IsBall τ B := by
+    93	  obtain ⟨l, _, hfin, hnodup, hsh⟩ := h t ht
+    94	  exact ⟨l, hfin, hnodup, hsh⟩
+    95
+    96	/-- **Theorem 3 (core), the free-shelling strong induction.** Same plumbing as
+    97	`theorem2_core`, carrying `FreelyShellable M.support σ`. Both non-base branches
+    98	consume the induction hypothesis (every strictly smaller taut filling is a free
+    99	sticker ball). Reduces Theorem 3 to three reduction steps. -/
+   100	theorem theorem3_core
+   101	    (base : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ → UnitOn X σ →
+   102	      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+   103	      FreelyShellable M.support σ)
+   104	    (deg3_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+   105	      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+   106	      SimplicialChain M → HasDegree3Vertex σ →
+   107	      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+   108	        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+   109	        FreelyShellable M'.support σ') →
+   110	      FreelyShellable M.support σ)
+   111	    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+   112	      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+   113	      SimplicialChain M → NoDegree3Vertex σ →
+   114	      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+   115	        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+   116	        FreelyShellable M'.support σ') →
+   117	      FreelyShellable M.support σ)
+   118	    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
+   119	    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+   120	    FreelyShellable M.support σ := by
+   121	  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+   122	      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+   123	      FreelyShellable M.support σ by
+   124	    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+   125	  intro N
+   126	  induction N using Nat.strong_induction_on with
+   127	  | _ N IH =>
+   128	    intro σ X M hN hσ hU hXc hMX hT hS
+   129	    by_cases hv : (vertsOf σ).card ≤ 4
+   130	    · exact base σ X M hσ hU hMX hT hS hv
+   131	    · push_neg at hv
+   132	      by_cases hd3 : HasDegree3Vertex σ
+   133	      · refine deg3_step σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+   134	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+   135	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+   136	      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+   137	        refine prime_step σ X M hσ hv hU hXc hMX hT hS hno3 ?_
+   138	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+   139	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+   140
+   141	end Taut
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem2Aleph.lean | sed -n '460,790p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   460	  rw [starTet, Finset.card_insert_of_notMem]
+   461	  · omega
+   462	  · rw [linkVerts]
+   463	    exact Finset.notMem_erase _ _
+   464
+   465	theorem degree3_cut_star_side_glue (σ : Finset (Finset V)) {v : V} {W : C2 σ}
+   466	    (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card) (hv : v ∈ vertsOf σ)
+   467	    (h3 : (linkVerts σ v).card = 3)
+   468	    (hW : bd2 σ W = gammaChain σ (linkVerts σ v)) :
+   469	    (insert (linkVerts σ v) (cutSet σ W) = tetFaces (starTet σ v) ∧
+   470	      GlueStep (starTet σ v) (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))) σ) ∨
+   471	    (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1)) = tetFaces (starTet σ v) ∧
+   472	      GlueStep (starTet σ v) (insert (linkVerts σ v) (cutSet σ W)) σ) := by
+   473	  classical
+   474	  let γ := linkVerts σ v
+   475	  let T := starTet σ v
+   476	  have hdata := degree3_link_triangle_cut_data hσ hv h3 hbig
+   477	  have hγ3 : γ.card = 3 := by simpa [γ] using hdata.1
+   478	  have hγe : γ.powersetCard 2 ⊆ edgesOf σ := by simpa [γ] using hdata.2.1
+   479	  have hγσ : γ ∉ σ := by simpa [γ] using hdata.2.2
+   480	  have hvγ : v ∉ γ := by
+   481	    simp [γ, linkVerts]
+   482	  obtain ⟨F, hFσ, hvF⟩ := mem_vertsOf.mp hv
+   483	  have hTcard : T.card = 4 := by
+   484	    simpa [T, starTet, γ] using starTet_card_of_degree3 σ (v := v) h3
+   485	  have star_side_eq (U : C2 σ) (hU : bd2 σ U = gammaChain σ γ)
+   486	      (hUF : U ⟨F, hFσ⟩ = 1) :
+   487	      insert γ (cutSet σ U) = tetFaces T := by
+   488	    let τ : Finset (Finset V) := insert γ (cutSet σ U)
+   489	    change τ = tetFaces T
+   490	    have hτ : IsSphere2 τ := by
+   491	      dsimp [τ]
+   492	      exact isSphere2_cut hσ hγ3 hγe hγσ hU
+   493	    have hUlink : bd2 σ U = gammaChain σ (linkVerts σ v) := by simpa [γ] using hU
+   494	    have htetra : ∀ f, f ∈ tetFaces T → f ∈ τ := by
+   495	      intro f hf
+   496	      obtain ⟨w, hwT, rfl⟩ := exists_erase_eq_of_mem_tetFaces hTcard hf
+   497	      by_cases hwv : w = v
+   498	      · subst w
+   499	        have hTv : T.erase v = γ := by
+   500	          simp [T, starTet, γ, hvγ]
+   501	        dsimp [τ]
+   502	        rw [hTv]
+   503	        exact Finset.mem_insert_self γ (cutSet σ U)
+   504	      · have hwγ : w ∈ γ := by
+   505	          have : w ∈ insert v γ := by simpa [T, starTet] using hwT
+   506	          rw [Finset.mem_insert] at this
+   507	          exact this.resolve_left hwv
+   508	        have hcard2 : (γ.erase w).card = 2 := by
+   509	          rw [Finset.card_erase_of_mem hwγ, hγ3]
+   510	        obtain ⟨x, y, hxy, hpair⟩ := Finset.card_eq_two.mp hcard2
+   511	        have hxγ : x ∈ γ := Finset.mem_of_mem_erase (hpair ▸ Finset.mem_insert_self x {y})
+   512	        have hyγ : y ∈ γ := Finset.mem_of_mem_erase (hpair ▸ Finset.mem_insert_of_mem (Finset.mem_singleton_self y))
+   513	        obtain ⟨_, hface⟩ := linkGraph_complete_of_linkVerts_card_three hσ
+   514	          (by simpa [γ] using hxγ) (by simpa [γ] using hyγ) hxy h3
+   515	        have heq : T.erase w = ({v, x, y} : Finset V) := by
+   516	          dsimp [T, starTet, γ]
+   517	          rw [Finset.erase_insert_of_ne (Ne.symm hwv), hpair]
+   518	        dsimp [τ]
+   519	        rw [heq]
+   520	        refine Finset.mem_insert_of_mem (mem_cutSet.mpr ⟨hface, ?_⟩)
+   521	        have key : U (⟨{v, x, y}, hface⟩ : σ) = U (⟨F, hFσ⟩ : σ) :=
+   522	          W_const_at hσ hUlink hvγ (by simp) hvF
+   523	        rw [key, hUF]
+   524	    apply Finset.Subset.antisymm
+   525	    · intro g hgτ
+   526	      rw [tetFaces, Finset.mem_powersetCard]
+   527	      refine ⟨?_, hτ.pure g hgτ⟩
+   528	      set S : Set τ := {f | (f : Finset V) ⊆ T}
+   529	      have hclosed : ∀ u ∈ S, ∀ z, (dualGraph τ).Adj u z → z ∈ S := by
+   530	        rintro u huT z ⟨_, e, he, heu, hez⟩
+   531	        have huT' : (u : Finset V) ⊆ T := huT
+   532	        have heT : e ⊆ T := heu.trans huT'
+   533	        have he2 : e.card = 2 := card_of_mem_edgesOf he
+   534	        have hTe : (T \ e).card = 2 := by rw [Finset.card_sdiff_of_subset heT, hTcard, he2]
+   535	        obtain ⟨w₁, w₂, hw12, hwe⟩ := Finset.card_eq_two.mp hTe
+   536	        have hw1 : w₁ ∈ T \ e := hwe ▸ Finset.mem_insert_self w₁ {w₂}
+   537	        have hw2 : w₂ ∈ T \ e := hwe ▸ Finset.mem_insert_of_mem (Finset.mem_singleton_self w₂)
+   538	        have hw1e : w₁ ∉ e := (Finset.mem_sdiff.mp hw1).2
+   539	        have hw2e : w₂ ∉ e := (Finset.mem_sdiff.mp hw2).2
+   540	        have hf1T : insert w₁ e ⊆ T := Finset.insert_subset (Finset.mem_sdiff.mp hw1).1 heT
+   541	        have hf2T : insert w₂ e ⊆ T := Finset.insert_subset (Finset.mem_sdiff.mp hw2).1 heT
+   542	        have hf1τ : insert w₁ e ∈ τ := htetra _
+   543	          (Finset.mem_powersetCard.mpr ⟨hf1T, by rw [Finset.card_insert_of_notMem hw1e, he2]⟩)
+   544	        have hf2τ : insert w₂ e ∈ τ := htetra _
+   545	          (Finset.mem_powersetCard.mpr ⟨hf2T, by rw [Finset.card_insert_of_notMem hw2e, he2]⟩)
+   546	        have hins_ne : insert w₁ e ≠ insert w₂ e := by
+   547	          intro hc
+   548	          have hm : w₁ ∈ insert w₂ e := hc ▸ Finset.mem_insert_self w₁ e
+   549	          rw [Finset.mem_insert] at hm
+   550	          exact hm.elim (fun h => hw12 h) (fun h => hw1e h)
+   551	        have hfilter2 : (τ.filter (fun h => e ⊆ h)).card = 2 := hτ.closed e he
+   552	        have hpair_sub : ({insert w₁ e, insert w₂ e} : Finset (Finset V))
+   553	            ⊆ τ.filter (fun h => e ⊆ h) := by
+   554	          intro h hh; rw [Finset.mem_insert, Finset.mem_singleton] at hh
+   555	          rcases hh with rfl | rfl
+   556	          · exact Finset.mem_filter.mpr ⟨hf1τ, Finset.subset_insert _ _⟩
+   557	          · exact Finset.mem_filter.mpr ⟨hf2τ, Finset.subset_insert _ _⟩
+   558	        have hfeq : τ.filter (fun h => e ⊆ h) = {insert w₁ e, insert w₂ e} :=
+   559	          (Finset.eq_of_subset_of_card_le hpair_sub
+   560	            (le_of_eq (hfilter2.trans (Finset.card_pair hins_ne).symm))).symm
+   561	        have hmemg : (z : Finset V) ∈ τ.filter (fun h => e ⊆ h) :=
+   562	          Finset.mem_filter.mpr ⟨z.2, hez⟩
+   563	        rw [hfeq, Finset.mem_insert, Finset.mem_singleton] at hmemg
+   564	        show (z : Finset V) ⊆ T
+   565	        rcases hmemg with h | h
+   566	        · rw [h]; exact hf1T
+   567	        · rw [h]; exact hf2T
+   568	      have hbase : (⟨γ, by dsimp [τ]; exact Finset.mem_insert_self γ (cutSet σ U)⟩ : τ) ∈ S := by
+   569	        show (γ : Finset V) ⊆ T
+   570	        simp [T, starTet, γ]
+   571	      obtain ⟨p⟩ := dualGraph_preconnected hτ.toClosedSurface
+   572	        (⟨γ, by dsimp [τ]; exact Finset.mem_insert_self γ (cutSet σ U)⟩ : τ) ⟨g, hgτ⟩
+   573	      exact walk_mem_of_adj_closed' hclosed p hbase
+   574	    · exact htetra
+   575	  have glue_of_star (U : C2 σ) (hstar : insert γ (cutSet σ U) = tetFaces T)
+   576	      (B : Finset (Finset V)) (hB : B = insert γ (σ \ cutSet σ U)) : GlueStep T B σ := by
+   577	    refine ⟨hTcard, ?_, ?_, hσ⟩
+   578	    · left
+   579	      have hshared : tetFaces T ∩ B = {γ} := by
+   580	        ext s
+   581	        simp only [Finset.mem_inter, Finset.mem_singleton]
+   582	        constructor
+   583	        · rintro ⟨hsT, hsB⟩
+   584	          rw [hB, Finset.mem_insert] at hsB
+   585	          rcases hsB with hsγ | hscomp
+   586	          · exact hsγ
+   587	          · exfalso
+   588	            rcases Finset.mem_sdiff.mp hscomp with ⟨hsσ, hsncut⟩
+   589	            have hsStar : s ∈ insert γ (cutSet σ U) := by rwa [hstar]
+   590	            rw [Finset.mem_insert] at hsStar
+   591	            rcases hsStar with hsg | hscut
+   592	            · exact hγσ (hsg ▸ hsσ)
+   593	            · exact hsncut hscut
+   594	        · intro hsγ
+   595	          subst s
+   596	          constructor
+   597	          · rw [← hstar]
+   598	            exact Finset.mem_insert_self γ (cutSet σ U)
+   599	          · rw [hB]
+   600	            exact Finset.mem_insert_self γ (σ \ cutSet σ U)
+   601	      rw [hshared]
+   602	      simp
+   603	    · ext s
+   604	      simp only [Finset.mem_union, Finset.mem_sdiff]
+   605	      constructor
+   606	      · intro hsσ
+   607	        by_cases hscut : s ∈ cutSet σ U
+   608	        · right
+   609	          refine ⟨?_, ?_⟩
+   610	          · rw [← hstar]
+   611	            exact Finset.mem_insert_of_mem hscut
+   612	          · rw [hB, Finset.mem_insert]
+   613	            intro hsB
+   614	            rcases hsB with hsγ | hscomp
+   615	            · exact hγσ (hsγ ▸ hsσ)
+   616	            · exact (Finset.mem_sdiff.mp hscomp).2 hscut
+   617	        · left
+   618	          refine ⟨?_, ?_⟩
+   619	          · rw [hB]
+   620	            exact Finset.mem_insert_of_mem (Finset.mem_sdiff.mpr ⟨hsσ, hscut⟩)
+   621	          · intro hsT
+   622	            have hsStar : s ∈ insert γ (cutSet σ U) := by rwa [hstar]
+   623	            rw [Finset.mem_insert] at hsStar
+   624	            rcases hsStar with hsγ | hscut'
+   625	            · exact hγσ (hsγ ▸ hsσ)
+   626	            · exact hscut hscut'
+   627	      · intro hs
+   628	        rcases hs with hs | hs
+   629	        · rcases hs with ⟨hsB, hsnotT⟩
+   630	          rw [hB, Finset.mem_insert] at hsB
+   631	          rcases hsB with hsγ | hscomp
+   632	          · exfalso
+   633	            apply hsnotT
+   634	            rw [← hstar]
+   635	            exact hsγ ▸ Finset.mem_insert_self γ (cutSet σ U)
+   636	          · exact (Finset.mem_sdiff.mp hscomp).1
+   637	        · rcases hs with ⟨hsT, hsnotB⟩
+   638	          have hsStar : s ∈ insert γ (cutSet σ U) := by rwa [hstar]
+   639	          rw [Finset.mem_insert] at hsStar
+   640	          rcases hsStar with hsγ | hscut
+   641	          · exfalso
+   642	            apply hsnotB
+   643	            rw [hB]
+   644	            exact hsγ ▸ Finset.mem_insert_self γ (σ \ cutSet σ U)
+   645	          · exact cutSet_subset hscut
+   646	  rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W ⟨F, hFσ⟩) with hWF0 | hWF1
+   647	  · right
+   648	    have hWadd : bd2 σ (W + fun _ => 1) = gammaChain σ γ := by
+   649	      simpa [γ] using bd2_W_add_one hσ hW
+   650	    have hWFadd : ((W + fun _ => 1) : C2 σ) ⟨F, hFσ⟩ = 1 := by
+   651	      show W ⟨F, hFσ⟩ + 1 = 1
+   652	      rw [hWF0]
+   653	      decide
+   654	    have hstar := star_side_eq (W + fun _ => 1) hWadd hWFadd
+   655	    refine ⟨?_, ?_⟩
+   656	    · simpa [γ, T] using hstar
+   657	    · have hcomp : cutSet σ W = σ \ cutSet σ (W + fun _ => 1) := by
+   658	        rw [cutSet_add_one_eq_sdiff W]
+   659	        exact (Finset.sdiff_sdiff_eq_self (cutSet_subset : cutSet σ W ⊆ σ)).symm
+   660	      have hg : GlueStep T (insert γ (cutSet σ W)) σ :=
+   661	        glue_of_star (W + fun _ => 1) hstar (insert γ (cutSet σ W)) (by rw [hcomp])
+   662	      simpa [γ, T] using hg
+   663	  · left
+   664	    have hWγ : bd2 σ W = gammaChain σ γ := by simpa [γ] using hW
+   665	    have hstar := star_side_eq W hWγ hWF1
+   666	    refine ⟨?_, ?_⟩
+   667	    · simpa [γ, T] using hstar
+   668	    · have hg : GlueStep T (insert γ (cutSet σ (W + fun _ => 1))) σ :=
+   669	        glue_of_star W hstar (insert γ (cutSet σ (W + fun _ => 1))) (by rw [cutSet_add_one_eq_sdiff W])
+   670	      simpa [γ, T] using hg
+   671
+   672	theorem star_filter_support_singleton (Mstar Y : Chain V) (T : Finset V) (hT4 : T.card = 4)
+   673	    (hU : UnitOn Y (tetFaces T)) (hbd : bdry Mstar = Y) (hMt : IsTaut Mstar)
+   674	    (hSupp : ∀ t ∈ Mstar.support, t ⊆ T) :
+   675	    Mstar.support = {T} := by
+   676	  classical
+   677	  have h_all : ∀ t ∈ Mstar.support, t = T := by
+   678	    intro t ht
+   679	    have hbdsupp : ∀ s ∈ (bdry Mstar).support, s.card = 3 := by
+   680	      intro s hs
+   681	      rw [hbd, hU.1] at hs
+   682	      exact (Finset.mem_powersetCard.mp hs).2
+   683	    have hcardt : t.card = 4 := by
+   684	      simpa using (hMt.dim_pure hbdsupp t ht)
+   685	    exact Finset.eq_of_subset_of_card_le (hSupp t ht) (by omega)
+   686	  have hnonempty : Mstar.support.Nonempty := by
+   687	    have hcardfaces : (tetFaces T).card = 4 := card_tetFaces hT4
+   688	    have hfaces_nonempty : (tetFaces T).Nonempty := by
+   689	      exact Finset.card_pos.mp (by rw [hcardfaces]; norm_num)
+   690	    rcases hfaces_nonempty with ⟨s, hs⟩
+   691	    have hYs : s ∈ Y.support := by
+   692	      rw [hU.1]
+   693	      exact hs
+   694	    have hYne : Y ≠ 0 := by
+   695	      intro hY0
+   696	      rw [hY0] at hYs
+   697	      simpa using hYs
+   698	    have hMne : Mstar ≠ 0 := by
+   699	      intro hM0
+   700	      apply hYne
+   701	      rw [← hbd, hM0]
+   702	      simp
+   703	    rw [Finset.nonempty_iff_ne_empty]
+   704	    intro hempty
+   705	    apply hMne
+   706	    rw [← Finsupp.support_eq_empty]
+   707	    exact hempty
+   708	  ext t
+   709	  constructor
+   710	  · intro ht
+   711	    have htT : t = T := h_all t ht
+   712	    rw [htT]
+   713	    exact Finset.mem_singleton_self T
+   714	  · intro ht
+   715	    rw [Finset.mem_singleton] at ht
+   716	    rw [ht]
+   717	    rcases hnonempty with ⟨u, hu⟩
+   718	    have huT : u = T := h_all u hu
+   719	    rw [← huT]
+   720	    exact hu
+   721
+   722	theorem support_eq_insert_of_filter_support_singleton (M : Chain V) (P : Finset V → Prop) [DecidablePred P] {T : Finset V}
+   723	    (hP : (M.filter P).support = {T}) :
+   724	    M.support = insert T (M.filter (fun t => ¬ P t)).support := by
+   725	  ext s
+   726	  constructor
+   727	  · intro hs
+   728	    by_cases hPs : P s
+   729	    · have hsfil : s ∈ (M.filter P).support := by
+   730	        simpa using And.intro hs hPs
+   731	      rw [hP] at hsfil
+   732	      have hsT : s = T := by
+   733	        simpa using hsfil
+   734	      simp [hsT]
+   735	    · have hsfil : s ∈ (M.filter (fun t => ¬ P t)).support := by
+   736	        simpa using And.intro hs hPs
+   737	      exact mem_insert_of_mem hsfil
+   738	  · intro hs
+   739	    simp at hs
+   740	    rcases hs with hsT | hsfil
+   741	    · have hTin : T ∈ (M.filter P).support := by
+   742	        rw [hP]
+   743	        simp
+   744	      have hTnz : ¬ M T = 0 := by
+   745	        have hTin' : ¬ M T = 0 ∧ P T := by
+   746	          simpa using hTin
+   747	        exact hTin'.1
+   748	      simpa [hsT] using hTnz
+   749	    · simpa using hsfil.1
+   750
+   751	theorem ball_reassemble_of_filter_support_singleton (M : Chain V) (P : Finset V → Prop) [DecidablePred P] {T : Finset V}
+   752	    {B σ : Finset (Finset V)} (hP : (M.filter P).support = {T})
+   753	    (hglue : GlueStep T B σ) :
+   754	    IsBall (M.filter (fun t => ¬ P t)).support B → IsBall M.support σ := by
+   755	  intro hball
+   756	  have hTmem : T ∈ (M.filter P).support := by
+   757	    rw [hP]
+   758	    simp
+   759	  have hTne : (M.filter P) T ≠ 0 := by
+   760	    exact Finsupp.mem_support_iff.mp hTmem
+   761	  have hPT : P T := by
+   762	    by_contra hnot
+   763	    have hzero : (M.filter P) T = 0 := by
+   764	      simp [Finsupp.filter, hnot]
+   765	    exact hTne hzero
+   766	  have hTnot : T ∉ (M.filter (fun t => ¬ P t)).support := by
+   767	    intro h
+   768	    have hne : (M.filter (fun t => ¬ P t)) T ≠ 0 := Finsupp.mem_support_iff.mp h
+   769	    have hzero : (M.filter (fun t => ¬ P t)) T = 0 := by
+   770	      simp [Finsupp.filter, hPT]
+   771	    exact hne hzero
+   772	  rw [support_eq_insert_of_filter_support_singleton M P hP]
+   773	  exact IsBall.insert_of_glueStep hball hglue hTnot
+   774
+   775	theorem taut_splits_for_capped_cut (σ : Finset (Finset V)) (X M : Chain V) {γ : Finset V} {W : C2 σ} {c : ℤ}
+   776	    (hσ : IsSphere2 σ)
+   777	    (hσL : IsSphere2 (insert γ (cutSet σ W)))
+   778	    (hσR : IsSphere2 (insert γ (cutSet σ (W + fun _ => 1))))
+   779	    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+   780	    (hW : bd2 σ W = gammaChain σ γ)
+   781	    (hUL : UnitOn (cappedCutLeft σ W X γ c) (insert γ (cutSet σ W)))
+   782	    (hXLc : bdry (cappedCutLeft σ W X γ c) = 0)
+   783	    (hUR : UnitOn (cappedCutRight σ W X γ c) (insert γ (cutSet σ (W + fun _ => 1))))
+   784	    (hXRc : bdry (cappedCutRight σ W X γ c) = 0)
+   785	    (hXsum : cappedCutLeft σ W X γ c + cappedCutRight σ W X γ c = X)
+   786	    (hMX : bdry M = X) (hT : IsTaut M) :
+   787	    bdry (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))) = cappedCutLeft σ W X γ c ∧
+   788	    bdry (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))) = cappedCutRight σ W X γ c ∧
+   789	    IsTaut (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+   790	    IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+
+codex
+The note confirms the intended shift: `FreelyShellable M.support σ` is the theorem object, and intermediate `IsSphere2` proofs should not gate gluing. I’m checking references/constructors now so the answer can name the exact breakpoints rather than hand-wave the blast radius.
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem23.lean | sed -n '1,260p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+     1	import Taut.Eligible
+     2
+     3	/-!
+     4	# Theorem 2 (core): a taut filling of a 2-sphere is a ball — the induction skeleton
+     5
+     6	The central theorem of "Taut fillings": a taut integral filling `M` of a
+     7	combinatorial 2-sphere `σ` arises from a simplicial triangulation of `B³` — here,
+     8	`M.support` is a (shelling-certified) ball with boundary `σ` (`IsBall M.support
+     9	σ`). The paper's proof is a strong induction on `|M| = nrm M`.
+    10
+    11	This file is the **induction skeleton** (architect: codex 019ec44f, Q5): the
+    12	strong-induction plumbing, with the three reduction steps as explicit hypotheses
+    13	— the named holes the remaining milestones fill:
+    14
+    15	* `base` — the minimal sphere `(vertsOf σ).card ≤ 4` (a tetrahedron boundary): its
+    16	  taut filling is a single tet, a ball (M24 base / `isBall_singleton`);
+    17	* `deg3_split` — a sphere with a degree-3 vertex splits (connected sum along the
+    18	  link triangle) into a strictly smaller taut filling whose ball reassembles to
+    19	  the original (M24c `deg3_split`, interface per the codex 019ec44f Q4 design);
+    20	* `prime_step` — a no-degree-3 ("prime") sphere: remove an eligible tet
+    21	  (`exists_eligibleTet_of_noDegree3`, M25 ✓) and reassemble, consuming the
+    22	  induction hypothesis on strictly smaller fillings (the eligible-tet branch =
+    23	  M25b disjoint pair + M22b relative shelling + the M23 edge-join bridge).
+    24
+    25	`theorem2_core` discharges Theorem 2 modulo these three. Free shellability
+    26	(Theorem 3) is a strengthening of the invariant, deferred.
+    27	-/
+    28
+    29	namespace Taut
+    30
+    31	open Finset
+    32
+    33	variable {V : Type*} [LinearOrder V]
+    34
+    35	/-- **Theorem 2 (core), the strong induction.** Given the base case and the two
+    36	reduction steps, every taut filling of a 2-sphere is a ball. The proof is pure
+    37	strong-induction plumbing on `nrm M`; all geometric content lives in the three
+    38	hypotheses (the named holes M24/M25b/M22b fill). -/
+    39	theorem theorem2_core
+    40	    (base : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ → UnitOn X σ →
+    41	      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+    42	      IsBall M.support σ)
+    43	    (deg3_split : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+    44	      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+    45	      SimplicialChain M → HasDegree3Vertex σ →
+    46	      ∃ (σ' : Finset (Finset V)) (X' M' : Chain V),
+    47	        IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
+    48	        SimplicialChain M' ∧ nrm M' < nrm M ∧
+    49	        (IsBall M'.support σ' → IsBall M.support σ))
+    50	    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+    51	      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+    52	      SimplicialChain M → NoDegree3Vertex σ →
+    53	      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+    54	        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+    55	        IsBall M'.support σ') →
+    56	      IsBall M.support σ)
+    57	    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
+    58	    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+    59	    IsBall M.support σ := by
+    60	  -- strong induction on `nrm M`
+    61	  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+    62	      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+    63	      IsBall M.support σ by
+    64	    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+    65	  intro N
+    66	  induction N using Nat.strong_induction_on with
+    67	  | _ N IH =>
+    68	    intro σ X M hN hσ hU hXc hMX hT hS
+    69	    by_cases hv : (vertsOf σ).card ≤ 4
+    70	    · exact base σ X M hσ hU hMX hT hS hv
+    71	    · push_neg at hv
+    72	      by_cases hd3 : HasDegree3Vertex σ
+    73	      · obtain ⟨σ', X', M', hσ', hU', hX'c, hM'X', hT', hS', hlt, hreass⟩ :=
+    74	          deg3_split σ X M hσ hv hU hXc hMX hT hS hd3
+    75	        exact hreass (IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS')
+    76	      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+    77	        refine prime_step σ X M hσ hv hU hXc hMX hT hS hno3 ?_
+    78	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+    79	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+    80
+    81	/-! ## Theorem 3 (core): the free-shelling induction
+    82
+    83	Per Peter's "sticker ball" reframe (and codex 019ecbfa): the right inductive
+    84	invariant is `FreelyShellable` (a free sticker ball — buildable one tet at a time,
+    85	startable at ANY tet), not plain `IsBall`. With it the case-2 reassembly is a
+    86	direct concatenation (start the second piece at the bridge-adjacent tet — possible
+    87	exactly because it is *free*), so no separate relative-shelling "topology" lemma is
+    88	needed at the induction level. Theorem 2 (`IsBall`) is then a corollary. -/
+    89
+    90	/-- A free sticker ball is a ball (forget the freedom). -/
+    91	lemma FreelyShellable.isBall_of_mem {τ B : Finset (Finset V)} {t : Finset V}
+    92	    (h : FreelyShellable τ B) (ht : t ∈ τ) : IsBall τ B := by
+    93	  obtain ⟨l, _, hfin, hnodup, hsh⟩ := h t ht
+    94	  exact ⟨l, hfin, hnodup, hsh⟩
+    95
+    96	/-- **Theorem 3 (core), the free-shelling strong induction.** Same plumbing as
+    97	`theorem2_core`, carrying `FreelyShellable M.support σ`. Both non-base branches
+    98	consume the induction hypothesis (every strictly smaller taut filling is a free
+    99	sticker ball). Reduces Theorem 3 to three reduction steps. -/
+   100	theorem theorem3_core
+   101	    (base : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ → UnitOn X σ →
+   102	      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+   103	      FreelyShellable M.support σ)
+   104	    (deg3_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+   105	      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+   106	      SimplicialChain M → HasDegree3Vertex σ →
+   107	      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+   108	        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+   109	        FreelyShellable M'.support σ') →
+   110	      FreelyShellable M.support σ)
+   111	    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+   112	      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+   113	      SimplicialChain M → NoDegree3Vertex σ →
+   114	      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+   115	        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+   116	        FreelyShellable M'.support σ') →
+   117	      FreelyShellable M.support σ)
+   118	    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
+   119	    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+   120	    FreelyShellable M.support σ := by
+   121	  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+   122	      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+   123	      FreelyShellable M.support σ by
+   124	    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+   125	  intro N
+   126	  induction N using Nat.strong_induction_on with
+   127	  | _ N IH =>
+   128	    intro σ X M hN hσ hU hXc hMX hT hS
+   129	    by_cases hv : (vertsOf σ).card ≤ 4
+   130	    · exact base σ X M hσ hU hMX hT hS hv
+   131	    · push_neg at hv
+   132	      by_cases hd3 : HasDegree3Vertex σ
+   133	      · refine deg3_step σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+   134	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+   135	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+   136	      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+   137	        refine prime_step σ X M hσ hv hU hXc hMX hT hS hno3 ?_
+   138	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+   139	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+   140
+   141	end Taut
+
+exec
+/bin/zsh -lc "rg -n \"GlueStep|\\.sphere|isSphere2|insert_of_glueStep|bridge_of_relShelling|RelShelling|FreelyShellable\\.bridge|deg3_step|prime_step|theorem3_core|sorry|admit\" lean/Taut notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Complex2.lean:22:  sphere (`isSphere2_tetraBdry`) — the semantic smoke test against a
+lean/Taut/Complex2.lean:549:theorem isSphere2_tetraBdry :
+lean/Taut/Complex2.lean:609:theorem isSphere2_powersetCard3 {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Complex2.lean:616:  exact isSphere2_tetraBdry hab hac had hbc hbd hcd
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:1:# Architect request (codex): drop `GlueStep.sphere`; make "sticker ball" the clean combinatorial object; finish the FreelyShellable reassembly
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:29:`Ball.lean`'s `GlueStep t B B'` currently bakes in a field `sphere : IsSphere2 B'`
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:32:(019ecc0d) flagged as "genuinely hard." Grep result: `GlueStep.sphere` is consumed
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:33:ONLY at `Ball.lean:102` (inside `ShellFrom.isSphere2` → `IsShelling.isSphere2` →
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:34:`IsBall.isSphere2`), a standalone "boundary of a ball is a sphere" validation lemma
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:35:that nothing in the induction (`theorem2_core`/`theorem3_core`/the reassembly/the
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:38:**Proposal: delete the `sphere` field from `GlueStep`.** Then
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:39:`GlueStep t B B' := card4 t ∧ (shared = 1 ∨ shared = 2) ∧ B' = (B \ tetFaces t) ∪
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:45:    boundary and it is given). Enumerate every site that CONSTRUCTS a `GlueStep`
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:46:    (so loses an argument) or CONSUMES `.sphere` (so must be repaired/deleted):
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:47:    candidates are `Ball.lean` `IsBall.insert_of_glueStep`, `RelShelling`/
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:48:    `IsBall.bridge_of_relShelling`, `ShellFrom.isSphere2`/`IsShelling.isSphere2`/
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:49:    `IsBall.isSphere2`, and anything in `Theorem2Aleph.lean` (does
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:50:    `aleph_deg3_split`'s reassembly `IsBall M' → IsBall M` build GlueSteps?). Give
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:55:    `theorem ShellFrom.isSphere2_of_seed : ShellFrom B₀ l B → IsSphere2 B₀ →
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:56:    IsSphere2 B` (induction on `l`, each step a `glueStep_preserves_isSphere2`). Is
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:63:    lemma DEFERRED — do not put it on the critical path; do not axiomatise/sorry it.
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:64:Q3. **The now-unblocked reassembly (lean `GlueStep`).** With no per-step sphere
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:69:    - **L2** `FreelyShellable.bridge`: free ball₁ + bridge tet `t` + free ball₂,
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:75:    - `deg3_step` (FreelyShellable): star tet (single, free) + capped remainder M₂
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:78:    - `prime_step` (FreelyShellable): case 1 (L1, stick the flipped eligible tet
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:81:Q4. **Hand-off + milestones.** Which of {L1-discharge, L2, deg3_step, prime_step
+notes/codex-consults/2026-06-15-g1-drop-sphere-spec.md:82:    case1, prime_step case2} are pure-combinatorial and good AlephProver targets,
+lean/Taut/Theorem23.lean:20:* `prime_step` — a no-degree-3 ("prime") sphere: remove an eligible tet
+lean/Taut/Theorem23.lean:50:    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+lean/Taut/Theorem23.lean:77:        refine prime_step σ X M hσ hv hU hXc hMX hT hS hno3 ?_
+lean/Taut/Theorem23.lean:100:theorem theorem3_core
+lean/Taut/Theorem23.lean:104:    (deg3_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+lean/Taut/Theorem23.lean:111:    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+lean/Taut/Theorem23.lean:133:      · refine deg3_step σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+lean/Taut/Theorem23.lean:137:        refine prime_step σ X M hσ hv hU hXc hMX hT hS hno3 ?_
+lean/Taut/Theorem3.lean:10:`theorem3_core`.
+lean/Taut/Theorem3.lean:13:`GlueStep` tet is a free sticker ball, given the bridge-start relative shelling) —
+lean/Taut/Theorem3.lean:25:`GlueStep` tet `t` is a free sticker ball with `t` adjoined. For an old target the
+lean/Taut/Theorem3.lean:30:lemma FreelyShellable.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Finset V}
+lean/Taut/Theorem3.lean:31:    (hfree : FreelyShellable τ B) (hg : GlueStep t B B') (ht : t ∉ τ)
+lean/Taut/Theorem3.lean:60:/-- **base_free** (the base hole of `theorem3_core`): a taut filling of a 2-sphere on
+lean/Taut/Ball.lean:35:  (`IsBall.isSphere2`) — the structural invariant carried by the certificate.
+lean/Taut/Ball.lean:56:structure GlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop where
+lean/Taut/Ball.lean:66:  | B₀, t :: l, B => ∃ B₁, GlueStep t B₀ B₁ ∧ ShellFrom B₁ l B
+lean/Taut/Ball.lean:75:/-- A *shelling-certified ball*: a facet set `τ` admitting a shelling (a
+lean/Taut/Ball.lean:91:lemma ShellFrom.isSphere2 {l : List (Finset V)} :
+lean/Taut/Ball.lean:102:      exact ih hrest hg.sphere
+lean/Taut/Ball.lean:105:lemma IsShelling.isSphere2 {l : List (Finset V)} {B : Finset (Finset V)}
+lean/Taut/Ball.lean:111:      exact h.2.isSphere2 (isSphere2_powersetCard3 h.1)
+lean/Taut/Ball.lean:114:theorem IsBall.isSphere2 {τ B : Finset (Finset V)} (h : IsBall τ B) :
+lean/Taut/Ball.lean:117:  exact hsh.isSphere2
+lean/Taut/Ball.lean:122:tets at the end; a ball with a `GlueStep` tet on its boundary grows by that tet
+lean/Taut/Ball.lean:124:needs *relative* shellability (`RelShelling`) — that is the genuine hidden-
+lean/Taut/Ball.lean:139:/-- Append one `GlueStep` tet to a `ShellFrom`. -/
+lean/Taut/Ball.lean:141:    (h : ShellFrom B₀ l B) (hg : GlueStep t B B') : ShellFrom B₀ (l ++ [t]) B' :=
+lean/Taut/Ball.lean:151:/-- Append one `GlueStep` tet to a shelling. -/
+lean/Taut/Ball.lean:153:    (h : IsShelling l B) (hg : GlueStep t B B') : IsShelling (l ++ [t]) B' :=
+lean/Taut/Ball.lean:156:/-- **Case-1 reassembly.** A ball whose boundary admits a `GlueStep` for a fresh
+lean/Taut/Ball.lean:158:theorem IsBall.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Finset V}
+lean/Taut/Ball.lean:159:    (h : IsBall τ B) (hg : GlueStep t B B') (ht : t ∉ τ) : IsBall (insert t τ) B' := by
+lean/Taut/Ball.lean:174:def RelShelling (τ B₀ B : Finset (Finset V)) : Prop :=
+lean/Taut/Ball.lean:178:a `GlueStep` tet `t` onto its boundary, and a relative shelling of `τ₂` onto the
+lean/Taut/Ball.lean:180:ball actually supplies the `RelShelling` — is M22b. -/
+lean/Taut/Ball.lean:181:theorem IsBall.bridge_of_relShelling {τ₁ τ₂ B₁ Bmid B : Finset (Finset V)} {t : Finset V}
+lean/Taut/Ball.lean:182:    (h₁ : IsBall τ₁ B₁) (hg : GlueStep t B₁ Bmid) (h₂ : RelShelling τ₂ Bmid B)
+lean/Taut/Theorem2Aleph.lean:19:`theorem2_modulo_prime_step` discharges these two holes, leaving Theorem 2's core
+lean/Taut/Theorem2Aleph.lean:20:dependent on a single remaining step `prime_step` (the no-degree-3 inductive step,
+lean/Taut/Theorem2Aleph.lean:438:  · exact isSphere2_cut hσ hγ3 hγe hγσ hW
+lean/Taut/Theorem2Aleph.lean:439:  · exact isSphere2_cut hσ hγ3 hγe hγσ (bd2_W_add_one hσ hW)
+lean/Taut/Theorem2Aleph.lean:470:      GlueStep (starTet σ v) (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))) σ) ∨
+lean/Taut/Theorem2Aleph.lean:472:      GlueStep (starTet σ v) (insert (linkVerts σ v) (cutSet σ W)) σ) := by
+lean/Taut/Theorem2Aleph.lean:492:      exact isSphere2_cut hσ hγ3 hγe hγσ hU
+lean/Taut/Theorem2Aleph.lean:576:      (B : Finset (Finset V)) (hB : B = insert γ (σ \ cutSet σ U)) : GlueStep T B σ := by
+lean/Taut/Theorem2Aleph.lean:660:      have hg : GlueStep T (insert γ (cutSet σ W)) σ :=
+lean/Taut/Theorem2Aleph.lean:668:    · have hg : GlueStep T (insert γ (cutSet σ (W + fun _ => 1))) σ :=
+lean/Taut/Theorem2Aleph.lean:753:    (hglue : GlueStep T B σ) :
+lean/Taut/Theorem2Aleph.lean:773:  exact IsBall.insert_of_glueStep hball hglue hTnot
+lean/Taut/Theorem2Aleph.lean:1428:filling of a 2-sphere is a ball provided the no-degree-3 step `prime_step` holds. -/
+lean/Taut/Theorem2Aleph.lean:1429:theorem theorem2_modulo_prime_step
+lean/Taut/Theorem2Aleph.lean:1430:    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+lean/Taut/Theorem2Aleph.lean:1440:  theorem2_core aleph_base aleph_deg3_split prime_step hσ hU hXc hMX hT hS
+lean/Taut/Separation.lean:1025:theorem isSphere2_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+lean/Taut/Separation.lean:1040:    isSphere2_cut h hγ3 hγe hγσ hW,
+lean/Taut/Separation.lean:1041:    isSphere2_cut h hγ3 hγe hγσ (bd2_W_add_one h hW)⟩
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem2Aleph.lean | sed -n '790,1120p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   790	    IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+   791	    (∀ t ∈ (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))).support,
+   792	      t ⊆ vertsOf (insert γ (cutSet σ W))) ∧
+   793	    (∀ t ∈ (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))).support,
+   794	      t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1)))) ∧
+   795	    M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W))) +
+   796	      M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W))) = M := by
+   797	  classical
+   798	  let A : Finset V := vertsOf (insert γ (cutSet σ W))
+   799	  let B : Finset V := vertsOf (insert γ (cutSet σ (W + fun _ => 1)))
+   800	  have hXsupp : ∀ s ∈ (cappedCutLeft σ W X γ c).support, s ⊆ A ∧ s.card = 2 + 1 := by
+   801	    intro s hs
+   802	    have hsτ : s ∈ insert γ (cutSet σ W) := by
+   803	      rw [hUL.1] at hs
+   804	      exact hs
+   805	    constructor
+   806	    · intro x hx
+   807	      exact mem_vertsOf.mpr ⟨s, hsτ, hx⟩
+   808	    · exact hσL.pure s hsτ
+   809	  have hYsupp : ∀ s ∈ (cappedCutRight σ W X γ c).support, s ⊆ B ∧ s.card = 2 + 1 := by
+   810	    intro s hs
+   811	    have hsτ : s ∈ insert γ (cutSet σ (W + fun _ => 1)) := by
+   812	      rw [hUR.1] at hs
+   813	      exact hs
+   814	    constructor
+   815	    · intro x hx
+   816	      exact mem_vertsOf.mpr ⟨s, hsτ, hx⟩
+   817	    · exact hσR.pure s hsτ
+   818	  have hAB : A ∩ B = γ := by
+   819	    dsimp [A, B]
+   820	    exact vertsOf_cut_inter hσ hW
+   821	  have hC : (A ∩ B).card ≤ 2 + 1 := by
+   822	    rw [hAB, hγ3]
+   823	  obtain ⟨p, hp, q, hq, hpq⟩ := exists_pair_of_one_lt_card (s := A ∩ B) (by
+   824	    rw [hAB, hγ3]
+   825	    omega)
+   826	  have hM1 : bdry M = cappedCutLeft σ W X γ c + cappedCutRight σ W X γ c :=
+   827	    hMX.trans hXsum.symm
+   828	  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = 2 + 1 := by
+   829	    intro s hs
+   830	    rw [hM1] at hs
+   831	    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+   832	    · exact (hXsupp s h).2
+   833	    · exact (hYsupp s h).2
+   834	  have hpure : ∀ s ∈ M.support, s.card = 2 + 2 :=
+   835	    fun s hs => hT.dim_pure hbdsupp s hs
+   836	  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+   837	    intro s hs
+   838	    rw [hpure s hs]
+   839	    omega
+   840	  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+   841	    intro t ht
+   842	    refine (supp_subset_vert ht).trans ((hT.vert_subset hdim2).trans ?_)
+   843	    rw [hM1]
+   844	    exact (vert_add_subset (cappedCutLeft σ W X γ c) (cappedCutRight σ W X γ c)).trans
+   845	      (Finset.union_subset_union
+   846	        (vert_subset_of_supp fun s hs => (hXsupp s hs).1)
+   847	        (vert_subset_of_supp fun s hs => (hYsupp s hs).1))
+   848	  have hdich : ∀ t ∈ M.support, t ⊆ A ∨ t ⊆ B := by
+   849	    intro t ht
+   850	    rcases hybrid_structure (A := A) (B := B) (n := 2) (M := M)
+   851	        (X := cappedCutLeft σ W X γ c) (Y := cappedCutRight σ W X γ c)
+   852	        (by omega) hp hq hpq hC hXsupp hYsupp hXLc hXRc hM1 hT hpure hsuppAB ht with h | h | ⟨h1, h2⟩ | ⟨h1, h2⟩
+   853	    · exact Or.inl h
+   854	    · exact Or.inr h
+   855	    · obtain ⟨y₀, hy⟩ := Finset.card_eq_one.mp h1
+   856	      exact (no_extreme_hybrid (A := A) (B := B) (n := 2) (M := M)
+   857	        (X := cappedCutLeft σ W X γ c) (Y := cappedCutRight σ W X γ c)
+   858	        (by omega) hp hq hpq hC hXsupp hYsupp hXLc hXRc hM1 hT hpure hsuppAB ht hy h2).elim
+   859	    · obtain ⟨x₀, hx⟩ := Finset.card_eq_one.mp h1
+   860	      have hM1' : bdry M = cappedCutRight σ W X γ c + cappedCutLeft σ W X γ c := by
+   861	        rw [hM1, add_comm]
+   862	      have hsuppBA : ∀ t' ∈ M.support, t' ⊆ B ∪ A := by
+   863	        intro t' ht'
+   864	        rw [Finset.union_comm]
+   865	        exact hsuppAB t' ht'
+   866	      exact (no_extreme_hybrid (A := B) (B := A) (n := 2) (M := M)
+   867	        (X := cappedCutRight σ W X γ c) (Y := cappedCutLeft σ W X γ c)
+   868	        (by omega) (Finset.inter_comm A B ▸ hq) (Finset.inter_comm A B ▸ hp) hpq.symm
+   869	        (Finset.inter_comm A B ▸ hC) hYsupp hXsupp hXRc hXLc hM1' hT hpure hsuppBA ht hx
+   870	        (Finset.inter_comm A B ▸ h2)).elim
+   871	  have hs := IsTaut.splits (A := A) (B := B) (n := 2) (M := M)
+   872	    (by omega) (p := p) (q := q) hp hq hpq hC hXsupp hYsupp hXLc hXRc hT hM1
+   873	  rcases hs with ⟨hbdL, hbdR, htL, htR, hsumM⟩
+   874	  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+   875	  · exact hbdL
+   876	  · exact hbdR
+   877	  · exact htL
+   878	  · exact htR
+   879	  · intro t ht
+   880	    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+   881	    exact ht.2
+   882	  · intro t ht
+   883	    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+   884	    exact (hdich t ht.1).resolve_left ht.2
+   885	  · exact hsumM
+   886
+   887	theorem vertsOf_tetFaces_eq (T : Finset V) (hT4 : T.card = 4) : vertsOf (tetFaces T) = T := by
+   888	  ext x
+   889	  constructor
+   890	  · intro hx
+   891	    rw [mem_vertsOf] at hx
+   892	    rcases hx with ⟨f, hf, hxf⟩
+   893	    exact (Finset.mem_powersetCard.mp hf).1 hxf
+   894	  · intro hx
+   895	    rw [mem_vertsOf]
+   896	    have herasecard : (T.erase x).card = 3 := by
+   897	      rw [Finset.card_erase_of_mem hx, hT4]
+   898	    have hpos : 0 < (T.erase x).card := by omega
+   899	    rcases Finset.card_pos.mp hpos with ⟨y, hy⟩
+   900	    have hyne : y ≠ x := (Finset.mem_erase.mp hy).1
+   901	    have hyT : y ∈ T := (Finset.mem_erase.mp hy).2
+   902	    refine ⟨T.erase y, ?_, ?_⟩
+   903	    · refine Finset.mem_powersetCard.mpr ⟨?_, ?_⟩
+   904	      · intro z hz
+   905	        exact Finset.mem_of_mem_erase hz
+   906	      · rw [Finset.card_erase_of_mem hyT, hT4]
+   907	    · exact Finset.mem_erase.mpr ⟨Ne.symm hyne, hx⟩
+   908
+   909	theorem degree3_reassemble_from_cut_split (σ : Finset (Finset V)) (X M : Chain V) {v : V} {W : C2 σ} {c : ℤ}
+   910	    (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card) (hv : v ∈ vertsOf σ)
+   911	    (h3 : (linkVerts σ v).card = 3)
+   912	    (hW : bd2 σ W = gammaChain σ (linkVerts σ v))
+   913	    (hσL : IsSphere2 (insert (linkVerts σ v) (cutSet σ W)))
+   914	    (hσR : IsSphere2 (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))))
+   915	    (hUL : UnitOn (cappedCutLeft σ W X (linkVerts σ v) c) (insert (linkVerts σ v) (cutSet σ W)))
+   916	    (hXLc : bdry (cappedCutLeft σ W X (linkVerts σ v) c) = 0)
+   917	    (hUR : UnitOn (cappedCutRight σ W X (linkVerts σ v) c) (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))))
+   918	    (hXRc : bdry (cappedCutRight σ W X (linkVerts σ v) c) = 0)
+   919	    (hML : bdry (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))) =
+   920	      cappedCutLeft σ W X (linkVerts σ v) c)
+   921	    (hMR : bdry (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))) =
+   922	      cappedCutRight σ W X (linkVerts σ v) c)
+   923	    (hTL : IsTaut (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
+   924	    (hTR : IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
+   925	    (hSuppL : ∀ t ∈ (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))).support,
+   926	      t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))
+   927	    (hSuppR : ∀ t ∈ (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))).support,
+   928	      t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))))
+   929	    (hMsum : M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))) +
+   930	      M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))) = M)
+   931	    (hS : SimplicialChain M) :
+   932	    ∃ (σ' : Finset (Finset V)) (X' M' : Chain V),
+   933	      IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
+   934	      SimplicialChain M' ∧ nrm M' < nrm M ∧
+   935	      (IsBall M'.support σ' → IsBall M.support σ) := by
+   936	  classical
+   937	  let γ : Finset V := linkVerts σ v
+   938	  let A : Finset V := vertsOf (insert γ (cutSet σ W))
+   939	  let ML : Chain V := M.filter (fun t => t ⊆ A)
+   940	  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
+   941	  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv h3 hW
+   942	  rcases hsplit with hcase | hcase
+   943	  · rcases hcase with ⟨hstar, hglue⟩
+   944	    refine ⟨insert γ (cutSet σ (W + fun _ => 1)), cappedCutRight σ W X γ c, MR, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+   945	    · dsimp [γ]
+   946	      exact hσR
+   947	    · dsimp [γ]
+   948	      exact hUR
+   949	    · dsimp [γ]
+   950	      exact hXRc
+   951	    · dsimp [MR, A, γ]
+   952	      exact hMR
+   953	    · dsimp [MR, A, γ]
+   954	      exact hTR
+   955	    · intro t
+   956	      dsimp [MR, A, γ]
+   957	      rw [Finsupp.filter_apply]
+   958	      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))
+   959	      · rw [if_pos ht]
+   960	        exact hS t
+   961	      · rw [if_neg ht]
+   962	        exact Or.inr (Or.inl rfl)
+   963	    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+   964	      have hULtet : UnitOn (cappedCutLeft σ W X γ c) (tetFaces (starTet σ v)) := by
+   965	        dsimp [γ]
+   966	        rw [← hstar]
+   967	        exact hUL
+   968	      have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet σ v := by
+   969	        intro t ht
+   970	        have htA : t ⊆ vertsOf (insert γ (cutSet σ W)) := hSuppL t (by simpa only [ML, A] using ht)
+   971	        dsimp [γ] at htA
+   972	        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+   973	        exact htA
+   974	      have hMLsupp : ML.support = {starTet σ v} := by
+   975	        exact star_filter_support_singleton ML (cappedCutLeft σ W X γ c) (starTet σ v) hT4 hULtet (by simpa only [ML, A, γ] using hML) (by simpa only [ML, A, γ] using hTL) hSuppLT
+   976	      have hlt : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
+   977	        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+   978	      simpa only [MR] using hlt
+   979	    · intro hball
+   980	      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+   981	      have hULtet : UnitOn (cappedCutLeft σ W X γ c) (tetFaces (starTet σ v)) := by
+   982	        dsimp [γ]
+   983	        rw [← hstar]
+   984	        exact hUL
+   985	      have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet σ v := by
+   986	        intro t ht
+   987	        have htA : t ⊆ vertsOf (insert γ (cutSet σ W)) := hSuppL t (by simpa only [ML, A] using ht)
+   988	        dsimp [γ] at htA
+   989	        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+   990	        exact htA
+   991	      have hMLsupp : ML.support = {starTet σ v} := by
+   992	        exact star_filter_support_singleton ML (cappedCutLeft σ W X γ c) (starTet σ v) hT4 hULtet (by simpa only [ML, A, γ] using hML) (by simpa only [ML, A, γ] using hTL) hSuppLT
+   993	      have hreasm : IsBall (M.filter (fun t => ¬ t ⊆ A)).support (insert γ (cutSet σ (W + fun _ => 1))) → IsBall M.support σ :=
+   994	        ball_reassemble_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp hglue
+   995	      exact hreasm (by simpa only [MR] using hball)
+   996	  · rcases hcase with ⟨hstar, hglue⟩
+   997	    refine ⟨insert γ (cutSet σ W), cappedCutLeft σ W X γ c, ML, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+   998	    · dsimp [γ]
+   999	      exact hσL
+  1000	    · dsimp [γ]
+  1001	      exact hUL
+  1002	    · dsimp [γ]
+  1003	      exact hXLc
+  1004	    · dsimp [ML, A, γ]
+  1005	      exact hML
+  1006	    · dsimp [ML, A, γ]
+  1007	      exact hTL
+  1008	    · intro t
+  1009	      dsimp [ML, A, γ]
+  1010	      rw [Finsupp.filter_apply]
+  1011	      by_cases ht : t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))
+  1012	      · rw [if_pos ht]
+  1013	        exact hS t
+  1014	      · rw [if_neg ht]
+  1015	        exact Or.inr (Or.inl rfl)
+  1016	    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+  1017	      have hURtet : UnitOn (cappedCutRight σ W X γ c) (tetFaces (starTet σ v)) := by
+  1018	        dsimp [γ]
+  1019	        rw [← hstar]
+  1020	        exact hUR
+  1021	      have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet σ v := by
+  1022	        intro t ht
+  1023	        have htA : t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) := hSuppR t (by simpa only [MR, A] using ht)
+  1024	        dsimp [γ] at htA
+  1025	        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+  1026	        exact htA
+  1027	      have hMRsupp : MR.support = {starTet σ v} := by
+  1028	        exact star_filter_support_singleton MR (cappedCutRight σ W X γ c) (starTet σ v) hT4 hURtet (by simpa only [MR, A, γ] using hMR) (by simpa only [MR, A, γ] using hTR) hSuppRT
+  1029	      have hlt : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
+  1030	        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+  1031	      have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+  1032	        dsimp [ML]
+  1033	        ext t
+  1034	        rw [Finsupp.filter_apply, Finsupp.filter_apply]
+  1035	        by_cases ht : t ⊆ A
+  1036	        · rw [if_pos ht, if_pos]
+  1037	          intro hneg
+  1038	          exact hneg ht
+  1039	        · rw [if_neg ht, if_neg]
+  1040	          intro hnn
+  1041	          exact hnn ht
+  1042	      rw [hML_eq]
+  1043	      exact hlt
+  1044	    · intro hball
+  1045	      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+  1046	      have hURtet : UnitOn (cappedCutRight σ W X γ c) (tetFaces (starTet σ v)) := by
+  1047	        dsimp [γ]
+  1048	        rw [← hstar]
+  1049	        exact hUR
+  1050	      have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet σ v := by
+  1051	        intro t ht
+  1052	        have htA : t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) := hSuppR t (by simpa only [MR, A] using ht)
+  1053	        dsimp [γ] at htA
+  1054	        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+  1055	        exact htA
+  1056	      have hMRsupp : MR.support = {starTet σ v} := by
+  1057	        exact star_filter_support_singleton MR (cappedCutRight σ W X γ c) (starTet σ v) hT4 hURtet (by simpa only [MR, A, γ] using hMR) (by simpa only [MR, A, γ] using hTR) hSuppRT
+  1058	      have hreasm : IsBall (M.filter (fun t => ¬ (¬ t ⊆ A))).support (insert γ (cutSet σ W)) → IsBall M.support σ :=
+  1059	        ball_reassemble_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp hglue
+  1060	      apply hreasm
+  1061	      have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+  1062	        dsimp [ML]
+  1063	        ext t
+  1064	        rw [Finsupp.filter_apply, Finsupp.filter_apply]
+  1065	        by_cases ht : t ⊆ A
+  1066	        · rw [if_pos ht, if_pos]
+  1067	          intro hneg
+  1068	          exact hneg ht
+  1069	        · rw [if_neg ht, if_neg]
+  1070	          intro hnn
+  1071	          exact hnn ht
+  1072	      rw [← hML_eq]
+  1073	      exact hball
+  1074
+  1075
+  1076	/-- M26 hole `deg3_split`: a 2-sphere with a degree-3 vertex (> 4 vertices) splits,
+  1077	along the link triangle, into a strictly smaller taut filling whose ball reassembles
+  1078	to the original (connected-sum reduction). -/
+  1079	theorem aleph_deg3_split (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+  1080	    (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+  1081	    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex σ) :
+  1082	    ∃ (σ' : Finset (Finset V)) (X' M' : Chain V),
+  1083	      IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
+  1084	      SimplicialChain M' ∧ nrm M' < nrm M ∧
+  1085	      (IsBall M'.support σ' → IsBall M.support σ) := by
+  1086	  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ := degree3_cut_setup σ hσ hbig hd3
+  1087	  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ := capped_cut_splits_unit σ X hσ hγ3 hγe hγσ hW hU hXc
+  1088	  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ := taut_splits_for_capped_cut σ X M hσ hσL hσR hγ3 hγe hW hUL hXLc hUR hXRc hXsum hMX hT
+  1089	  exact degree3_reassemble_from_cut_split σ X M hσ hbig hv hγ3 hW hσL hσR hUL hXLc hUR hXRc hML hMR hTL hTR hSuppL hSuppR hMsum hS
+  1090
+  1091
+  1092	noncomputable def alephChosenFiber {V : Type*} [LinearOrder V] {M : Chain V} {σ : Finset (Finset V)}
+  1093	    (f : {α // α ∈ σ} → {t // t ∈ M.support}) (τ : {t // t ∈ M.support}) :
+  1094	    Finset {α // α ∈ σ} :=
+  1095	  (Finset.univ : Finset {α // α ∈ σ}).filter (fun α => f α = τ)
+  1096
+  1097	noncomputable def alephChosenFaceFiber {V : Type*} [LinearOrder V] {M : Chain V} {σ : Finset (Finset V)}
+  1098	    (f : {α // α ∈ σ} → {t // t ∈ M.support}) (τ : {t // t ∈ M.support}) :
+  1099	    Finset (Finset V) :=
+  1100	  (alephChosenFiber f τ).image (fun α : {α // α ∈ σ} => (α : Finset V))
+  1101
+  1102	open Finset in
+  1103	theorem aleph_chosenFaceFiber_subset_sharedFaces {M : Chain V} {σ : Finset (Finset V)}
+  1104	    (hU : UnitOn (bdry M) σ)
+  1105	    (f : {α // α ∈ σ} → {t // t ∈ M.support})
+  1106	    (hfspec : ∀ α : {α // α ∈ σ}, ProperBoundaryFaceTet M (α : Finset V) ((f α) : Finset V))
+  1107	    (τ : {t // t ∈ M.support}) :
+  1108	    alephChosenFaceFiber f τ ⊆ sharedFaces M (τ : Finset V) := by
+  1109	  unfold alephChosenFaceFiber alephChosenFiber
+  1110	  intro s hs
+  1111	  rw [mem_image] at hs
+  1112	  rcases hs with ⟨α, hα, rfl⟩
+  1113	  rw [mem_filter] at hα
+  1114	  rcases hα with ⟨hαuniv, hαeq⟩
+  1115	  rw [sharedFaces]
+  1116	  rw [mem_inter]
+  1117	  constructor
+  1118	  · have hproper := hfspec α
+  1119	    rw [hαeq] at hproper
+  1120	    exact hproper.2.1
+
+codex
+The only `.sphere` consumer in the tree is exactly the chain in `Ball.lean:91-117`. The constructors are concentrated in `Theorem2Aleph.lean`’s degree-3 star glue helper, so the field deletion has a small mechanical blast radius plus comment/doc cleanup.
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Complex2.lean | sed -n '500,630p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Separation.lean | sed -n '1010,1050p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   500	      (show 0 < (({a, b, c, d} : Finset V) \ e).card by omega)
+   501	    obtain ⟨hzT, hze⟩ := Finset.mem_sdiff.mp hz
+   502	    refine ⟨insert z e, (tetra_mem hab hac had hbc hbd hcd _).mpr
+   503	      ⟨Finset.insert_subset hzT hsub, ?_⟩,
+   504	      Finset.subset_insert z e, hcard⟩
+   505	    rw [Finset.card_insert_of_notMem hze, hcard]
+   506
+   507	/-- Faces containing a fixed edge of the tetrahedron boundary: exactly
+   508	the two completions by a vertex outside the edge. -/
+   509	private lemma tetra_closed :
+   510	    ∀ e ∈ edgesOf (tetraBdry a b c d), edgeDeg (tetraBdry a b c d) e = 2 := by
+   511	  intro e he
+   512	  rw [tetra_edges hab hac had hbc hbd hcd, Finset.mem_powersetCard] at he
+   513	  obtain ⟨hsub, hcard⟩ := he
+   514	  have hfilter : (tetraBdry a b c d).filter (fun f => e ⊆ f)
+   515	      = (({a, b, c, d} : Finset V) \ e).image (fun z => insert z e) := by
+   516	    ext f
+   517	    rw [Finset.mem_filter, Finset.mem_image]
+   518	    constructor
+   519	    · rintro ⟨hf, hef⟩
+   520	      obtain ⟨hfT, hf3⟩ := (tetra_mem hab hac had hbc hbd hcd f).mp hf
+   521	      have hd : (f \ e).card = 1 := by
+   522	        rw [Finset.card_sdiff_of_subset hef, hf3, hcard]
+   523	      obtain ⟨z, hz⟩ := Finset.card_eq_one.mp hd
+   524	      have hzf : z ∈ f \ e := by rw [hz]; exact Finset.mem_singleton_self z
+   525	      obtain ⟨hzf', hze⟩ := Finset.mem_sdiff.mp hzf
+   526	      refine ⟨z, Finset.mem_sdiff.mpr ⟨hfT hzf', hze⟩, ?_⟩
+   527	      have : f = e ∪ (f \ e) := by
+   528	        rw [Finset.union_sdiff_of_subset hef]
+   529	      rw [this, hz]
+   530	      ext x
+   531	      simp only [Finset.mem_union, Finset.mem_singleton, Finset.mem_insert]
+   532	      tauto
+   533	    · rintro ⟨z, hz, rfl⟩
+   534	      obtain ⟨hzT, hze⟩ := Finset.mem_sdiff.mp hz
+   535	      refine ⟨(tetra_mem hab hac had hbc hbd hcd _).mpr
+   536	        ⟨Finset.insert_subset hzT hsub, ?_⟩, Finset.subset_insert z e⟩
+   537	      rw [Finset.card_insert_of_notMem hze, hcard]
+   538	  rw [edgeDeg, hfilter, Finset.card_image_of_injOn, Finset.card_sdiff_of_subset hsub,
+   539	    tetra_T_card hab hac had hbc hbd hcd, hcard]
+   540	  intro z₁ h₁ z₂ h₂ hins
+   541	  have hins' : insert z₁ e = insert z₂ e := hins
+   542	  have hz₁ : z₁ ∈ insert z₂ e := hins' ▸ Finset.mem_insert_self z₁ e
+   543	  rcases Finset.mem_insert.mp hz₁ with h | h
+   544	  · exact h
+   545	  · exact absurd h (Finset.mem_sdiff.mp h₁).2
+   546
+   547	/-- Validation instance: the boundary of the tetrahedron is a
+   548	combinatorial 2-sphere. -/
+   549	theorem isSphere2_tetraBdry :
+   550	    IsSphere2 (tetraBdry a b c d) := by
+   551	  have hmem := tetra_mem hab hac had hbc hbd hcd
+   552	  have hverts := tetra_verts hab hac had hbc hbd hcd
+   553	  have hT := tetra_T_card hab hac had hbc hbd hcd
+   554	  constructor
+   555	  · exact fun f hf => ((hmem f).mp hf).2
+   556	  · exact tetra_closed hab hac had hbc hbd hcd
+   557	  · -- links: every pair of neighbours of v spans a face with v
+   558	    intro v hv x hx y hy
+   559	    rw [hverts] at hv
+   560	    have hmemT : ∀ w, w ∈ linkVerts (tetraBdry a b c d) v →
+   561	        w ∈ ({a, b, c, d} : Finset V) ∧ w ≠ v := by
+   562	      intro w hw
+   563	      have hwv := Finset.ne_of_mem_erase hw
+   564	      have hw' := Finset.mem_of_mem_erase hw
+   565	      rw [mem_vertsOf] at hw'
+   566	      obtain ⟨f, hf, hwf⟩ := hw'
+   567	      have hfσ := Finset.mem_of_mem_filter f hf
+   568	      exact ⟨hverts ▸ mem_vertsOf.mpr ⟨f, hfσ, hwf⟩, hwv⟩
+   569	    obtain ⟨hxT, hxv⟩ := hmemT x hx
+   570	    obtain ⟨hyT, hyv⟩ := hmemT y hy
+   571	    by_cases hxy : x = y
+   572	    · subst hxy; exact ⟨SimpleGraph.Walk.nil⟩
+   573	    refine SimpleGraph.Adj.reachable ⟨hxy, ?_⟩
+   574	    refine (hmem _).mpr ⟨?_, Finset.card_eq_three.mpr
+   575	      ⟨v, x, y, Ne.symm hxv, Ne.symm hyv, hxy, rfl⟩⟩
+   576	    intro u hu
+   577	    rcases Finset.mem_insert.mp hu with rfl | hu
+   578	    · exact hv
+   579	    · rcases Finset.mem_insert.mp hu with rfl | hu
+   580	      · exact hxT
+   581	      · rw [Finset.mem_singleton] at hu
+   582	        exact hu ▸ hyT
+   583	  · -- the 1-skeleton is complete on the four vertices
+   584	    intro x hx y hy
+   585	    rw [hverts] at hx hy
+   586	    by_cases hxy : x = y
+   587	    · subst hxy; exact ⟨SimpleGraph.Walk.nil⟩
+   588	    refine SimpleGraph.Adj.reachable ⟨hxy, ?_⟩
+   589	    rw [tetra_edges hab hac had hbc hbd hcd, Finset.mem_powersetCard]
+   590	    refine ⟨?_, Finset.card_eq_two.mpr ⟨x, y, hxy, rfl⟩⟩
+   591	    intro u hu
+   592	    rcases Finset.mem_insert.mp hu with rfl | hu
+   593	    · exact hx
+   594	    · rw [Finset.mem_singleton] at hu
+   595	      exact hu ▸ hy
+   596	  · -- Euler: 4 + 4 = 6 + 2
+   597	    have hS : tetraBdry a b c d = ({a, b, c, d} : Finset V).powersetCard 3 := by
+   598	      ext f
+   599	      rw [hmem f, Finset.mem_powersetCard]
+   600	    rw [hverts, tetra_edges hab hac had hbc hbd hcd, hS,
+   601	      Finset.card_powersetCard, Finset.card_powersetCard, hT]
+   602	    rfl
+   603
+   604	end Tetra
+   605
+   606	/-- The boundary of any 4-element set (its card-3 subsets) is a combinatorial
+   607	2-sphere.  This is the base-case sphere of the Theorem 2 induction and the
+   608	initial boundary of a one-tet ball. -/
+   609	theorem isSphere2_powersetCard3 {t : Finset V} (ht : t.card = 4) :
+   610	    IsSphere2 (t.powersetCard 3) := by
+   611	  obtain ⟨a, b, c, d, hab, hac, had, hbc, hbd, hcd, rfl⟩ := Finset.card_eq_four.mp ht
+   612	  have heq : ({a, b, c, d} : Finset V).powersetCard 3 = tetraBdry a b c d := by
+   613	    ext f
+   614	    rw [Finset.mem_powersetCard, tetra_mem hab hac had hbc hbd hcd f]
+   615	  rw [heq]
+   616	  exact isSphere2_tetraBdry hab hac had hbc hbd hcd
+   617
+   618	end Taut
+
+ succeeded in 0ms:
+  1010	  have hle1 := chi_le_two hcs1 hne1
+  1011	  have hle2 := chi_le_two hcs2 hne2
+  1012	  have hchoose : Nat.choose 3 2 = 3 := by decide
+  1013	  have hVadd := Finset.card_union_add_card_inter
+  1014	    (vertsOf (insert γ (cutSet σ W))) (vertsOf (insert γ (cutSet σ (W + fun _ => 1))))
+  1015	  rw [vertsOf_cut_union hγ3 hγe, vertsOf_cut_inter h hW, hγ3] at hVadd
+  1016	  have hEadd := Finset.card_union_add_card_inter
+  1017	    (edgesOf (insert γ (cutSet σ W))) (edgesOf (insert γ (cutSet σ (W + fun _ => 1))))
+  1018	  rw [edgesOf_cut_union hγe, edgesOf_cut_inter h hγe hW, Finset.card_powersetCard, hγ3,
+  1019	    hchoose] at hEadd
+  1020	  have hFadd := card_faces_cut_add (W := W) hγσ
+  1021	  have he := h.euler
+  1022	  omega
+  1023
+  1024	/-- **A capped side of the cut is a sphere.** All five `IsSphere2` fields. -/
+  1025	theorem isSphere2_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : Finset V}
+  1026	    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ)
+  1027	    (hW : bd2 σ W = gammaChain σ γ) : IsSphere2 (insert γ (cutSet σ W)) :=
+  1028	  ⟨pure_cut h hγ3, closed_cut h hγ3 hγe hγσ hW, linkConn_cut h hγ3 hγe hW,
+  1029	    conn_cut h hγ3 hγe hW, euler_cut h hγ3 hγe hγσ hW⟩
+  1030
+  1031	/-- **The separation theorem (sphere halves).** A non-face triangle `γ` of a
+  1032	combinatorial 2-sphere splits it into two sides, each capping with `γ` to a
+  1033	combinatorial 2-sphere. -/
+  1034	theorem separates {σ : Finset (Finset V)} (h : IsSphere2 σ) {γ : Finset V}
+  1035	    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ) (hγσ : γ ∉ σ) :
+  1036	    ∃ σ₁ σ₂ : Finset (Finset V),
+  1037	      IsSphere2 (insert γ σ₁) ∧ IsSphere2 (insert γ σ₂) := by
+  1038	  obtain ⟨W, hW⟩ := exists_cut h hγ3 hγe
+  1039	  exact ⟨cutSet σ W, cutSet σ (W + fun _ => 1),
+  1040	    isSphere2_cut h hγ3 hγe hγσ hW,
+  1041	    isSphere2_cut h hγ3 hγe hγσ (bd2_W_add_one h hW)⟩
+  1042
+  1043	end Taut
+
+exec
+/bin/zsh -lc 'rg -n "structure IsSphere2|class IsSphere2|def IsSphere2|closed|linkConn|euler|connected|orient" lean/Taut/Complex2.lean' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+11:triangulation of S²": pure, closed pseudomanifold (every edge in exactly
+12:two faces), connected vertex links, connected, Euler characteristic 2.
+15:cycles" is derivable (closed pm ⟹ links 2-regular; 2-regular and
+16:connected ⟹ one cycle) rather than assumed.
+92:/-- A combinatorial closed surface: pure 2-dimensional, every edge in exactly
+93:two faces, connected vertex links, connected. This is `IsSphere2` minus the
+98:  closed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2
+99:  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+102:/-- A combinatorial 2-sphere: a closed surface with Euler characteristic 2.
+105:structure IsSphere2 (σ : Finset (Finset V)) : Prop where
+107:  closed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2
+108:  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+110:  euler : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2
+112:/-- Forget the Euler constraint: every sphere is a closed surface. -/
+113:def IsSphere2.toClosedSurface {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+115:  ⟨h.pure, h.closed, h.linkConn, h.conn⟩
+142:    h.closed
+155:  have h2 := h.euler
+162:  have h2 := h.euler
+195:  have h2 := h.closed e he
+308:  exact h.closed _ hedge
+509:private lemma tetra_closed :
+556:  · exact tetra_closed hab hac had hbc hbd hcd
+
+codex
+One important nuance: the current `Ball.lean` comments still define sticker balls as maintaining a ball/sphere after every step. Those comments should be edited with the structural change, because after dropping `sphere`, `IsBall` is a shelling/sticker certificate, not a proof that every intermediate boundary is already certified as `IsSphere2`.
+codex
+**Q1**
+
+Sound to drop `GlueStep.sphere`. The target theorem is now `FreelyShellable M.support σ`; the final boundary `σ` is supplied with `hσ : IsSphere2 σ` by `theorem3_core` [Theorem23.lean:118](/Users/doyle/Dropbox/taut/lean/Taut/Theorem23.lean:118). No induction step needs intermediate boundary spherehood.
+
+Exact edits:
+
+- [Ball.lean:56-60](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:56): delete field
+  ```lean
+  sphere : IsSphere2 B'
+  ```
+  and update the docstring at [45-55](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:45). `GlueStep` becomes just `card4`, `shared`, `newBdry`.
+
+- [Ball.lean:91-117](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:91): delete or move out of the critical file:
+  `ShellFrom.isSphere2`, `IsShelling.isSphere2`, `IsBall.isSphere2`.
+  The only `.sphere` consumer is [Ball.lean:102](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:102). After the field is removed these lemmas are no longer derivable from the certificate alone.
+
+- [Ball.lean:139-154](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:139): `ShellFrom_snoc` and `IsShelling_snoc` are unchanged except they now carry weaker `GlueStep`.
+
+- [Ball.lean:158-169](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:158): `IsBall.insert_of_glueStep` unchanged.
+
+- [Ball.lean:174-205](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:174): `RelShelling` and `IsBall.bridge_of_relShelling` unchanged. They use `GlueStep` structurally, not `.sphere`.
+
+- [Ball.lean:211-225](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:211): `isBall_singleton` and `freelyShellable_singleton` unaffected. Also `base_free` [Theorem3.lean:64-74](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3.lean:64) is unaffected.
+
+- [Theorem2Aleph.lean:470,472](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:470): statement type unchanged.
+
+- [Theorem2Aleph.lean:576-578](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:576): constructor loses final `hσ`:
+  ```lean
+  refine ⟨hTcard, ?_, ?_⟩
+  ```
+  instead of `⟨hTcard, ?_, ?_, hσ⟩`.
+
+- [Theorem2Aleph.lean:660,668](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:660): uses of `glue_of_star` unchanged.
+
+- [Theorem2Aleph.lean:753-773](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:753): `ball_reassemble_of_filter_support_singleton` unchanged.
+
+- [Theorem2Aleph.lean:941-995](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:941) and [996-1073](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:996): yes, `aleph_deg3_split` reassembly builds/uses `GlueStep` through `degree3_cut_star_side_glue`; only the constructor arity changes.
+
+Also update stale module comments in [Ball.lean:17-19](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:17) and [31-35](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:31), because intermediate `IsSphere2` is no longer baked into the certificate.
+
+**Q2**
+
+Deferred target should be separate, not on the theorem path:
+
+```lean
+theorem glueStep_preserves_isSphere2
+    {t : Finset V} {B B' : Finset (Finset V)}
+    (hg : GlueStep t B B') :
+    IsSphere2 B → IsSphere2 B' := by
+  ...
+
+theorem ShellFrom.isSphere2_of_seed {l : List (Finset V)}
+    {B₀ B : Finset (Finset V)}
+    (h : ShellFrom B₀ l B) :
+    IsSphere2 B₀ → IsSphere2 B := by
+  ...
+```
+
+Do not use surface classification in Lean here. `Complex2.lean` defines `IsSphere2` directly by fields `pure`, `closed`, `linkConn`, `conn`, `euler` [Complex2.lean:105-110](/Users/doyle/Dropbox/taut/lean/Taut/Complex2.lean:105). There is no available classification theorem `closed ∧ connected ∧ orientable ∧ χ = 2 → IsSphere2`. The clean Lean route is fieldwise preservation, exactly like `isSphere2_cut` packages all five fields in [Separation.lean:1024-1029](/Users/doyle/Dropbox/taut/lean/Taut/Separation.lean:1024). `linkConn` remains the only serious sublemma. Mark this DEFERRED; do not axiomatize or sorry it.
+
+**Q3**
+
+L1 remains the right abstraction. [Theorem3.lean:30-34](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3.lean:30) is correct: old targets use `l ++ [t]`; target `t` needs `hstart_t : ShellFrom (tetFaces t) l B'`. This `hstart_t` is not derivable from `FreelyShellable τ B` plus `GlueStep t B B'` alone. It must be discharged from the attachment geometry by a pure combinatorial “transport shelling across a fixed symmetric-difference ambient boundary” lemma.
+
+For L2, define `FreelyShellable.bridge` as: free `τ₁` with boundary `B₁`, bridge `t`, free `τ₂`, disjoint tets, and boundary/facet almost-disjointness saying every transported glue step for `τ₂` has the same shared count after adding the ambient part from `τ₁ ∪ {t}`. Concatenation order:
+
+```lean
+(shelling of τ₁ starting at requested old target) ++ [t] ++ transported shelling of τ₂
+```
+
+For requested target in `τ₂`, use its free shelling first on the `τ₂` side, then transport it after `τ₁ ++ [t]`. The key Aleph lemma is that if `tetFaces u` is disjoint from the ambient boundary piece `K`, then both
+`(tetFaces u ∩ (B △ K)).card = (tetFaces u ∩ B).card`
+and the new boundary commutes with `△ K`.
+
+`deg3_step` is L1, not L2. Existing `aleph_deg3_split` already proves one capped side is the star tet and reassembles by `ball_reassemble_of_filter_support_singleton` [Theorem2Aleph.lean:941-995](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:941), [996-1073](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:996). Replace the final `IsBall` reassembly with `FreelyShellable.insert_of_glueStep`, plus the new pure `hstart_t` lemma for the star footprint.
+
+`prime_step` case 1 is also L1: stick the flipped eligible tet back; final boundary is `σ`, already `hσ`.
+
+`prime_step` case 2 is L2: bridge through the eligible pair, consuming M25b `aleph_disjoint_eligible_pair` and the M23 edge-join split-as-fillings. No sphere preservation belongs in this bridge.
+
+**Q4**
+
+Good AlephProver targets, in order:
+
+1. Mechanical `GlueStep.sphere` deletion and constructor arity repair.
+2. L1 `hstart_t` transport lemma.
+3. L2 `FreelyShellable.bridge`.
+4. `deg3_step` using existing `aleph_deg3_split` data.
+5. `prime_step` case 1.
+6. `prime_step` case 2.
+
+Riskiest is L2 / prime case 2, because the almost-disjointness interface has to match M25b plus the M23 edge-join split exactly. Minimize edits to verified Aleph proofs: leave `Theorem2Aleph.lean` proofs intact except the `GlueStep` constructor arity, and build the free-shelling reassembly wrappers in `Theorem3.lean` or a small new file.
+
+APPROVED: Drop `GlueStep.sphere`; keep boundary-sphere preservation deferred and finish the theorem via pure `FreelyShellable` reassembly.
+tokens used
+66,500
+**Q1**
+
+Sound to drop `GlueStep.sphere`. The target theorem is now `FreelyShellable M.support σ`; the final boundary `σ` is supplied with `hσ : IsSphere2 σ` by `theorem3_core` [Theorem23.lean:118](/Users/doyle/Dropbox/taut/lean/Taut/Theorem23.lean:118). No induction step needs intermediate boundary spherehood.
+
+Exact edits:
+
+- [Ball.lean:56-60](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:56): delete field
+  ```lean
+  sphere : IsSphere2 B'
+  ```
+  and update the docstring at [45-55](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:45). `GlueStep` becomes just `card4`, `shared`, `newBdry`.
+
+- [Ball.lean:91-117](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:91): delete or move out of the critical file:
+  `ShellFrom.isSphere2`, `IsShelling.isSphere2`, `IsBall.isSphere2`.
+  The only `.sphere` consumer is [Ball.lean:102](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:102). After the field is removed these lemmas are no longer derivable from the certificate alone.
+
+- [Ball.lean:139-154](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:139): `ShellFrom_snoc` and `IsShelling_snoc` are unchanged except they now carry weaker `GlueStep`.
+
+- [Ball.lean:158-169](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:158): `IsBall.insert_of_glueStep` unchanged.
+
+- [Ball.lean:174-205](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:174): `RelShelling` and `IsBall.bridge_of_relShelling` unchanged. They use `GlueStep` structurally, not `.sphere`.
+
+- [Ball.lean:211-225](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:211): `isBall_singleton` and `freelyShellable_singleton` unaffected. Also `base_free` [Theorem3.lean:64-74](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3.lean:64) is unaffected.
+
+- [Theorem2Aleph.lean:470,472](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:470): statement type unchanged.
+
+- [Theorem2Aleph.lean:576-578](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:576): constructor loses final `hσ`:
+  ```lean
+  refine ⟨hTcard, ?_, ?_⟩
+  ```
+  instead of `⟨hTcard, ?_, ?_, hσ⟩`.
+
+- [Theorem2Aleph.lean:660,668](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:660): uses of `glue_of_star` unchanged.
+
+- [Theorem2Aleph.lean:753-773](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:753): `ball_reassemble_of_filter_support_singleton` unchanged.
+
+- [Theorem2Aleph.lean:941-995](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:941) and [996-1073](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:996): yes, `aleph_deg3_split` reassembly builds/uses `GlueStep` through `degree3_cut_star_side_glue`; only the constructor arity changes.
+
+Also update stale module comments in [Ball.lean:17-19](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:17) and [31-35](/Users/doyle/Dropbox/taut/lean/Taut/Ball.lean:31), because intermediate `IsSphere2` is no longer baked into the certificate.
+
+**Q2**
+
+Deferred target should be separate, not on the theorem path:
+
+```lean
+theorem glueStep_preserves_isSphere2
+    {t : Finset V} {B B' : Finset (Finset V)}
+    (hg : GlueStep t B B') :
+    IsSphere2 B → IsSphere2 B' := by
+  ...
+
+theorem ShellFrom.isSphere2_of_seed {l : List (Finset V)}
+    {B₀ B : Finset (Finset V)}
+    (h : ShellFrom B₀ l B) :
+    IsSphere2 B₀ → IsSphere2 B := by
+  ...
+```
+
+Do not use surface classification in Lean here. `Complex2.lean` defines `IsSphere2` directly by fields `pure`, `closed`, `linkConn`, `conn`, `euler` [Complex2.lean:105-110](/Users/doyle/Dropbox/taut/lean/Taut/Complex2.lean:105). There is no available classification theorem `closed ∧ connected ∧ orientable ∧ χ = 2 → IsSphere2`. The clean Lean route is fieldwise preservation, exactly like `isSphere2_cut` packages all five fields in [Separation.lean:1024-1029](/Users/doyle/Dropbox/taut/lean/Taut/Separation.lean:1024). `linkConn` remains the only serious sublemma. Mark this DEFERRED; do not axiomatize or sorry it.
+
+**Q3**
+
+L1 remains the right abstraction. [Theorem3.lean:30-34](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3.lean:30) is correct: old targets use `l ++ [t]`; target `t` needs `hstart_t : ShellFrom (tetFaces t) l B'`. This `hstart_t` is not derivable from `FreelyShellable τ B` plus `GlueStep t B B'` alone. It must be discharged from the attachment geometry by a pure combinatorial “transport shelling across a fixed symmetric-difference ambient boundary” lemma.
+
+For L2, define `FreelyShellable.bridge` as: free `τ₁` with boundary `B₁`, bridge `t`, free `τ₂`, disjoint tets, and boundary/facet almost-disjointness saying every transported glue step for `τ₂` has the same shared count after adding the ambient part from `τ₁ ∪ {t}`. Concatenation order:
+
+```lean
+(shelling of τ₁ starting at requested old target) ++ [t] ++ transported shelling of τ₂
+```
+
+For requested target in `τ₂`, use its free shelling first on the `τ₂` side, then transport it after `τ₁ ++ [t]`. The key Aleph lemma is that if `tetFaces u` is disjoint from the ambient boundary piece `K`, then both
+`(tetFaces u ∩ (B △ K)).card = (tetFaces u ∩ B).card`
+and the new boundary commutes with `△ K`.
+
+`deg3_step` is L1, not L2. Existing `aleph_deg3_split` already proves one capped side is the star tet and reassembles by `ball_reassemble_of_filter_support_singleton` [Theorem2Aleph.lean:941-995](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:941), [996-1073](/Users/doyle/Dropbox/taut/lean/Taut/Theorem2Aleph.lean:996). Replace the final `IsBall` reassembly with `FreelyShellable.insert_of_glueStep`, plus the new pure `hstart_t` lemma for the star footprint.
+
+`prime_step` case 1 is also L1: stick the flipped eligible tet back; final boundary is `σ`, already `hσ`.
+
+`prime_step` case 2 is L2: bridge through the eligible pair, consuming M25b `aleph_disjoint_eligible_pair` and the M23 edge-join split-as-fillings. No sphere preservation belongs in this bridge.
+
+**Q4**
+
+Good AlephProver targets, in order:
+
+1. Mechanical `GlueStep.sphere` deletion and constructor arity repair.
+2. L1 `hstart_t` transport lemma.
+3. L2 `FreelyShellable.bridge`.
+4. `deg3_step` using existing `aleph_deg3_split` data.
+5. `prime_step` case 1.
+6. `prime_step` case 2.
+
+Riskiest is L2 / prime case 2, because the almost-disjointness interface has to match M25b plus the M23 edge-join split exactly. Minimize edits to verified Aleph proofs: leave `Theorem2Aleph.lean` proofs intact except the `GlueStep` constructor arity, and build the free-shelling reassembly wrappers in `Theorem3.lean` or a small new file.
+
+APPROVED: Drop `GlueStep.sphere`; keep boundary-sphere preservation deferred and finish the theorem via pure `FreelyShellable` reassembly.

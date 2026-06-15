@@ -574,7 +574,7 @@ theorem degree3_cut_star_side_glue (σ : Finset (Finset V)) {v : V} {W : C2 σ}
     · exact htetra
   have glue_of_star (U : C2 σ) (hstar : insert γ (cutSet σ U) = tetFaces T)
       (B : Finset (Finset V)) (hB : B = insert γ (σ \ cutSet σ U)) : GlueStep T B σ := by
-    refine ⟨hTcard, ?_, ?_, hσ⟩
+    refine ⟨hTcard, ?_, ?_⟩
     · left
       have hshared : tetFaces T ∩ B = {γ} := by
         ext s
