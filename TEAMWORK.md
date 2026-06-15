@@ -419,13 +419,30 @@ sphere/ball definitions.
   opposite edge γ\{a} to ±γ, so `cone a C = c • [γ]` (c = C(γ.erase a)·sgn a) ⟹
   C = c•bdryGen γ. Avoids all order-dependent vertex-sign bashing. Build green
   (8263), no sorry, standard three.
-- THEN (fill the holes): M24b-part2 (the full `oriented_split_chains_of_cut` bridge
-  — cap the side-filters with ±c•[γ]; the UnitOn capped-cycle clauses + closedness,
-  intertwined with Separation's cut machinery; THE time sink), M24c (deg3_split,
-  composing M24a + separates + M24b + the star-side single-tet reassembly →
-  discharges `deg3_split`), the eligible-tet branch (→ `prime_step`: M25b disjoint
-  pair + M22b relShelling + M23 edge-join bridge + case-1/2), `base` (minimal
-  sphere = single tet).
+- ALEPH PROVER TRIAL (2026-06-14, Peter's call: "use max minutes and $500"): handed
+  the 3 holes of `theorem2_core` (verbatim) + M25b to Aleph Prover (Lean-4 auto-
+  prover, CLI via `uvx alephprover`, auth `$PROVER_API_KEY` from ~/.zshrc, archives
+  local project + returns a patch). BUILD BLOCKER found+fixed: taut's lake-manifest
+  pinned `packagesDir` to the absolute local cache path (unbuildable off this
+  machine — a real PORTABILITY BUG; diagnosed by comparing to working `glove`).
+  RESULT: `base`, `deg3_split`, M25b all came back COMPLETED and were VERIFIED
+  locally (compile, no sorry, std 3 axioms). `prime_step` ran ~4.5h / ~450 cr and
+  did NOT close (95/104 lemmas, blueprint exploded 32→104) — empirically confirming
+  M22b (relative-shelling) is the genuine wall. ~$500 spent.
+- M-ALEPH (DONE, Theorem2Aleph.lean, building & committed): **banked the trial.**
+  Aleph's verified proofs of `aleph_base`, `aleph_deg3_split`, `aleph_disjoint_
+  eligible_pair` (35 decls, provenance attributed) + **`theorem2_modulo_prime_step`**
+  — proves Theorem 2's core (IsBall M.support σ) MODULO the single `prime_step`
+  hypothesis (the other two holes discharged by Aleph's proofs). Full `lake build`
+  8264 jobs, no sorry, all four key thms on [propext, Classical.choice, Quot.sound].
+  **Theorem 2's core is now reduced from 3 open holes to 1 (prime_step / M22b).**
+- THEN (the one remaining hole): `prime_step` — its hard core is **M22b** (`relShelling
+  _of_separated_cap`, the relative-shelling reassembly "where the paper hides
+  topology"). Aleph couldn't crack it in $500; it needs a proper codex G1 design +
+  hand proof. Once M22b is a lemma, prime_step likely closes (Aleph reached 95/104
+  around it). Remaining sub-pieces of prime_step: M24b-part2 (the full edge-join /
+  `oriented_split_chains_of_cut`; M24b-part1 + capping algebra done), M23 wrapper,
+  the case-1/case-2 reassembly. `base` + `deg3_split` are DONE (Aleph, verified).
 - Open: Corollary 1, |A∩B|≤1 Th1 cases, Th4.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
