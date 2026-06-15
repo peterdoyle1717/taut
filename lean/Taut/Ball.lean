@@ -133,6 +133,51 @@ lemma ShellFrom_snoc {B₀ B B' : Finset (Finset V)} {l : List (Finset V)} {t : 
     (h : ShellFrom B₀ l B) (hg : GlueStep t B B') : ShellFrom B₀ (l ++ [t]) B' :=
   ShellFrom_append h ⟨B', hg, rfl⟩
 
+/-- **Ambient transport of one glue step.** A glue step commutes with adjoining a
+piece `K` of boundary disjoint from the tet's faces: the shared count is unchanged
+(the tet's faces avoid `K`) and the new boundary just carries `K` along.  This is
+the combinatorial core of the case-2 bridge — sticking the second ball's tets while
+the first ball + bridge sit in the ambient `K`. -/
+lemma GlueStep.union_disjoint {t : Finset V} {B B' K : Finset (Finset V)}
+    (hg : GlueStep t B B') (hdisj : Disjoint (tetFaces t) K) :
+    GlueStep t (B ∪ K) (B' ∪ K) where
+  card4 := hg.card4
+  shared := by
+    have heq : tetFaces t ∩ (B ∪ K) = tetFaces t ∩ B := by
+      ext s
+      simp only [Finset.mem_inter, Finset.mem_union]
+      constructor
+      · rintro ⟨hsT, hsB | hsK⟩
+        · exact ⟨hsT, hsB⟩
+        · exact absurd hsK (fun h => (Finset.disjoint_left.mp hdisj) hsT h)
+      · rintro ⟨hsT, hsB⟩; exact ⟨hsT, Or.inl hsB⟩
+    rw [heq]; exact hg.shared
+  newBdry := by
+    rw [hg.newBdry]
+    ext s
+    simp only [Finset.mem_union, Finset.mem_sdiff]
+    by_cases hsK : s ∈ K
+    · have hsT : s ∉ tetFaces t := fun h => (Finset.disjoint_left.mp hdisj) h hsK
+      tauto
+    · tauto
+
+/-- **Ambient transport of a whole relative shelling.** Gluing the tets of `l` onto
+`B₀` transports to gluing them onto `B₀ ∪ K`, provided every tet's faces avoid `K`. -/
+lemma ShellFrom_union_disjoint {K : Finset (Finset V)} {l : List (Finset V)} :
+    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B →
+      (∀ t ∈ l, Disjoint (tetFaces t) K) → ShellFrom (B₀ ∪ K) l (B ∪ K) := by
+  induction l with
+  | nil =>
+      intro B₀ B h _
+      simp only [ShellFrom] at h ⊢
+      rw [h]
+  | cons t l ih =>
+      intro B₀ B h hd
+      simp only [ShellFrom] at h ⊢
+      obtain ⟨B₁, hg, hrest⟩ := h
+      exact ⟨B₁ ∪ K, hg.union_disjoint (hd t (List.mem_cons.mpr (Or.inl rfl))),
+        ih hrest (fun u hu => hd u (List.mem_cons.mpr (Or.inr hu)))⟩
+
 /-- Glue a `ShellFrom` of `l₂` onto the end of a shelling `l`. -/
 lemma IsShelling_append {l l₂ : List (Finset V)} {B₁ B : Finset (Finset V)}
     (h : IsShelling l B₁) (hf : ShellFrom B₁ l₂ B) : IsShelling (l ++ l₂) B := by
