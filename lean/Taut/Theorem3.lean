@@ -57,6 +57,33 @@ lemma FreelyShellable.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Fins
       rintro rfl
       exact ht (hlτ ▸ List.mem_toFinset.mpr ha)
 
+/-- **Old-target snoc** (L1's old-target half, extracted, with no `hstart_t`): if `τ`
+is a free sticker ball and a fresh tet `e` glues onto its boundary, then for any OLD
+target `s ∈ τ` there is a shelling of `insert e τ` starting at `s` — namely `(τ's
+shelling from s) ++ [e]`.  This is the only half `prime_step`/`deg3_step` need: by
+the M25b disjoint-eligible-pair, the removed tet is always chosen `≠ s`, so the
+target is always old and the removed tet always glues last. -/
+lemma FreelyShellable.exists_shelling_insert_of_glueStep_old
+    {τ B B' : Finset (Finset V)} {e s : Finset V}
+    (hfree : FreelyShellable τ B) (hg : GlueStep e B B') (heτ : e ∉ τ) (hsτ : s ∈ τ) :
+    ∃ l : List (Finset V), l.head? = some s ∧ l.toFinset = insert e τ ∧ l.Nodup ∧
+      IsShelling l B' := by
+  obtain ⟨l, hhead, hlτ, hnodup, hsh⟩ := hfree s hsτ
+  refine ⟨l ++ [e], ?_, ?_, ?_, IsShelling_snoc hsh hg⟩
+  · cases l with
+    | nil => exact absurd hsh (by simp [IsShelling])
+    | cons a r => rw [List.cons_append]; exact hhead
+  · rw [List.toFinset_append, hlτ]
+    ext x
+    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+    tauto
+  · refine hnodup.append (List.nodup_singleton e) ?_
+    rw [List.disjoint_left]
+    intro a ha
+    simp only [List.mem_singleton]
+    rintro rfl
+    exact heτ (hlτ ▸ List.mem_toFinset.mpr ha)
+
 /-- **base_free** (the base hole of `theorem3_core`): a taut filling of a 2-sphere on
 ≤ 4 vertices is a free sticker ball — it is a single tetrahedron
 (`freelyShellable_singleton`). Reuses the Aleph base lemmas verbatim; only the final
