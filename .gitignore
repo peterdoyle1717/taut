@@ -3,3 +3,5 @@
 lean/.lake/
 .session/
 .claude/settings.local.json
+# G2 commit-gate raw transcripts (saved for audit, not tracked; see TEAMWORK.md)
+notes/codex-consults/*-codex-gate-*.txt

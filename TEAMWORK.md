@@ -514,6 +514,20 @@ sphere/ball definitions.
   the clean predicates (`degree3_hanchor` must re-establish vertex-link connectedness;
   `flipEdgePresent_side_bridge` must produce clean side data). Building the CleanGlueStep
   fields for the eligible re-glue is exactly where the real geometry (the 2 sorries) lives.
+- M-CS1 COMMITTED (2026-06-18, `a0d8692` "Checkpoint clean shelling stack"): the clean
+  stack + the inherited never-committed Fable5 frontier (FlipGeom/PrimeStep/Stickerball
+  Ruleouts/Theorem3 deg3) banked together (Ball.lean/Taut.lean mix both). Build green 8271;
+  2 disclosed sorries (PrimeStep:1605 `flipEdgePresent_side_bridge`, Theorem3:226
+  `degree3_hanchor`); clean stack sorry/admit/axiom-free; theorem2/3 carry sorryAx. Gate
+  verdict WARN (disclosed-WIP). Pristine frontier still in stash `a875eed`.
+- G2 GATE MADE TERSE (2026-06-18; GLOBAL `~/.claude/hooks/`, backups `*.bak-20260618`): the
+  gate is a Claude PreToolUse hook, NOT a `.git/hook`. `codex-review` now prints a compact
+  PASS/WARN/BLOCK summary (≤80 lines) and writes the raw transcript to
+  `notes/codex-consults/<ts>-codex-gate-<tree>.txt` (gitignored); added a DISCLOSED-WIP rule
+  (new sorry/admit/axiom = WARN not BLOCK iff enumerated in BOTH commit message and evidence
+  file; undisclosed still BLOCK). `codex-commit-gate.py` excludes `notes/codex-consults/*`
+  from the inline diff (+700 KB backstop) — fixes the 2 MiB bundle that exceeded codex's
+  1 MiB stdin limit and caused the earlier context blowup.
 
 ## Design decisions of record (G1-audited)
 
