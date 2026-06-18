@@ -1,4 +1,5 @@
 import Taut.Eligible
+import Taut.Pseudomanifold
 
 /-!
 # Theorem 2 (core): a taut filling of a 2-sphere is a ball — the induction skeleton
@@ -100,27 +101,27 @@ sticker ball). Reduces Theorem 3 to three reduction steps. -/
 theorem theorem3_core
     (base : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ → UnitOn X σ →
       bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
-      FreelyShellable M.support σ)
+      FreelyShellable M.support σ ∧ IsPseudomanifold M.support)
     (deg3_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
       4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
       SimplicialChain M → HasDegree3Vertex σ →
       (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
         UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
-        FreelyShellable M'.support σ') →
-      FreelyShellable M.support σ)
+        FreelyShellable M'.support σ' ∧ IsPseudomanifold M'.support) →
+      FreelyShellable M.support σ ∧ IsPseudomanifold M.support)
     (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
       4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
       SimplicialChain M → NoDegree3Vertex σ →
       (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
         UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
-        FreelyShellable M'.support σ') →
-      FreelyShellable M.support σ)
+        FreelyShellable M'.support σ' ∧ IsPseudomanifold M'.support) →
+      FreelyShellable M.support σ ∧ IsPseudomanifold M.support)
     {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
     (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
-    FreelyShellable M.support σ := by
+    FreelyShellable M.support σ ∧ IsPseudomanifold M.support := by
   suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
       UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
-      FreelyShellable M.support σ by
+      FreelyShellable M.support σ ∧ IsPseudomanifold M.support by
     exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
   intro N
   induction N using Nat.strong_induction_on with
