@@ -1563,6 +1563,333 @@ lemma faceCount_removeTet_sharedFace_eq_zero {σ : Finset (Finset V)} {X M : Cha
   have h3 : 3 ≤ faceCount (removeTet M u).support r := by omega
   exact not_isPseudomanifold_of_faceCount hr3 h3 hPMu
 
+/-! ## PM-carry: a taut filling of a 2-sphere is a pseudomanifold
+
+A standalone strong induction mirroring the free-shelling induction
+(`base_free`/`deg3_step_free`/`prime_step_free` assembled by `theorem3_core`),
+but carrying `IsPseudomanifold M.support` instead of `FreelyShellable`. This
+provides the triangle-incidence half of a faithful stickerball directly to
+downstream proofs. -/
+
+/-- **base_isPM** (PM base case, ≤ 4 vertices): a taut filling of a 2-sphere on
+≤ 4 vertices is a single tetrahedron, hence a pseudomanifold. Mirrors `base_free`,
+but ends in `isPseudomanifold_singleton` instead of `freelyShellable_singleton`. -/
+lemma base_isPM (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+    (hv : (vertsOf σ).card ≤ 4) : IsPseudomanifold M.support := by
+  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+  have hsuppInfo := aleph_base_taut_support_card4_subset_verts hσ hU hMX hT
+  have hne := aleph_base_support_nonempty hσ hU hMX
+  have hsupp : M.support = {vertsOf σ} :=
+    aleph_base_support_eq_singleton_of_four_vertices hcard hsuppInfo hne
+  rw [hsupp]
+  exact isPseudomanifold_singleton (vertsOf σ)
+
+/-- **prime_isPM** (PM no-degree-3 step): a no-degree-3 taut filling of a 2-sphere
+is a pseudomanifold, given that every strictly smaller single-sphere taut filling
+is one. Pick a disjoint eligible pair `e, u` (M25b); each `removeTet` is a PM by
+the recursion (`removeTet_isPseudomanifold`); re-insert `e` via
+`isPseudomanifold_insert`, discharging the clean-glue obligation by the triangle
+rule-out (`faceCount_removeTet_sharedFace_eq_zero`) on shared faces and by the
+unit boundary (`faceCount_eq_one_of_boundary`) on exposed faces. -/
+lemma prime_isPM (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+    (IHpm : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      IsPseudomanifold M'.support) :
+    IsPseudomanifold M.support := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+    fun t ht => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
+  obtain ⟨e, u, hne, he, hu, hdisj⟩ :=
+    aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+  have hPMu : IsPseudomanifold (removeTet M u).support :=
+    removeTet_isPseudomanifold hσ hU hXc hMX hT hS hu IHpm
+  -- re-insert e onto the smaller PM (removeTet M e)
+  have hPMe : IsPseudomanifold (removeTet M e).support :=
+    removeTet_isPseudomanifold hσ hU hXc hMX hT hS he IHpm
+  rw [← support_insert_removeTet_of_mem he.2.1]
+  refine isPseudomanifold_insert hPMe ?_ ?_
+  · -- e ∉ (removeTet M e).support
+    rw [support_removeTet_of_mem he.2.1]
+    exact Finset.notMem_erase e M.support
+  · -- clean glue: every triangle of e lies in ≤ 1 tet of removeTet M e
+    intro f hf3 hfe
+    have hftet : f ∈ tetFaces e := Finset.mem_powersetCard.mpr ⟨hfe, hf3⟩
+    by_cases hsh : f ∈ sharedFaces M e
+    · -- shared face: vanishes on removal
+      have h0 : faceCount (removeTet M e).support f = 0 :=
+        faceCount_removeTet_sharedFace_eq_zero hσ hU hXc hMX hT hS hPure he hu hdisj hPMu hsh
+      omega
+    · -- exposed face: it is a unit boundary face of removeTet M e, so exactly one tet
+      have hexpf : f ∈ exposedFaces M e := Finset.mem_sdiff.mpr ⟨hftet, hsh⟩
+      have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
+        unitOn_flipBoundary_of_eligible hUb hS he
+      have hfflip : f ∈ (σ \ sharedFaces M e) ∪ exposedFaces M e :=
+        Finset.mem_union_right _ hexpf
+      have hbd : bdry (removeTet M e) f = 1 ∨ bdry (removeTet M e) f = -1 :=
+        hUe.2 f hfflip
+      have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
+      have hPureE : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+        intro t ht
+        rw [support_removeTet_of_mem he.2.1] at ht
+        exact hPure t (Finset.mem_of_mem_erase ht)
+      have h1 : faceCount (removeTet M e).support f = 1 :=
+        faceCount_eq_one_of_boundary hSe hPureE hPMe hf3 hbd
+      omega
+
+/-- **deg3 clean-glue (PM version).** The clean-glue obligation for inserting the
+degree-3 star tet onto the remainder side `R`. A triangle `f` of `starTet σ v`
+either contains the apex `v` — then no remainder tet contains it (`hvNotR`), so it
+lies in zero remainder tets — or it is the link triangle `γ`, which is a boundary
+face of `R` (it is in `σR` and `R`'s boundary is unit on `σR`), so it lies in
+exactly one remainder tet by `faceCount_eq_one_of_boundary`. -/
+lemma deg3_clean_glue_of_remainder {σ : Finset (Finset V)} {R : Chain V}
+    {v : V} {γ : Finset V}
+    (hγ : γ = linkVerts σ v) (hT4 : (starTet σ v).card = 4)
+    (hURγ : bdry R γ = 1 ∨ bdry R γ = -1)
+    (hPMR : IsPseudomanifold R.support) (hSR : SimplicialChain R)
+    (hPureR : ∀ t ∈ R.support, t.card = 4)
+    (hvNotR : ∀ t ∈ R.support, v ∉ t) :
+    ∀ f, f.card = 3 → f ⊆ starTet σ v → faceCount R.support f ≤ 1 := by
+  classical
+  intro f hf3 hfstar
+  by_cases hvf : v ∈ f
+  · -- v ∈ f: no remainder tet can contain f (it would contain v)
+    have h0 : faceCount R.support f = 0 := by
+      apply faceCount_eq_zero
+      intro t ht hft
+      exact hvNotR t ht (hft hvf)
+    omega
+  · -- v ∉ f: f ⊆ insert v γ and v ∉ f force f = γ, a unit boundary face
+    have hfγ : f ⊆ γ := by
+      intro x hx
+      have hx' : x ∈ insert v γ := by
+        have : f ⊆ insert v γ := by rw [hγ] at *; simpa [starTet, hγ] using hfstar
+        exact this hx
+      rcases Finset.mem_insert.mp hx' with rfl | hxγ
+      · exact absurd hx hvf
+      · exact hxγ
+    have hγcard : γ.card = 3 := by
+      rw [hγ]
+      have : (starTet σ v).card = 4 := hT4
+      simpa [starTet, hγ, Finset.card_insert_of_notMem
+        (by simp [hγ, linkVerts] : v ∉ linkVerts σ v)] using this
+    have hfeqγ : f = γ := Finset.eq_of_subset_of_card_le hfγ (by rw [hγcard, hf3])
+    subst hfeqγ
+    have h1 : faceCount R.support f = 1 :=
+      faceCount_eq_one_of_boundary hSR hPureR hPMR hf3 hURγ
+    omega
+
+/-- **deg3_isPM** (PM degree-3 step): a taut filling of a 2-sphere with a degree-3
+vertex is a pseudomanifold, given that every strictly smaller single-sphere taut
+filling is one. Mirrors the *setup* of `deg3_step_free` (the cut, the ML/MR
+filters, the star-side dichotomy, `hsupport`/`hTnot`/`hvNotR`), but instead of the
+star-shelling glue it applies the IH to the remainder to get a PM, then re-inserts
+the star tet with `isPseudomanifold_insert`, discharging the clean-glue obligation
+by `deg3_clean_glue_of_remainder`. Does NOT use `degree3_hanchor`. -/
+lemma deg3_isPM (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex σ)
+    (IHpm : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      IsPseudomanifold M'.support) :
+    IsPseudomanifold M.support := by
+  classical
+  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ :=
+    degree3_cut_setup σ hσ hbig hd3
+  let γ : Finset V := linkVerts σ v
+  let A : Finset V := vertsOf (insert γ (cutSet σ W))
+  let ML : Chain V := M.filter (fun t => t ⊆ A)
+  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
+  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
+    capped_cut_splits_unit σ X hσ hγ3 hγe hγσ hW hU hXc
+  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
+    taut_splits_for_capped_cut σ X M hσ hσL hσR hγ3 hγe hW
+      hUL hXLc hUR hXRc hXsum hMX hT
+  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv hγ3 hW
+  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
+  -- γ lies in both candidate remainder spheres
+  have hγL : γ ∈ insert γ (cutSet σ W) := Finset.mem_insert_self _ _
+  have hγR : γ ∈ insert γ (cutSet σ (W + fun _ => 1)) := Finset.mem_insert_self _ _
+  rcases hsplit with hcase | hcase
+  · -- left side is the star; remainder is MR (the ¬⊆A side, sphere σR)
+    rcases hcase with ⟨hstar, _hglue⟩
+    have hULtet : UnitOn (cappedCutLeft σ W X γ c) (tetFaces (starTet σ v)) := by
+      dsimp [γ]; rw [← hstar]; exact hUL
+    have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet σ v := by
+      intro t ht
+      have htA : t ⊆ vertsOf (insert γ (cutSet σ W)) :=
+        hSuppL t (by simpa only [ML, A] using ht)
+      dsimp [γ] at htA
+      rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+      exact htA
+    have hMLsupp : ML.support = {starTet σ v} :=
+      star_filter_support_singleton ML (cappedCutLeft σ W X γ c)
+        (starTet σ v) hT4 hULtet (by simpa only [ML, A, γ] using hML)
+        (by simpa only [ML, A, γ] using hTL) hSuppLT
+    have hlt : nrm MR < nrm M := by
+      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
+        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+      simpa only [MR] using hlt'
+    have hSimpR : SimplicialChain MR := by
+      intro t
+      dsimp [MR, A, γ]
+      rw [Finsupp.filter_apply]
+      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))
+      · rw [if_pos ht]; exact hS t
+      · rw [if_neg ht]; exact Or.inr (Or.inl rfl)
+    have hbdMR : bdry MR = cappedCutRight σ W X γ c := by dsimp [MR, A, γ]; exact hMR
+    have hURMR : UnitOn (bdry MR) (insert γ (cutSet σ (W + fun _ => 1))) := by
+      rw [hbdMR]; dsimp [γ]; exact hUR
+    have hTRMR : IsTaut MR := by dsimp [MR, A, γ]; exact hTR
+    have hσRdef : IsSphere2 (insert γ (cutSet σ (W + fun _ => 1))) := by dsimp [γ]; exact hσR
+    have hPMR : IsPseudomanifold MR.support :=
+      IHpm (insert γ (cutSet σ (W + fun _ => 1))) (bdry MR) MR hlt hσRdef hURMR
+        (bdry_bdry _) rfl hTRMR hSimpR
+    have hPT : (starTet σ v) ⊆ A := by
+      have hTin : starTet σ v ∈ ML.support := by rw [hMLsupp]; simp
+      have hTin' : ¬ M (starTet σ v) = 0 ∧ (starTet σ v) ⊆ A := by simpa [ML] using hTin
+      exact hTin'.2
+    have hTnot : starTet σ v ∉ MR.support := by
+      intro hmem
+      have hne : MR (starTet σ v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
+      have hzero : MR (starTet σ v) = 0 := by simp [MR, hPT]
+      exact hne hzero
+    have hvNotMR : ∀ t ∈ MR.support, v ∉ t := by
+      have hvNotSigmaR : v ∉ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+        degree3_apex_notMem_right_verts_of_left_star (σ := σ) (v := v) (W := W)
+          (γ := γ) hσ hγ3 rfl (by simpa [γ] using hW) hstar
+      have hsuppInfo :
+          ∀ t ∈ MR.support,
+            t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+        aleph_base_taut_support_card4_subset_verts hσRdef
+          (by dsimp [γ]; exact hUR) hbdMR hTRMR
+      intro t ht hvt
+      exact hvNotSigmaR ((hsuppInfo t ht).2 hvt)
+    have hPureMR : ∀ t ∈ MR.support, t.card = 4 := by
+      have hsuppInfo :
+          ∀ t ∈ MR.support,
+            t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+        aleph_base_taut_support_card4_subset_verts hσRdef
+          (by dsimp [γ]; exact hUR) hbdMR hTRMR
+      intro t ht; exact (hsuppInfo t ht).1
+    have hURγ : bdry MR γ = 1 ∨ bdry MR γ = -1 := hURMR.2 γ hγR
+    have hsupport : M.support = insert (starTet σ v) MR.support := by
+      simpa only [MR] using
+        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+    rw [hsupport]
+    refine isPseudomanifold_insert hPMR hTnot ?_
+    exact deg3_clean_glue_of_remainder rfl hT4 hURγ hPMR hSimpR hPureMR hvNotMR
+  · -- right side is the star; remainder is ML (the ⊆A side, sphere σL)
+    rcases hcase with ⟨hstar, _hglue⟩
+    have hURtet : UnitOn (cappedCutRight σ W X γ c) (tetFaces (starTet σ v)) := by
+      dsimp [γ]; rw [← hstar]; exact hUR
+    have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet σ v := by
+      intro t ht
+      have htA : t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+        hSuppR t (by simpa only [MR, A] using ht)
+      dsimp [γ] at htA
+      rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+      exact htA
+    have hMRsupp : MR.support = {starTet σ v} :=
+      star_filter_support_singleton MR (cappedCutRight σ W X γ c)
+        (starTet σ v) hT4 hURtet (by simpa only [MR, A, γ] using hMR)
+        (by simpa only [MR, A, γ] using hTR) hSuppRT
+    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+      dsimp [ML]
+      ext t
+      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+      by_cases ht : t ⊆ A
+      · rw [if_pos ht, if_pos]; intro hneg; exact hneg ht
+      · rw [if_neg ht, if_neg]; intro hnn; exact hnn ht
+    have hlt : nrm ML < nrm M := by
+      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
+        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+      rwa [← hML_eq] at hlt'
+    have hSimpL : SimplicialChain ML := by
+      intro t
+      dsimp [ML, A, γ]
+      rw [Finsupp.filter_apply]
+      by_cases ht : t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))
+      · rw [if_pos ht]; exact hS t
+      · rw [if_neg ht]; exact Or.inr (Or.inl rfl)
+    have hbdML : bdry ML = cappedCutLeft σ W X γ c := by dsimp [ML, A, γ]; exact hML
+    have hULML : UnitOn (bdry ML) (insert γ (cutSet σ W)) := by
+      rw [hbdML]; dsimp [γ]; exact hUL
+    have hTLML : IsTaut ML := by dsimp [ML, A, γ]; exact hTL
+    have hσLdef : IsSphere2 (insert γ (cutSet σ W)) := by dsimp [γ]; exact hσL
+    have hPML : IsPseudomanifold ML.support :=
+      IHpm (insert γ (cutSet σ W)) (bdry ML) ML hlt hσLdef hULML
+        (bdry_bdry _) rfl hTLML hSimpL
+    have hPstar : ¬ (starTet σ v) ⊆ A := by
+      have hTin : starTet σ v ∈ MR.support := by rw [hMRsupp]; simp
+      have hTin' : ¬ M (starTet σ v) = 0 ∧ ¬ (starTet σ v) ⊆ A := by simpa [MR] using hTin
+      exact hTin'.2
+    have hTnot : starTet σ v ∉ ML.support := by
+      intro hmem
+      have hne : ML (starTet σ v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
+      have hzero : ML (starTet σ v) = 0 := by simp [ML, hPstar]
+      exact hne hzero
+    have hvNotML : ∀ t ∈ ML.support, v ∉ t := by
+      have hvNotSigmaL : v ∉ vertsOf (insert γ (cutSet σ W)) :=
+        degree3_apex_notMem_left_verts_of_right_star (σ := σ) (v := v) (W := W)
+          (γ := γ) hσ hγ3 rfl (by simpa [γ] using hW) hstar
+      have hsuppInfo :
+          ∀ t ∈ ML.support, t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ W)) :=
+        aleph_base_taut_support_card4_subset_verts hσLdef
+          (by dsimp [γ]; exact hUL) hbdML hTLML
+      intro t ht hvt
+      exact hvNotSigmaL ((hsuppInfo t ht).2 hvt)
+    have hPureML : ∀ t ∈ ML.support, t.card = 4 := by
+      have hsuppInfo :
+          ∀ t ∈ ML.support, t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ W)) :=
+        aleph_base_taut_support_card4_subset_verts hσLdef
+          (by dsimp [γ]; exact hUL) hbdML hTLML
+      intro t ht; exact (hsuppInfo t ht).1
+    have hURγ : bdry ML γ = 1 ∨ bdry ML γ = -1 := hULML.2 γ hγL
+    have hsupport : M.support = insert (starTet σ v) ML.support := by
+      have hsupport' :
+          M.support = insert (starTet σ v)
+            (M.filter (fun t => ¬ (¬ t ⊆ A))).support :=
+        support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+      rwa [← hML_eq] at hsupport'
+    rw [hsupport]
+    refine isPseudomanifold_insert hPML hTnot ?_
+    exact deg3_clean_glue_of_remainder rfl hT4 hURγ hPML hSimpL hPureML hvNotML
+
+/-- **PM-carry: every taut filling of a combinatorial 2-sphere is a
+pseudomanifold.** A standalone strong induction parallel to `theorem3_core`,
+carrying `IsPseudomanifold M.support` (each triangle in ≤ 2 tets). Base case
+(≤ 4 vertices) by `base_isPM`; degree-3 vertex by `deg3_isPM`; otherwise by
+`prime_isPM`; the strong induction hypothesis is threaded to both non-base
+steps. This exposes the triangle-incidence half of a faithful stickerball to
+downstream proofs without modifying the free-shelling induction. -/
+theorem taut_isPseudomanifold {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsPseudomanifold M.support := by
+  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+      IsPseudomanifold M.support by
+    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N IH =>
+    intro σ X M hN hσ hU hXc hMX hT hS
+    by_cases hv : (vertsOf σ).card ≤ 4
+    · exact base_isPM σ X M hσ hU hMX hT hS hv
+    · push_neg at hv
+      by_cases hd3 : HasDegree3Vertex σ
+      · refine deg3_isPM σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+        refine prime_isPM σ X M hσ hU hXc hMX hT hS hno3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+
 /-- **Case-2 edge split, bridge shellings.** After gluing `e` onto either
 spherical side, the other side shelling transports through the disjoint ambient
 boundary. The coverage and exact-side separation hypotheses rule out degenerate
