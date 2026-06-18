@@ -1,0 +1,95 @@
+G1 DESIGN SPEC — Clean (by-definition) shellability stack: review predicates + migration plan.
+
+Reviewer: codex, friendly adversary. The stack below is IMPLEMENTED and BUILDS GREEN
+(`cd lean && lake build`, 8271 jobs, only the 2 pre-existing sorries degree3_hanchor /
+flipEdgePresent_side_bridge). Do NOT rubber-stamp; find holes in the DESIGN. The two
+questions that matter most: Q1 (is CleanGlueStep.clean the right + complete + *satisfiable*
+no-rogue-face condition?) and Q2 (does Clean3Complex-preservation secretly need the chain,
+defeating a purely-combinatorial clean predicate?). Argue back; cite the definitions.
+
+=====================================================================
+CONTEXT / DECISION (Peter)
+=====================================================================
+- The PUBLIC shellability predicate must be clean BY DEFINITION
+  (FreelyCleanShellable / IsCleanBall), NOT weak boundary shelling + a separate
+  normality certificate. (The old public theorem3/theorem2 concluding weak
+  FreelyShellable/IsBall is the bug: GlueStep is a boundary trace and cannot see
+  rogue lower-dim intersections with the accumulated complex.)
+- B = the committed IsPseudomanifold / EdgeLinkConnected / isStickerball_insert
+  machinery, used as the migration BRIDGE (reuse, not export).
+- Weak shelling kept as BoundaryShelling (abbrev aliases). Clean predicates project
+  down via .toBoundary* so banked reassembly facts stay usable.
+
+=====================================================================
+IMPLEMENTED THIS SESSION (builds green; files below)
+=====================================================================
+[Ball.lean]  BoundaryGlueStep/ShellFrom/IsShelling/IsBall/FreelyShellable/RelShelling
+  := abbrev aliases of the weak defs. GlueStep t B B': card4; (tetFaces t ∩ B).card ∈ {1,2};
+  newBdry B' = (B \ tetFaces t) ∪ (tetFaces t \ B).  tetFaces t := t.powersetCard 3.
+
+[Pseudomanifold.lean]
+  TriangleBounded3 τ := IsPseudomanifold τ  (∀ triangle f, faceCount τ f ≤ 2).
+  vertexLinkGraph τ v : Adj x y := x ≠ y ∧ ∃ t ∈ τ, {v,x,y} ⊆ t.
+  vertexLinkVerts τ v := vertsOf (τ.filter (v ∈ ·)) \ {v}.
+  VertexLinkConnected τ := ∀ v, ConnOn (vertexLinkGraph τ v) (vertexLinkVerts τ v).
+    proved: vertexLinkConnected_singleton; vertexLinkConnected_insert
+      (compat ∀ v ∈ t, vertexLinkVerts τ v = ∅ ∨ ((t\{v}) ∩ vertexLinkVerts τ v).Nonempty);
+      not_vertexLinkConnected_of_subset; mono / empty / insert helpers.
+  Pure3 τ := ∀ t ∈ τ, t.card = 4.
+  Normal3 τ := EdgeLinkConnected τ ∧ VertexLinkConnected τ.
+  Clean3Complex τ := Pure3 τ ∧ TriangleBounded3 τ ∧ Normal3 τ.
+  clean3Complex_singleton; clean3Complex_insert (combiner; hyps
+    hpmc: ∀ triangle f ⊆ t, faceCount τ f ≤ 1; helc; hvlc).
+
+[CleanShelling.lean]
+  CleanGlueStep t τ B B' : weak : BoundaryGlueStep t B B';
+    clean : ∀ f, f ⊆ t → (∃ s ∈ τ, f ⊆ s) → ∃ g ∈ tetFaces t ∩ B, f ⊆ g.
+  CleanShellFrom (threads insert t τ); IsCleanShelling (base τ={t}, B=tetFaces t, no glue
+    for head); IsCleanBall; FreelyCleanShellable.
+  Projections (clean → boundary): CleanGlueStep.toBoundary, CleanShellFrom.toBoundaryShellFrom,
+    IsCleanShelling.toBoundaryIsShelling, IsCleanBall.toBoundaryIsBall,
+    FreelyCleanShellable.toBoundaryFreelyShellable. Clean singletons.
+
+=====================================================================
+THE LOAD-BEARING CASE: eligible-tet re-glue
+=====================================================================
+t = {a,b,c,d}. In M: sharedFaces (on bdry M) = {s₁=abc, s₂=abd};
+exposedFaces (interior of M) = {r₁=acd, r₂=bcd}.
+Remove t: bdry(M−t) = (bdry M \ {s₁,s₂}) ∪ {r₁,r₂}.
+Re-glue t onto M−t: B = bdry(M−t), so tetFaces t ∩ B = {r₁,r₂} (the SHARED faces in the
+re-glue are the EXPOSED-in-M faces). r₁ ∩ r₂ = cd (the flip edge). Every vertex of t is in
+r₁ ∪ r₂; every edge of t is ⊆ r₁ or ⊆ r₂ EXCEPT ab = s₁ ∩ s₂.
+
+=====================================================================
+QUESTIONS (argue back)
+=====================================================================
+Q1 SOUND + COMPLETE + SATISFIABLE. With shared faces {r₁,r₂}:
+  (a) does CleanGlueStep.clean rule out all four rogues — doubled tet (f=t), rogue old
+      triangle (card 3), rogue old edge (card 2), rogue old vertex (card 1)?
+  (b) is it SATISFIABLE in the genuinely-clean re-glue: every old face f ⊆ t present in M−t
+      lies in r₁ or r₂? The only obstruction is edge ab (⊄ r₁,r₂): .clean(ab) forces ab ∉ M−t.
+      Is "ab ∉ M−t" exactly the case-1 (FlipEdgeAbsent / snoc) branch, and "ab ∈ M−t" exactly
+      case-2 (split)? Confirm .clean is the correct discriminator, neither too weak nor too strong.
+
+Q2 CHAIN-DEPENDENCE (the one I am unsure about). To prove "CleanShellFrom prefixes are
+  Clean3Complex" we must discharge clean3Complex_insert.hpmc: faceCount τ f ≤ 1 for a triangle
+  f ⊆ t in τ. .clean gives f = some g ∈ {r₁,r₂} (both card 3 ⇒ equal). Getting faceCount τ g ≤ 1
+  appears to need g a boundary face of the UNIT chain (faceCount_eq_one_of_boundary needs
+  bdry = ±1) — i.e. NOT purely combinatorial. Is Clean3Complex-preservation therefore a
+  CHAIN-context lemma (carry that B = the unit boundary of M−t), or can .clean be strengthened
+  to yield faceCount ≤ 1 combinatorially? Same worry for helc / hvlc: do they need the boundary
+  2-sphere's manifold structure, or follow from .clean + the shelling alone?
+
+Q3 THREADING. Base τ={t₁}, accumulate insert t τ ⇒ at the k-th glue τ = {t₁,…,t_{k−1}}.
+  Correct for the doubled-tet ruleout (.clean with f=t needs t ∈ the accumulated set)? Off-by-one?
+
+Q4 MIGRATION REUSE. The projections are clean → boundary (forgetful). But the induction
+  CONSTRUCTS shellings by reassembly (ShellFrom_append/snoc, IsBall.bridge_of_relShelling). To
+  conclude FreelyCleanShellable the reassembly must PRODUCE clean shellings, so we presumably
+  need CLEAN analogues of the reassembly lemmas (discharging .clean at each graft); the
+  projections only let us reuse boundary FACTS, not build clean shellings. Confirm the real
+  migration cost is "lift reassembly to the clean level", and check: is .clean composable across
+  append/snoc/bridge (does grafting preserve the no-rogue-face condition, given the grafted tets
+  meet the accumulated set only in the shared interface)?
+
+FILES: lean/Taut/{Ball,Pseudomanifold,CleanShelling}.lean.  BUILD: cd lean && lake build.

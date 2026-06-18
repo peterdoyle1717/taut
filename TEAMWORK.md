@@ -469,6 +469,52 @@ sphere/ball definitions.
 - Open targets (not assumed anywhere): Corollary 1 (ℚ-fillings, via
   clearing denominators); |A∩B| ≤ 1 cases of Th1; Th2-Th4 remainder.
 
+- **TEAMWORK CP TAKEOVER (2026-06-18, new conductor).** Taking over from the
+  Fable5 frontier. **Architectural correction (Peter):** the public shellability
+  predicate must be CLEAN BY DEFINITION, not weak boundary shelling + a separate
+  normality certificate. Weak `GlueStep`/`FreelyShellable`/`IsBall` are boundary
+  traces (see only `tetFaces t ∩ B` + symmetric difference) and cannot detect rogue
+  lower-dim intersections; `theorem2`/`theorem3` currently conclude these WEAK
+  predicates — the bug. `IsStickerball` (=FreelyShellable∧IsPseudomanifold∧
+  EdgeLinkConnected, committed M-PM1) was defined but ORPHANED (never threaded), and
+  omits vertex links. DECISION: target A (clean-by-definition predicate), use B (the
+  IsPseudomanifold/EdgeLinkConnected machinery + projections) as the migration bridge.
+- FRONTIER (inherited, now on branch `claude/clean-shelling`): NEW FlipGeom.lean,
+  PrimeStep.lean, StickerballRuleouts.lean + Theorem3.lean mods; 2 sorries =
+  `degree3_hanchor` (Theorem3.lean:226), `flipEdgePresent_side_bridge`
+  (PrimeStep.lean:1605). Pristine frontier snapshotted in stash `a875eed`.
+- M-CS1 (DONE, building, branch claude/clean-shelling): **the clean predicate stack.**
+  `Ball.lean`: Boundary{GlueStep,ShellFrom,IsShelling,IsBall,FreelyShellable} +
+  RelBoundaryShelling aliases (demote weak shelling). `Pseudomanifold.lean`:
+  TriangleBounded3 (= IsPseudomanifold); vertexLink{Graph,Verts} + VertexLinkConnected
+  (+ singleton / insert-preservation / ruleout, mirrors the edge-link block); Pure3,
+  Normal3 (edge ∧ vertex links), Clean3Complex (Pure3 ∧ TriangleBounded3 ∧ Normal3);
+  `clean3Complex_insert` combiner. `CleanShelling.lean` (NEW): **CleanGlueStep**
+  (`weak` + `clean` no-rogue-shape + `newTet` + `hpmc` + `helc` + `hvlc` — the β
+  self-certifying step), CleanShellFrom (threads accumulated τ), IsCleanShelling /
+  IsCleanBall / FreelyCleanShellable; projections `.toBoundary*` (reuse banked
+  reassembly); **self-certification** CleanShellFrom/IsCleanBall/FreelyCleanShellable
+  `.clean3Complex` (clean prefixes ARE Clean3Complex, NO chain input). Full build green
+  (8271 jobs); 2 known sorries unchanged; **the entire clean stack is sorryAx-free**
+  (#print axioms = propext, Classical.choice, Quot.sound; theorem2/3 still carry
+  sorryAx from the 2 holes).
+- G1 VERDICT (clean shelling stack): **Q1 APPROVED / Q2 actionable** — codex session
+  019ed979, output notes/codex-consults/2026-06-18-g1-clean-shelling-output.txt. Q1:
+  `CleanGlueStep.clean` is the right no-rogue SHAPE + the exact case-1/case-2
+  discriminator (the eligible re-glue shares the EXPOSED-in-M faces {r₁,r₂}; the
+  s₁∩s₂ edge `ab` is the discriminator — present ⟹ case-2 split). Q2: `.clean` does
+  NOT imply the quantitative `faceCount≤1` / link-attach compat (those are CHAIN
+  facts: a boundary face of a unit chain is in exactly one tet) ⟹ CleanGlueStep
+  STRENGTHENED to carry hpmc/helc/hvlc (Peter's β decision), supplied by chain
+  geometry at construction; the clean shelling is then self-certifying. Q3 threading
+  OK; Q4 migration needs CLEAN reassembly analogues (projections are forgetful only).
+- NEXT (migration, beyond M-CS1; own check-in): clean analogues of snoc/append/bridge
+  that discharge a CleanGlueStep at each graft (Q4); migrate theorem3_core to conclude
+  FreelyCleanShellable (and carry/derive Clean3Complex); re-state the 2 sorries against
+  the clean predicates (`degree3_hanchor` must re-establish vertex-link connectedness;
+  `flipEdgePresent_side_bridge` must produce clean side data). Building the CleanGlueStep
+  fields for the eligible re-glue is exactly where the real geometry (the 2 sorries) lives.
+
 ## Design decisions of record (G1-audited)
 
 - Chains: `Chain V := Finset V →₀ ℤ`, dimension-mixed, AUGMENTED (∅ is a

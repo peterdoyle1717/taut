@@ -1,0 +1,96 @@
+G1 CONSULT — concrete proof of H2 (flipEdgePresent_side_bridge), the case-2
+relative-shelling bridge. This is the harder of the two remaining sorries and is
+INDEPENDENT of the pseudomanifold carry. I have a TEMPLATE (the deg3 analogue is
+already proved) and want you to either (a) confirm + complete the construction, or
+(b) find the precise obstruction.
+
+=====================================================================
+THE TARGET  (PrimeStep.lean:1447, currently `sorry` at :1481)
+=====================================================================
+flipEdgePresent_side_bridge: given an eligible tet e with exposedFaces M e={f₃,f₄}
+(f₃≠f₄, the flip edge cd=f₃∩f₄ already present in σ), and the side split
+A,B (A∩B=f₃∩f₄, card 2), σ₁=(flipBoundary σ M e).filter(⊆A),
+σ₂=(flipBoundary σ M e).filter(⊆B), M₁=(removeTet M e).filter(⊆A),
+M₂=(removeTet M e).filter(⊆B), with hypotheses including:
+  hsphere₁:IsSphere2 σ₁, hsphere₂:IsSphere2 σ₂,
+  hfree₁:FreelyShellable M₁.support σ₁, hfree₂:FreelyShellable M₂.support σ₂,
+  hf₃A:f₃⊆A, hf₃notB:¬f₃⊆B, hf₄B:f₄⊆B, hf₄notA:¬f₄⊆A,
+  hcover:∀ t∈(removeTet M e).support, t⊆A ∨ t⊆B,
+  hsep:∀ t∈(removeTet M e).support, (t⊆A ∧ ¬t⊆B) ∨ (t⊆B ∧ ¬t⊆A),
+  hAB:A∩B=f₃∩f₄, hcd:(f₃∩f₄).card=2.
+PRODUCE:
+  ∃ Bmid₁₂ Bmid₂₁,
+    GlueStep e σ₁ Bmid₁₂ ∧ GlueStep e σ₂ Bmid₂₁ ∧
+    RelShelling M₂.support Bmid₁₂ σ ∧ RelShelling M₁.support Bmid₂₁ σ.
+
+DEFS:  flipBoundary σ M e := (σ \ sharedFaces M e) ∪ exposedFaces M e.
+  tetFaces e ∩ flipBoundary σ M e = exposedFaces M e = {f₃,f₄}  (shared faces r₁,r₂
+  of e are removed from the boundary, so r₁,r₂ ∉ flipBoundary).
+  GlueStep t B B' := t.card=4 ∧ (tetFaces t ∩ B).card∈{1,2} ∧ B'=(B\tetFaces t)∪(tetFaces t\B).
+  RelShelling τ B₀ B := ∃ l, l.toFinset=τ ∧ l.Nodup ∧ ShellFrom B₀ l B.
+  ShellFrom B₀ [] B := B=B₀;  ShellFrom B₀ (t::l) B := ∃B₁, GlueStep t B₀ B₁ ∧ ShellFrom B₁ l B.
+  FreelyShellable τ B := ∀ t∈τ, ∃ l, l.head?=some t ∧ l.toFinset=τ ∧ l.Nodup ∧ IsShelling l B.
+  IsShelling (t::l) B := t.card=4 ∧ ShellFrom (tetFaces t) l B.
+
+=====================================================================
+THE TEMPLATE — deg3 already does this exact kind of transport
+=====================================================================
+degree3_star_start_shellFrom (Theorem3.lean:112-140) builds a RelShelling-type
+ShellFrom for the deg3 star by EXACTLY this move:
+  obtain free shelling of τ STARTING at the bridge tet t₀  (uses FREEDOM):
+      hfree t₀ ht₀ ⟹ IsShelling (t₀::rest) B  i.e.  ShellFrom (tetFaces t₀) rest B.
+  glue t₀ onto the ambient seed (there: tetFaces(star)) landing on
+      (tetFaces t₀).erase γ ∪ K   [hglue₀ : GlueStep t₀ (tetFaces star) (...)],
+  transport the REST by ShellFrom_erase_union_disjoint hsh.2 htail_disj:
+      ShellFrom ((tetFaces t₀).erase γ ∪ K) rest (B.erase γ ∪ K),
+  assemble ShellFrom (tetFaces star) (t₀::rest) σ via ⟨_, hglue₀, hfinal ▸ transport⟩,
+  using hfinal : σ = B.erase γ ∪ K and htail_disj : ∀ t∈rest, Disjoint(tetFaces t)(insert γ K).
+Available transport lemmas (Ball.lean): GlueStep.union_disjoint,
+ShellFrom_union_disjoint, GlueStep.erase_union_disjoint, ShellFrom_erase_union_disjoint.
+
+=====================================================================
+MY PROPOSED H2 CONSTRUCTION (validate / fix)
+=====================================================================
+By symmetry treat rel₂_over₁ : RelShelling M₂.support Bmid₁₂ σ (glue the B-side M₂
+over the A-side-plus-e boundary). Compute the e-glue:
+  tetFaces e ∩ σ₁ = {f₃,f₄} ∩ σ₁ = {f₃}   (f₃⊆A∈σ₁; f₄⊄A ∉σ₁; r₁,r₂∉flipBoundary).
+  So GlueStep e σ₁ Bmid₁₂ has shared count 1 and
+  Bmid₁₂ = (σ₁ \ {f₃}) ∪ {r₁,r₂,f₄}   where {r₁,r₂}=sharedFaces M e (the ab-faces).
+Claim the bridge tet is the M₂-tet t₀ with f₄ ⊆ t₀ (f₄ is the B-side exposed face;
+exactly one M₂-tet has it — f₄ is a boundary face of σ₂, in one tet — but proving
+"exactly one" without PM is the worry; see Q-b). Free-shell M₂ at t₀:
+  ShellFrom (tetFaces t₀) rest σ₂.
+Let δ := f₄ (t₀'s face that meets the e-glued boundary) and
+  K := Bmid₁₂ \ {δ}  (the ambient A-side+e faces that ride along).
+Then I want: GlueStep t₀ Bmid₁₂ ((tetFaces t₀).erase δ ∪ K) and
+  σ = σ₂.erase δ ∪ K, and ∀ t∈rest, Disjoint (tetFaces t) (insert δ K),
+so ShellFrom_erase_union_disjoint gives the rest-transport and the assembly mirrors
+degree3_star_start_shellFrom. The disjointness ∀ t∈rest, Disjoint(tetFaces t)(insert δ K):
+rest ⊆ M₂.support so every such tet ⊆ B; K ⊆ Bmid₁₂ ⊆ A-side ∪{r₁,r₂}. A shared
+face would be ⊆ A∩B (card 2) but faces are triangles (card 3) — EXCEPT r₁,r₂ which
+are ⊆ e not ⊆ B... need r₁,r₂ ∉ tetFaces t for t∈M₂ (t⊆B, r₁,r₂⊄B since they ⊆e and
+contain a∉B). This is the side-cleanliness codex flagged.
+
+=====================================================================
+QUESTIONS
+=====================================================================
+Qa. Is the above construction correct? In particular is δ=f₄, K=Bmid₁₂\{f₄}, and
+    σ = σ₂.erase f₄ ∪ K the right bookkeeping, or do r₁,r₂ (which are in Bmid₁₂ but
+    NOT in σ — wait, r₁,r₂=sharedFaces ARE in σ) need separate handling? Recompute
+    Bmid₁₂ vs σ carefully: σ = (flipBoundary \ {f₃,f₄}) ∪ {r₁,r₂}. Is
+    σ = σ₂.erase f₄ ∪ (Bmid₁₂ \ {f₄})? Please verify or give the correct K.
+Qb. The bridge tet t₀ with f₄⊆t₀: do we need "exactly one such tet", or does ANY
+    t₀ with f₄⊆t₀ ∈ M₂.support work (FreelyShellable lets us start anywhere)? If
+    f₄ is in ≥2 tets of M₂ the GlueStep shared-count may break. Can we get
+    "f₄ in exactly one M₂-tet" WITHOUT PM — e.g. from IsSphere2 σ₂ + UnitOn(bdry M₂)σ₂
+    + f₄∈σ₂ via the EXISTING lemma exists_properBoundaryFaceTet / the eligible
+    machinery, OR is this another place that secretly needs PM(M₂)? (If it needs
+    PM(M₂), that's fine — I'm building the PM carry anyway and M₂ is a smaller
+    single-sphere taut filling, so PM(M₂) is available from the IH.)
+Qc. The side-cleanliness ∀ t∈M₂.support, Disjoint (tetFaces t) (insert δ K): is it
+    fully a consequence of hsep + hAB(card 2) + r₁,r₂⊆e-with-a∉B, or is a piece
+    missing? Give the cleanest sufficient lemma statement.
+Qd. If you see a fundamentally cleaner route to H2 than the deg3-template mimicry
+    (e.g. a symmetric IsBall.bridge_of_relShelling-style assembly that sidesteps
+    constructing Bmid explicitly), propose it. Otherwise confirm the template path
+    and give the Lean-level lemma breakdown (4-6 named sublemmas) to implement.

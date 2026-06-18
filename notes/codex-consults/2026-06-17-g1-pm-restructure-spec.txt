@@ -1,0 +1,179 @@
+G1 DESIGN SPEC — make Theorem 2/3 FAITHFUL by carrying IsPseudomanifold, and
+discharge the two remaining geometry holes with it.
+
+Reviewer: codex (friendly adversary). Find holes in the plan; the two questions
+that matter most are Q1 (is edge-link-connectedness needed, or does PM suffice?)
+and Q4 (with PM in hand, are the two holes actually provable, or is there a
+deeper obstruction?). Please argue back.
+
+=====================================================================
+0. CURRENT STATE (verified by reading the source this session)
+=====================================================================
+The whole of Theorem 2/3 is proved EXCEPT two `sorry`s, both in the
+`FreelyShellable` reassembly route:
+
+  (H1) Theorem3.lean:226  `degree3_hanchor` — the degree-3 anchor tet.
+  (H2) PrimeStep.lean:1481 `flipEdgePresent_side_bridge` — case-2 bridge shellings.
+
+Assembly chain (all real, all compile modulo H1/H2):
+  theorem2  ⟵ theorem3  ⟵ theorem3_core(base_free, deg3_step_free, prime_step_free)
+  deg3_step_free  uses  degree3_hanchor            (H1)
+  prime_step_free → exists_shelling_prime_case2 → prime_flipEdge_split_free_package
+                  → flipEdgePresent_side_data → flipEdgePresent_side_bridge  (H2)
+
+Both holes are exactly where the boundary-only `GlueStep` (symmetric-difference)
+is too weak: each needs "a boundary triangle of the smaller filling lies in
+exactly ONE tet", which is FALSE for a bare freely-shellable complex (a triangle
+can be re-exposed into a 3rd tet) but TRUE for a pseudomanifold. This is the
+faithfulness defect Peter flagged ("a sticker ball for us is a shellable
+SIMPLICIAL complex; pseudomanifold is part of the definition").
+
+=====================================================================
+1. RELEVANT DEFINITIONS (exact, from the source)
+=====================================================================
+Chain V := Finset V →₀ ℤ.  bdry : Chain → Chain.  M.support : Finset (Finset V).
+SimplicialChain M := ∀ t, M t = -1 ∨ M t = 0 ∨ M t = 1.
+IsTaut M := nrm M = Zvol (bdry M)   (here only used via the existing lemmas).
+UnitOn X σ := (bdry-style) X.support = σ ∧ ∀ s ∈ σ, X s = ±1.
+
+removeTet M t := M - single t (M t).           -- (removeTet M t) t = 0
+tetFaces t := t.powersetCard 3.                 -- the 4 triangles of a tet
+sharedFaces M t := tetFaces t ∩ (bdry M).support.   -- t's faces ON the boundary
+exposedFaces M t := tetFaces t \ sharedFaces M t.   -- t's faces NOT on boundary
+EligibleTet M t := t.card=4 ∧ t ∈ M.support ∧ (sharedFaces M t).card = 2 ∧
+                   ∀ s ∈ sharedFaces M t, bdry M s = tetContribution M t s.
+flipBoundary σ M e := (σ \ sharedFaces M e) ∪ exposedFaces M e.
+FlipEdgePresent σ f₃ f₄ := f₃ ∩ f₄ ∈ edgesOf σ.
+
+faceCount τ f := (τ.filter (f ⊆ ·)).card.                   -- BANKED (Pseudomanifold.lean)
+IsPseudomanifold τ := ∀ f, f.card = 3 → faceCount τ f ≤ 2.   -- BANKED
+
+ALREADY BANKED + sorry-free (Pseudomanifold.lean, Stickerball.lean):
+ - isPseudomanifold_singleton, isPseudomanifold_insert
+     (insert fresh t, given ∀ triangle f ⊆ t, faceCount τ f ≤ 1 ⟹ PM preserved),
+ - faceCount_insert_of_not_mem, faceCount_eq_zero, faceCount_le_of_subset,
+ - not_isPseudomanifold_of_faceCount (3 ≤ faceCount ⟹ ¬PM),
+ - bdry_eq_sum_facets (bdry M f = Σ over facet-tets of M t·bdryGen t f, each ±1),
+ - faceCount_eq_one_of_boundary (PM + bdry M f = ±1 ⟹ faceCount = 1) — THE BRIDGE,
+ - faceCount_ne_two_of_boundary (PARITY: bdry M f = ±1 ⟹ faceCount ≠ 2, no PM needed).
+ - aleph_disjoint_eligible_pair: ∃ t₁≠t₂ both EligibleTet with
+     Disjoint (sharedFaces M t₁) (sharedFaces M t₂).   (Theorem2Aleph.lean — REAL)
+
+=====================================================================
+2. THE PLAN — carry IsPseudomanifold (NOT a new "Good" disjunction)
+=====================================================================
+Earlier I thought the IH had to be a disjunction
+   Good := IsStickerball  ∨  "two stickerballs joined along an edge"
+to survive the case where the auxiliary removed tet `u` has a present flip edge
+(so removeTet M u is two pieces, not one sphere-filling). I now believe `Good`
+is AVOIDABLE. The two pieces are each a SMALLER single-sphere taut filling, so
+the strong-induction IH applies to EACH piece directly; their PM-ness is then
+glued by a union lemma. So the carried invariant is simply
+
+   IsPseudomanifold M.support       (alongside the existing FreelyShellable)
+
+and the "two pieces" only ever appears transiently inside one helper lemma.
+
+--- LEMMA A (union-PM).  Pure combinatorics.
+If τ = τ₁ ∪ τ₂, IsPseudomanifold τ₁, IsPseudomanifold τ₂, and every tet of τ is
+⊆A or ⊆B with (A ∩ B).card ≤ 2 and τ₁ = τ.filter(⊆A), τ₂ = τ.filter(⊆B), then
+IsPseudomanifold τ. Proof: a triangle f (card 3) cannot satisfy f ⊆ A∩B
+(card ≤2), so every tet containing f lies on a single side ⟹
+faceCount τ f = faceCount τᵢ f ≤ 2.
+
+--- LEMMA B (removeTet_isPseudomanifold).  The key helper, parameterized by IH.
+Hyp: M taut filling of sphere σ (Unit/closed/taut/simplicial/pure), u EligibleTet,
+and IH = "every strictly smaller single-sphere taut filling M' has
+IsPseudomanifold M'.support". Conclusion: IsPseudomanifold (removeTet M u).support.
+Proof: let {f₃,f₄}=exposedFaces M u, case on FlipEdgePresent σ f₃ f₄.
+  • absent (case 1): removeTet M u is itself a smaller single-sphere taut filling
+    of flipBoundary σ M u (existing: isSphere2_flipBoundary_of_eligible,
+    unitOn_flipBoundary_of_eligible, isTaut_removeTet, simplicialChain_removeTet,
+    nrm_removeTet_add_one_of_simplicial). IH ⟹ PM.
+  • present (case 2): the case-2 package (flipEdgePresent_side_data, REAL & total
+    once H2 is filled — but it does NOT itself need PM to BUILD the package;
+    only the bridge field needs H2) splits removeTet M u into M₁ᵘ,M₂ᵘ, each a
+    smaller single-sphere taut filling (package fields sphereᵢ,unitᵢ,closedᵢ,
+    tautᵢ,simpᵢ,smallerᵢ), with (removeTet M u).support = M₁ᵘ.support ∪ M₂ᵘ.support
+    (coverage) and side predicates ⊆A,⊆B, A∩B = f₃∩f₄ card 2. IH ⟹ PM(M₁ᵘ),
+    PM(M₂ᵘ); LEMMA A ⟹ PM(removeTet M u).
+  CONCERN to check: in case 2 the package is built via flipEdgePresent_side_data
+  which depends (through the bridge) on H2. Does Lemma B then have a circular
+  dependency on H2? I think NOT, because the SPLIT DATA (sides, spheres,
+  smaller, coverage) is produced by flipEdgePresent_side_sets/_algebra, which are
+  independent of the bridge (the bridge is a separate field). If needed, factor a
+  bridge-free "split package" so Lemma B never touches H2. Please confirm this
+  factoring is sound.
+
+--- LEMMA C (triangle rule-out).  Shared faces of an eligible tet vanish on removal.
+For e EligibleTet and r ∈ sharedFaces M e: faceCount (removeTet M e).support r = 0.
+Proof: suppose r ⊆ w, w ∈ (removeTet M e).support (so w ∈ M.support, w ≠ e).
+Take the disjoint eligible u (other half of aleph_disjoint_eligible_pair, so
+Disjoint(sharedFaces M e)(sharedFaces M u), u ≠ e). Then r ∈ sharedFaces M e ⟹
+r ∉ sharedFaces M u ⟹ (r ∈ (bdry M).support = σ) r ∉ tetFaces u ⟹ r ⊄ u ⟹
+u ≠ w (r⊆w) and u ≠ e (r⊆e). So e,w ∈ (removeTet M u).support ⟹
+faceCount (removeTet M u).support r ≥ 2. Also r ∈ σ\sharedFaces M u ⊆
+flipBoundary σ M u, and UnitOn(bdry(removeTet M u))(flipBoundary σ M u) ⟹
+bdry(removeTet M u) r = ±1 ⟹ (faceCount_ne_two_of_boundary) faceCount ≠ 2 ⟹ ≥3 ⟹
+(LEMMA B) ¬PM(removeTet M u) — contradiction. So no such w ⟹ faceCount = 0.
+
+--- The induction (carry PM).  Add IsPseudomanifold M.support as a second
+    conclusion alongside FreelyShellable in theorem3_core / base_free /
+    deg3_step_free / prime_step_free (or a parallel standalone PM-only strong
+    induction reusing the SAME geometric setups). At each step:
+  • base: M.support = {tet} ⟹ isPseudomanifold_singleton.
+  • deg3: M.support = insert (starTet σ v) MR.support; MR avoids v (hvNotMR) and
+    γ=link triangle is σR-boundary. starTet's 3 v-faces ∉ MR (faceCount 0); γ in
+    exactly one tet of MR by faceCount_eq_one_of_boundary (PM of MR from IH).
+    isPseudomanifold_insert ⟹ PM(M). NO rule-out needed here.
+  • prime case 1: M.support = insert e (removeTet M e).support. exposedFaces of e
+    in exactly one tet (PM bridge on removeTet M e via IH); sharedFaces in zero
+    (LEMMA C). isPseudomanifold_insert ⟹ PM(M).
+  • prime case 2: M.support = insert e (M₁.support ∪ M₂.support). PM(M₁),PM(M₂)
+    from IH; LEMMA A ⟹ PM(M₁∪M₂); then glue e (exposed faces one each side =
+    faceCount 1; shared faces zero by LEMMA C on M) via isPseudomanifold_insert.
+
+=====================================================================
+3. DISCHARGING THE TWO HOLES WITH PM (the real geometry — Q4)
+=====================================================================
+(H1) degree3_hanchor (Theorem3.lean:200-226). Needs t₀∈MR.support with
+  GlueStep t₀ (tetFaces(starTet σ v)) ((tetFaces t₀).erase γ ∪ K),
+  rest of MR disjoint from insert γ K, and σ = σR.erase γ ∪ K.
+  With PM(MR.support): γ is a σR-boundary triangle ⟹ faceCount MR.support γ = 1
+  ⟹ a UNIQUE t₀ ∈ MR with γ ⊆ t₀. Take K := tetFaces(starTet σ v) \ {the σ-faces}
+  (the exposed star faces). Claim the GlueStep/disjointness/σ-recovery all follow
+  from "γ in one tet" + the cut geometry already proved in deg3_step_free.
+  Q4a: does H1 need anything beyond faceCount γ = 1 (e.g. edge-link)? Sketch or
+  refute the GlueStep + rest-disjoint derivation.
+
+(H2) flipEdgePresent_side_bridge (PrimeStep.lean:1447-1481). Needs Bmid₁₂,Bmid₂₁
+  with GlueStep e σ₁ Bmid₁₂, GlueStep e σ₂ Bmid₂₁, RelShelling M₂.support Bmid₁₂ σ,
+  RelShelling M₁.support Bmid₂₁ σ. The two sides share only edge cd=f₃∩f₄.
+  With PM(M₁∪M₂) (and PM of each side): the RelShelling transport of the far side
+  over the near side's glued boundary should go through because the sides meet
+  only along cd (no triangle shared) — i.e. the ambient faces the far side glues
+  against are disjoint from the near side except along cd, so the existing
+  ShellFrom_union_disjoint / GlueStep.union_disjoint apply.
+  Q4b: is PM(M₁∪M₂) enough to drive the RelShelling, or is an additional
+  cleanliness fact needed (and is THAT a PM consequence or a genuinely new hole)?
+
+=====================================================================
+4. QUESTIONS
+=====================================================================
+Q1. Is EdgeLinkConnected needed at all for H1/H2, or does IsPseudomanifold +
+    FreelyShellable suffice to discharge BOTH holes? (I built edge-link
+    machinery defensively; I'd like to drop it from the critical path if PM
+    suffices, since Peter's stated concern — "flipping an edge back and forth" =
+    re-exposing a face — is exactly a PM violation, not an edge-link one.)
+Q2. Is the `Good` disjunction really avoidable via LEMMA B (apply IH to each of
+    the two pieces, union the PM)? Any case where removeTet M u's pieces are NOT
+    each a smaller single-sphere taut filling?
+Q3. Lemma B circularity: can flipEdgePresent_side_data's SPLIT data be obtained
+    without the H2 bridge field (so Lemma B doesn't depend on H2)? If not, what's
+    the right factoring?
+Q4. THE CRUX: with PM available, are H1 and H2 actually provable (Q4a, Q4b)? If
+    one of them needs more than PM, name the exact missing fact and whether it's
+    a PM/shelling consequence or a new geometric obstruction.
+Q5. Architecture: carry FreelyShellable ∧ PM through ONE modified induction
+    (reuse deg3/prime geometric setups), or a SEPARATE PM-only strong induction
+    that re-derives the setups? Which is less total work given the existing code?

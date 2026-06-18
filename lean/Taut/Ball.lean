@@ -178,6 +178,64 @@ lemma ShellFrom_union_disjoint {K : Finset (Finset V)} {l : List (Finset V)} :
       exact ⟨B₁ ∪ K, hg.union_disjoint (hd t (List.mem_cons.mpr (Or.inl rfl))),
         ih hrest (fun u hu => hd u (List.mem_cons.mpr (Or.inr hu)))⟩
 
+/-- One glue step, transported by erasing the interface face `γ` and adjoining the
+disjoint piece `K`, when the tet avoids both. -/
+lemma GlueStep.erase_union_disjoint {t γ : Finset V} {B B' K : Finset (Finset V)}
+    (hg : GlueStep t B B') (hdisj : Disjoint (tetFaces t) (insert γ K)) :
+    GlueStep t (B.erase γ ∪ K) (B'.erase γ ∪ K) where
+  card4 := hg.card4
+  shared := by
+    have heq : tetFaces t ∩ (B.erase γ ∪ K) = tetFaces t ∩ B := by
+      ext s
+      simp only [Finset.mem_inter, Finset.mem_union, Finset.mem_erase]
+      constructor
+      · rintro ⟨hsT, (⟨_, hsB⟩ | hsK)⟩
+        · exact ⟨hsT, hsB⟩
+        · exact absurd hsK (fun h => (Finset.disjoint_left.mp hdisj) hsT (Finset.mem_insert_of_mem h))
+      · rintro ⟨hsT, hsB⟩
+        refine ⟨hsT, Or.inl ⟨?_, hsB⟩⟩
+        intro hsγ
+        exact (Finset.disjoint_left.mp hdisj) hsT (hsγ ▸ Finset.mem_insert_self γ K)
+    rw [heq]; exact hg.shared
+  newBdry := by
+    have hγT : γ ∉ tetFaces t :=
+      fun h => (Finset.disjoint_left.mp hdisj) h (Finset.mem_insert_self γ K)
+    have hKT : ∀ ⦃x⦄, x ∈ tetFaces t → x ∉ K :=
+      fun x hx hxK => (Finset.disjoint_left.mp hdisj) hx (Finset.mem_insert_of_mem hxK)
+    rw [hg.newBdry]
+    ext s
+    simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_erase]
+    by_cases hsT : s ∈ tetFaces t
+    · have hsγ : s ≠ γ := fun h => hγT (h ▸ hsT)
+      have hsK : s ∉ K := hKT hsT
+      tauto
+    · tauto
+
+/-- **Boundary-piece transport.** If none of the tets in a relative shelling touches
+`γ` or the ambient piece `K`, then the shelling is unchanged after replacing the
+carried boundary face `γ` by `K`.
+
+This is the degree-3 star-start transport target: after the first remainder tet
+uses the interface triangle `γ`, the rest of the remainder shelling carries the
+three exposed star faces `K` instead, while `γ` is final on the remainder side and
+is therefore absent from all later glue steps. -/
+lemma ShellFrom_erase_union_disjoint {γ : Finset V} {K : Finset (Finset V)}
+    {l : List (Finset V)} :
+    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B →
+      (∀ t ∈ l, Disjoint (tetFaces t) (insert γ K)) →
+      ShellFrom (B₀.erase γ ∪ K) l (B.erase γ ∪ K) := by
+  induction l with
+  | nil =>
+      intro B₀ B h _
+      simp only [ShellFrom] at h ⊢
+      rw [h]
+  | cons t l ih =>
+      intro B₀ B h hd
+      simp only [ShellFrom] at h ⊢
+      obtain ⟨B₁, hg, hrest⟩ := h
+      exact ⟨B₁.erase γ ∪ K, hg.erase_union_disjoint (hd t (List.mem_cons.mpr (Or.inl rfl))),
+        ih hrest (fun u hu => hd u (List.mem_cons.mpr (Or.inr hu)))⟩
+
 /-- Glue a `ShellFrom` of `l₂` onto the end of a shelling `l`. -/
 lemma IsShelling_append {l l₂ : List (Finset V)} {B₁ B : Finset (Finset V)}
     (h : IsShelling l B₁) (hf : ShellFrom B₁ l₂ B) : IsShelling (l ++ l₂) B := by
@@ -260,5 +318,32 @@ theorem freelyShellable_singleton {t : Finset V} (ht : t.card = 4) :
   refine ⟨[t], by simp, by simp, by simp, ?_⟩
   simp only [IsShelling, ShellFrom]
   exact ⟨ht, trivial⟩
+
+/-! ## Boundary (weak) shelling — demoted names
+
+The predicates above are *boundary traces*: a `GlueStep` only constrains the new
+tet against the current boundary `B` (its shared card-3 faces, symmetric-
+difference update); it never sees the accumulated tet-set, so it cannot detect a
+rogue lower-dimensional intersection with an already-built tet.  The clean,
+public predicates (`CleanGlueStep`, `IsCleanShelling`, `FreelyCleanShellable`, …)
+live in `Taut.CleanShelling` and project down to these via `.toBoundary…`, so the
+banked reassembly lemmas keep firing on the projected boundary trace.  These
+aliases mark the weak layer; avoid the bare names in final theorem statements. -/
+
+/-- Boundary (weak) glue step — alias for `GlueStep`. -/
+abbrev BoundaryGlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop :=
+  GlueStep t B B'
+/-- Boundary (weak) shelling-from — alias for `ShellFrom`. -/
+abbrev BoundaryShellFrom (B₀ : Finset (Finset V)) (l : List (Finset V))
+    (B : Finset (Finset V)) : Prop := ShellFrom B₀ l B
+/-- Boundary (weak) shelling — alias for `IsShelling`. -/
+abbrev BoundaryIsShelling (l : List (Finset V)) (B : Finset (Finset V)) : Prop :=
+  IsShelling l B
+/-- Boundary (weak) ball — alias for `IsBall`. -/
+abbrev BoundaryIsBall (τ B : Finset (Finset V)) : Prop := IsBall τ B
+/-- Boundary (weak) free shellability — alias for `FreelyShellable`. -/
+abbrev BoundaryFreelyShellable (τ B : Finset (Finset V)) : Prop := FreelyShellable τ B
+/-- Boundary (weak) relative shelling — alias for `RelShelling`. -/
+abbrev RelBoundaryShelling (τ B₀ B : Finset (Finset V)) : Prop := RelShelling τ B₀ B
 
 end Taut

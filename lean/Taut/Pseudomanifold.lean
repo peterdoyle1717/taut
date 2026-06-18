@@ -28,6 +28,12 @@ With a unit boundary this forces every boundary triangle into exactly one tet
 def IsPseudomanifold (τ : Finset (Finset V)) : Prop :=
   ∀ f, f.card = 3 → faceCount τ f ≤ 2
 
+/-- `TriangleBounded3` — the preferred name for the triangle-count condition
+(`IsPseudomanifold`): every triangle lies in at most two tets.  This is a
+low-level helper only; it is *not* a normal/clean pseudomanifold (it admits two
+balls joined along an edge, or along a single vertex). -/
+abbrev TriangleBounded3 (τ : Finset (Finset V)) : Prop := IsPseudomanifold τ
+
 /-- A face contained in no tet has incidence zero — used to discharge the
 triangle-cleanliness hypothesis from the triangle rule-out (`s₁,s₂ ∉ M−t`). -/
 lemma faceCount_eq_zero {τ : Finset (Finset V)} {f : Finset V}
@@ -277,5 +283,196 @@ lemma not_edgeLinkConnected_of_subset {τ τ' : Finset (Finset V)} (h : τ' ⊆ 
     (hnr : ¬ (edgeLinkGraph τ e).Reachable x y) :
     ¬ EdgeLinkConnected τ' :=
   fun hC => hnr (edgeLink_reachable_mono h e (hC e he x hx y hy))
+
+/-! ## Vertex-link connectedness — the manifold-at-vertices half
+
+`EdgeLinkConnected` is still not enough: two tets meeting at a single shared
+*vertex* have every triangle in ≤ 1 tet and every edge-link connected, yet they
+pinch at that vertex.  Only the vertex link sees it.  A faithful clean complex
+must carry it.  Mirrors the edge-link block: the link of `v` is the graph on its
+apexes with `x ~ y` iff some tet contains the triangle `{v, x, y}`. -/
+
+/-- The link of a vertex `v` in `τ`, as a simple graph on apexes: `x ~ y` iff
+some tet of `τ` contains the triangle `{v, x, y}` (the triangle is present). -/
+def vertexLinkGraph (τ : Finset (Finset V)) (v : V) : SimpleGraph V where
+  Adj x y := x ≠ y ∧ ∃ t ∈ τ, {v, x, y} ⊆ t
+  symm := by
+    rintro x y ⟨hxy, t, ht, hsub⟩
+    exact ⟨hxy.symm, t, ht, by rw [Finset.pair_comm y x]; exact hsub⟩
+  loopless := ⟨fun _ h => h.1 rfl⟩
+
+/-- The apexes of `v` in `τ`: vertices appearing in a tet with `v`, minus `v`. -/
+def vertexLinkVerts (τ : Finset (Finset V)) (v : V) : Finset V :=
+  vertsOf (τ.filter (fun t => v ∈ t)) \ {v}
+
+/-- `τ` is *vertex-link connected*: for every vertex, its apexes are mutually
+reachable in the vertex-link graph (one connected link, no pinch). -/
+def VertexLinkConnected (τ : Finset (Finset V)) : Prop :=
+  ∀ v : V, ConnOn (vertexLinkGraph τ v) (vertexLinkVerts τ v)
+
+/-- A vertex in no tet has empty apex set. -/
+lemma vertexLinkVerts_eq_empty {τ : Finset (Finset V)} {v : V}
+    (h : ∀ t ∈ τ, v ∉ t) : vertexLinkVerts τ v = ∅ := by
+  unfold vertexLinkVerts vertsOf
+  rw [Finset.filter_false_of_mem h]; simp
+
+/-- Vertex-link graphs grow with the tet-set. -/
+lemma vertexLinkGraph_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (v : V) :
+    vertexLinkGraph τ v ≤ vertexLinkGraph τ' v :=
+  fun _ _ hxy => ⟨hxy.1, hxy.2.imp fun _ ht => ⟨h ht.1, ht.2⟩⟩
+
+/-- Reachability transfers to a larger tet-set; contrapositively, **deleting tets
+cannot reconnect a split vertex-link** — the key fact behind the vertex rule-out. -/
+lemma vertexLink_reachable_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (v : V)
+    {x y : V} (hr : (vertexLinkGraph τ v).Reachable x y) :
+    (vertexLinkGraph τ' v).Reachable x y :=
+  hr.mono (vertexLinkGraph_mono h v)
+
+/-- A single tetrahedron is vertex-link connected (its link at any vertex is a
+clique on the opposite face). -/
+lemma vertexLinkConnected_singleton (t : Finset V) :
+    VertexLinkConnected ({t} : Finset (Finset V)) := by
+  intro v x hx y hy
+  simp only [vertexLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+    Finset.mem_singleton] at hx hy
+  obtain ⟨⟨f, ⟨hf, hvf⟩, hxf⟩, _⟩ := hx
+  obtain ⟨⟨g, ⟨hg, _⟩, hyg⟩, _⟩ := hy
+  rw [hf] at hvf hxf
+  rw [hg] at hyg
+  by_cases hxy : x = y
+  · subst hxy; exact ⟨SimpleGraph.Walk.nil⟩
+  · refine SimpleGraph.Adj.reachable ⟨hxy, t, Finset.mem_singleton_self t, ?_⟩
+    intro a ha
+    simp only [Finset.mem_insert, Finset.mem_singleton] at ha
+    rcases ha with rfl | rfl | rfl
+    · exact hvf
+    · exact hxf
+    · exact hyg
+
+/-- The apexes of `v` after inserting a tet `t ∋ v` are `(t \ {v})` together with
+the old apexes. -/
+lemma vertexLinkVerts_insert_of_mem {τ : Finset (Finset V)} {t : Finset V} {v : V}
+    (h : v ∈ t) :
+    vertexLinkVerts (insert t τ) v = (t \ {v}) ∪ vertexLinkVerts τ v := by
+  unfold vertexLinkVerts vertsOf
+  rw [Finset.filter_insert, if_pos h, Finset.biUnion_insert, id_eq,
+    Finset.union_sdiff_distrib]
+
+/-- If `v ∉ t`, inserting `t` does not change the apexes of `v`. -/
+lemma vertexLinkVerts_insert_of_not_mem {τ : Finset (Finset V)} {t : Finset V} {v : V}
+    (h : v ∉ t) :
+    vertexLinkVerts (insert t τ) v = vertexLinkVerts τ v := by
+  unfold vertexLinkVerts
+  rw [Finset.filter_insert, if_neg h]
+
+/-- **Vertex-link connectedness is preserved by inserting a fresh tet**, provided
+each vertex of `t` is either new to `τ` or already shares an apex with `τ`'s link
+there.  Mirrors `edgeLinkConnected_insert`; the new apexes `t \ {v}` form a clique
+in the link (any two lie in `t`), which attaches to the old link via the shared
+apex. -/
+lemma vertexLinkConnected_insert {τ : Finset (Finset V)} {t : Finset V}
+    (hτ : VertexLinkConnected τ)
+    (hcompat : ∀ v ∈ t, vertexLinkVerts τ v = ∅ ∨
+      ((t \ {v}) ∩ vertexLinkVerts τ v).Nonempty) :
+    VertexLinkConnected (insert t τ) := by
+  have hsubins : τ ⊆ insert t τ := Finset.subset_insert t τ
+  intro v x hx y hy
+  have hmono : vertexLinkGraph τ v ≤ vertexLinkGraph (insert t τ) v :=
+    vertexLinkGraph_mono hsubins v
+  by_cases hv : v ∈ t
+  · rw [vertexLinkVerts_insert_of_mem hv] at hx hy
+    have adj_apex : ∀ {p q : V}, p ∈ t \ {v} → q ∈ t \ {v} → p ≠ q →
+        (vertexLinkGraph (insert t τ) v).Adj p q := by
+      intro p q hp hq hpq
+      rw [Finset.mem_sdiff, Finset.mem_singleton] at hp hq
+      refine ⟨hpq, t, Finset.mem_insert_self t τ, ?_⟩
+      intro a ha
+      simp only [Finset.mem_insert, Finset.mem_singleton] at ha
+      rcases ha with rfl | rfl | rfl
+      · exact hv
+      · exact hp.1
+      · exact hq.1
+    rcases hcompat v hv with hempty | ⟨w, hw⟩
+    · rw [hempty, Finset.union_empty] at hx hy
+      by_cases hxy : x = y
+      · subst hxy; exact ⟨SimpleGraph.Walk.nil⟩
+      · exact (adj_apex hx hy hxy).reachable
+    · obtain ⟨hwt, hwold⟩ := Finset.mem_inter.mp hw
+      have reach_w : ∀ z ∈ (t \ {v}) ∪ vertexLinkVerts τ v,
+          (vertexLinkGraph (insert t τ) v).Reachable z w := by
+        intro z hz
+        rcases Finset.mem_union.mp hz with hzt | hzold
+        · by_cases hzw : z = w
+          · subst hzw; exact ⟨SimpleGraph.Walk.nil⟩
+          · exact (adj_apex hzt hwt hzw).reachable
+        · exact (hτ v z hzold w hwold).mono hmono
+      exact (reach_w x hx).trans (reach_w y hy).symm
+  · rw [vertexLinkVerts_insert_of_not_mem hv] at hx hy
+    exact (hτ v x hx y hy).mono hmono
+
+/-- **Vertex rule-out core.** Two apexes present in `τ'` but non-reachable in a
+larger `τ` forbid `VertexLinkConnected τ'`.  Applied with `τ' = M−u ⊆ M`: deleting
+`u` cannot reconnect a split vertex-link, so a pinch in `M` survives in `M−u`. -/
+lemma not_vertexLinkConnected_of_subset {τ τ' : Finset (Finset V)} (h : τ' ⊆ τ)
+    {v x y : V} (hx : x ∈ vertexLinkVerts τ' v) (hy : y ∈ vertexLinkVerts τ' v)
+    (hnr : ¬ (vertexLinkGraph τ v).Reachable x y) :
+    ¬ VertexLinkConnected τ' :=
+  fun hC => hnr (vertexLink_reachable_mono h v (hC v x hx y hy))
+
+/-! ## Normal and clean 3-complexes
+
+`TriangleBounded3 ∧ EdgeLinkConnected` is still not the right invariant — it omits
+vertex links (two tets sharing one vertex pass both yet pinch).  The honest
+condition is `Clean3Complex`: pure, triangle-bounded, and *normal* (both links
+connected).  This is what the public shellability predicate must certify. -/
+
+/-- `Pure3 τ`: every tet has 4 vertices (genuine 3-dimensionality). -/
+def Pure3 (τ : Finset (Finset V)) : Prop := ∀ t ∈ τ, t.card = 4
+
+/-- `Normal3 τ`: connected edge links *and* connected vertex links — the normal
+(no-pinch) condition.  `TriangleBounded3 ∧ EdgeLinkConnected` alone is not normal. -/
+def Normal3 (τ : Finset (Finset V)) : Prop :=
+  EdgeLinkConnected τ ∧ VertexLinkConnected τ
+
+/-- `Clean3Complex τ`: pure, triangle-bounded, and normal — the honest
+"simplicial triangulation of a 3-ball" invariant the public shelling must carry,
+not the boundary-only trace. -/
+def Clean3Complex (τ : Finset (Finset V)) : Prop :=
+  Pure3 τ ∧ TriangleBounded3 τ ∧ Normal3 τ
+
+lemma pure3_singleton {t : Finset V} (ht : t.card = 4) :
+    Pure3 ({t} : Finset (Finset V)) := by
+  intro s hs; rw [Finset.mem_singleton] at hs; subst hs; exact ht
+
+lemma normal3_singleton {t : Finset V} (ht : t.card = 4) :
+    Normal3 ({t} : Finset (Finset V)) :=
+  ⟨edgeLinkConnected_singleton ht, vertexLinkConnected_singleton t⟩
+
+/-- The base of the clean induction: one tetrahedron is a clean 3-complex. -/
+lemma clean3Complex_singleton {t : Finset V} (ht : t.card = 4) :
+    Clean3Complex ({t} : Finset (Finset V)) :=
+  ⟨pure3_singleton ht, isPseudomanifold_singleton t, normal3_singleton ht⟩
+
+/-- **Clean insertion preserves `Clean3Complex`.** The combiner bundling the three
+per-dimension preservation lemmas (triangle count, edge link, vertex link).  These
+three compatibilities are discharged from the chain geometry of the shelling step
+(unit boundary ⇒ a boundary face lies in exactly one tet); `CleanGlueStep.clean`
+gives the no-rogue *shape* but not these quantitative facts on its own (G1
+2026-06-18, session 019ed979). -/
+lemma clean3Complex_insert {τ : Finset (Finset V)} {t : Finset V}
+    (ht : t.card = 4) (httτ : t ∉ τ) (hτ : Clean3Complex τ)
+    (hpmc : ∀ f, f.card = 3 → f ⊆ t → faceCount τ f ≤ 1)
+    (helc : ∀ e, e ⊆ t → e.card = 2 →
+      edgeLinkVerts τ e = ∅ ∨ ((t \ e) ∩ edgeLinkVerts τ e).Nonempty)
+    (hvlc : ∀ v ∈ t, vertexLinkVerts τ v = ∅ ∨
+      ((t \ {v}) ∩ vertexLinkVerts τ v).Nonempty) :
+    Clean3Complex (insert t τ) := by
+  obtain ⟨hpure, hpm, hel, hvl⟩ := hτ
+  refine ⟨?_, isPseudomanifold_insert hpm httτ hpmc,
+    edgeLinkConnected_insert ht hel helc, vertexLinkConnected_insert hvl hvlc⟩
+  intro s hs
+  rcases Finset.mem_insert.mp hs with rfl | hsτ
+  · exact ht
+  · exact hpure s hsτ
 
 end Taut
