@@ -240,9 +240,185 @@ lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
       GlueStep t₀ (tetFaces (starTet sigma v)) ((tetFaces t₀).erase γ ∪ K) ∧
       (∀ t ∈ MR.support, t ≠ t₀ → Disjoint (tetFaces t) (insert γ K)) ∧
       sigma = sigmaR.erase γ ∪ K := by
-  -- Residual degree-3 geometry target: find the first non-star tetrahedron
-  -- meeting the capped face `γ`, with the exposed star faces carried as `K`.
-  sorry
+  classical
+  -- Abbreviations.
+  set T := starTet sigma v with hT
+  -- 1. The remainder support is pure (all tets are card 4).
+  have hPureR : ∀ t ∈ MR.support, t.card = 4 := fun t ht =>
+    (aleph_base_taut_support_card4_subset_verts hσR hUR rfl hTautR t ht).1
+  -- 2. γ ∈ σR.
+  have hγσR : γ ∈ sigmaR := by
+    rcases hsigmaR_cut with h | h <;> rw [h] <;> exact Finset.mem_insert_self _ _
+  -- 3. γ has card 3.
+  have hγ3' : γ.card = 3 := by rw [hγ]; exact hγ3
+  -- 4. γ is a unit boundary face of MR.
+  have hbd : bdry MR γ = 1 ∨ bdry MR γ = -1 := hUR.2 γ hγσR
+  -- 5. faceCount = 1 (PM + pure + unit boundary ⟹ exactly one tet at γ).
+  have hfc1 : faceCount MR.support γ = 1 :=
+    faceCount_eq_one_of_boundary hSimpR hPureR hPMR hγ3' hbd
+  -- 6. Extract the unique tet t₀ at γ.
+  have hfilt : (MR.support.filter (fun t => γ ⊆ t)).card = 1 := hfc1
+  obtain ⟨t₀, ht₀set⟩ := Finset.card_eq_one.mp hfilt
+  have ht₀mem : t₀ ∈ MR.support := by
+    have : t₀ ∈ MR.support.filter (fun t => γ ⊆ t) := by
+      rw [ht₀set]; exact Finset.mem_singleton_self _
+    exact (Finset.mem_filter.mp this).1
+  have hγt₀ : γ ⊆ t₀ := by
+    have : t₀ ∈ MR.support.filter (fun t => γ ⊆ t) := by
+      rw [ht₀set]; exact Finset.mem_singleton_self _
+    exact (Finset.mem_filter.mp this).2
+  have huniq : ∀ t ∈ MR.support, γ ⊆ t → t = t₀ := by
+    intro t htmem hγt
+    have : t ∈ MR.support.filter (fun t => γ ⊆ t) :=
+      Finset.mem_filter.mpr ⟨htmem, hγt⟩
+    rw [ht₀set] at this
+    exact Finset.mem_singleton.mp this
+  -- 7. Cardinalities.
+  have ht₀card : t₀.card = 4 := hPureR t₀ ht₀mem
+  have hstarcard : T.card = 4 := by rw [hT]; exact starTet_card_of_degree3 sigma hγ3
+  -- The star tet is `insert v γ`.
+  have hTeq : T = insert v γ := by rw [hT, starTet, hγ]
+  -- v ∉ γ (it is the apex erased in linkVerts).
+  have hvγ : v ∉ γ := by rw [hγ]; simp [linkVerts]
+  -- γ ∉ σ (a degree-3 link triangle is not itself a face).
+  have hγnotσ : γ ∉ sigma := by
+    rw [hγ]
+    exact linkVerts_not_mem_of_card_three_of_four_lt_verts hsigma hv hγ3 hbig
+  -- γ ∈ tetFaces T and γ ∈ tetFaces t₀ (membership facts).
+  have hmemTet : ∀ {s f : Finset V}, f ∈ tetFaces s ↔ f ⊆ s ∧ f.card = 3 := by
+    intro s f; rw [tetFaces, Finset.mem_powersetCard]
+  have hγstar : γ ∈ tetFaces T := hmemTet.mpr ⟨by rw [hTeq]; exact Finset.subset_insert _ _, hγ3'⟩
+  have hγt₀face : γ ∈ tetFaces t₀ := hmemTet.mpr ⟨hγt₀, hγ3'⟩
+  -- 8. The exposed star faces carried over.
+  set K := tetFaces T \ tetFaces t₀ with hK
+  -- **hinter**: the two tets share exactly the face γ.
+  have hinter : tetFaces t₀ ∩ tetFaces T = {γ} := by
+    apply Finset.eq_singleton_iff_unique_mem.mpr
+    refine ⟨Finset.mem_inter.mpr ⟨hγt₀face, hγstar⟩, ?_⟩
+    intro f hf
+    rw [Finset.mem_inter] at hf
+    obtain ⟨hft₀, hfstar⟩ := hf
+    obtain ⟨hfsubt₀, hfc3⟩ := hmemTet.mp hft₀
+    obtain ⟨hfsubstar, _⟩ := hmemTet.mp hfstar
+    -- f ⊆ insert v γ.
+    rw [hTeq] at hfsubstar
+    by_cases hvf : v ∈ f
+    · -- v ∈ f ⟹ v ∈ t₀, contradicting hvNotMR.
+      exact absurd (hfsubt₀ hvf) (hvNotMR t₀ ht₀mem)
+    · -- v ∉ f ⟹ f ⊆ γ ⟹ f = γ by card.
+      have hfsubγ : f ⊆ γ := by
+        intro x hx
+        rcases Finset.mem_insert.mp (hfsubstar hx) with rfl | hxγ
+        · exact absurd hx hvf
+        · exact hxγ
+      exact Finset.eq_of_subset_of_card_le hfsubγ (by rw [hγ3', hfc3])
+  -- `tetFaces t₀ \ tetFaces T = (tetFaces t₀).erase γ` (γ is the unique common face).
+  have hsdiff_t₀ : tetFaces t₀ \ tetFaces T = (tetFaces t₀).erase γ := by
+    ext f
+    simp only [Finset.mem_sdiff, Finset.mem_erase]
+    constructor
+    · rintro ⟨hft₀, hfstar⟩
+      refine ⟨?_, hft₀⟩
+      intro hfγ; subst hfγ; exact hfstar hγstar
+    · rintro ⟨hfne, hft₀⟩
+      refine ⟨hft₀, ?_⟩
+      intro hfstar
+      have : f ∈ tetFaces t₀ ∩ tetFaces T := Finset.mem_inter.mpr ⟨hft₀, hfstar⟩
+      rw [hinter] at this
+      exact hfne (Finset.mem_singleton.mp this)
+  refine ⟨t₀, K, ht₀mem, ?glue, ?disj, ?recon⟩
+  · -- **glue**: GlueStep t₀ (tetFaces T) ((tetFaces t₀).erase γ ∪ K).
+    refine ⟨ht₀card, ?_, ?_⟩
+    · -- shared: exactly one common face.
+      left
+      have : tetFaces t₀ ∩ tetFaces T = {γ} := hinter
+      rw [this]; exact Finset.card_singleton _
+    · -- newBdry: B' = (B \ tetFaces t₀) ∪ (tetFaces t₀ \ B), B = tetFaces T.
+      -- LHS is (tetFaces t₀).erase γ ∪ K; RHS is K ∪ (tetFaces t₀).erase γ.
+      rw [hK, hsdiff_t₀, Finset.union_comm]
+  · -- **disj**: every other remainder tet avoids both γ and K.
+    intro t htmem htne
+    rw [Finset.disjoint_left]
+    intro f hft hfins
+    rcases Finset.mem_insert.mp hfins with hfγ | hfK
+    · -- f = γ ⟹ γ ⊆ t ⟹ t = t₀, contra htne.
+      subst hfγ
+      obtain ⟨hfsubt, _⟩ := hmemTet.mp hft
+      exact htne (huniq t htmem hfsubt)
+    · -- f ∈ K ⟹ v ∈ f (K = star faces minus γ), but v ∉ t.
+      have hfstar : f ∈ tetFaces T := (Finset.mem_sdiff.mp hfK).1
+      have hfnt₀ : f ∉ tetFaces t₀ := (Finset.mem_sdiff.mp hfK).2
+      obtain ⟨hfsubstar, hfc3⟩ := hmemTet.mp hfstar
+      obtain ⟨hfsubt, _⟩ := hmemTet.mp hft
+      -- v ∈ f: else f ⊆ γ ⟹ f = γ ∈ tetFaces t₀, contra hfnt₀.
+      by_cases hvf : v ∈ f
+      · exact hvNotMR t htmem (hfsubt hvf)
+      · exfalso
+        rw [hTeq] at hfsubstar
+        have hfsubγ : f ⊆ γ := by
+          intro x hx
+          rcases Finset.mem_insert.mp (hfsubstar hx) with rfl | hxγ
+          · exact absurd hx hvf
+          · exact hxγ
+        have hfeqγ : f = γ := Finset.eq_of_subset_of_card_le hfsubγ (by rw [hγ3', hfc3])
+        rw [hfeqγ] at hfnt₀
+        exact hfnt₀ hγt₀face
+  · -- **recon**: sigma = sigmaR.erase γ ∪ K.
+    -- Determine which cut side is the star, then which is σR (the non-star side).
+    have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
+    -- γ ∉ both cut sides (γ is a non-face of σ).
+    have hγnotL : γ ∉ cutSet sigma W := fun hc => hγnotσ (cutSet_subset hc)
+    have hγnotR : γ ∉ cutSet sigma (W + fun _ => 1) := fun hc => hγnotσ (cutSet_subset hc)
+    -- K = (tetFaces T).erase γ (γ is the unique common face of T and t₀).
+    have hKerase : K = (tetFaces T).erase γ := by
+      rw [hK]
+      ext f
+      simp only [Finset.mem_sdiff, Finset.mem_erase]
+      constructor
+      · rintro ⟨hfstar, hfnt₀⟩
+        refine ⟨?_, hfstar⟩
+        intro hfγ; subst hfγ; exact hfnt₀ hγt₀face
+      · rintro ⟨hfne, hfstar⟩
+        refine ⟨hfstar, ?_⟩
+        intro hft₀
+        have : f ∈ tetFaces t₀ ∩ tetFaces T := Finset.mem_inter.mpr ⟨hft₀, hfstar⟩
+        rw [hinter] at this
+        exact hfne (Finset.mem_singleton.mp this)
+    -- Support tets lie in the vertices of σR.
+    have hsuppV : ∀ t ∈ MR.support, t ⊆ vertsOf sigmaR := fun t ht =>
+      (aleph_base_taut_support_card4_subset_verts hσR hUR rfl hTautR t ht).2
+    -- σR is not the star tet's boundary: else t₀ = T ∈ MR.support, contradicting hStarNotMR.
+    have hstarNotσR : sigmaR ≠ tetFaces T := by
+      intro hSR
+      have ht₀V : t₀ ⊆ vertsOf sigmaR := hsuppV t₀ ht₀mem
+      rw [hSR, vertsOf_tetFaces_eq T hstarcard] at ht₀V
+      have ht₀T : t₀ = T := Finset.eq_of_subset_of_card_le ht₀V (by rw [hstarcard, ht₀card])
+      rw [← ht₀T] at hStarNotMR
+      exact hStarNotMR ht₀mem
+    -- The two cut sides partition σ.
+    have hunion : cutSet sigma W ∪ cutSet sigma (W + fun _ => 1) = sigma := by
+      rw [cutSet_add_one_eq_sdiff, Finset.union_sdiff_of_subset cutSet_subset]
+    -- erase γ from a γ-capped side recovers the bare cut side.
+    have heraseL : (insert γ (cutSet sigma W)).erase γ = cutSet sigma W :=
+      Finset.erase_insert hγnotL
+    have heraseR : (insert γ (cutSet sigma (W + fun _ => 1))).erase γ
+        = cutSet sigma (W + fun _ => 1) := Finset.erase_insert hγnotR
+    -- Pair σR (non-star) with the star side, then sigmaR.erase γ ∪ K = σ.
+    rcases hsplit with ⟨hstarEq, _⟩ | ⟨hstarEq, _⟩
+    · -- Star side is the W-side: `insert γ (cutSet σ W) = tetFaces T`.
+      rw [← hγ, ← hT] at hstarEq
+      rcases hsigmaR_cut with hσRdef | hσRdef
+      · -- σR = insert γ (cutSet σ W) = tetFaces T — ruled out.
+        exact absurd (hσRdef.trans hstarEq) hstarNotσR
+      · -- σR = insert γ (cutSet σ (W+1)); K = (tetFaces T).erase γ = cutSet σ W.
+        rw [hσRdef, hKerase, ← hstarEq, heraseL, heraseR, Finset.union_comm, hunion]
+    · -- Star side is the (W+1)-side: `insert γ (cutSet σ (W+1)) = tetFaces T`.
+      rw [← hγ, ← hT] at hstarEq
+      rcases hsigmaR_cut with hσRdef | hσRdef
+      · -- σR = insert γ (cutSet σ W); K = (tetFaces T).erase γ = cutSet σ (W+1).
+        rw [hσRdef, hKerase, ← hstarEq, heraseR, heraseL, hunion]
+      · -- σR = insert γ (cutSet σ (W+1)) = tetFaces T — ruled out.
+        exact absurd (hσRdef.trans hstarEq) hstarNotσR
 
 /-- **deg3 clean-glue (PM version).** The clean-glue obligation for inserting the
 degree-3 star tet onto the remainder side `R`. A triangle `f` of `starTet σ v`
