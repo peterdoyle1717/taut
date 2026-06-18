@@ -528,6 +528,26 @@ sphere/ball definitions.
   file; undisclosed still BLOCK). `codex-commit-gate.py` excludes `notes/codex-consults/*`
   from the inline diff (+700 KB backstop) — fixes the 2 MiB bundle that exceeded codex's
   1 MiB stdin limit and caused the earlier context blowup.
+- PM-CARRY DONE (2026-06-18, `21ee2ba` "PM-carry: standalone taut_isPseudomanifold"): the
+  low-level triangle-count carry. New `taut_isPseudomanifold : (taut filling of a 2-sphere) →
+  IsPseudomanifold M.support`, a standalone parallel strong induction (NOT folded into
+  theorem3_core — chosen to preserve existing proofs / avoid the broad all-or-nothing rewrite;
+  trivially convertible to a literal conjunction later if wanted). Step lemmas base_isPM /
+  prime_isPM / deg3_isPM (+ helper deg3_clean_glue_of_remainder), all in PrimeStep.lean,
+  +327/−0 additive, no existing decl touched. Wires the previously-ORPHANED PM machinery
+  (removeTet_isPseudomanifold, LEMMA A isPseudomanifold_union_of_sideSep, LEMMA C). Build green
+  8271; `taut_isPseudomanifold` axioms = [propext, Classical.choice, Quot.sound] (sorryAx-free).
+  Scope: triangle-count ONLY — does NOT touch Clean3Complex/Normal3/FreelyCleanShellable, does
+  NOT migrate theorem2/3 (still weak IsBall/FreelyShellable). UNBLOCKS H1 (degree3_hanchor) and
+  H2 (flipEdgePresent_side_bridge): both can now call `taut_isPseudomanifold` on the smaller
+  filling to get `faceCount … = 1` for a boundary triangle (faceCount_eq_one_of_boundary).
+  Implemented by a general-purpose subagent (AlephProver protocol: route well-specified leaves,
+  quick return ⇒ counterexample/boundary-case; none needed here). 2 known sorries unchanged.
+- NEXT (H1, now unblocked): in `degree3_hanchor` (Theorem3.lean:226) call `taut_isPseudomanifold`
+  on the remainder MR (smaller taut filling) to get `IsPseudomanifold MR.support`, then
+  `faceCount_eq_one_of_boundary` ⇒ unique anchor `t₀ ∋ γ`; build the GlueStep
+  (K = exposed star faces, shared=1 via v∉MR), disjointness (hvNotMR + faceCount γ=1), and the
+  σ = σR.erase γ ∪ K reconstruction. Then H2 similarly via removeTet PM.
 
 ## Design decisions of record (G1-audited)
 
