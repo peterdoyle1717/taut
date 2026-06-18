@@ -1,0 +1,42 @@
+G1 DESIGN AUDIT — establishing the manifold structure of taut fillings
+(so that "freely shellable simplicial complex" is faithful).
+
+CONTEXT (Lean 4 + Mathlib formalization of Doyle-Ellison-Wang taut fillings).
+- Chain V = Finset V ->0 Z.  A taut filling M of a combinatorial 2-sphere sigma:
+  IsSphere2 sigma, UnitOn (bdry M) sigma, SimplicialChain M (coeffs in {-1,0,1}),
+  IsTaut M (nrm M = Zvol (bdry M)), pure (every t in M.support has card 4).
+- We must prove the SUPPORT is a genuine simplicial triangulation, i.e. the
+  pseudomanifold property:
+      PM(M) :=  for every triangle f (f.card=3),  (M.support.filter (f ⊆ ·)).card ≤ 2.
+  Combined with UnitOn this gives "every boundary face is in exactly ONE tet",
+  which is what the reassembly (degree-3 anchor, case-2 bridge) needs.
+
+THE GAP (verified in the code):
+- Eligible.lean builds a boundary-face→tet map by Classical.choose, explicitly
+  "the tet is chosen, NOT unique". So uniqueness/manifoldness was never proven.
+- ProperBoundaryFaceTet M f e gives  bdry M f = (e's tet-contribution) alone,
+  hence the OTHER tets containing f have contributions summing to 0.  This rules
+  out ONE extra tet but NOT two canceling extras (+1,-1).  So PM is NOT a
+  consequence of eligibility; a face can be in e + two canceling tets.
+
+QUESTIONS (be adversarial; do not assert a route is easy without the argument):
+Q1. Is PM(M) actually TRUE for every taut filling, or only for the minimal/
+    no-degree-3 reduced ones?  Give the argument or a counterexample.
+Q2. Best route to prove it:
+    (a) a standalone lemma  IsTaut + SimplicialChain + UnitOn ⇒ PM, via a local
+        minimality/exchange move on a face in ≥3 tets (does subtracting/flipping
+        a canceling pair strictly lower nrm? show it); OR
+    (b) thread PM through the SAME minimal-bad-pair induction that yields the
+        shelling (base = one tet has PM; reassembly ball+tet+ball preserves PM
+        from almost-disjointness; the flip/case-1 step is the crux).
+    Which, and why?
+Q3. THE CRUX for route (b), case 1 (eligible tet e, flip): e's two sigma-faces
+    f1,f2 (sharedFaces) — prove they lie in NO other tet of M (so removing e
+    leaves them in 0 tets, and PM is preserved when e is glued last).  From
+    eligibility alone the non-e contributions only cancel.  What additional taut/
+    minimality fact closes "cancel ⇒ vanish" here?  Is it a strict-nrm-drop
+    exchange, or does it need the link of f being a taut filling of S^0?
+Q4. Does any of this risk circularity with Theorem 2 itself (which concludes
+    "is a triangulation")?  i.e. is PM strictly weaker and independently
+    provable, or is it effectively equivalent to Th2 so must be co-proven?
+Q5. Lowest-risk concrete first lemma to formalize/submit to an automated prover.

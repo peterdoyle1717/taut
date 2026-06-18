@@ -1,0 +1,51 @@
+ROUND 2 (adversarial iteration on the Theorem-2 simpliciality proof; same setup as
+round 1: eligible t={a,b,c,d}, boundary faces s1={a,b,c},s2={a,b,d} sharing edge ab,
+glue faces r1={a,c,d},r2={b,c,d}; M-t is one stickerball or two joined along an edge;
+>= maxdeg(sigma) >= 4 disjoint eligible tets).
+
+I ACCEPT from round 1:
+ (A) doubled tet 2t: kill with a disjoint eligible u != t (a pair suffices).
+ (B) triangle s1 or s2 interior in M-t -> that triangle in 3 distinct tets {p,q,t};
+     kill with eligible u not in {p,q,t}; needs maxdeg >= 4 > 3 (the COUNT, not a pair).
+
+I PUSH BACK on your flagged "clean intersection" point -- I think it is a genuine
+THIRD obstruction (C), at the EDGE level, that (A) and (B) do not cover:
+
+  (C) ab is a boundary edge of sigma, flipped out of sigma_t, so in M-t the edge ab is
+      either absent or INTERIOR. If M-t is a stickerball and ab is interior, its link
+      is a single cycle of tets. If c,d are NOT apexes on that cycle, then s1,s2 are
+      NOT in M-t (so (B) does not fire), yet re-adding t puts the c-d edge into ab's
+      link, giving link(ab) = (cycle) ⊔ (c-d edge) = DISCONNECTED. That is non-manifold
+      at the edge ab -- M is not a genuine ball -- but it is neither a doubled tet nor
+      a tripled triangle.
+
+QUESTIONS (be rigorous; refute me if I am wrong):
+ 1. Is (C) genuinely possible and distinct from (A),(B)? Or is "ab interior in M-t with
+    c,d off the cycle" actually impossible (e.g. forced by ab being a boundary edge of
+    sigma whose only two sigma-faces s1,s2 are faces of t)? Give the precise reason
+    either way.
+ 2. If (C) is real, how is it ruled out? My claim: the defect is "link(ab) disconnected
+    (>= 2 components)"; deleting any eligible u != t cannot MERGE components, so M-u
+    still has link(ab) disconnected, contradicting M-u being a stickerball -- hence (C)
+    needs only a disjoint PAIR, not the maxdeg count. Correct? And it needs a lemma
+    "stickerball => every edge link is connected", an EDGE-level lemma distinct from
+    triangle-incidence. Right?
+ 3. DEFINITIONAL / the crux for Lean: my current GlueStep only constrains the FACE
+    intersection (tetFaces t ∩ boundary has card 1 or 2) and updates the boundary by
+    symmetric difference. It does NOT see edges, so it does not enforce clean edge
+    intersection -- meaning my "shellable" does NOT by itself rule out (C). So either:
+      (a) I must ADD edge-manifoldness (connected edge links) to the stickerball
+          invariant and carry/prove it (handling (C)), OR
+      (b) there is a classical fact "shellable + pseudomanifold(triangle<=2) => genuine
+          ball" that makes edge-manifoldness automatic -- BUT proving "M is shellable"
+          via M-t + t still needs the t-glue to be a valid shelling step with clean
+          (face AND edge) intersection, which is exactly (C). So I don't see how (b)
+          avoids (C). Adjudicate: is (C) unavoidable, and must the stickerball invariant
+          explicitly include edge-link manifoldness?
+ 4. Give the COMPLETE, MINIMAL obstruction list for "re-gluing t to M-t yields a
+    stickerball", and for EACH: (i) eligible-tet resource (pair vs maxdeg count),
+    (ii) the supporting "stickerball => ..." lemma needed. Include vertex links too if
+    they are a separate obstruction, or argue they are not.
+
+The goal is the exact, complete obstruction set so the Lean invariant is faithful and
+the induction closes. Do not minimize (C) as a footnote; resolve it.

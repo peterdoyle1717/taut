@@ -1,0 +1,191 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: none
+reasoning summaries: none
+session id: 019ed7a2-6c89-72b1-b759-c3711d1cfb2c
+--------
+user
+TASK: Formulate correctly the simpliciality argument in Theorem 2 of the
+Doyle-Ellison-Wang "taut fillings" paper (being formalized in Lean 4).  The
+requester will then adversarially evaluate your proof and iterate with you.
+
+DEFINITIONS.  A taut filling M of a triangulated 2-sphere sigma is an integral
+3-chain (a +/-1 combination of tetrahedra = 4-vertex sets) with boundary the
+fundamental cycle of sigma, of minimal L1 norm.  A STICKERBALL is a shellable
+SIMPLICIAL complex (a genuine simplicial triangulation of the 3-ball): built from
+one tetrahedron by gluing tets one at a time along 1 or 2 boundary faces.
+"Simplicial" entails BOTH:
+  (i) no tetrahedron occurs with multiplicity >= 2 (every coefficient in {-1,0,1});
+  (ii) MANIFOLD: every triangle (2-face) lies in at most two tets of the support
+       (no triangle is shared by three or more DISTINCT tets).
+A stickerball may also be TWO stickerballs joined along a single shared edge.
+
+THEOREM 2: every taut filling is a stickerball.  Proof by minimal counterexample:
+(sigma,M) a bad pair (M taut, not a stickerball), |M| minimal; reduce to sigma
+prime, so no degree-3 vertex.
+
+ELIGIBLE TET / FLIP.  A tet t in M is eligible if it shares exactly two faces with
+sigma.  Write t={a,b,c,d} with boundary faces s1={a,b,c}, s2={a,b,d} (sharing edge
+ab); its other two faces are {a,c,d},{b,c,d}.  Removing t flips edge ab->cd: M-t
+fills sigma_t = sigma with s1,s2 removed and {a,c,d},{b,c,d} added.  Cases:
+  (1) cd not previously an edge: sigma_t is a 2-sphere; by minimality M-t is ONE
+      stickerball.
+  (2) cd already an edge: sigma_t is two 2-spheres joined along cd; by minimality
+      M-t is TWO stickerballs joined along edge cd.
+There are at least maxdeg(sigma) disjoint eligible tets (disjoint boundary-face pairs).
+
+Re-glue t onto M-t by attaching along its two faces {a,c,d},{b,c,d} (which lie on
+sigma_t), so t's two faces s1={a,b,c}, s2={a,b,d} become the new boundary.
+M = (M-t) + t.
+
+THE QUESTION.  Formulate rigorously WHY M is a stickerball (the contradiction).
+Enumerate ALL ways re-gluing t could fail to yield a stickerball, and rule out each
+using minimality + the (>= maxdeg) disjoint eligible tets.  Address precisely:
+
+  (A) Doubled-tet failure: t already occurs in M-t, so 2t in M.  Proposed: pick a
+      disjoint eligible u (u != t); M-u still contains 2t; M-u is one stickerball or
+      two joined along an edge, and 2t lies wholly in one stickerball piece -- but a
+      stickerball has all multiplicities <= 1 -- contradiction.  Confirm or correct.
+
+  (B) Manifold failure: could ONE OR BOTH of t's two new boundary faces s1={a,b,c},
+      s2={a,b,d} ALREADY be present in M-t as an interior triangle (each sitting in
+      two tets of M-t)?  If so, M would have that triangle in THREE distinct tets
+      (no tet doubled, so (A)'s multiplicity argument does NOT detect it).  Is (B)
+      genuinely possible, or precluded?
+        - If precluded, give the EXACT reason (edge ab is not in sigma_t; does that,
+          plus M-t being a stickerball, force s1,s2 to be new?).  Do not merely
+          assert "the glue is clean".
+        - If possible, rule it out.  Does it need a disjoint eligible u avoiding ALL
+          tets incident to the over-incident triangle (hence the >= maxdeg count, not
+          just a pair), or does the same "M-u is a stickerball" contradiction work
+          with only a disjoint pair?
+
+Give a rigorous formulation suitable for Lean formalization, distinguishing what
+follows from the induction hypothesis (M minus any eligible tet is a stickerball or
+two joined along an edge) versus what needs a fresh argument.  Be concrete; do not
+hand-wave the manifold/cleanliness point -- that is the crux.
+codex
+I’ll work this as a proof-engineering task: first isolate the exact combinatorial invariants needed, then check whether the proposed “remove a disjoint eligible tet” argument really covers multiplicity and over-incident triangles.
+codex
+The key issue is that “`ab` is not an edge of `sigma_t`” is not, by itself, a cleanliness proof. It excludes `s1,s2` from the boundary of `M-t`, but a stickerball can have interior triangles using non-boundary edges. So the manifold case needs the same kind of persistence-under-removal contradiction, with a careful choice of the second eligible tet.
+codex
+The proposed argument for (A) is correct, with one small formal precision: choose the second eligible tet by underlying 4-set, not by “copy.” Then `M - u` still has coefficient `2` on the 4-set `t`.
+
+The manifold issue (B) is not precluded merely because `ab` is not an edge of `sigma_t`. That only says `s1={a,b,c}` and `s2={a,b,d}` are not boundary triangles of `M-t`. In a stickerball they could still be interior triangles a priori. So this needs a real argument.
+
+A Lean-suitable formulation is:
+
+Let `Good(N)` mean either one stickerball or two stickerballs joined along one edge. From the induction/minimality hypothesis:
+
+For every eligible tet `u` of `M`, `M - u` is `Good`.
+
+Also prove once:
+
+`Good_no_double`: if `Good(N)`, every tet coefficient is at most `1`.
+
+`Good_triangle_incidence`: if `Good(N)`, every triangle is incident to at most two distinct tets.
+
+For the two-stickerball-along-edge case, the second lemma follows because a triangle cannot be split between the two pieces: their intersection is only an edge, so any common triangle would enlarge the intersection.
+
+Now fix eligible `t={a,b,c,d}` with old boundary faces
+
+```text
+s1 = {a,b,c}
+s2 = {a,b,d}
+```
+
+and gluing faces
+
+```text
+r1 = {a,c,d}
+r2 = {b,c,d}.
+```
+
+By induction, `M - t` is `Good`. Therefore `r1,r2` are genuine boundary faces of `M-t`, and if the re-gluing is clean then adding `t` along `r1,r2` gives a stickerball by the shelling constructor. The only simpliciality failures to rule out are:
+
+1. `t` already occurs in `M-t`.
+2. `s1` or `s2` already occurs as an interior triangle of `M-t`.
+
+For (A), suppose `t` already occurs in `M-t`. Then `M` has coefficient `2` on the tetrahedron `t`. Since `sigma` has no degree-3 vertex, `maxdeg(sigma) >= 4`, and there are at least `maxdeg(sigma)` pairwise disjoint eligible tets. Pick an eligible `u` whose underlying tetrahedron is not `t`. Then `M-u` still has coefficient `2` on `t`. But by minimality `M-u` is `Good`, contradicting `Good_no_double`.
+
+For (B), suppose for example that `s1={a,b,c}` is already an interior triangle of `M-t`. Since `M-t` is `Good`, exactly two distinct tets of `M-t` contain `s1`; call them `p` and `q`. After re-adding `t`, the triangle `s1` is contained in the three distinct tets
+
+```text
+p, q, t.
+```
+
+This is not detected by coefficient multiplicity, because the three tets are distinct.
+
+Choose an eligible `u` not among `{p,q,t}`. This is where the `>= maxdeg` supply is used: the forbidden set has size at most `3`, while `maxdeg(sigma) >= 4`. Then `M-u` still contains all three tets `p,q,t`, so `s1` is still incident to three distinct tetrahedra in `M-u`. By minimality, `M-u` is `Good`, contradicting `Good_triangle_incidence`.
+
+The same argument applies if `s2` is over-incident. If both `s1` and `s2` are over-incident, choose one of them; you only need to preserve one three-tet triangle obstruction, so you do not need to avoid all tets incident to both faces.
+
+So the exact answer to the crux is:
+
+`ab ∉ sigma_t` does not force `s1,s2` to be new. It only forces them not to be boundary faces of `M-t`. Their possible interior presence is ruled out by the disjoint-eligible-tet persistence argument above.
+
+One additional formal note: if your Lean definition of `stickerball` requires the last gluing intersection to be exactly the two faces `r1,r2`, then you must also rule out extra lower-dimensional intersection, especially an existing edge `ab` in `M-t`. That is a separate “clean intersection” lemma, not a triangle-incidence lemma. If your current theorem only formalizes the two stated simpliciality obligations, then (A) and (B) are the complete simpliciality argument.
+tokens used
+29,596
+The proposed argument for (A) is correct, with one small formal precision: choose the second eligible tet by underlying 4-set, not by “copy.” Then `M - u` still has coefficient `2` on the 4-set `t`.
+
+The manifold issue (B) is not precluded merely because `ab` is not an edge of `sigma_t`. That only says `s1={a,b,c}` and `s2={a,b,d}` are not boundary triangles of `M-t`. In a stickerball they could still be interior triangles a priori. So this needs a real argument.
+
+A Lean-suitable formulation is:
+
+Let `Good(N)` mean either one stickerball or two stickerballs joined along one edge. From the induction/minimality hypothesis:
+
+For every eligible tet `u` of `M`, `M - u` is `Good`.
+
+Also prove once:
+
+`Good_no_double`: if `Good(N)`, every tet coefficient is at most `1`.
+
+`Good_triangle_incidence`: if `Good(N)`, every triangle is incident to at most two distinct tets.
+
+For the two-stickerball-along-edge case, the second lemma follows because a triangle cannot be split between the two pieces: their intersection is only an edge, so any common triangle would enlarge the intersection.
+
+Now fix eligible `t={a,b,c,d}` with old boundary faces
+
+```text
+s1 = {a,b,c}
+s2 = {a,b,d}
+```
+
+and gluing faces
+
+```text
+r1 = {a,c,d}
+r2 = {b,c,d}.
+```
+
+By induction, `M - t` is `Good`. Therefore `r1,r2` are genuine boundary faces of `M-t`, and if the re-gluing is clean then adding `t` along `r1,r2` gives a stickerball by the shelling constructor. The only simpliciality failures to rule out are:
+
+1. `t` already occurs in `M-t`.
+2. `s1` or `s2` already occurs as an interior triangle of `M-t`.
+
+For (A), suppose `t` already occurs in `M-t`. Then `M` has coefficient `2` on the tetrahedron `t`. Since `sigma` has no degree-3 vertex, `maxdeg(sigma) >= 4`, and there are at least `maxdeg(sigma)` pairwise disjoint eligible tets. Pick an eligible `u` whose underlying tetrahedron is not `t`. Then `M-u` still has coefficient `2` on `t`. But by minimality `M-u` is `Good`, contradicting `Good_no_double`.
+
+For (B), suppose for example that `s1={a,b,c}` is already an interior triangle of `M-t`. Since `M-t` is `Good`, exactly two distinct tets of `M-t` contain `s1`; call them `p` and `q`. After re-adding `t`, the triangle `s1` is contained in the three distinct tets
+
+```text
+p, q, t.
+```
+
+This is not detected by coefficient multiplicity, because the three tets are distinct.
+
+Choose an eligible `u` not among `{p,q,t}`. This is where the `>= maxdeg` supply is used: the forbidden set has size at most `3`, while `maxdeg(sigma) >= 4`. Then `M-u` still contains all three tets `p,q,t`, so `s1` is still incident to three distinct tetrahedra in `M-u`. By minimality, `M-u` is `Good`, contradicting `Good_triangle_incidence`.
+
+The same argument applies if `s2` is over-incident. If both `s1` and `s2` are over-incident, choose one of them; you only need to preserve one three-tet triangle obstruction, so you do not need to avoid all tets incident to both faces.
+
+So the exact answer to the crux is:
+
+`ab ∉ sigma_t` does not force `s1,s2` to be new. It only forces them not to be boundary faces of `M-t`. Their possible interior presence is ruled out by the disjoint-eligible-tet persistence argument above.
+
+One additional formal note: if your Lean definition of `stickerball` requires the last gluing intersection to be exactly the two faces `r1,r2`, then you must also rule out extra lower-dimensional intersection, especially an existing edge `ab` in `M-t`. That is a separate “clean intersection” lemma, not a triangle-incidence lemma. If your current theorem only formalizes the two stated simpliciality obligations, then (A) and (B) are the complete simpliciality argument.
