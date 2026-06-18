@@ -28,6 +28,13 @@ With a unit boundary this forces every boundary triangle into exactly one tet
 def IsPseudomanifold (τ : Finset (Finset V)) : Prop :=
   ∀ f, f.card = 3 → faceCount τ f ≤ 2
 
+/-- A face contained in no tet has incidence zero — used to discharge the
+triangle-cleanliness hypothesis from the triangle rule-out (`s₁,s₂ ∉ M−t`). -/
+lemma faceCount_eq_zero {τ : Finset (Finset V)} {f : Finset V}
+    (h : ∀ t ∈ τ, ¬ f ⊆ t) : faceCount τ f = 0 := by
+  unfold faceCount
+  rw [Finset.filter_false_of_mem h]; rfl
+
 /-- Inserting a fresh tet bumps the count of exactly the faces it contains. -/
 lemma faceCount_insert_of_not_mem {τ : Finset (Finset V)} {t : Finset V}
     (ht : t ∉ τ) (f : Finset V) :
@@ -92,6 +99,13 @@ reachable in the edge-link graph (one connected ring, no stray components). -/
 def EdgeLinkConnected (τ : Finset (Finset V)) : Prop :=
   ∀ e : Finset V, e.card = 2 → ConnOn (edgeLinkGraph τ e) (edgeLinkVerts τ e)
 
+/-- An edge contained in no tet has empty apex set — used to discharge the
+edge-cleanliness hypothesis from the edge rule-out (`ab ∉ M−t`). -/
+lemma edgeLinkVerts_eq_empty {τ : Finset (Finset V)} {e : Finset V}
+    (h : ∀ t ∈ τ, ¬ e ⊆ t) : edgeLinkVerts τ e = ∅ := by
+  unfold edgeLinkVerts vertsOf
+  rw [Finset.filter_false_of_mem h]; simp
+
 /-- Edge-link graphs grow with the tet-set. -/
 lemma edgeLinkGraph_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (e : Finset V) :
     edgeLinkGraph τ e ≤ edgeLinkGraph τ' e :=
@@ -129,6 +143,77 @@ lemma edgeLinkConnected_singleton {t : Finset V} (ht : t.card = 4) :
     · exact hyt
     · exact hesub hz
 
+/-! ## Edge-link connectedness is preserved by a clean tet insertion -/
+
+/-- If `z, w` are the two apexes of edge `e` in the tetrahedron `t`, then
+`e ∪ {z, w} = t`. -/
+lemma insert_apexes_eq {t e : Finset V} {z w : V} (ht : t.card = 4) (he : e.card = 2)
+    (hsub : e ⊆ t) (hz : z ∈ t \ e) (hw : w ∈ t \ e) (hzw : z ≠ w) :
+    insert z (insert w e) = t := by
+  rw [Finset.mem_sdiff] at hz hw
+  have hwni : w ∉ e := hw.2
+  have hzni : z ∉ insert w e := by
+    simp only [Finset.mem_insert, not_or]; exact ⟨hzw, hz.2⟩
+  have hcard : (insert z (insert w e)).card = 4 := by
+    rw [Finset.card_insert_of_notMem hzni, Finset.card_insert_of_notMem hwni]; omega
+  refine Finset.eq_of_subset_of_card_le (fun u hu => ?_) (le_of_eq (ht.trans hcard.symm))
+  simp only [Finset.mem_insert] at hu
+  rcases hu with rfl | rfl | hu
+  · exact hz.1
+  · exact hw.1
+  · exact hsub hu
+
+/-- The apexes of `e` after inserting a tet `t ⊇ e` are `(t \ e)` together with
+the old apexes. -/
+lemma edgeLinkVerts_insert_of_subset {τ : Finset (Finset V)} {t e : Finset V}
+    (h : e ⊆ t) :
+    edgeLinkVerts (insert t τ) e = (t \ e) ∪ edgeLinkVerts τ e := by
+  unfold edgeLinkVerts vertsOf
+  rw [Finset.filter_insert, if_pos h, Finset.biUnion_insert, id_eq,
+    Finset.union_sdiff_distrib]
+
+/-- If `e ⊄ t`, inserting `t` does not change the apexes of `e`. -/
+lemma edgeLinkVerts_insert_of_not_subset {τ : Finset (Finset V)} {t e : Finset V}
+    (h : ¬ e ⊆ t) :
+    edgeLinkVerts (insert t τ) e = edgeLinkVerts τ e := by
+  unfold edgeLinkVerts
+  rw [Finset.filter_insert, if_neg h]
+
+/-- **Edge-link connectedness is preserved by inserting a fresh tet**, provided
+each edge of the new tet is either new to `τ` or already shares an apex with
+`τ`'s link there (the clean-glue compatibility). This is the manifold half of
+"clean glue onto a stickerball gives a stickerball". -/
+lemma edgeLinkConnected_insert {τ : Finset (Finset V)} {t : Finset V} (ht : t.card = 4)
+    (hτ : EdgeLinkConnected τ)
+    (hcompat : ∀ e, e ⊆ t → e.card = 2 →
+      edgeLinkVerts τ e = ∅ ∨ ((t \ e) ∩ edgeLinkVerts τ e).Nonempty) :
+    EdgeLinkConnected (insert t τ) := by
+  have hsubins : τ ⊆ insert t τ := Finset.subset_insert t τ
+  intro e he x hx y hy
+  have hmono : edgeLinkGraph τ e ≤ edgeLinkGraph (insert t τ) e := edgeLinkGraph_mono hsubins e
+  by_cases hsub : e ⊆ t
+  · rw [edgeLinkVerts_insert_of_subset hsub] at hx hy
+    have adj_apex : ∀ {p q : V}, p ∈ t \ e → q ∈ t \ e → p ≠ q →
+        (edgeLinkGraph (insert t τ) e).Adj p q := fun {p q} hp hq hpq =>
+      ⟨hpq, by rw [insert_apexes_eq ht he hsub hp hq hpq]; exact Finset.mem_insert_self t τ⟩
+    rcases hcompat e hsub he with hempty | ⟨w, hw⟩
+    · rw [hempty, Finset.union_empty] at hx hy
+      by_cases hxy : x = y
+      · subst hxy; exact ⟨SimpleGraph.Walk.nil⟩
+      · exact (adj_apex hx hy hxy).reachable
+    · obtain ⟨hwt, hwold⟩ := Finset.mem_inter.mp hw
+      have reach_w : ∀ z ∈ (t \ e) ∪ edgeLinkVerts τ e,
+          (edgeLinkGraph (insert t τ) e).Reachable z w := by
+        intro z hz
+        rcases Finset.mem_union.mp hz with hzt | hzold
+        · by_cases hzw : z = w
+          · subst hzw; exact ⟨SimpleGraph.Walk.nil⟩
+          · exact (adj_apex hzt hwt hzw).reachable
+        · exact (hτ e he z hzold w hwold).mono hmono
+      exact (reach_w x hx).trans (reach_w y hy).symm
+  · rw [edgeLinkVerts_insert_of_not_subset hsub] at hx hy
+    exact (hτ e he x hx y hy).mono hmono
+
 /-! ## The faithful stickerball -/
 
 /-- A **faithful stickerball**: freely shellable *and* genuinely simplicial —
@@ -147,6 +232,21 @@ lemma isStickerball_singleton {t : Finset V} (ht : t.card = 4) :
   intro s hs
   rw [Finset.mem_singleton] at hs; subst hs
   exact ⟨[s], rfl, by simp, by simp, ht, rfl⟩
+
+/-- **Preservation: a clean glue onto a stickerball is a stickerball.** Given the
+shelling extends (`hfree`, from the existing reassembly machinery) and the new tet
+meets the simplicial structure cleanly — each triangle of `t` in ≤ 1 old tet
+(`hpmc`), each edge of `t` new or already apex-sharing (`helc`) — the result keeps
+both manifold invariants. -/
+lemma isStickerball_insert {τ : Finset (Finset V)} {t σ : Finset (Finset V)} {tt : Finset V}
+    (ht : tt.card = 4) (httτ : tt ∉ τ)
+    (hpm : IsPseudomanifold τ) (hel : EdgeLinkConnected τ)
+    (hfree : FreelyShellable (insert tt τ) σ)
+    (hpmc : ∀ f, f.card = 3 → f ⊆ tt → faceCount τ f ≤ 1)
+    (helc : ∀ e, e ⊆ tt → e.card = 2 →
+      edgeLinkVerts τ e = ∅ ∨ ((tt \ e) ∩ edgeLinkVerts τ e).Nonempty) :
+    IsStickerball (insert tt τ) σ :=
+  ⟨hfree, isPseudomanifold_insert hpm httτ hpmc, edgeLinkConnected_insert ht hel helc⟩
 
 /-! ## Rule-out engines
 

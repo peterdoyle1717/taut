@@ -1,0 +1,37 @@
+CONTEXT: Formalizing Theorem 2 of Doyle-Ellison-Wang taut fillings (Lean 4). Just
+built the faithful stickerball invariant in Taut/Pseudomanifold.lean (all sorry-free):
+  IsStickerball τ B := FreelyShellable τ B ∧ IsPseudomanifold τ ∧ EdgeLinkConnected τ
+  IsPseudomanifold τ := ∀ f, f.card=3 → faceCount τ f ≤ 2  (faceCount τ f := (τ.filter (f ⊆ ·)).card)
+  EdgeLinkConnected τ := for every edge e, the apexes (edgeLinkVerts) are mutually
+    reachable in edgeLinkGraph τ e (x~y iff e∪{x,y} ∈ τ).
+  isStickerball_singleton (base); isStickerball_insert (PRESERVATION: clean glue onto a
+    stickerball is a stickerball, given hpmc: ∀ triangle f⊆t, faceCount τ f ≤ 1; and
+    helc: ∀ edge e⊆t, edgeLinkVerts τ e = ∅ ∨ (t\e ∩ edgeLinkVerts τ e).Nonempty);
+  rule-out ENGINES: not_isPseudomanifold_of_faceCount (3 ≤ faceCount τ' f → ¬IsPseudomanifold τ'),
+    not_edgeLinkConnected_of_subset (apexes appear in τ'⊆τ but non-reachable in τ → ¬EdgeLinkConnected τ').
+
+The eligible tet t={a,b,c,d}: boundary faces s1={a,b,c},s2={a,b,d} (= sharedFaces M t),
+glue faces r1={a,c,d},r2={b,c,d}; M-t = removeTet M t fills sigma_t. By induction every
+strictly smaller taut filling is a stickerball. aleph_disjoint_eligible_pair gives
+∃ t1≠t2, EligibleTet M t1 ∧ EligibleTet M t2 ∧ Disjoint (sharedFaces M t1) (sharedFaces M t2).
+
+QUESTIONS (be concrete, Lean-oriented, name existing lemmas in Eligible.lean/Theorem2.lean;
+adversarially flag any step needing more than the disjoint PAIR or circular with Thm 2):
+1. faceCount<->chain bridge: faceCount M.support f counts tets ⊇ f (SET count); bdry M f is
+   the signed chain boundary. For SimplicialChain M, cleanest lemma linking them — I expect
+   faceCount M.support f ≡ (bdry M f) mod 2, giving "f ∈ sigma (bdry M f = ±1) +
+   IsPseudomanifold M.support ⟹ faceCount = 1" (boundary face in exactly one tet). Which
+   bdry/bdryGen/tetContribution API to use?
+2. Triangle rule-out: prove s1 (and s2) is in NO tet of M-t (faceCount (M-t).support s1 = 0).
+   Structure: if s1 ⊆ some w ∈ (M-t).support, then s1 in ≥2 M tets (w,t); parity + s1∈sigma
+   ⟹ ≥3; choose disjoint eligible u with s1 ∉ sharedFaces u (since s1∈sigma, s1⊆u would force
+   s1∈sharedFaces u, contradicting disjointness) so u doesn't contain s1; M-u keeps s1 in ≥3
+   tets ⟹ ¬IsPseudomanifold (M-u).support ⟹ contradicts IH stickerball. Precise statement +
+   key sub-steps.
+3. Edge rule-out: prove edge ab is in NO tet of M-t (no w∈(M-t).support with {a,b}⊆w). Use the
+   edge-link disconnection (Lk(ab) = ring ⊔ cd-arc) + not_edgeLinkConnected_of_subset + a
+   disjoint eligible u that misses the ab-link. Precise statement + structure; confirm a PAIR
+   suffices.
+4. theorem3_core restructure to CARRY IsStickerball (base/deg3/prime steps), feeding
+   isStickerball_insert with hpmc/helc from these rule-outs. Sketch the induction skeleton and
+   what each step must now additionally prove.
