@@ -543,11 +543,29 @@ sphere/ball definitions.
   filling to get `faceCount … = 1` for a boundary triangle (faceCount_eq_one_of_boundary).
   Implemented by a general-purpose subagent (AlephProver protocol: route well-specified leaves,
   quick return ⇒ counterexample/boundary-case; none needed here). 2 known sorries unchanged.
-- NEXT (H1, now unblocked): in `degree3_hanchor` (Theorem3.lean:226) call `taut_isPseudomanifold`
-  on the remainder MR (smaller taut filling) to get `IsPseudomanifold MR.support`, then
-  `faceCount_eq_one_of_boundary` ⇒ unique anchor `t₀ ∋ γ`; build the GlueStep
-  (K = exposed star faces, shared=1 via v∉MR), disjointness (hvNotMR + faceCount γ=1), and the
-  σ = σR.erase γ ∪ K reconstruction. Then H2 similarly via removeTet PM.
+- IMPORT-CYCLE FINDING + CONJUNCTION-CARRY (2026-06-18, `74f6534` "Thread IsPseudomanifold
+  through theorem3_core induction"): the standalone `taut_isPseudomanifold` (PrimeStep) could NOT
+  feed `degree3_hanchor` (Theorem3) — `PrimeStep` imports `Theorem3`, so a downstream PM theorem
+  can't be called upstream (verified cycle). FIX (Peter's original conjunction-carry, now forced):
+  threaded `IsPseudomanifold M.support` through `theorem3_core` as a conjunction
+  `FreelyShellable M.support σ ∧ IsPseudomanifold M.support`. So `deg3_step_free`'s IH now yields
+  `IsPseudomanifold MR.support`, passed to `degree3_hanchor` as `hPMR`. Relocated
+  `base_isPM`/`deg3_isPM`/`deg3_clean_glue_of_remainder` PrimeStep→Theorem3 (Theorem3 += import
+  Stickerball, Theorem23 += import Pseudomanifold, both acyclic); `prime_isPM`/`taut_isPseudomanifold`
+  stay in PrimeStep. `theorem3` projects `.1`; `theorem2`/`theorem3` STATEMENTS unchanged (still weak
+  `IsBall`/`FreelyShellable`). Build green 8271; `taut_isPseudomanifold` still sorryAx-free.
+- **H1 CLOSED** (2026-06-18, `4a4836a` "Close degree3_hanchor (H1) using carried PM"): proved
+  `degree3_hanchor` using `hPMR` — `faceCount_eq_one_of_boundary` on the cap triangle γ ⇒
+  `faceCount MR.support γ = 1` ⇒ unique anchor `t₀ ∋ γ`; `K = tetFaces(starTet)\tetFaces t₀`; the
+  GlueStep (shared=1 via `v∉t₀`), disjointness (uniqueness + `hvNotMR`), and the
+  `σ = σR.erase γ ∪ K` reconstruction (`degree3_cut_star_side_glue` + `cutSet_add_one_eq_sdiff`,
+  `σR≠star` via `hStarNotMR`). `degree3_hanchor` axioms = [propext, Classical.choice, Quot.sound]
+  (sorryAx-FREE). **Theorem3.lean is now sorry-free.** No AlephProver needed. Implemented by
+  general-purpose subagents (PM-carry + H1).
+- NEXT (H2 — the SINGLE remaining hole): `flipEdgePresent_side_bridge` (`PrimeStep.lean:1698`) —
+  the case-2 RelShelling bridge (the M22b "hidden topology" wall; Aleph stalled here). It now has
+  PM available via the carry (and `removeTet_isPseudomanifold`/LEMMA C). Peter: do NOT start H2 yet
+  except to inspect deps. theorem2/theorem3 still carry sorryAx via H2 only.
 
 ## Design decisions of record (G1-audited)
 
