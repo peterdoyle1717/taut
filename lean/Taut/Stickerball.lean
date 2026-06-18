@@ -96,4 +96,38 @@ lemma faceCount_eq_one_of_boundary {M : Chain V}
       rw [hb, e1, e2] at hsum <;> omega
   omega
 
+/-- **A boundary triangle is in an odd number of tets — never exactly two.** This
+is the parity half of the bridge (no pseudomanifold assumption): two tets would
+give `bdry ∈ {-2,0,2} ≠ ±1`. The triangle rule-out uses it to bump "`s` is in `t`
+and `w` (≥ 2)" up to "`s` is in ≥ 3 tets" (since it can't be exactly 2). -/
+lemma faceCount_ne_two_of_boundary {M : Chain V}
+    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    {f : Finset V} (hf : f.card = 3) (hb : bdry M f = 1 ∨ bdry M f = -1) :
+    faceCount M.support f ≠ 2 := by
+  intro h2
+  have hsum := bdry_eq_sum_facets (M := M) (f := f)
+  have hterm : ∀ t ∈ M.support.filter (fun t => f ⊆ t),
+      M t * bdryGen t f = 1 ∨ M t * bdryGen t f = -1 := by
+    intro t ht
+    rw [Finset.mem_filter] at ht
+    obtain ⟨htM, htf⟩ := ht
+    have hMt : M t = 1 ∨ M t = -1 := by
+      rcases hS t with h | h | h
+      · exact Or.inr h
+      · exact absurd h (Finsupp.mem_support_iff.mp htM)
+      · exact Or.inl h
+    have hgen : bdryGen t f = 1 ∨ bdryGen t f = -1 := by
+      rcases bdryGen_apply_mem_pm t f with h | h | h
+      · exact Or.inr h
+      · exact absurd h (bdryGen_ne_zero_of_subset (hPure t htM) hf htf)
+      · exact Or.inl h
+    rcases hMt with h1 | h1 <;> rcases hgen with h2 | h2 <;> rw [h1, h2] <;> decide
+  unfold faceCount at h2
+  obtain ⟨t1, t2, hne, heq⟩ := Finset.card_eq_two.mp h2
+  rw [heq, Finset.sum_pair hne] at hsum
+  have e1 := hterm t1 (by rw [heq]; exact Finset.mem_insert_self _ _)
+  have e2 := hterm t2 (by rw [heq]; exact Finset.mem_insert_of_mem (Finset.mem_singleton.mpr rfl))
+  rcases hb with hb | hb <;> rcases e1 with e1 | e1 <;> rcases e2 with e2 | e2 <;>
+    rw [hb, e1, e2] at hsum <;> omega
+
 end Taut
