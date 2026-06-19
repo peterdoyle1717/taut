@@ -607,13 +607,19 @@ sphere/ball definitions.
   `v∉e ⇒ e⊄starTet` so the apex set is unchanged. RESOLUTION = root the MR clean shelling at `t₀`
   (free clean shellability) ⇒ `t₀ ∈ τ` at every later glue. Also `deg3_clean_old_target` (old-target
   half) committed.
-- NAMED REMAINING OBLIGATIONS for theorem3_clean (τ-extension now resolved): (1) `deg3_step_clean` —
-  the CLEAN STAR-START `degree3_star_start_cleanShellFrom` (assemble: first glue t₀ onto {starTet}
-  [helc via w∈t₀], then transport the rest via the clean K-transport `CleanShellFrom_erase_union_disjoint`
-  for the boundary + `helc_insert_star`/`hvlc_insert_star` for τ-extension, rooted at t₀), then both
-  target cases (old via `deg3_clean_old_target`, star via the star-start + `insert_of_cleanGlueStep`);
-  plus the deg-3 PREAMBLE re-derived. (2) `prime_step_clean` — case-1 clean snoc + case-2 clean bridge
-  (mirror H2's `relShelling_over_insert_boundary_face` at the clean level — hardest). (3)
+- CLEAN STAR-START DONE — CHECKED (2026-06-19, `17dbf4b`): `degree3_star_start_cleanShellFrom`
+  builds `CleanShellFrom {starTet σ v} (tetFaces (starTet σ v)) l σ` (l = clean shelling of the
+  remainder rooted at t₀); first glue t₀ onto {starTet}, rest via the NEW exposed transport
+  `CleanShellFrom_starStart_transport` (folds the per-step `cleanGlueStep_insert_star_erase` =
+  τ-extension-by-starTet ∘ boundary erase-γ-add-K, using helc_insert_star/hvlc_insert_star). axioms
+  = standard-3. Both deg-3 reassembly halves now exist (`deg3_clean_old_target` + this).
+- NAMED REMAINING OBLIGATIONS for theorem3_clean: (1) `deg3_step_clean` — now just ASSEMBLY: re-derive
+  the deg-3 PREAMBLE (mirror `deg3_step_free`: degree3_cut_setup → MR, t₀ via degree3_hanchor [needs
+  the star CleanGlueStep `hglue₀` for the star-start — discharge via `cleanGlueStep_star_of_remainder`
+  / the first-glue construction], hPMR, faceCount γ=1, hvNotMR, M.support = insert starTet MR.support),
+  then ∀ target: old via `deg3_clean_old_target`, star=starTet via `degree3_star_start_cleanShellFrom`
+  + `FreelyCleanShellable.insert_of_cleanGlueStep`. (2) `prime_step_clean` — case-1 clean snoc + case-2
+  clean bridge (mirror H2's `relShelling_over_insert_boundary_face` at the clean level — hardest). (3)
   `theorem3_clean`/`theorem2_clean` = assemble once (1)+(2) done. Other open: Corollary 1 (ℚ-fillings),
   |A∩B|≤1 Th1 cases, Th4 (S³⊄B³).
 
