@@ -32,8 +32,11 @@ sphere/ball definitions.
   clean steps CHECKED (`base_free_clean`, `deg3_step_clean`, `prime_step_clean`@`e27ba91`), via the new
   `taut_edgeLinkConnected` (`ac1c0bb`) + the case-2 clean-shelling bridge. Weak `theorem2`/`theorem3`
   (`PrimeStep.lean`) UNCHANGED + intact. Full `lake build` green (8272 jobs), grep ZERO, std-3 axioms.
-  Branch `claude/clean-shelling`, HEAD `481c2b6`. Remaining work is OUTSIDE the clean migration:
-  Corollary 1 (ℚ-fillings), |A∩B|≤1 Theorem-1 cases, Theorem 4 (S³⊄B³). (AlephProver currently
+  Branch `claude/clean-shelling`, HEAD `202678b`. ALSO done (2026-06-19): the FULL Theorem 1 at the
+  paper's hypothesis `|A∩B| ≤ n+1` (no `p,q`) — `Zvol_add_of_almost_disjoint_full` /
+  `IsTaut.splits_full` (`202678b`) via the fresh-vertex WLOG enlargement (`[Infinite V]`); the
+  `|A∩B| ≤ 1` cases are ABSORBED by the enlargement, NOT separate missing lemmas.
+  Remaining work is OUTSIDE the clean migration: Corollary 1 (ℚ-fillings), Theorem 4 (S³⊄B³). (AlephProver currently
   unusable for taut — server-side mathlib build-validation failure; migration closed manually. See
   `notes/aleph-requests.md` / `STATUS.md`.)
 - Lean project: `lean/` (Mathlib v4.29.1, packages cached at
@@ -63,15 +66,19 @@ sphere/ball definitions.
   (`dimPart_bdry`), purity of taut chains (`IsTaut.dim_pure`),
   `IsTaut.vert_subset`, `Kmap_eq_self`, recovery
   (`Kmap_eq_zero_of_closed`), kill lemma (`Kkills_or_Kkills`, general n),
-  and THEOREM 1 PART 1: `Zvol_add_of_almost_disjoint` (general n ≥ 1,
-  under p ≠ q ∈ A∩B; the |A∩B| ≤ 1 cases are open targets, NOT assumed).
-  Axioms: standard three.
+  and THEOREM 1 PART 1: `Zvol_add_of_almost_disjoint` (the HARD case, n ≥ 1,
+  p ≠ q ∈ A∩B). **The paper's full statement `|A∩B| ≤ n+1` (incl. the ≤1 cases) is now CHECKED as
+  `Zvol_add_of_almost_disjoint_full` (`202678b`)** by the fresh-vertex WLOG enlargement (enlarge A,B
+  with fresh vertices from `[Infinite V]` to a size-2 cut, then apply the hard case) — the ≤1 cases are
+  ABSORBED, NOT separate lemmas/obligations. Axioms: standard three.
 - `Taut/Splitting.lean` — COMPLETE and building: kill certificates,
   strengthened mass bound, `no_double_kill`, `hybrid_structure`,
   `no_extreme_hybrid` (the complete-cone argument, coefficient-level),
   and THEOREM 1 PART 2: `IsTaut.splits` (n ≥ 2, general dimension,
   constructive split by filtering along `· ⊆ A`). Axioms: standard three.
-  PAPER STATUS: Props 1-4 and Theorem 1 (both parts) fully formalized.
+  PAPER STATUS: Props 1-4 and Theorem 1 (both parts) fully formalized — the hard case (p≠q∈A∩B) PLUS
+  the full paper statement `|A∩B| ≤ n+1` via fresh-vertex WLOG (`Zvol_add_of_almost_disjoint_full` /
+  `IsTaut.splits_full`, `202678b`, `[Infinite V]`).
 - G1 audit #2 (sphere/ball layer for Th2-Th4): spec
   notes/codex-consults/2026-06-12-g1-sphere-ball-spec.md — APPROVED.
   Notes of record: keep `conn` in IsSphere2 (χ alone admits torus
