@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-0858-hoppempty-architect-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-0858-hoppempty-architect-summary.txt
+
+=== raw size ===
+    2276  184428 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-0858-hoppempty-architect-raw.txt
+
+=== extracted markers ===
+2205:BLOCK
+2207:Verdict: `no_rogue_oppEdge_of_not_flipEdgePresent` is not the right next target as stated. `¬ FlipEdgePresent σ f₃ f₄` does not rule out a fresh tet containing `e \ (f₃ ∩ f₄)`. The missing force is full edge-link connectedness before deleting `e`.
+2238:Blocker:
+2242:BLOCK
+2244:Verdict: `no_rogue_oppEdge_of_not_flipEdgePresent` is not the right next target as stated. `¬ FlipEdgePresent σ f₃ f₄` does not rule out a fresh tet containing `e \ (f₃ ∩ f₄)`. The missing force is full edge-link connectedness before deleting `e`.
+2275:Blocker:
+
+=== final tail ===
+  Pure3 τ ∧ TriangleBounded3 τ ∧ Normal3 τ
+
+lemma pure3_singleton {t : Finset V} (ht : t.card = 4) :
+    Pure3 ({t} : Finset (Finset V)) := by
+  intro s hs; rw [Finset.mem_singleton] at hs; subst hs; exact ht
+lean/Taut/Theorem3Clean.lean:694:from it (`toBoundaryFreelyShellable`, `clean3Complex`).  The reassembly collapses to
+lean/Taut/Theorem3Clean.lean:780:      (hfreeMR.clean3Complex hMRne).2.1
+lean/Taut/Theorem3Clean.lean:924:      (hfreeML.clean3Complex hMLne).2.1
+lean/Taut/Pseudomanifold.lean:230:def IsStickerball (τ B : Finset (Finset V)) : Prop :=
+lean/Taut/Pseudomanifold.lean:236:    IsStickerball ({t} : Finset (Finset V)) (tetFaces t) := by
+lean/Taut/Pseudomanifold.lean:254:    IsStickerball (insert tt τ) σ :=
+lean/Taut/Pseudomanifold.lean:426:condition is `Clean3Complex`: pure, triangle-bounded, and *normal* (both links
+lean/Taut/Pseudomanifold.lean:437:/-- `Clean3Complex τ`: pure, triangle-bounded, and normal — the honest
+lean/Taut/Pseudomanifold.lean:440:def Clean3Complex (τ : Finset (Finset V)) : Prop :=
+lean/Taut/Pseudomanifold.lean:452:lemma clean3Complex_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Pseudomanifold.lean:453:    Clean3Complex ({t} : Finset (Finset V)) :=
+lean/Taut/Pseudomanifold.lean:456:/-- **Clean insertion preserves `Clean3Complex`.** The combiner bundling the three
+lean/Taut/Pseudomanifold.lean:462:lemma clean3Complex_insert {τ : Finset (Finset V)} {t : Finset V}
+lean/Taut/Pseudomanifold.lean:463:    (ht : t.card = 4) (httτ : t ∉ τ) (hτ : Clean3Complex τ)
+lean/Taut/Pseudomanifold.lean:469:    Clean3Complex (insert t τ) := by
+lean/Taut/CleanShelling.lean:22:compatibilities (`faceCount ≤ 1`, link attachment) that `clean3Complex_insert`
+lean/Taut/CleanShelling.lean:26:the clean shelling **self-certifying**: its prefixes are `Clean3Complex` with no
+lean/Taut/CleanShelling.lean:27:further chain input (`CleanShellFrom.clean3Complex`, `IsCleanBall.clean3Complex`),
+lean/Taut/CleanShelling.lean:44:`clean3Complex_insert` consumes.  Per the G1 audit (2026-06-18, session 019ed979)
+lean/Taut/CleanShelling.lean:144:/-! ## Self-certification: clean prefixes are `Clean3Complex`
+lean/Taut/CleanShelling.lean:146:The quantitative fields of `CleanGlueStep` feed `clean3Complex_insert`, so a clean
+lean/Taut/CleanShelling.lean:150:/-- One clean glue step preserves `Clean3Complex`. -/
+lean/Taut/CleanShelling.lean:151:lemma CleanGlueStep.clean3Complex {t : Finset V} {τ B B' : Finset (Finset V)}
+lean/Taut/CleanShelling.lean:152:    (hstep : CleanGlueStep t τ B B') (hτ : Clean3Complex τ) :
+lean/Taut/CleanShelling.lean:153:    Clean3Complex (insert t τ) :=
+lean/Taut/CleanShelling.lean:154:  clean3Complex_insert hstep.weak.card4 hstep.newTet hτ hstep.hpmc hstep.helc hstep.hvlc
+lean/Taut/CleanShelling.lean:156:/-- **Clean shelling prefixes are `Clean3Complex`.** Fold the per-step preservation
+lean/Taut/CleanShelling.lean:159:lemma CleanShellFrom.clean3Complex {τ B₀ : Finset (Finset V)} {l : List (Finset V)}
+lean/Taut/CleanShelling.lean:160:    {B : Finset (Finset V)} (hτ : Clean3Complex τ) (h : CleanShellFrom τ B₀ l B) :
+lean/Taut/CleanShelling.lean:161:    Clean3Complex (τ ∪ l.toFinset) := by
+lean/Taut/CleanShelling.lean:166:      have hrec := ih (hstep.clean3Complex hτ) hrest
+lean/Taut/CleanShelling.lean:171:/-- A clean shelling's tet-set is `Clean3Complex`. -/
+lean/Taut/CleanShelling.lean:172:lemma IsCleanShelling.clean3Complex {l : List (Finset V)} {B : Finset (Finset V)}
+lean/Taut/CleanShelling.lean:173:    (h : IsCleanShelling l B) : Clean3Complex l.toFinset := by
+lean/Taut/CleanShelling.lean:178:      have h2 := CleanShellFrom.clean3Complex (clean3Complex_singleton ht) hsh
+lean/Taut/CleanShelling.lean:184:lemma IsCleanBall.clean3Complex {τ B : Finset (Finset V)} (h : IsCleanBall τ B) :
+lean/Taut/CleanShelling.lean:185:    Clean3Complex τ := by
+lean/Taut/CleanShelling.lean:187:  rw [← hl]; exact hsh.clean3Complex
+lean/Taut/CleanShelling.lean:190:lemma FreelyCleanShellable.clean3Complex {τ B : Finset (Finset V)}
+lean/Taut/CleanShelling.lean:191:    (h : FreelyCleanShellable τ B) (hτ : τ.Nonempty) : Clean3Complex τ := by
+lean/Taut/CleanShelling.lean:194:  rw [← hl]; exact hsh.clean3Complex
+
+codex
+BLOCK
+
+Verdict: `no_rogue_oppEdge_of_not_flipEdgePresent` is not the right next target as stated. `¬ FlipEdgePresent σ f₃ f₄` does not rule out a fresh tet containing `e \ (f₃ ∩ f₄)`. The missing force is full edge-link connectedness before deleting `e`.
+
+Exact recommended patch shape:
+- Do not prove the proposed lemma from `hNotFlip`.
+- Add a local lemma consuming full edge-link connectedness:
+```lean
+private lemma oppEdge_empty_of_full_edgeLinkConnected ...
+    (hELM : EdgeLinkConnected M.support) :
+    edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅
+```
+- Then the real required theorem is:
+```lean
+theorem taut_edgeLinkConnected {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0)
+    (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) :
+    EdgeLinkConnected M.support
+```
+Hard stop there: this is a new edge-link connectedness theorem for taut fillings.
+
+Files to edit:
+- `lean/Taut/Pseudomanifold.lean` or a new local section in `lean/Taut/PrimeStep.lean`: prove/export `taut_edgeLinkConnected`.
+- `lean/Taut/Theorem3Clean.lean`: replace the proposed `hNotFlip` route with `oppEdge_empty_of_full_edgeLinkConnected` once `hELM` is available.
+
+Local lemmas needed for the local `hELM` lemma:
+- exposed-pair geometry: from `hexp : exposedFaces M e = {f₃,f₄}`, get vertices `z₃,z₄` with `e \ (f₃ ∩ f₄) = {z₃,z₄}`.
+- shared-face identification: the two tet faces of `e` containing `{z₃,z₄}` are exactly the shared faces.
+- isolation lemma: in `edgeLinkGraph M.support {z₃,z₄}`, any neighbor of either exposed apex from `e` is the other apex; proof uses `faceCount_removeTet_sharedFace_eq_zero`.
+- rogue-apex lemma: if `t ∈ (removeTet M e).support` contains `{z₃,z₄}`, then some apex `w` of `t` lies in `edgeLinkVerts M.support {z₃,z₄}` and `w` is not one of the two apexes from `e`.
+- no-reachability lemma: the isolated `{apex₃, apex₄}` component cannot reach `w`.
+
+Blocker:
+- `IsPseudomanifold` is insufficient. The required missing theorem is exactly `taut_edgeLinkConnected` above.
+tokens used
+83,929
+BLOCK
+
+Verdict: `no_rogue_oppEdge_of_not_flipEdgePresent` is not the right next target as stated. `¬ FlipEdgePresent σ f₃ f₄` does not rule out a fresh tet containing `e \ (f₃ ∩ f₄)`. The missing force is full edge-link connectedness before deleting `e`.
+
+Exact recommended patch shape:
+- Do not prove the proposed lemma from `hNotFlip`.
+- Add a local lemma consuming full edge-link connectedness:
+```lean
+private lemma oppEdge_empty_of_full_edgeLinkConnected ...
+    (hELM : EdgeLinkConnected M.support) :
+    edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅
+```
+- Then the real required theorem is:
+```lean
+theorem taut_edgeLinkConnected {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0)
+    (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) :
+    EdgeLinkConnected M.support
+```
+Hard stop there: this is a new edge-link connectedness theorem for taut fillings.
+
+Files to edit:
+- `lean/Taut/Pseudomanifold.lean` or a new local section in `lean/Taut/PrimeStep.lean`: prove/export `taut_edgeLinkConnected`.
+- `lean/Taut/Theorem3Clean.lean`: replace the proposed `hNotFlip` route with `oppEdge_empty_of_full_edgeLinkConnected` once `hELM` is available.
+
+Local lemmas needed for the local `hELM` lemma:
+- exposed-pair geometry: from `hexp : exposedFaces M e = {f₃,f₄}`, get vertices `z₃,z₄` with `e \ (f₃ ∩ f₄) = {z₃,z₄}`.
+- shared-face identification: the two tet faces of `e` containing `{z₃,z₄}` are exactly the shared faces.
+- isolation lemma: in `edgeLinkGraph M.support {z₃,z₄}`, any neighbor of either exposed apex from `e` is the other apex; proof uses `faceCount_removeTet_sharedFace_eq_zero`.
+- rogue-apex lemma: if `t ∈ (removeTet M e).support` contains `{z₃,z₄}`, then some apex `w` of `t` lies in `edgeLinkVerts M.support {z₃,z₄}` and `w` is not one of the two apexes from `e`.
+- no-reachability lemma: the isolated `{apex₃, apex₄}` component cannot reach `w`.
+
+Blocker:
+- `IsPseudomanifold` is insufficient. The required missing theorem is exactly `taut_edgeLinkConnected` above.
