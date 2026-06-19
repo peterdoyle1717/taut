@@ -1,0 +1,138 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-0944-taut-elc-architect-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-0944-taut-elc-architect-summary.txt
+
+=== raw size ===
+    2792  226390 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-0944-taut-elc-architect-raw.txt
+
+=== extracted markers ===
+2346:BLOCK
+2348:Verdict: `no_rogue_oppEdge_of_not_flipEdgePresent` is not the right next target as stated. `¬ FlipEdgePresent σ f₃ f₄` does not rule out a fresh tet containing `e \ (f₃ ∩ f₄)`. The missing force is full edge-link connectedness before deleting `e`.
+2379:Blocker:
+2383:BLOCK
+2385:Verdict: `no_rogue_oppEdge_of_not_flipEdgePresent` is not the right next target as stated. `¬ FlipEdgePresent σ f₃ f₄` does not rule out a fresh tet containing `e \ (f₃ ∩ f₄)`. The missing force is full edge-link connectedness before deleting `e`.
+2717:BLOCK
+2719:Verdict: the proposed `taut_edgeLinkConnected` is the right *shape* to supply `hELM`, but the naive insert-style proof is circular and should not be assigned as “mirror `taut_isPseudomanifold`” without one new rule-out lemma.
+2756:BLOCK
+2758:Verdict: the proposed `taut_edgeLinkConnected` is the right *shape* to supply `hELM`, but the naive insert-style proof is circular and should not be assigned as “mirror `taut_isPseudomanifold`” without one new rule-out lemma.
+
+=== final tail ===
+lemma edgeLinkGraph_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (e : Finset V) :
+    edgeLinkGraph τ e ≤ edgeLinkGraph τ' e :=
+  fun _ _ hxy => ⟨hxy.1, h hxy.2⟩
+
+/-- Reachability in a smaller tet-set's edge-link transfers to the larger one;
+contrapositively, **deleting tets cannot reconnect a split edge-link** — the
+key fact behind the edge rule-out. -/
+lemma edgeLink_reachable_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (e : Finset V)
+    {x y : V} (hr : (edgeLinkGraph τ e).Reachable x y) :
+    (edgeLinkGraph τ' e).Reachable x y :=
+  hr.mono (edgeLinkGraph_mono h e)
+
+/-- A single tetrahedron is edge-link connected. -/
+lemma edgeLinkConnected_singleton {t : Finset V} (ht : t.card = 4) :
+    EdgeLinkConnected ({t} : Finset (Finset V)) := by
+  intro e he x hx y hy
+  simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+    Finset.mem_singleton] at hx hy
+  obtain ⟨⟨_, ⟨rfl, hesub⟩, hxt⟩, hxe⟩ := hx
+  obtain ⟨⟨_, ⟨rfl, _⟩, hyt⟩, hye⟩ := hy
+  by_cases hxy : x = y
+  · subst hxy; exact ⟨SimpleGraph.Walk.nil⟩
+  · refine SimpleGraph.Adj.reachable ⟨hxy, ?_⟩
+    rw [Finset.mem_singleton]
+    have hxni : x ∉ insert y e := by
+      simp only [Finset.mem_insert, not_or]; exact ⟨hxy, hxe⟩
+    have hcard : (insert x (insert y e)).card = 4 := by
+      rw [Finset.card_insert_of_notMem hxni, Finset.card_insert_of_notMem hye]
+      omega
+    refine Finset.eq_of_subset_of_card_le (fun z hz => ?_) (le_of_eq (ht.trans hcard.symm))
+    simp only [Finset.mem_insert] at hz
+    rcases hz with rfl | rfl | hz
+    · exact hxt
+    · exact hyt
+    · exact hesub hz
+
+/-! ## Edge-link connectedness is preserved by a clean tet insertion -/
+
+/-- If `z, w` are the two apexes of edge `e` in the tetrahedron `t`, then
+`e ∪ {z, w} = t`. -/
+lemma insert_apexes_eq {t e : Finset V} {z w : V} (ht : t.card = 4) (he : e.card = 2)
+    (hsub : e ⊆ t) (hz : z ∈ t \ e) (hw : w ∈ t \ e) (hzw : z ≠ w) :
+
+codex
+BLOCK
+
+Verdict: the proposed `taut_edgeLinkConnected` is the right *shape* to supply `hELM`, but the naive insert-style proof is circular and should not be assigned as “mirror `taut_isPseudomanifold`” without one new rule-out lemma.
+
+Exact recommended patch shape:
+- Keep the public supplier:
+  `taut_edgeLinkConnected ... : EdgeLinkConnected M.support`
+- Add companion induction lemmas mirroring PM:
+  `removeTet_edgeLinkConnected`
+  `prime_edgeLinkConnected`
+  `deg3_edgeLinkConnected`
+- In `prime_edgeLinkConnected`, do not discharge the opposite-edge case by calling `oppEdge_empty_of_full_edgeLinkConnected`.
+- Instead, prove a separate contradiction lemma for the opposite edge using IH on a second removal:
+  `oppEdge_empty_of_disjoint_eligible_remainder`
+  concluding
+  `edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅`
+  from the disjoint eligible pair plus `EdgeLinkConnected (removeTet M u).support`.
+
+Files to edit:
+- `lean/Taut/PrimeStep.lean`: define/prove `removeTet_edgeLinkConnected`, `prime_edgeLinkConnected`, `deg3_edgeLinkConnected`, `taut_edgeLinkConnected`.
+- `lean/Taut/Theorem3Clean.lean`: call `taut_edgeLinkConnected` to supply `hELM` to the checked `oppEdge_empty_of_full_edgeLinkConnected`.
+- Possibly `lean/Taut/Pseudomanifold.lean`: only for generic edge-link helper lemmas, not chain-specific taut lemmas.
+
+Local lemmas needed:
+- exposed-pair/opposite-edge geometry: same decomposition already used in `oppEdge_empty_of_full_edgeLinkConnected`.
+- shared-triangle uniqueness for the two triangles `insert p (e \ (f₃ ∩ f₄))`, using `faceCount_eq_one_of_boundary` and `taut_isPseudomanifold`.
+- adjacency-closed component lemma: the two complementary vertices of `e` form a closed component in `edgeLinkGraph M.support` at the opposite edge.
+- survivor lemma: if a rogue tet containing the opposite edge exists in `removeTet M e`, it also survives in some chosen `removeTet M u`.
+- contradiction lemma: surviving closed component plus rogue apex gives `¬ EdgeLinkConnected (removeTet M u).support` via `not_edgeLinkConnected_of_subset`.
+
+Circularity ruling:
+- The insert route is circular unless the opposite-edge `hcompat` is proved by the new disjoint-removal contradiction lemma above.
+- It must consume only IH-level `EdgeLinkConnected (removeTet M u).support`, never `EdgeLinkConnected M.support`, and must not call `oppEdge_empty_of_full_edgeLinkConnected`.
+
+Hard stop:
+- If Claude cannot prove the survivor lemma from current `aleph_disjoint_eligible_pair` data, stop. Do not weaken with `sorry`, and do not assume `hOppEmpty`.
+- In that case the next required theorem is a strengthened eligible-pair selection lemma choosing `u` outside the bad opposite-edge link.
+tokens used
+78,386
+BLOCK
+
+Verdict: the proposed `taut_edgeLinkConnected` is the right *shape* to supply `hELM`, but the naive insert-style proof is circular and should not be assigned as “mirror `taut_isPseudomanifold`” without one new rule-out lemma.
+
+Exact recommended patch shape:
+- Keep the public supplier:
+  `taut_edgeLinkConnected ... : EdgeLinkConnected M.support`
+- Add companion induction lemmas mirroring PM:
+  `removeTet_edgeLinkConnected`
+  `prime_edgeLinkConnected`
+  `deg3_edgeLinkConnected`
+- In `prime_edgeLinkConnected`, do not discharge the opposite-edge case by calling `oppEdge_empty_of_full_edgeLinkConnected`.
+- Instead, prove a separate contradiction lemma for the opposite edge using IH on a second removal:
+  `oppEdge_empty_of_disjoint_eligible_remainder`
+  concluding
+  `edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅`
+  from the disjoint eligible pair plus `EdgeLinkConnected (removeTet M u).support`.
+
+Files to edit:
+- `lean/Taut/PrimeStep.lean`: define/prove `removeTet_edgeLinkConnected`, `prime_edgeLinkConnected`, `deg3_edgeLinkConnected`, `taut_edgeLinkConnected`.
+- `lean/Taut/Theorem3Clean.lean`: call `taut_edgeLinkConnected` to supply `hELM` to the checked `oppEdge_empty_of_full_edgeLinkConnected`.
+- Possibly `lean/Taut/Pseudomanifold.lean`: only for generic edge-link helper lemmas, not chain-specific taut lemmas.
+
+Local lemmas needed:
+- exposed-pair/opposite-edge geometry: same decomposition already used in `oppEdge_empty_of_full_edgeLinkConnected`.
+- shared-triangle uniqueness for the two triangles `insert p (e \ (f₃ ∩ f₄))`, using `faceCount_eq_one_of_boundary` and `taut_isPseudomanifold`.
+- adjacency-closed component lemma: the two complementary vertices of `e` form a closed component in `edgeLinkGraph M.support` at the opposite edge.
+- survivor lemma: if a rogue tet containing the opposite edge exists in `removeTet M e`, it also survives in some chosen `removeTet M u`.
+- contradiction lemma: surviving closed component plus rogue apex gives `¬ EdgeLinkConnected (removeTet M u).support` via `not_edgeLinkConnected_of_subset`.
+
+Circularity ruling:
+- The insert route is circular unless the opposite-edge `hcompat` is proved by the new disjoint-removal contradiction lemma above.
+- It must consume only IH-level `EdgeLinkConnected (removeTet M u).support`, never `EdgeLinkConnected M.support`, and must not call `oppEdge_empty_of_full_edgeLinkConnected`.
+
+Hard stop:
+- If Claude cannot prove the survivor lemma from current `aleph_disjoint_eligible_pair` data, stop. Do not weaken with `sorry`, and do not assume `hOppEmpty`.
+- In that case the next required theorem is a strengthened eligible-pair selection lemma choosing `u` outside the bad opposite-edge link.

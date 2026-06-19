@@ -24,17 +24,24 @@ theorem taut_edgeLinkConnected {σ : Finset (Finset V)} {X M : Chain V}
     EdgeLinkConnected M.support
 ```
 
-## Authorization gate (DO NOT proceed without it)
-- **`taut_edgeLinkConnected` is a NEW topology theorem** ("every taut filling of a 2-sphere is
-  edge-link connected"). Codex (architect) HARD-STOPPED on it; `IsPseudomanifold` is insufficient
-  (it bounds triangle counts but does not give edge-link connectivity). It is the analogue of
-  `taut_isPseudomanifold` at the edge-link level and is expected to be a substantial induction.
-- **It is NOT authorized yet.** Per protocol, launching it is a design decision (substantial new
-  topology development) requiring **Codex architecture + user authorization**.
-- **No further clean-migration work should proceed without Codex architecture and user
-  authorization.** In particular: do not start `taut_edgeLinkConnected`, do not open
-  `prime_step_clean` case-2 (the clean RelShelling bridge), and do not touch the locked weak
-  `theorem2`/`theorem3`, without sign-off.
+## Authorization (2026-06-19): clean-route topology AUTHORIZED
+User authorized proceeding through the remaining clean-route topology WITHOUT per-lemma approval.
+Codex stays architect; Claude implements. **Authorized without further user approval:**
+`taut_edgeLinkConnected` (or any narrower theorem supplying `hELM : EdgeLinkConnected M.support`)
+and its supporting edge-link lemmas; the clean RelShelling bridge for `prime_step_clean` case-2;
+completing `hOppEmpty`/`cleanGlueStep_eligible`/`prime_step_clean`/`theorem3_clean`/`theorem2_clean`;
+AlephProver on named local lemmas; Codex consults for next-target selection; bounded subagents;
+committing green checkpoints. **Do NOT stop merely because the next lemma is "new topology."**
+
+**Still require user approval before:** changing core defs (`Clean3Complex`, `Normal3`,
+`CleanGlueStep`, `IsCleanBall`, `FreelyCleanShellable`, `IsPseudomanifold`, `EdgeLinkConnected`);
+weakening theorem statements; touching locked weak `theorem2`/`theorem3` (beyond harmless
+imports/shared-helper movement); adding `sorry`/`admit`/`axiom`/`native_decide`/`unsafe`; leaving
+the repo broken; abandoning the clean route.
+
+`taut_edgeLinkConnected` is the analogue of `taut_isPseudomanifold` at the edge-link level
+(`IsPseudomanifold` bounds triangle counts but does not give edge-link connectivity); Codex is
+selecting the smallest sufficient statement + proof route.
 
 ## Remaining chain to `theorem3_clean` / `theorem2_clean`
 1. `taut_edgeLinkConnected` (NEW, unauthorized) ⟹ discharges `hELM` ⟹ `hOppEmpty` case-1 closes via `oppEdge_empty_of_full_edgeLinkConnected` + `cleanGlueStep_eligible`.
