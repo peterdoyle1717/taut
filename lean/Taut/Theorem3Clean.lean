@@ -1965,6 +1965,104 @@ private lemma prime_edgeLinkConnected_case1 {σ : Finset (Finset V)} {X M : Chai
     · exact edgeLinkCompat_nonOpp_of_exposed_face hσ hU hMX hT hS hPure hPMe he hf₃exp hi he'2
     · exact edgeLinkCompat_nonOpp_of_exposed_face hσ hU hMX hT hS hPure hPMe he hf₄exp hi he'2
 
+/-- **Edge-link connectivity transfers from a closed-up subset.**  If `τ' ⊆ τ`
+and every tet of `τ` containing `O` already lies in `τ'` (`hloc`), then the edge
+`O` sees the *same* link in `τ` as in `τ'`; hence connectivity on `O`'s apexes in
+`τ'` upgrades to `τ`.  Used to push the side-filling's edge-link connectivity (on
+an edge that lives entirely on one side) up to `removeTet M u`. -/
+private lemma connOn_oppEdge_of_subset_local {τ τ' : Finset (Finset V)} {O : Finset V}
+    (hsub : τ' ⊆ τ) (hloc : ∀ t ∈ τ, O ⊆ t → t ∈ τ')
+    (h : ConnOn (edgeLinkGraph τ' O) (edgeLinkVerts τ' O)) :
+    ConnOn (edgeLinkGraph τ O) (edgeLinkVerts τ O) := by
+  classical
+  -- The two filters by `O ⊆ ·` agree, so both the apex set and the link graph do.
+  have hfilter : τ.filter (fun t => O ⊆ t) = τ'.filter (fun t => O ⊆ t) := by
+    ext t
+    simp only [Finset.mem_filter]
+    constructor
+    · rintro ⟨ht, hOt⟩; exact ⟨hloc t ht hOt, hOt⟩
+    · rintro ⟨ht, hOt⟩; exact ⟨hsub ht, hOt⟩
+  have hverts : edgeLinkVerts τ O = edgeLinkVerts τ' O := by
+    unfold edgeLinkVerts; rw [hfilter]
+  have hgraph : edgeLinkGraph τ O = edgeLinkGraph τ' O := by
+    apply SimpleGraph.ext
+    funext x y
+    simp only [edgeLinkGraph]
+    apply propext
+    refine and_congr_right (fun _ => ?_)
+    have hOin : O ⊆ insert x (insert y O) :=
+      (Finset.subset_insert y O).trans (Finset.subset_insert x _)
+    constructor
+    · intro hmem; exact hloc _ hmem hOin
+    · intro hmem; exact hsub hmem
+  rw [hgraph, hverts]; exact h
+
+/-- **Side-local edge-link connectivity at a non-flip edge (flip present).**  When
+the flip edge of the eligible `u` is already in `σ`, `removeTet M u` splits into two
+smaller single-sphere taut fillings `sideA`, `sideB` along `g₃ ∩ g₄` (the side
+package + side algebra).  An edge `O ⊆ e` with `O ⊄ u` cannot straddle the seam, so
+it lies on one side; the IH gives that side's edge-link connectivity at `O`, and
+`connOn_oppEdge_of_subset_local` pushes it back up to `removeTet M u`. -/
+private lemma flipPresent_removeTet_connOn_at_nonflip_edge {σ : Finset (Finset V)}
+    {X M : Chain V} {e u g₃ g₄ O : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M)
+    (hu : EligibleTet M u) (heU : e ∈ (removeTet M u).support)
+    (hOe : O ⊆ e) (hOu : ¬ O ⊆ u) (hO2 : O.card = 2)
+    (hexpu : exposedFaces M u = {g₃, g₄}) (hg₃₄ : g₃ ≠ g₄)
+    (hFlipu : FlipEdgePresent σ g₃ g₄)
+    (IHelc : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      EdgeLinkConnected M'.support) :
+    ConnOn (edgeLinkGraph (removeTet M u).support O) (edgeLinkVerts (removeTet M u).support O) := by
+  classical
+  -- The flip-present side package: two sides `A, B`, covering and exact-separating.
+  obtain ⟨A, B, hAB, hcd, hsphA, hsphB, hcover, hsep, hg₃A, hg₃notB, hg₄B, hg₄notA, _⟩ :=
+    flipEdgePresent_side_sets hσ hU hXc hMX hT hS hu hexpu hg₃₄ hFlipu
+  -- Side-filling algebra: each side is a smaller single-sphere taut filling.
+  obtain ⟨hUA, hUB, hbA, hbB, hTA, hTB, hSA, hSB, hnrmA, hnrmB, _, _, _, _⟩ :=
+    flipEdgePresent_side_algebra hσ hU hXc hMX hT hS hu hexpu hg₃₄ hFlipu hAB hcd hcover hsep
+  -- `g₃ ⊆ u` (it is a face of the tet `u`), so `A ∩ B = g₃ ∩ g₄ ⊆ g₃ ⊆ u`.
+  have hg₃exp : g₃ ∈ exposedFaces M u := by rw [hexpu]; exact Finset.mem_insert_self g₃ _
+  have hg₃tet : g₃ ∈ tetFaces u := exposedFaces_subset_tetFaces M u hg₃exp
+  have hg₃u : g₃ ⊆ u := (Finset.mem_powersetCard.mp hg₃tet).1
+  have hABu : A ∩ B ⊆ u := by
+    rw [hAB]; exact (Finset.inter_subset_left).trans hg₃u
+  -- A subset `O ⊆ e`, `O ⊄ u`, cannot lie in `A ∩ B`.
+  have hOnotAB : ¬ O ⊆ A ∩ B := fun h => hOu (h.trans hABu)
+  -- `e` lies on one side.
+  rcases hcover e heU with heA | heB
+  · -- `e ⊆ A`: use side A.
+    have hloc : ∀ t ∈ (removeTet M u).support, O ⊆ t → t ∈
+        ((removeTet M u).filter (fun t => t ⊆ A)).support := by
+      intro t ht hOt
+      rw [Finsupp.support_filter, Finset.mem_filter]
+      refine ⟨ht, ?_⟩
+      rcases hcover t ht with htA | htB
+      · exact htA
+      · exact absurd (Finset.subset_inter (hOe.trans heA) (hOt.trans htB)) hOnotAB
+    have helcA : EdgeLinkConnected ((removeTet M u).filter (fun t => t ⊆ A)).support :=
+      IHelc ((flipBoundary σ M u).filter (fun f => f ⊆ A))
+        (bdry ((removeTet M u).filter (fun t => t ⊆ A)))
+        ((removeTet M u).filter (fun t => t ⊆ A)) hnrmA hsphA hUA hbA rfl hTA hSA
+    refine connOn_oppEdge_of_subset_local ?_ hloc (helcA O hO2)
+    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+  · -- `e ⊆ B`: use side B.
+    have hloc : ∀ t ∈ (removeTet M u).support, O ⊆ t → t ∈
+        ((removeTet M u).filter (fun t => t ⊆ B)).support := by
+      intro t ht hOt
+      rw [Finsupp.support_filter, Finset.mem_filter]
+      refine ⟨ht, ?_⟩
+      rcases hcover t ht with htA | htB
+      · exact absurd (Finset.subset_inter (hOt.trans htA) (hOe.trans heB)) hOnotAB
+      · exact htB
+    have helcB : EdgeLinkConnected ((removeTet M u).filter (fun t => t ⊆ B)).support :=
+      IHelc ((flipBoundary σ M u).filter (fun f => f ⊆ B))
+        (bdry ((removeTet M u).filter (fun t => t ⊆ B)))
+        ((removeTet M u).filter (fun t => t ⊆ B)) hnrmB hsphB hUB hbB rfl hTB hSB
+    refine connOn_oppEdge_of_subset_local ?_ hloc (helcB O hO2)
+    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+
 /-- **One clean glue step for re-gluing the eligible tet `e`** onto its remainder
 `removeTet M e` (boundary the flip-boundary, ending at `σ`).  All fields are
 discharged from the eligible geometry except the edge-link emptiness on the single
