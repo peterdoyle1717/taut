@@ -356,4 +356,216 @@ lemma deg3_clean_old_target {σ : Finset (Finset V)} {v : V}
   FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old hfreeMR hglue
     hglue.newTet hsMR
 
+/-! ## Degree-3 STAR-START half: the star tet glues first, then the remainder shells
+
+The star-start (new-target) half of the degree-3 reduction.  Here the *star* tet
+`starTet σ v` is the head of the shelling and the remainder `τ` is shelled onto it.
+The data is the clean analogue of the weak `degree3_star_start_shellFrom`
+(`Theorem3.lean`): a clean free shelling of the remainder rooted at a first tet
+`t₀` whose interface face is `γ = linkVerts σ v`, plus the clean inputs (v absent,
+γ unique to `t₀`, the disjoint exposed-star piece `K`).  The transport adjoins
+`starTet σ v` to the τ-base of the remainder shelling and swaps the interface face
+`γ` for the exposed star boundary `K`. -/
+
+/-- **τ-extension of one clean glue step by the star tet.**  Inserting the star tet
+`starTet σ v` into the accumulated tet-set `τ` of a clean glue step `t` is again a
+clean glue step, provided `v ∉ t`, `γ = linkVerts σ v` (card 3) sits in a tet
+`t₀ ∈ τ`, and `γ ⊄ t` (so `t` is not the interface tet).  Every field is preserved:
+`weak` is unchanged (boundary untouched); `newTet` adds `t ≠ starTet σ v`; `clean`
+gains no case (a face `f ⊆ t` newly covered by `starTet σ v` has `v ∉ f`, hence
+`f ⊆ γ ⊆ t₀ ∈ τ`, so it was already covered by the old `clean`); `hpmc` is
+unchanged (a card-3 `f ⊆ t` with `f ⊆ starTet σ v` would force `f = γ ⊆ t`, against
+`γ ⊄ t`, so the star contributes no count); `helc`/`hvlc` use the banked
+`helc_insert_star`/`hvlc_insert_star`. -/
+lemma cleanGlueStep_insert_star {σ : Finset (Finset V)} {v : V} {γ t₀ t : Finset V}
+    {τ B B' : Finset (Finset V)}
+    (hg : CleanGlueStep t τ B B')
+    (hγ : γ = linkVerts σ v) (hγ3 : γ.card = 3)
+    (ht₀τ : t₀ ∈ τ) (hγt₀ : γ ⊆ t₀)
+    (hvt : v ∉ t) (hγnt : ¬ γ ⊆ t)
+    (hstarNotτ : starTet σ v ∉ τ) (htstar : t ≠ starTet σ v) :
+    CleanGlueStep t (insert (starTet σ v) τ) B B' := by
+  have hstar : starTet σ v = insert v γ := by rw [starTet, hγ]
+  refine
+    { weak := hg.weak
+      newTet := ?_
+      clean := ?_
+      hpmc := ?_
+      helc := helc_insert_star hγ hγ3 hvt ht₀τ hγt₀ hg.helc
+      hvlc := hvlc_insert_star hγ hγ3 hvt ht₀τ hγt₀ hg.hvlc }
+  · -- clean: a face covered via the star tet is already covered via `t₀ ∈ τ`.
+    intro f hf ⟨s, hsτ, hfs⟩
+    apply hg.clean f hf
+    rcases Finset.mem_insert.mp hsτ with rfl | hsτ'
+    · -- `s = starTet σ v`: `v ∉ f` ⟹ `f ⊆ γ ⊆ t₀`.
+      refine ⟨t₀, ht₀τ, ?_⟩
+      have hvf : v ∉ f := fun hvf => hvt (hf hvf)
+      have hfγ : f ⊆ γ := by
+        intro x hxf
+        have : x ∈ insert v γ := hstar ▸ hfs hxf
+        rcases Finset.mem_insert.mp this with rfl | hxγ
+        · exact absurd hxf hvf
+        · exact hxγ
+      exact hfγ.trans hγt₀
+    · exact ⟨s, hsτ', hfs⟩
+  · -- freshness: `t ∉ insert (starTet σ v) τ`.
+    rw [Finset.mem_insert]
+    rintro (h | h)
+    · exact htstar h
+    · exact hg.newTet h
+  · -- hpmc: the star tet contributes no count to a card-3 face of `t` (else `γ ⊆ t`).
+    intro f hf3 hf
+    rw [faceCount_insert_of_not_mem hstarNotτ]
+    have hnotstar : ¬ f ⊆ starTet σ v := by
+      intro hsub
+      apply hγnt
+      have hvf : v ∉ f := fun hvf => hvt (hf hvf)
+      have hfγ : f ⊆ γ := by
+        intro x hxf
+        have : x ∈ insert v γ := hstar ▸ hsub hxf
+        rcases Finset.mem_insert.mp this with rfl | hxγ
+        · exact absurd hxf hvf
+        · exact hxγ
+      -- card-3 `f ⊆ γ` (card 3) is `γ`, so `γ = f ⊆ t`.
+      have : f = γ := Finset.eq_of_subset_of_card_le hfγ (by rw [hγ3, hf3])
+      exact this ▸ hf
+    rw [if_neg hnotstar, Nat.add_zero]
+    exact hg.hpmc f hf3 hf
+
+/-- **Combined per-step upgrade for the degree-3 star-start shelling.**  Compose the
+τ-extension by `starTet σ v` (`cleanGlueStep_insert_star`) with the boundary
+erase-γ-add-K transport (`CleanGlueStep.erase_union_disjoint`).  The boundary
+`clean`/`weak` survive the swap because the tet `t` avoids both `γ` and `K`
+(`hdisj`); the τ-fields survive the extension because `γ ⊄ t`. -/
+lemma cleanGlueStep_insert_star_erase {σ : Finset (Finset V)} {v : V} {γ t₀ t : Finset V}
+    {τ B B' K : Finset (Finset V)}
+    (hg : CleanGlueStep t τ B B')
+    (hγ : γ = linkVerts σ v) (hγ3 : γ.card = 3)
+    (ht₀τ : t₀ ∈ τ) (hγt₀ : γ ⊆ t₀)
+    (hvt : v ∉ t) (hγnt : ¬ γ ⊆ t)
+    (hstarNotτ : starTet σ v ∉ τ) (htstar : t ≠ starTet σ v)
+    (hdisj : Disjoint (tetFaces t) (insert γ K)) :
+    CleanGlueStep t (insert (starTet σ v) τ) (B.erase γ ∪ K) (B'.erase γ ∪ K) :=
+  (cleanGlueStep_insert_star hg hγ hγ3 ht₀τ hγt₀ hvt hγnt hstarNotτ htstar).erase_union_disjoint
+    hdisj
+
+/-- **The degree-3 star-start transport (the heart).**  Clean analogue of
+`ShellFrom_erase_union_disjoint`, additionally adjoining the star tet `starTet σ v`
+to the accumulated τ-base at every step.  Given a clean relative shelling of `l`
+from `τ₀` with interface tet `t₀ ∈ τ₀` (carrying `γ = linkVerts σ v ⊆ t₀`), in which
+the apex `v` is absent everywhere, no rest tet contains `γ`, the star is fresh and
+distinct from every rest tet, and every rest tet avoids `γ` and the exposed-star
+piece `K`, the same list `l` is a clean relative shelling from `insert (starTet σ v) τ₀`
+with the interface face `γ` swapped for `K`.
+
+The invariant threaded through the induction is `t₀ ∈` the accumulated τ-base (it
+starts in `τ₀` and only grows under `insert`), so the link-compat hypotheses of
+`helc_insert_star`/`hvlc_insert_star` always hold. -/
+lemma CleanShellFrom_starStart_transport {σ : Finset (Finset V)} {v : V} {γ t₀ : Finset V}
+    {K : Finset (Finset V)} {l : List (Finset V)} :
+    ∀ {τ₀ B₀ B : Finset (Finset V)}, CleanShellFrom τ₀ B₀ l B →
+      t₀ ∈ τ₀ → γ ⊆ t₀ → γ = linkVerts σ v → γ.card = 3 →
+      (∀ t ∈ l, v ∉ t) → (∀ t ∈ l, ¬ γ ⊆ t) →
+      starTet σ v ∉ τ₀ → (∀ t ∈ l, t ≠ starTet σ v) →
+      (∀ t ∈ l, Disjoint (tetFaces t) (insert γ K)) →
+      CleanShellFrom (insert (starTet σ v) τ₀) (B₀.erase γ ∪ K) l (B.erase γ ∪ K) := by
+  induction l with
+  | nil =>
+      intro τ₀ B₀ B h _ _ _ _ _ _ _ _ _
+      simp only [CleanShellFrom] at h ⊢
+      rw [h]
+  | cons t l ih =>
+      intro τ₀ B₀ B h ht₀τ hγt₀ hγ hγ3 hv hγn hstarNot htstar hdisj
+      simp only [CleanShellFrom] at h ⊢
+      obtain ⟨B₁, hstep, hrest⟩ := h
+      -- per-step upgrade for the head tet `t`
+      have hstep' : CleanGlueStep t (insert (starTet σ v) τ₀) (B₀.erase γ ∪ K) (B₁.erase γ ∪ K) :=
+        cleanGlueStep_insert_star_erase hstep hγ hγ3 ht₀τ hγt₀
+          (hv t (List.mem_cons.mpr (Or.inl rfl))) (hγn t (List.mem_cons.mpr (Or.inl rfl)))
+          hstarNot (htstar t (List.mem_cons.mpr (Or.inl rfl)))
+          (hdisj t (List.mem_cons.mpr (Or.inl rfl)))
+      refine ⟨B₁.erase γ ∪ K, hstep', ?_⟩
+      -- recurse on `insert t τ₀`; the invariant `t₀ ∈ insert t τ₀` is kept.
+      have htail : ∀ {P : Finset V → Prop}, (∀ u ∈ t :: l, P u) → ∀ u ∈ l, P u :=
+        fun H u hu => H u (List.mem_cons_of_mem t hu)
+      have hrec := ih hrest (Finset.mem_insert_of_mem ht₀τ) hγt₀ hγ hγ3
+        (htail hv) (htail hγn)
+        (fun hc => hstarNot ((Finset.mem_insert.mp hc).resolve_left
+          (fun h => htstar t (List.mem_cons.mpr (Or.inl rfl)) h.symm)))
+        (htail htstar) (htail hdisj)
+      -- align: `insert starTet (insert t τ₀) = insert t (insert starTet τ₀)`.
+      rwa [Finset.insert_comm] at hrec
+
+/-- **Degree-3 star-start clean shelling.**  Clean analogue of the weak
+`degree3_star_start_shellFrom`.  From a clean free shelling of the remainder `τ`
+rooted at the interface tet `t₀` (carrying the interface face `γ = linkVerts σ v`),
+together with the clean inputs (apex `v` absent from every remainder tet, `γ` unique
+to `t₀`, the first star glue across `γ`, and the rest tets disjoint from the
+exposed-star piece `K`), the star tet `starTet σ v` heads a clean shelling of the
+remainder onto it, ending at the target boundary `σ = B.erase γ ∪ K`.
+
+The construction: `hfree t₀` gives a clean free shelling `t₀ :: rest` of `τ`; glue
+the star tet first (the first `CleanGlueStep` `hglue₀` of `t₀` onto the single tet
+`{starTet σ v}`), then transport the relative shelling of `rest` by adjoining
+`starTet σ v` to the τ-base and swapping `γ` for `K`
+(`CleanShellFrom_starStart_transport`). -/
+lemma degree3_star_start_cleanShellFrom (σ B τ : Finset (Finset V)) {v : V}
+    {γ t₀ : Finset V} {K : Finset (Finset V)}
+    (hfree : FreelyCleanShellable τ B) (ht₀ : t₀ ∈ τ)
+    (hγ : γ = linkVerts σ v) (hγ3 : γ.card = 3) (hγt₀ : γ ⊆ t₀)
+    (hvτ : ∀ t ∈ τ, v ∉ t)
+    (huniqγ : ∀ t ∈ τ, γ ⊆ t → t = t₀)
+    (hstarNotτ : starTet σ v ∉ τ)
+    (hglue₀ : CleanGlueStep t₀ {starTet σ v} (tetFaces (starTet σ v))
+      ((tetFaces t₀).erase γ ∪ K))
+    (hrest_disj : ∀ t ∈ τ, t ≠ t₀ → Disjoint (tetFaces t) (insert γ K))
+    (hfinal : σ = B.erase γ ∪ K) :
+    ∃ l : List (Finset V), l.head? = some t₀ ∧ l.toFinset = τ ∧ l.Nodup ∧
+      CleanShellFrom {starTet σ v} (tetFaces (starTet σ v)) l σ := by
+  obtain ⟨l, hhead, hlτ, hnodup, hsh⟩ := hfree t₀ ht₀
+  cases l with
+  | nil => simp at hhead
+  | cons a rest =>
+      simp only [List.head?_cons, Option.some.injEq] at hhead
+      subst a
+      simp only [IsCleanShelling] at hsh
+      -- the remainder relative shelling, rooted at `t₀` with τ-base `{t₀}`.
+      obtain ⟨ht₀card, hrest_sh⟩ := hsh
+      -- membership of a `rest`-tet in `τ`, and that it is not `t₀`.
+      have hmemτ : ∀ t ∈ rest, t ∈ τ := by
+        intro t ht
+        exact hlτ ▸ List.mem_toFinset.mpr (List.mem_cons_of_mem t₀ ht)
+      have hne_t₀ : ∀ t ∈ rest, t ≠ t₀ := by
+        intro t ht hc
+        subst t
+        exact (List.nodup_cons.mp hnodup).1 ht
+      -- the per-rest-tet hypotheses for the transport.
+      have hv_rest : ∀ t ∈ rest, v ∉ t := fun t ht => hvτ t (hmemτ t ht)
+      have hγn_rest : ∀ t ∈ rest, ¬ γ ⊆ t := by
+        intro t ht hc
+        exact hne_t₀ t ht (huniqγ t (hmemτ t ht) hc)
+      have hstarne_rest : ∀ t ∈ rest, t ≠ starTet σ v := by
+        intro t ht hc
+        exact hstarNotτ (hc ▸ hmemτ t ht)
+      have hdisj_rest : ∀ t ∈ rest, Disjoint (tetFaces t) (insert γ K) :=
+        fun t ht => hrest_disj t (hmemτ t ht) (hne_t₀ t ht)
+      -- transport the remainder shelling onto `insert (starTet σ v) {t₀}`,
+      -- swapping `γ` for `K`.
+      have htransport :
+          CleanShellFrom (insert (starTet σ v) {t₀}) ((tetFaces t₀).erase γ ∪ K) rest
+            (B.erase γ ∪ K) :=
+        CleanShellFrom_starStart_transport hrest_sh (Finset.mem_singleton_self t₀) hγt₀ hγ
+          hγ3 hv_rest hγn_rest
+          (fun hc => hstarNotτ (by
+            rw [Finset.mem_singleton] at hc; rw [hc]; exact ht₀))
+          hstarne_rest hdisj_rest
+      refine ⟨t₀ :: rest, rfl, hlτ, hnodup, ?_⟩
+      -- assemble: first the star glue, then the transported remainder.
+      simp only [CleanShellFrom]
+      refine ⟨(tetFaces t₀).erase γ ∪ K, hglue₀, ?_⟩
+      -- `insert t₀ {starTet σ v} = insert (starTet σ v) {t₀}` (`Finset.pair_comm`).
+      rw [show insert t₀ ({starTet σ v} : Finset (Finset V)) = insert (starTet σ v) {t₀} from
+        Finset.pair_comm t₀ (starTet σ v)]
+      exact hfinal ▸ htransport
+
 end Taut
