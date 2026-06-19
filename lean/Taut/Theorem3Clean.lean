@@ -1341,7 +1341,8 @@ private lemma oppEdge_empty_of_disjoint_eligible_remainder {σ : Finset (Finset 
     (he : EligibleTet M e) (hu : EligibleTet M u)
     (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
     (hOu : ¬ (e \ (f₃ ∩ f₄)) ⊆ u)
-    (hELMu : EdgeLinkConnected (removeTet M u).support) :
+    (hConnOu : ConnOn (edgeLinkGraph (removeTet M u).support (e \ (f₃ ∩ f₄)))
+      (edgeLinkVerts (removeTet M u).support (e \ (f₃ ∩ f₄)))) :
     edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅ := by
   classical
   -- exposed-pair geometry: `f₃ = e.erase z₃`, `f₄ = e.erase z₄`, `e \ (f₃ ∩ f₄) = {z₃, z₄}`.
@@ -1525,8 +1526,8 @@ private lemma oppEdge_empty_of_disjoint_eligible_remainder {σ : Finset (Finset 
     have hnr : ¬ (edgeLinkGraph (removeTet M u).support ({z₃, z₄} : Finset V)).Reachable p₁ w := by
       rintro ⟨walk⟩
       exact hwp (walk_mem_of_adj_closed hclosed walk (Finset.mem_insert_self p₁ _))
-    exact (not_edgeLinkConnected_of_subset (subset_refl (removeTet M u).support)
-      hOcard hp₁_link hw_link hnr) hELMu
+    rw [hopp_eq] at hConnOu
+    exact hnr (hConnOu p₁ hp₁_link w hw_link)
 
 /-- **Opposite-edge geometry of an eligible tet.** For an eligible tet `t` of `M`
 with `exposedFaces M t = {a, b}` (`a ≠ b`), the flip-opposite edge `t \ (a ∩ b)`

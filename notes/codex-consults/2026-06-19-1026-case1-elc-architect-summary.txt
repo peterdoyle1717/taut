@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1026-case1-elc-architect-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1026-case1-elc-architect-summary.txt
+
+=== raw size ===
+    5322 1148423 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1026-case1-elc-architect-raw.txt
+
+=== extracted markers ===
+5121:WARN
+5123:Verdict: the weakening is correct, but do not bet on a disjoint `¬ FlipEdgePresent` pair. No such selection lemma is present, and it is plausibly false. Use a single-edge `ConnOn` hypothesis for `O_e`, and source it by case-splitting on `FlipEdgePresent` for `u`.
+5219:Next bounded implementation target:
+5223:WARN
+5225:Verdict: the weakening is correct, but do not bet on a disjoint `¬ FlipEdgePresent` pair. No such selection lemma is present, and it is plausibly false. Use a single-edge `ConnOn` hypothesis for `O_e`, and source it by case-splitting on `FlipEdgePresent` for `u`.
+5321:Next bounded implementation target:
+
+=== final tail ===
+  (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+  (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄)
+  (hOu : ¬ (e \ (f₃ ∩ f₄)) ⊆ u)
+  (hELMe : EdgeLinkConnected (removeTet M e).support)
+  (hConnOu : ConnOn ... O_e ...) :
+  EdgeLinkConnected M.support
+```
+Assemble via `support_insert_removeTet_of_mem`, `edgeLinkConnected_insert he.1 hELMe`; opposite edge uses weakened `oppEdge_empty...`, all other edges use `edgeLinkCompat_nonOpp_of_exposed_face`.
+
+Overall `taut_edgeLinkConnected` structure:
+- base: singleton.
+- degree-3: existing insert/star route.
+- prime: choose eligible `e`; split on `FlipEdgePresent` for `e`.
+- `¬ FlipEdgePresent e`: use `removeTet_edgeLinkConnected_noFlip`, disjoint eligible `u`, oriented `hOu`, dispatcher for `hConnOu`, then `prime_edgeLinkConnected_case1`.
+- `FlipEdgePresent e`: hard stop at new bridge, e.g. `prime_edgeLinkConnected_case2`.
+
+Next bounded implementation target:
+weaken `oppEdge_empty_of_disjoint_eligible_remainder` only, replacing full ELC by `ConnOn`, and prove it still builds. Hard stop before side-local connectivity if the direct weakened lemma does not compile cleanly.
+tokens used
+56,646
+WARN
+
+Verdict: the weakening is correct, but do not bet on a disjoint `¬ FlipEdgePresent` pair. No such selection lemma is present, and it is plausibly false. Use a single-edge `ConnOn` hypothesis for `O_e`, and source it by case-splitting on `FlipEdgePresent` for `u`.
+
+Recommended patch shape:
+
+Files to edit:
+- `lean/Taut/Theorem3Clean.lean`
+- likely no edits needed in `PrimeStep.lean` or `Pseudomanifold.lean`
+
+Weaken:
+```lean
+(hELMu : EdgeLinkConnected (removeTet M u).support)
+```
+to:
+```lean
+(hConnOu :
+  ConnOn
+    (edgeLinkGraph (removeTet M u).support (e \ (f₃ ∩ f₄)))
+    (edgeLinkVerts (removeTet M u).support (e \ (f₃ ∩ f₄))))
+```
+in `oppEdge_empty_of_disjoint_eligible_remainder`.
+
+Inside the proof, replace the final `not_edgeLinkConnected_of_subset ... hELMu` contradiction with direct contradiction:
+use `hConnOu` at the two constructed apexes `p₁` and `w`, after `simpa [hopp_eq]`.
+
+Local lemmas needed:
+
+1. `removeTet_edgeLinkConnected_noFlip`
+```lean
+private lemma removeTet_edgeLinkConnected_noFlip ...
+  (he : EligibleTet M e)
+  (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+  (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄)
+  (IHelc : ∀ σ' X' M', nrm M' < nrm M → IsSphere2 σ' →
+    UnitOn X' σ' → bdry X' = 0 → bdry M' = X' →
+    IsTaut M' → SimplicialChain M' → EdgeLinkConnected M'.support) :
+  EdgeLinkConnected (removeTet M e).support
+```
+Route: `isSphere2_flipBoundary_of_eligible`, `unitOn_flipBoundary_of_eligible`, `isTaut_removeTet`, `simplicialChain_removeTet`, `nrm_removeTet_add_one_of_simplicial`.
+
+2. `flipPresent_removeTet_connOn_at_nonflip_edge`
+```lean
+private lemma flipPresent_removeTet_connOn_at_nonflip_edge ...
+  (hu : EligibleTet M u)
+  (heU : e ∈ (removeTet M u).support)
+  (hO2 : O.card = 2) (hOe : O ⊆ e) (hOu : ¬ O ⊆ u)
+  (hexpu : exposedFaces M u = {g₃, g₄}) (hg₃₄ : g₃ ≠ g₄)
+  (hFlipu : FlipEdgePresent σ g₃ g₄)
+  (IHelc : ∀ σ' X' M', nrm M' < nrm M → IsSphere2 σ' →
+    UnitOn X' σ' → bdry X' = 0 → bdry M' = X' →
+    IsTaut M' → SimplicialChain M' → EdgeLinkConnected M'.support) :
+  ConnOn (edgeLinkGraph (removeTet M u).support O)
+         (edgeLinkVerts (removeTet M u).support O)
+```
+Route: use `flipEdgePresent_side_sets` for `A B`, then `flipEdgePresent_side_algebra` for side IH inputs. Do not use `isPseudomanifold_union_of_sideSep`; that is PM-only. If `e` lies on side `A`, prove every tet containing `O` lies on `A`; otherwise `O ⊆ A ∩ B = g₃ ∩ g₄`, hence `O ⊆ u`, contradicting `hOu`. Symmetric for `B`.
+
+3. Dispatcher:
+```lean
+private lemma removeTet_connOn_oppEdge_of_disjoint_eligible ...
+  (he : EligibleTet M e) (hu : EligibleTet M u)
+  (hexpe : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+  (hOu : ¬ (e \ (f₃ ∩ f₄)) ⊆ u)
+  (IHelc : ...) :
+  ConnOn
+    (edgeLinkGraph (removeTet M u).support (e \ (f₃ ∩ f₄)))
+    (edgeLinkVerts (removeTet M u).support (e \ (f₃ ∩ f₄)))
+```
+Route: obtain `g₃ g₄`; case on `FlipEdgePresent σ g₃ g₄`. No-flip: use `removeTet_edgeLinkConnected_noFlip`. Flip: use helper 2.
+
+`prime_edgeLinkConnected_case1` should take:
+- pair data `he`, `hu`;
+- oriented avoidance `hOu`;
+- `hPMe`;
+- `hELMe`;
+- `hConnOu`.
+
+Shape:
+```lean
+private lemma prime_edgeLinkConnected_case1 ...
+  (he : EligibleTet M e) (hu : EligibleTet M u)
+  (hPMe : IsPseudomanifold (removeTet M e).support)
+  (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+  (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄)
+  (hOu : ¬ (e \ (f₃ ∩ f₄)) ⊆ u)
+  (hELMe : EdgeLinkConnected (removeTet M e).support)
+  (hConnOu : ConnOn ... O_e ...) :
+  EdgeLinkConnected M.support
+```
+Assemble via `support_insert_removeTet_of_mem`, `edgeLinkConnected_insert he.1 hELMe`; opposite edge uses weakened `oppEdge_empty...`, all other edges use `edgeLinkCompat_nonOpp_of_exposed_face`.
+
+Overall `taut_edgeLinkConnected` structure:
+- base: singleton.
+- degree-3: existing insert/star route.
+- prime: choose eligible `e`; split on `FlipEdgePresent` for `e`.
+- `¬ FlipEdgePresent e`: use `removeTet_edgeLinkConnected_noFlip`, disjoint eligible `u`, oriented `hOu`, dispatcher for `hConnOu`, then `prime_edgeLinkConnected_case1`.
+- `FlipEdgePresent e`: hard stop at new bridge, e.g. `prime_edgeLinkConnected_case2`.
+
+Next bounded implementation target:
+weaken `oppEdge_empty_of_disjoint_eligible_remainder` only, replacing full ELC by `ConnOn`, and prove it still builds. Hard stop before side-local connectivity if the direct weakened lemma does not compile cleanly.
