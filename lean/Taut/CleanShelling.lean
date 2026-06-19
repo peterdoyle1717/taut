@@ -193,4 +193,93 @@ lemma FreelyCleanShellable.clean3Complex {τ B : Finset (Finset V)}
   obtain ⟨l, _, hl, _, hsh⟩ := h t ht
   rw [← hl]; exact hsh.clean3Complex
 
+/-! ## Clean reassembly — the clean analogues of the weak snoc lemmas
+
+These mirror `Ball.ShellFrom_snoc`/`IsShelling_snoc` and the `Theorem3` grafts
+(`FreelyShellable.insert_of_glueStep`, `…exists_shelling_insert_of_glueStep_old`),
+threading the accumulated tet-set `τ` that `CleanShellFrom` carries. -/
+
+/-- Append one clean glue step to a `CleanShellFrom`. The step must glue onto the
+fully accumulated tet-set `τ₀ ∪ l.toFinset`. -/
+lemma CleanShellFrom_snoc {τ₀ B₀ B B' : Finset (Finset V)} {l : List (Finset V)}
+    {e : Finset V} (h : CleanShellFrom τ₀ B₀ l B)
+    (hg : CleanGlueStep e (τ₀ ∪ l.toFinset) B B') :
+    CleanShellFrom τ₀ B₀ (l ++ [e]) B' := by
+  induction l generalizing τ₀ B₀ with
+  | nil =>
+      simp only [List.toFinset_nil, Finset.union_empty] at hg
+      simp only [CleanShellFrom] at h
+      subst h
+      exact ⟨B', hg, rfl⟩
+  | cons t l ih =>
+      obtain ⟨B₁, hstep, hrest⟩ := h
+      have hg' : CleanGlueStep e ((insert t τ₀) ∪ l.toFinset) B B' := by
+        have hset : (insert t τ₀) ∪ l.toFinset = τ₀ ∪ (t :: l).toFinset := by
+          rw [List.toFinset_cons, Finset.union_insert, Finset.insert_union]
+        rwa [hset]
+      exact ⟨B₁, hstep, ih hrest hg'⟩
+
+/-- Append one clean glue step to a clean shelling. -/
+lemma IsCleanShelling_snoc {l : List (Finset V)} {B B' : Finset (Finset V)}
+    {e : Finset V} (h : IsCleanShelling l B)
+    (hg : CleanGlueStep e l.toFinset B B') :
+    IsCleanShelling (l ++ [e]) B' := by
+  cases l with
+  | nil => exact h.elim
+  | cons t r =>
+      obtain ⟨ht, hsf⟩ := h
+      have hg' : CleanGlueStep e ({t} ∪ r.toFinset) B B' := by
+        have hset : ({t} : Finset (Finset V)) ∪ r.toFinset = (t :: r).toFinset := by
+          rw [List.toFinset_cons, Finset.singleton_union]
+        rwa [hset]
+      exact ⟨ht, CleanShellFrom_snoc hsf hg'⟩
+
+/-- **Old-target clean snoc.** A freely clean shellable `τ` and a fresh clean-glue
+tet `e` give, for any old target `s ∈ τ`, a clean shelling of `insert e τ` starting
+at `s` — namely `(τ's clean shelling from s) ++ [e]`. The clean analogue of
+`FreelyShellable.exists_shelling_insert_of_glueStep_old`. -/
+lemma FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old
+    {τ B B' : Finset (Finset V)} {e s : Finset V}
+    (hfree : FreelyCleanShellable τ B) (hg : CleanGlueStep e τ B B')
+    (heτ : e ∉ τ) (hsτ : s ∈ τ) :
+    ∃ l : List (Finset V), l.head? = some s ∧ l.toFinset = insert e τ ∧ l.Nodup ∧
+      IsCleanShelling l B' := by
+  obtain ⟨l, hhead, hlτ, hnodup, hsh⟩ := hfree s hsτ
+  refine ⟨l ++ [e], ?_, ?_, ?_, IsCleanShelling_snoc hsh (hlτ ▸ hg)⟩
+  · cases l with
+    | nil => exact absurd hsh (by simp [IsCleanShelling])
+    | cons a r => rw [List.cons_append]; exact hhead
+  · rw [List.toFinset_append, hlτ]
+    ext x
+    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+    tauto
+  · refine hnodup.append (List.nodup_singleton e) ?_
+    rw [List.disjoint_left]
+    intro a ha
+    simp only [List.mem_singleton]
+    rintro rfl
+    exact heτ (hlτ ▸ List.mem_toFinset.mpr ha)
+
+/-- **Clean case-1 stick.** A free clean sticker ball `τ` (boundary `B`) plus a
+fresh `CleanGlueStep` tet `t` is a free clean sticker ball with `t` adjoined. For an
+old target the shelling is `(old clean shelling from target) ++ [t]`; for target `t`
+the shelling is `t :: (a clean shelling of τ onto `B'` from `tetFaces t`)` — that
+bridge-start relative clean shelling is the hypothesis `hstart_t`. The clean
+analogue of `FreelyShellable.insert_of_glueStep`. -/
+lemma FreelyCleanShellable.insert_of_cleanGlueStep {τ B B' : Finset (Finset V)}
+    {t : Finset V} (hfree : FreelyCleanShellable τ B) (hg : CleanGlueStep t τ B B')
+    (hstart_t : ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
+      CleanShellFrom {t} (tetFaces t) l B') :
+    FreelyCleanShellable (insert t τ) B' := by
+  intro s hs
+  rcases Finset.mem_insert.mp hs with rfl | hsτ
+  · -- target is the new tet (`rcases rfl` substituted the binder `t := s`)
+    obtain ⟨l, hlτ, hnodup, hsf⟩ := hstart_t
+    refine ⟨s :: l, rfl, ?_, ?_, hg.weak.card4, hsf⟩
+    · rw [List.toFinset_cons, hlτ]
+    · exact List.nodup_cons.mpr ⟨fun hc => hg.newTet (hlτ ▸ List.mem_toFinset.mpr hc), hnodup⟩
+  · -- target is an old tet `s ∈ τ`
+    exact FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old hfree hg
+      hg.newTet hsτ
+
 end Taut
