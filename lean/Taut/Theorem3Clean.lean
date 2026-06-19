@@ -2751,4 +2751,55 @@ private lemma prime_edgeLinkConnected_case2 {σ : Finset (Finset V)} {X M : Chai
   exact edgeLinkConnected_insert_flipBridge hAB hcd2 he4 hs₁A hs₂B hcdf₃ hcdf₄ hf₃e hf₄e
     hf₃3 hf₄3 hf₃₄ he_eq hELC₁ hELC₂ ht₃ hf₃t₃ ht₄ hf₄t₄ hOppEmpty
 
+/-- **Prime (no-degree-3) step of the edge-link-connectedness induction.**
+Mirror of `prime_isPM`: when `σ` has no degree-3 vertex, pick a face-disjoint
+eligible pair (`aleph_disjoint_eligible_pair`).  Orientation
+(`eligible_pair_oriented_opp_avoidance`) names a favored tet `r` whose
+flip-opposite edge `r \ (r₃ ∩ r₄)` avoids the other tet `w`.  If `r`'s exposed
+pair spans a flip edge of `σ`, the side-split assembly
+(`prime_edgeLinkConnected_case2`) applies; otherwise the remainder is itself a
+smaller taut filling (edge-link connected by IH via
+`removeTet_edgeLinkConnected_noFlip`) and the avoided edge's link in
+`removeTet M w` is connected (`removeTet_connOn_oppEdge_of_disjoint_eligible`),
+so the clean re-glue `prime_edgeLinkConnected_case1` finishes. -/
+private lemma prime_edgeLinkConnected {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+    (IHelc : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      EdgeLinkConnected M'.support) :
+    EdgeLinkConnected M.support := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+    fun t ht => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
+  -- Reusable PM supplier for the smaller fillings (`taut_isPseudomanifold` is standalone).
+  have IHpm : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      IsPseudomanifold M'.support :=
+    fun σ' X' M' _ hσ' hU' hXc' hMX' hT' hS' => taut_isPseudomanifold hσ' hU' hXc' hMX' hT' hS'
+  -- A single oriented step, applied to both disjunct orientations.
+  have key : ∀ (r w r₃ r₄ : Finset V), EligibleTet M r → EligibleTet M w → r ≠ w →
+      Disjoint (sharedFaces M r) (sharedFaces M w) → exposedFaces M r = {r₃, r₄} → r₃ ≠ r₄ →
+      ¬ (r \ (r₃ ∩ r₄)) ⊆ w → EdgeLinkConnected M.support := by
+    intro r w r₃ r₄ hr hw rne rdisj hrexp hr₃₄ hOu
+    have hPMr : IsPseudomanifold (removeTet M r).support :=
+      removeTet_isPseudomanifold hσ hU hXc hMX hT hS hr IHpm
+    by_cases hFlip : FlipEdgePresent σ r₃ r₄
+    · exact prime_edgeLinkConnected_case2 hσ hU hXc hMX hT hS hPure hPMr hr hrexp hr₃₄ hFlip IHelc
+    · have hELMr : EdgeLinkConnected (removeTet M r).support :=
+        removeTet_edgeLinkConnected_noFlip hσ hU hXc hMX hT hS hr hrexp hr₃₄ hFlip IHelc
+      have hConnOw : ConnOn (edgeLinkGraph (removeTet M w).support (r \ (r₃ ∩ r₄)))
+          (edgeLinkVerts (removeTet M w).support (r \ (r₃ ∩ r₄))) :=
+        removeTet_connOn_oppEdge_of_disjoint_eligible hσ hU hXc hMX hT hS hr hw hrexp hr₃₄ hOu IHelc
+      exact prime_edgeLinkConnected_case1 hσ hU hXc hMX hT hS hPure hr hw hPMr hrexp hr₃₄ hOu
+        hELMr hConnOw
+  obtain ⟨e₀, u₀, hne, he₀, hu₀, hdisj⟩ := aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+  obtain ⟨f₃, f₄, hf₃₄, hexpe⟩ := exposedFaces_eq_pair_of_eligible he₀
+  obtain ⟨g₃, g₄, hg₃₄, hexpu⟩ := exposedFaces_eq_pair_of_eligible hu₀
+  rcases eligible_pair_oriented_opp_avoidance hσ hU hMX he₀ hu₀ hne hdisj hexpe hf₃₄ hexpu hg₃₄
+    with hOu | hOu
+  · exact key e₀ u₀ f₃ f₄ he₀ hu₀ hne hdisj hexpe hf₃₄ hOu
+  · exact key u₀ e₀ g₃ g₄ hu₀ he₀ hne.symm hdisj.symm hexpu hg₃₄ hOu
+
 end Taut
