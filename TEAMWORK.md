@@ -613,15 +613,28 @@ sphere/ball definitions.
   `CleanShellFrom_starStart_transport` (folds the per-step `cleanGlueStep_insert_star_erase` =
   τ-extension-by-starTet ∘ boundary erase-γ-add-K, using helc_insert_star/hvlc_insert_star). axioms
   = standard-3. Both deg-3 reassembly halves now exist (`deg3_clean_old_target` + this).
-- NAMED REMAINING OBLIGATIONS for theorem3_clean: (1) `deg3_step_clean` — now just ASSEMBLY: re-derive
-  the deg-3 PREAMBLE (mirror `deg3_step_free`: degree3_cut_setup → MR, t₀ via degree3_hanchor [needs
-  the star CleanGlueStep `hglue₀` for the star-start — discharge via `cleanGlueStep_star_of_remainder`
-  / the first-glue construction], hPMR, faceCount γ=1, hvNotMR, M.support = insert starTet MR.support),
-  then ∀ target: old via `deg3_clean_old_target`, star=starTet via `degree3_star_start_cleanShellFrom`
-  + `FreelyCleanShellable.insert_of_cleanGlueStep`. (2) `prime_step_clean` — case-1 clean snoc + case-2
-  clean bridge (mirror H2's `relShelling_over_insert_boundary_face` at the clean level — hardest). (3)
-  `theorem3_clean`/`theorem2_clean` = assemble once (1)+(2) done. Other open: Corollary 1 (ℚ-fillings),
-  |A∩B|≤1 Th1 cases, Th4 (S³⊄B³).
+- **`deg3_step_clean` CHECKED** (2026-06-19, `6f6931f`): the clean degree-3 step is PROVED (standard-3
+  axioms). Assembly over the CHECKED clean lemmas + new `cleanGlueStep_firstStar`; reassembly = one
+  `FreelyCleanShellable.insert_of_cleanGlueStep` per branch.
+- **`prime_step_clean` FAILED — precisely isolated** (2026-06-19, `4f75b83` banks the artifact). Two
+  edge-link obstructions, NEITHER in the current toolkit (this is exactly the EdgeLinkConnected gap the
+  weak route never needed):
+  • case-1 needs `hOppEmpty : edgeLinkVerts (removeTet M e).support (e \ (f₃∩f₄)) = ∅` — the eligible
+    tet's flip-OPPOSITE edge lies in no remaining tet (a rogue interior edge, obstruction (C) in
+    SHELLING-CONSULT.md §7b, INVISIBLE to IsPseudomanifold). Needs an EDGE-level analogue of
+    `faceCount_removeTet_sharedFace_eq_zero` (disjoint eligible `u` + the 2-sphere edge-link-cycle
+    topology). Committed artifact `cleanGlueStep_eligible` proves ALL fields of the eligible clean glue
+    EXCEPT this, consuming `hOppEmpty` as a hypothesis (so case-1 = just `hOppEmpty`). `helc`/`clean`
+    fields fail without it; `hvlc`/`hpmc`/`weak`/`newTet` are fine.
+  • case-2 needs a CLEAN RelShelling bridge — a `CleanShellFrom`-based analogue of
+    `relShelling_over_insert_boundary_face` (Ball.lean:281) verifying cross-side cleanliness
+    (side-1+e vs side-2) per glue; the weak RelShelling is boundary-only and does NOT transport.
+- NEXT EXACT LEMMA: the edge-link rule-out giving `hOppEmpty` (mirror `faceCount_removeTet_sharedFace
+  _eq_zero` at the edge-link level, via the disjoint eligible pair + `not_edgeLinkConnected_of_subset`
+  Pseudomanifold.lean:280 + 2-sphere edge-link topology). Then `prime_step_clean` case-1 closes via
+  `cleanGlueStep_eligible`; case-2 needs the clean RelShelling bridge. Then `theorem3_clean`/
+  `theorem2_clean` = `theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean` (+ projection).
+  Other open: Corollary 1 (ℚ-fillings), |A∩B|≤1 Th1 cases, Th4 (S³⊄B³).
 
 ## Design decisions of record (G1-audited)
 
