@@ -219,6 +219,52 @@ lemma CleanShellFrom_snoc {τ₀ B₀ B B' : Finset (Finset V)} {l : List (Finse
         rwa [hset]
       exact ⟨B₁, hstep, ih hrest hg'⟩
 
+/-- **`CleanShellFrom` composes.** Glue `l₁` (accumulating from `τ₀`) then `l₂`,
+whose accumulator must start at the fully accumulated tet-set `τ₀ ∪ l₁.toFinset`.
+The clean analogue of `Ball.ShellFrom_append`; because `CleanShellFrom` threads the
+accumulated tet-set, the induction generalizes `τ₀` (and the boundary `B₀`). -/
+lemma CleanShellFrom_append {τ₀ B₀ B₁ B : Finset (Finset V)} {l₁ l₂ : List (Finset V)}
+    (h₁ : CleanShellFrom τ₀ B₀ l₁ B₁)
+    (h₂ : CleanShellFrom (τ₀ ∪ l₁.toFinset) B₁ l₂ B) :
+    CleanShellFrom τ₀ B₀ (l₁ ++ l₂) B := by
+  induction l₁ generalizing τ₀ B₀ with
+  | nil =>
+      simp only [CleanShellFrom] at h₁
+      subst h₁
+      simpa only [List.toFinset_nil, Finset.union_empty, List.nil_append] using h₂
+  | cons t l ih =>
+      obtain ⟨B', hstep, hrest⟩ := h₁
+      refine ⟨B', hstep, ih hrest ?_⟩
+      have hset : (insert t τ₀) ∪ l.toFinset = τ₀ ∪ (t :: l).toFinset := by
+        rw [List.toFinset_cons, Finset.union_insert, Finset.insert_union]
+      rwa [hset]
+
+/-- A *clean relative shelling*: glue the tets of `τ` onto an ambient boundary `B₀`
+(threading `τ₀` as the accumulated old tet-set), ending at `B`.  The clean analogue
+of `Ball.RelShelling` — the invariant the case-2 clean bridge needs. -/
+def CleanRelShellingFrom (τ₀ τ B₀ B : Finset (Finset V)) : Prop :=
+  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ CleanShellFrom τ₀ B₀ l B
+
+/-- **Stitch a clean shelling to a clean continuation over a second region.**
+Consume a clean shelling `IsCleanShelling l₁ Bmid` (ending at boundary `Bmid`) and a
+clean `CleanShellFrom l₁.toFinset Bmid l₂ B` (continuing over the second region with
+the first region's tets as the accumulated old set), and produce a single clean
+shelling `IsCleanShelling (l₁ ++ l₂) B`.  The clean analogue of how `Ball`'s
+`IsShelling_append` stitches the two sides of the case-2 bridge. -/
+lemma IsCleanShelling_append_cleanShellFrom {l₁ l₂ : List (Finset V)}
+    {Bmid B : Finset (Finset V)} (h : IsCleanShelling l₁ Bmid)
+    (hf : CleanShellFrom l₁.toFinset Bmid l₂ B) :
+    IsCleanShelling (l₁ ++ l₂) B := by
+  cases l₁ with
+  | nil => exact h.elim
+  | cons t r =>
+      obtain ⟨ht, hsf⟩ := h
+      refine ⟨ht, ?_⟩
+      refine CleanShellFrom_append hsf ?_
+      have hset : ({t} : Finset (Finset V)) ∪ r.toFinset = (t :: r).toFinset := by
+        rw [List.toFinset_cons, Finset.singleton_union]
+      rwa [hset]
+
 /-- Append one clean glue step to a clean shelling. -/
 lemma IsCleanShelling_snoc {l : List (Finset V)} {B B' : Finset (Finset V)}
     {e : Finset V} (h : IsCleanShelling l B)
@@ -339,5 +385,429 @@ lemma CleanShellFrom_erase_union_disjoint {γ : Finset V}
       obtain ⟨B₁, hstep, hrest⟩ := h
       exact ⟨B₁.erase γ ∪ K, hstep.erase_union_disjoint (hd t (List.mem_cons.mpr (Or.inl rfl))),
         ih hrest (fun u hu => hd u (List.mem_cons.mpr (Or.inr hu)))⟩
+
+/-! ## Clean accumulator enlargement across a seam — the case-2 bridge engine
+
+The case-2 clean bridge shells side 1, sticks the bridge tet `e`, then continues
+over side 2 — but the side-2 continuation must thread the **enlarged accumulator**
+`Δ := insert e M₁.support` (the side-1 tets plus `e`), not side-2 alone.  Each side-2
+glue step's four `τ`-only fields must therefore be re-certified against `Δ ∪ (side-2
+prefix)`.  The lemmas below transport one such step, then fold the transport along a
+`CleanShellFrom`.
+
+The geometry that makes this work (supplied at the call site, abstracted here):
+* `Δ` meets the side-2 region `Bside` only inside the bridge face `f₄`
+  (`hΔB : ∀ d ∈ Δ, ∀ x ∈ d, x ∈ Bside → x ∈ f₄`).  So any face of a side-2 tet
+  `t ⊆ Bside` shared with `Δ` lies in `f₄` (card ≤ 3), killing all triangle/edge/vertex
+  cross terms except those inside `f₄`.
+* `f₄` itself lies in a unique side-2 tet `t₄` which is shelled **first**, so it is
+  always in the accumulator for the later steps; the seam-cleanliness then reduces to
+  the side-2 step's own `clean`/`helc`/`hvlc` via that `t₄`.
+
+The whole transport is driven by the single seam hypothesis `hΔB` plus the
+`t₄`-in-accumulator invariant `ht₄τ : t₄ ∈ τ`; everything else is the side-2 step's
+own field lifted by union-monotonicity. -/
+
+/-- **One clean glue step, prepend a disjoint cross-seam block `Δ`** (tail step).
+The side-2 tet `t ⊆ Bside` (`htB`) glues cleanly at `τ` (`hcg`); `Δ` meets `Bside`
+only inside the bridge face `f₄` (`hΔB`), the unique `Bside`-tet through `f₄` is
+`t₄`, which is already in the accumulator (`ht₄τ`, `hf₄t₄`).  Then the step is clean
+at `Δ ∪ τ`:
+
+* **clean** — a face `f ⊆ t` shared with `Δ` lies in `f₄ ⊆ t₄ ∈ τ`, so it is also
+  `τ`-shared and the side-2 `clean` field applies;
+* **hpmc** — `f₄ ⊄ t` (else `t = t₄ ∈ τ`, but `t ∉ τ`), so the only triangle of `t`
+  that `Δ` could carry is absent; the `Δ`-count is `0` and the side-2 bound survives;
+* **helc/hvlc** — an edge/vertex with empty `τ`-link and a nonempty `Δ`-link would lie
+  in `f₄ ⊆ t₄ ∈ τ`, making the `τ`-link nonempty (contradiction); so the `Δ`-link is
+  empty too, or the side-2 nonempty branch lifts by monotonicity. -/
+lemma CleanGlueStep.prepend_crossSeam {t f₄ Bside : Finset V} {Δ τ B B' : Finset (Finset V)}
+    (hcg : CleanGlueStep t τ B B')
+    (hdisj : Disjoint Δ τ) (htΔ : t ∉ Δ)
+    (htB : t ⊆ Bside)
+    (hΔB : ∀ d ∈ Δ, ∀ x ∈ d, x ∈ Bside → x ∈ f₄)
+    {t₄ : Finset V} (ht₄τ : t₄ ∈ τ) (hf₄t₄ : f₄ ⊆ t₄) (ht₄card : t₄.card = 4)
+    (hf₄card : f₄.card = 3) (hf₄nott : ¬ f₄ ⊆ t) :
+    CleanGlueStep t (Δ ∪ τ) B B' := by
+  classical
+  -- A face of `t` shared with `Δ` lies in `f₄` (each vertex is in `Bside ∩ Δ-tet`).
+  have hsharef₄ : ∀ {f : Finset V}, f ⊆ t → (∃ d ∈ Δ, f ⊆ d) → f ⊆ f₄ := by
+    rintro f hft ⟨d, hdΔ, hfd⟩ x hxf
+    exact hΔB d hdΔ x (hfd hxf) (htB (hft hxf))
+  -- A face of `t` shared with `Δ` is also shared with `τ` (via `t₄ ∈ τ ⊇ f₄`).
+  have hshareτ : ∀ {f : Finset V}, f ⊆ t → (∃ d ∈ Δ, f ⊆ d) → ∃ s ∈ τ, f ⊆ s :=
+    fun hft hd => ⟨t₄, ht₄τ, (hsharef₄ hft hd).trans hf₄t₄⟩
+  -- A proper-or-equal `f₄`-subface contained in `t` is a proper subface (else `f₄ ⊆ t`).
+  -- For the link branches: an `e`/`v` inside `f₄ ⊆ t₄ ∈ τ` already has a nonempty
+  -- `τ`-link (`t₄ \ e`, resp. `t₄ \ {v}`, is nonempty), since `t₄` has 4 > |e|,|{v}| verts.
+  have hlinkNeτ_edge : ∀ {e : Finset V}, e ⊆ f₄ → e.card = 2 → edgeLinkVerts τ e ≠ ∅ := by
+    intro e hef₄ he2
+    have hsub : e ⊆ t₄ := hef₄.trans hf₄t₄
+    have hcard : (t₄ \ e).card = 2 := by rw [Finset.card_sdiff_of_subset hsub, ht₄card, he2]
+    obtain ⟨w, hw⟩ := Finset.card_pos.mp (by rw [hcard]; norm_num : 0 < (t₄ \ e).card)
+    rw [Finset.mem_sdiff] at hw
+    refine Finset.ne_empty_of_mem (a := w) ?_
+    simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter]
+    exact ⟨⟨t₄, ⟨ht₄τ, hsub⟩, hw.1⟩, hw.2⟩
+  have hlinkNeτ_vert : ∀ {v : V}, v ∈ f₄ → vertexLinkVerts τ v ≠ ∅ := by
+    intro v hvf₄
+    have hvt₄ : v ∈ t₄ := hf₄t₄ hvf₄
+    have hcard : (t₄ \ {v}).card = 3 := by
+      rw [Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.mpr hvt₄), ht₄card,
+        Finset.card_singleton]
+    obtain ⟨w, hw⟩ := Finset.card_pos.mp (by rw [hcard]; norm_num : 0 < (t₄ \ {v}).card)
+    rw [Finset.mem_sdiff, Finset.mem_singleton] at hw
+    refine Finset.ne_empty_of_mem (a := w) ?_
+    simp only [vertexLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+      Finset.mem_singleton]
+    exact ⟨⟨t₄, ⟨ht₄τ, hvt₄⟩, hw.1⟩, hw.2⟩
+  refine
+    { weak := hcg.weak
+      newTet := ?_
+      clean := ?_
+      hpmc := ?_
+      helc := ?_
+      hvlc := ?_ }
+  · -- clean: a `Δ∪τ`-shared face reduces to a `τ`-shared face, then `hcg.clean`.
+    rintro f hft ⟨s, hs, hfs⟩
+    rw [Finset.mem_union] at hs
+    refine hcg.clean f hft ?_
+    rcases hs with hsΔ | hsτ
+    · exact hshareτ hft ⟨s, hsΔ, hfs⟩
+    · exact ⟨s, hsτ, hfs⟩
+  · -- newTet: `t ∉ Δ ∪ τ`.
+    intro h
+    rcases Finset.mem_union.mp h with hd | hτ
+    · exact htΔ hd
+    · exact hcg.newTet hτ
+  · -- hpmc: faceCount splits; the `Δ`-part is `0` (a triangle of `t` in `Δ` lies in
+    -- `f₄`, but `f₄ ⊄ t`, so a card-3 subface of `t` cannot fill `f₄`).
+    intro f hf3 hft
+    rw [faceCount_union_of_disjoint hdisj]
+    have hΔ0 : faceCount Δ f = 0 := by
+      apply faceCount_eq_zero
+      intro d hdΔ hfd
+      have hff₄ : f ⊆ f₄ := hsharef₄ hft ⟨d, hdΔ, hfd⟩
+      have hfeq : f = f₄ := Finset.eq_of_subset_of_card_le hff₄ (by rw [hf3, hf₄card])
+      exact hf₄nott (hfeq ▸ hft)
+    rw [hΔ0, zero_add]
+    exact hcg.hpmc f hf3 hft
+  · -- helc: union split; empty `τ`-branch kills the `Δ`-branch (a `Δ`-linked edge lies
+    -- in `f₄ ⊆ t₄ ∈ τ`, so its `τ`-link is nonempty); nonempty lifts.
+    intro e he he2
+    rw [edgeLinkVerts_union]
+    rcases hcg.helc e he he2 with hempty | ⟨w, hw⟩
+    · left
+      rw [hempty, Finset.union_empty]
+      apply edgeLinkVerts_eq_empty
+      intro d hdΔ hed
+      exact absurd hempty (hlinkNeτ_edge (hsharef₄ he ⟨d, hdΔ, hed⟩) he2)
+    · right
+      rw [Finset.mem_inter] at hw
+      exact ⟨w, Finset.mem_inter.mpr ⟨hw.1, Finset.mem_union_right _ hw.2⟩⟩
+  · -- hvlc: vertex analogue.
+    intro v hv
+    rw [vertexLinkVerts_union]
+    rcases hcg.hvlc v hv with hempty | ⟨w, hw⟩
+    · left
+      rw [hempty, Finset.union_empty]
+      apply vertexLinkVerts_eq_empty
+      intro d hdΔ hvd
+      exact absurd hempty (hlinkNeτ_vert (hΔB d hdΔ v hvd (htB hv)))
+    · right
+      rw [Finset.mem_inter] at hw
+      exact ⟨w, Finset.mem_inter.mpr ⟨hw.1, Finset.mem_union_right _ hw.2⟩⟩
+
+/-- **The cross-seam head glue: the bridge face's tet against the foreign block.**
+The unique `Bside`-tet `t₄` through the bridge face `f₄` is glued onto a boundary
+`B` that still carries `f₄` (`hf₄B`), against the foreign block `Δ` that meets `Bside`
+only inside `f₄` (`hΔB`).  This is the first side-2 step of the case-2 clean bridge
+(`relShelling_over_insert_boundary_face`'s first glue, at the clean level):
+
+* **clean** — a face of `t₄` shared with `Δ` lies in `f₄`, and `f₄ ∈ tetFaces t₄ ∩ B`;
+* **hpmc** — a card-3 face of `t₄` shared with `Δ` is `f₄` (card), whose `Δ`-count is
+  `≤ 1` (`hf₄countΔ`); other triangles are `Δ`-free;
+* **helc/hvlc** — an edge/vertex inside `f₄` has the apex `f₄ \ ·` supplied by the
+  foreign tet `e ⊇ f₄` (`he_mem`, `hf₄e`); outside `f₄` the `Δ`-link is empty (`hΔB`). -/
+lemma cleanGlueStep_crossSeam_head {t₄ f₄ Bside e : Finset V} {Δ B B' : Finset (Finset V)}
+    (hweak : BoundaryGlueStep t₄ B B')
+    (ht₄Δ : t₄ ∉ Δ) (ht₄B : t₄ ⊆ Bside) (ht₄card : t₄.card = 4)
+    (hΔB : ∀ d ∈ Δ, ∀ x ∈ d, x ∈ Bside → x ∈ f₄)
+    (hf₄t₄ : f₄ ⊆ t₄) (hf₄card : f₄.card = 3) (hf₄B : f₄ ∈ B)
+    (he_mem : e ∈ Δ) (hf₄e : f₄ ⊆ e) (hf₄countΔ : faceCount Δ f₄ ≤ 1) :
+    CleanGlueStep t₄ Δ B B' := by
+  classical
+  have hf₄tetT : f₄ ∈ tetFaces t₄ := Finset.mem_powersetCard.mpr ⟨hf₄t₄, hf₄card⟩
+  have hf₄interB : f₄ ∈ tetFaces t₄ ∩ B := Finset.mem_inter.mpr ⟨hf₄tetT, hf₄B⟩
+  -- A face of `t₄` shared with `Δ` lies in `f₄`.
+  have hsharef₄ : ∀ {f : Finset V}, f ⊆ t₄ → (∃ d ∈ Δ, f ⊆ d) → f ⊆ f₄ := by
+    rintro f hft ⟨d, hdΔ, hfd⟩ x hxf
+    exact hΔB d hdΔ x (hfd hxf) (ht₄B (hft hxf))
+  refine
+    { weak := hweak
+      newTet := ht₄Δ
+      clean := ?_
+      hpmc := ?_
+      helc := ?_
+      hvlc := ?_ }
+  · -- clean: shared face ⊆ f₄ ∈ tetFaces t₄ ∩ B.
+    rintro f hft hsh
+    exact ⟨f₄, hf₄interB, hsharef₄ hft hsh⟩
+  · -- hpmc: a shared triangle is `f₄`; its count is `≤ 1`; else `0`.
+    intro f hf3 hft
+    by_cases hsh : ∃ d ∈ Δ, f ⊆ d
+    · have hfeq : f = f₄ := Finset.eq_of_subset_of_card_le (hsharef₄ hft hsh) (by rw [hf3, hf₄card])
+      rw [hfeq]; exact hf₄countΔ
+    · rw [faceCount_eq_zero]; · omega
+      · intro d hdΔ hfd; exact hsh ⟨d, hdΔ, hfd⟩
+  · -- helc: edge `ε ⊆ t₄`.  If `ε ⊆ f₄`, apex `f₄ \ ε ⊆ t₄ \ ε` lies in `e ⊇ f₄ ⊇ ε`.
+    --        Else no `Δ`-tet contains `ε` (hΔB), so the link is empty.
+    intro ε hε hε2
+    by_cases hεf₄ : ε ⊆ f₄
+    · right
+      have hcard : (f₄ \ ε).card = 1 := by rw [Finset.card_sdiff_of_subset hεf₄, hf₄card, hε2]
+      obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hcard
+      have hwf₄ε : w ∈ f₄ \ ε := hw ▸ Finset.mem_singleton_self w
+      rw [Finset.mem_sdiff] at hwf₄ε
+      obtain ⟨hwf₄, hwε⟩ := hwf₄ε
+      refine ⟨w, Finset.mem_inter.mpr ⟨?_, ?_⟩⟩
+      · rw [Finset.mem_sdiff]; exact ⟨hf₄t₄ hwf₄, hwε⟩
+      · -- `w` is an apex of `ε` in `Δ` via `e ⊇ f₄ ⊇ ε` and `w ∈ f₄ ⊆ e`.
+        simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter]
+        exact ⟨⟨e, ⟨he_mem, hεf₄.trans hf₄e⟩, hf₄e hwf₄⟩, hwε⟩
+    · left
+      apply edgeLinkVerts_eq_empty
+      intro d hdΔ hεd
+      exact hεf₄ (hsharef₄ hε ⟨d, hdΔ, hεd⟩)
+  · -- hvlc: vertex `x ∈ t₄`.  If `x ∈ f₄`, apex `f₄ \ {x}` via `e`; else empty link.
+    intro x hx
+    by_cases hxf₄ : x ∈ f₄
+    · right
+      have hcard : (f₄ \ {x}).card = 2 := by
+        rw [Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.mpr hxf₄), hf₄card,
+          Finset.card_singleton]
+      obtain ⟨w, hw⟩ := Finset.card_pos.mp (by rw [hcard]; norm_num : 0 < (f₄ \ {x}).card)
+      rw [Finset.mem_sdiff, Finset.mem_singleton] at hw
+      obtain ⟨hwf₄, hwx⟩ := hw
+      refine ⟨w, Finset.mem_inter.mpr ⟨?_, ?_⟩⟩
+      · rw [Finset.mem_sdiff, Finset.mem_singleton]; exact ⟨hf₄t₄ hwf₄, hwx⟩
+      · simp only [vertexLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+          Finset.mem_singleton]
+        exact ⟨⟨e, ⟨he_mem, hf₄e hxf₄⟩, hf₄e hwf₄⟩, hwx⟩
+    · left
+      apply vertexLinkVerts_eq_empty
+      intro d hdΔ hxd
+      exact hxf₄ (hΔB d hdΔ x hxd (ht₄B hx))
+
+/-- **Prepend a disjoint cross-seam block to a whole clean shelling-from** (tail
+shelling).  Folds `CleanGlueStep.prepend_crossSeam` along a `CleanShellFrom τ₀ B₀ l B`
+of side-2 tets (`l`), all contained in `Bside` (`hlB`), disjoint from `Δ` (`hlΔ`), and
+not containing the bridge face `f₄` (`hlf₄` — they are the *tail*, after the unique
+`f₄`-tet `t₄` has been shelled).  With `Δ` meeting `Bside` only inside `f₄` (`hΔB`) and
+the `f₄`-tet `t₄` already in the accumulator (`ht₄τ`, preserved as the accumulator
+grows), the shelling stays clean with `Δ` prepended: `CleanShellFrom (Δ ∪ τ₀) B₀ l B`. -/
+lemma CleanShellFrom_prepend_crossSeam {Δ : Finset (Finset V)}
+    {f₄ Bside t₄ : Finset V} {l : List (Finset V)}
+    (hΔB : ∀ d ∈ Δ, ∀ x ∈ d, x ∈ Bside → x ∈ f₄)
+    (hf₄t₄ : f₄ ⊆ t₄) (ht₄card : t₄.card = 4) (hf₄card : f₄.card = 3)
+    (hlB : ∀ t ∈ l, t ⊆ Bside) (hlΔ : ∀ t ∈ l, t ∉ Δ) (hlf₄ : ∀ t ∈ l, ¬ f₄ ⊆ t) :
+    ∀ {τ₀ B₀ B : Finset (Finset V)}, CleanShellFrom τ₀ B₀ l B →
+      Disjoint Δ τ₀ → t₄ ∈ τ₀ →
+      CleanShellFrom (Δ ∪ τ₀) B₀ l B := by
+  induction l with
+  | nil =>
+      intro τ₀ B₀ B h _ _
+      simp only [CleanShellFrom] at h ⊢
+      exact h
+  | cons t l ih =>
+      intro τ₀ B₀ B h hdisj ht₄τ
+      simp only [CleanShellFrom] at h ⊢
+      obtain ⟨B₁, hstep, hrest⟩ := h
+      have htΔ : t ∉ Δ := hlΔ t (List.mem_cons_self ..)
+      -- Glue `t` cleanly at the enlarged accumulator `Δ ∪ τ₀`.
+      have hstep' : CleanGlueStep t (Δ ∪ τ₀) B₀ B₁ :=
+        hstep.prepend_crossSeam hdisj htΔ (hlB t (List.mem_cons_self ..)) hΔB
+          ht₄τ hf₄t₄ ht₄card hf₄card (hlf₄ t (List.mem_cons_self ..))
+      -- recurse with the grown accumulator `insert t τ₀` (still disjoint from `Δ`,
+      -- still containing `t₄`).
+      refine ⟨B₁, hstep', ?_⟩
+      have hdisj' : Disjoint Δ (insert t τ₀) := by
+        rw [Finset.disjoint_insert_right]; exact ⟨htΔ, hdisj⟩
+      have ht₄τ' : t₄ ∈ insert t τ₀ := Finset.mem_insert_of_mem ht₄τ
+      have hrec : CleanShellFrom (Δ ∪ insert t τ₀) B₁ l B :=
+        ih (fun u hu => hlB u (List.mem_cons_of_mem _ hu))
+          (fun u hu => hlΔ u (List.mem_cons_of_mem _ hu))
+          (fun u hu => hlf₄ u (List.mem_cons_of_mem _ hu)) hrest hdisj' ht₄τ'
+      -- `Δ ∪ insert t τ₀ = insert t (Δ ∪ τ₀)`.
+      rwa [Finset.union_insert] at hrec
+
+/-- **Clean relative shelling over the bridge boundary** — the clean, accumulator-aware
+analogue of `Ball.FreelyShellable.relShelling_over_insert_boundary_face`.  A freely
+clean-shellable side-2 region `τ₂` (boundary `σ₂'`), with a unique tet `t₄` through the
+bridge face `f₄`, relatively clean-shells onto the ambient bridge boundary `insert f₄ K`
+**with the foreign block `Δ` (the side-1 tets plus the bridge tet) prepended to the
+accumulated set** — ending at `σ₂'.erase f₄ ∪ K`.
+
+The shelling starts at `t₄` (free, by `hfree`): `t₄` glues onto `insert f₄ K` sharing
+the single face `f₄` (`cleanGlueStep_crossSeam_head`, against the accumulator `Δ`),
+exposing the other three faces while carrying `K`; the remaining tets glue on with the
+boundary transported (`CleanShellFrom_erase_union_disjoint`, they avoid `insert f₄ K`)
+and the accumulator enlarged by `Δ` (`CleanShellFrom_prepend_crossSeam`, with `t₄`
+already accumulated).  The two transports are orthogonal — boundary vs. tet-set — so
+they compose. -/
+lemma freelyCleanShellable_cleanRelShelling_over_bridge
+    {Δ τ₂ σ₂' K σ : Finset (Finset V)} {f₄ Bside e : Finset V}
+    (hfree : FreelyCleanShellable τ₂ σ₂')
+    (huniq : ∃! t, t ∈ τ₂ ∧ f₄ ⊆ t)
+    (hf₄card : f₄.card = 3)
+    (hΔdisj : Disjoint Δ τ₂)
+    (hΔB : ∀ d ∈ Δ, ∀ x ∈ d, x ∈ Bside → x ∈ f₄)
+    (hτ₂B : ∀ t ∈ τ₂, t ⊆ Bside)
+    (he_mem : e ∈ Δ) (hf₄e : f₄ ⊆ e) (hf₄countΔ : faceCount Δ f₄ ≤ 1)
+    (hKdisj : ∀ t ∈ τ₂, Disjoint (tetFaces t) K)
+    (hσ : σ = σ₂'.erase f₄ ∪ K) :
+    CleanRelShellingFrom Δ τ₂ (insert f₄ K) σ := by
+  classical
+  obtain ⟨head, ⟨hheadτ, hf₄head⟩, huniq'⟩ := huniq
+  -- `f₄` is a face of `head`.
+  have hf₄hd : f₄ ∈ tetFaces head :=
+    Finset.mem_powersetCard.mpr ⟨hf₄head, hf₄card⟩
+  -- The clean shelling starting at `head` (= the f₄-tet).
+  obtain ⟨l, hlhead, hlτ, hlnodup, hlshell⟩ := hfree head hheadτ
+  cases l with
+  | nil => simp at hlhead
+  | cons hd tail =>
+    have hhd : hd = head := by
+      simpa only [List.head?_cons, Option.some.injEq] using hlhead
+    subst hhd
+    obtain ⟨hcard4, hshellfrom⟩ := hlshell
+    -- `hd ⊆ Bside`, `hd ∉ Δ` (disjoint from `τ₂ ∋ hd`).
+    have hhdB : hd ⊆ Bside := hτ₂B hd hheadτ
+    have hhdΔ : hd ∉ Δ := fun hc => (Finset.disjoint_left.mp hΔdisj) hc hheadτ
+    -- The first clean glue: `hd` (= the f₄-tet) onto `insert f₄ K`, against `Δ`.
+    have hfirstGlue : CleanGlueStep hd Δ (insert f₄ K) ((tetFaces hd).erase f₄ ∪ K) := by
+      refine cleanGlueStep_crossSeam_head ?_ hhdΔ hhdB hcard4 hΔB hf₄head hf₄card
+        (Finset.mem_insert_self f₄ K) he_mem hf₄e hf₄countΔ
+      -- the underlying boundary glue `GlueStep hd (insert f₄ K) ((tetFaces hd).erase f₄ ∪ K)`.
+      have hdisjHd : Disjoint (tetFaces hd) K := hKdisj hd hheadτ
+      have hinter : tetFaces hd ∩ insert f₄ K = {f₄} := by
+        ext s
+        simp only [Finset.mem_inter, Finset.mem_insert, Finset.mem_singleton]
+        constructor
+        · rintro ⟨hsT, hsf | hsK⟩
+          · exact hsf
+          · exact absurd hsK (fun h => (Finset.disjoint_left.mp hdisjHd) hsT h)
+        · rintro rfl; exact ⟨hf₄hd, Or.inl rfl⟩
+      refine ⟨hcard4, ?_, ?_⟩
+      · rw [hinter, Finset.card_singleton]; exact Or.inl rfl
+      · ext s
+        simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_insert, Finset.mem_erase]
+        by_cases hsK : s ∈ K
+        · have hsT : s ∉ tetFaces hd := fun h => (Finset.disjoint_left.mp hdisjHd) h hsK
+          tauto
+        · by_cases hsT : s ∈ tetFaces hd
+          · by_cases hsf : s = f₄
+            · subst hsf; tauto
+            · tauto
+          · have hsf : s ≠ f₄ := fun h => hsT (h ▸ hf₄hd)
+            tauto
+    -- The tail tets avoid `insert f₄ K`: disjoint from `K` (`hKdisj`) and do not contain
+    -- `f₄` (uniqueness of `head`).
+    have htailDisj : ∀ t ∈ tail, Disjoint (tetFaces t) (insert f₄ K) := by
+      intro t ht
+      have htτ : t ∈ τ₂ := by
+        rw [← hlτ]; exact List.mem_toFinset.mpr (List.mem_cons_of_mem _ ht)
+      have htK : Disjoint (tetFaces t) K := hKdisj t htτ
+      have hf₄nt : ¬ f₄ ⊆ t := by
+        intro hf₄t
+        have : t = hd := huniq' t ⟨htτ, hf₄t⟩
+        subst this
+        exact (List.nodup_cons.mp hlnodup).1 ht
+      have hf₄nT : f₄ ∉ tetFaces t := fun h => hf₄nt (Finset.mem_powersetCard.mp h).1
+      rw [Finset.disjoint_left]
+      intro x hxT hxins
+      rcases Finset.mem_insert.mp hxins with hxf | hxK
+      · exact hf₄nT (hxf ▸ hxT)
+      · exact (Finset.disjoint_left.mp htK) hxT hxK
+    -- The tail tets are in `Bside`, not in `Δ`, and do not contain `f₄`.
+    have htailB : ∀ t ∈ tail, t ⊆ Bside := fun t ht => hτ₂B t (by
+      rw [← hlτ]; exact List.mem_toFinset.mpr (List.mem_cons_of_mem _ ht))
+    have htailΔ : ∀ t ∈ tail, t ∉ Δ := fun t ht hc =>
+      (Finset.disjoint_left.mp hΔdisj) hc (by
+        rw [← hlτ]; exact List.mem_toFinset.mpr (List.mem_cons_of_mem _ ht))
+    have htailf₄ : ∀ t ∈ tail, ¬ f₄ ⊆ t := by
+      intro t ht hf₄t
+      have htτ : t ∈ τ₂ := by
+        rw [← hlτ]; exact List.mem_toFinset.mpr (List.mem_cons_of_mem _ ht)
+      have : t = hd := huniq' t ⟨htτ, hf₄t⟩
+      subst this
+      exact (List.nodup_cons.mp hlnodup).1 ht
+    -- Boundary transport of the tail clean shelling, then accumulator enlargement by `Δ`.
+    have htailBdry :
+        CleanShellFrom {hd} ((tetFaces hd).erase f₄ ∪ K) tail (σ₂'.erase f₄ ∪ K) :=
+      CleanShellFrom_erase_union_disjoint hshellfrom htailDisj
+    have htailFull :
+        CleanShellFrom (Δ ∪ {hd}) ((tetFaces hd).erase f₄ ∪ K) tail (σ₂'.erase f₄ ∪ K) :=
+      CleanShellFrom_prepend_crossSeam hΔB hf₄head hcard4 hf₄card htailB htailΔ htailf₄
+        htailBdry (by rwa [Finset.disjoint_singleton_right]) (Finset.mem_singleton_self hd)
+    have hacc : Δ ∪ ({hd} : Finset (Finset V)) = insert hd Δ := by
+      rw [Finset.union_comm, Finset.insert_eq]
+    rw [hacc] at htailFull
+    refine ⟨hd :: tail, hlτ, hlnodup, ?_⟩
+    rw [hσ]
+    -- `CleanShellFrom Δ (insert f₄ K) (hd :: tail) σ`: first glue, then the enlarged tail.
+    exact ⟨(tetFaces hd).erase f₄ ∪ K, hfirstGlue, htailFull⟩
+
+/-- **Case-2 clean bridge assembly (one side).** Stitch a clean shelling of side 1
+(from a prescribed old target `s`), the bridge tet `e` (a clean glue onto side 1's
+boundary), and a clean relative shelling of side 2 over the resulting boundary into a
+single clean shelling of `insert e (τ₁ ∪ τ₂)` headed at `s`.  The clean analogue of
+the `IsShelling_append (IsShelling_snoc …) …` step of `exists_shelling_prime_case2`,
+threading the enlarged accumulator `insert e τ₁` that the clean relative shelling
+requires.  (`τ₁ = l₁.toFinset` is side 1's tet-set.) -/
+lemma cleanBridge_assemble {τ₂ σ₁ Bmid σ : Finset (Finset V)} {e s : Finset V}
+    {l₁ : List (Finset V)}
+    (hsh₁ : IsCleanShelling l₁ σ₁) (hhead₁ : l₁.head? = some s) (hnd₁ : l₁.Nodup)
+    (hg : CleanGlueStep e l₁.toFinset σ₁ Bmid)
+    (hrel : CleanRelShellingFrom (insert e l₁.toFinset) τ₂ Bmid σ)
+    (heτ₁ : e ∉ l₁.toFinset) (hdisj : Disjoint l₁.toFinset τ₂) (heτ₂ : e ∉ τ₂) :
+    ∃ l : List (Finset V), l.head? = some s ∧
+      l.toFinset = insert e (l₁.toFinset ∪ τ₂) ∧ l.Nodup ∧ IsCleanShelling l σ := by
+  classical
+  obtain ⟨l₂, hl₂τ, hl₂nodup, hsf₂⟩ := hrel
+  -- `l₁ ++ [e]` is a clean shelling onto `Bmid` (snoc the bridge tet).
+  have hsh₁e : IsCleanShelling (l₁ ++ [e]) Bmid := IsCleanShelling_snoc hsh₁ hg
+  -- Stitch the side-2 continuation; its accumulator `(l₁ ++ [e]).toFinset = insert e τ₁`.
+  have htoFin : (l₁ ++ [e]).toFinset = insert e l₁.toFinset := by
+    rw [List.toFinset_append]
+    ext x
+    simp only [Finset.mem_union, List.toFinset_cons, List.toFinset_nil, Finset.mem_insert,
+      Finset.notMem_empty, or_false, Finset.mem_singleton]
+    tauto
+  have hsf₂' : CleanShellFrom (l₁ ++ [e]).toFinset Bmid l₂ σ := htoFin ▸ hsf₂
+  refine ⟨(l₁ ++ [e]) ++ l₂, ?_, ?_, ?_, IsCleanShelling_append_cleanShellFrom hsh₁e hsf₂'⟩
+  · -- head? = some s.
+    cases l₁ with
+    | nil => exact absurd hsh₁ (by simp [IsCleanShelling])
+    | cons a r => rw [List.append_assoc, List.cons_append]; rwa [List.head?_cons] at hhead₁ ⊢
+  · -- toFinset = insert e (τ₁ ∪ τ₂).
+    rw [List.toFinset_append, htoFin, hl₂τ]
+    ext x
+    simp only [Finset.mem_union, Finset.mem_insert]
+    tauto
+  · -- Nodup.
+    have hel₁ : e ∉ l₁ := fun hc => heτ₁ (List.mem_toFinset.mpr hc)
+    have hel₂ : e ∉ l₂ := fun hc => heτ₂ (hl₂τ ▸ List.mem_toFinset.mpr hc)
+    have hdl : l₁.Disjoint l₂ := by
+      intro a ha₁ ha₂
+      exact Finset.disjoint_left.mp hdisj (List.mem_toFinset.mpr ha₁)
+        (hl₂τ ▸ List.mem_toFinset.mpr ha₂)
+    refine (hnd₁.append (List.nodup_singleton e) ?_).append hl₂nodup ?_
+    · rw [List.disjoint_left]; intro a ha; simp only [List.mem_singleton]; rintro rfl; exact hel₁ ha
+    · rw [List.disjoint_left]; intro a ha
+      rw [List.mem_append, List.mem_singleton] at ha
+      rcases ha with ha₁ | rfl
+      · exact List.disjoint_left.mp hdl ha₁
+      · exact hel₂
 
 end Taut

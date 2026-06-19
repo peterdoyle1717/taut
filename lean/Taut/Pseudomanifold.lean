@@ -185,6 +185,20 @@ lemma edgeLinkVerts_insert_of_not_subset {τ : Finset (Finset V)} {t e : Finset 
   unfold edgeLinkVerts
   rw [Finset.filter_insert, if_neg h]
 
+/-- The apexes of `e` in a union are the union of the apexes on each side. -/
+lemma edgeLinkVerts_union {τ₁ τ₂ : Finset (Finset V)} (e : Finset V) :
+    edgeLinkVerts (τ₁ ∪ τ₂) e = edgeLinkVerts τ₁ e ∪ edgeLinkVerts τ₂ e := by
+  ext w
+  simp only [edgeLinkVerts, Finset.mem_union, Finset.mem_sdiff, mem_vertsOf,
+    Finset.mem_filter]
+  constructor
+  · rintro ⟨⟨t, ⟨ht₁ | ht₂, hsub⟩, hwt⟩, hwe⟩
+    · exact Or.inl ⟨⟨t, ⟨ht₁, hsub⟩, hwt⟩, hwe⟩
+    · exact Or.inr ⟨⟨t, ⟨ht₂, hsub⟩, hwt⟩, hwe⟩
+  · rintro (⟨⟨t, ⟨ht, hsub⟩, hwt⟩, hwe⟩ | ⟨⟨t, ⟨ht, hsub⟩, hwt⟩, hwe⟩)
+    · exact ⟨⟨t, ⟨Or.inl ht, hsub⟩, hwt⟩, hwe⟩
+    · exact ⟨⟨t, ⟨Or.inr ht, hsub⟩, hwt⟩, hwe⟩
+
 /-- **Edge-link connectedness is preserved by inserting a fresh tet**, provided
 each edge of the new tet is either new to `τ` or already shares an apex with
 `τ`'s link there (the clean-glue compatibility). This is the manifold half of
@@ -267,6 +281,15 @@ lemma faceCount_le_of_subset {τ τ' : Finset (Finset V)} (h : τ' ⊆ τ) (f : 
   unfold faceCount
   exact Finset.card_le_card (Finset.filter_subset_filter _ h)
 
+/-- **Face incidence splits over a disjoint union.** The count over `τ₁ ∪ τ₂` is the
+sum of the side counts when the tet-sets are disjoint (`Finset.filter_union` plus
+disjoint `card_union`). -/
+lemma faceCount_union_of_disjoint {τ₁ τ₂ : Finset (Finset V)} (hd : Disjoint τ₁ τ₂)
+    (f : Finset V) : faceCount (τ₁ ∪ τ₂) f = faceCount τ₁ f + faceCount τ₂ f := by
+  unfold faceCount
+  rw [Finset.filter_union, Finset.card_union_of_disjoint
+    (Finset.disjoint_filter_filter hd)]
+
 /-- **Triangle rule-out core.** A triangle still in ≥ 3 tets of `τ'` forbids
 `IsPseudomanifold τ'`. -/
 lemma not_isPseudomanifold_of_faceCount {τ' : Finset (Finset V)} {f : Finset V}
@@ -315,6 +338,20 @@ lemma vertexLinkVerts_eq_empty {τ : Finset (Finset V)} {v : V}
     (h : ∀ t ∈ τ, v ∉ t) : vertexLinkVerts τ v = ∅ := by
   unfold vertexLinkVerts vertsOf
   rw [Finset.filter_false_of_mem h]; simp
+
+/-- The apexes of `v` in a union are the union of the apexes on each side. -/
+lemma vertexLinkVerts_union {τ₁ τ₂ : Finset (Finset V)} (v : V) :
+    vertexLinkVerts (τ₁ ∪ τ₂) v = vertexLinkVerts τ₁ v ∪ vertexLinkVerts τ₂ v := by
+  ext w
+  simp only [vertexLinkVerts, Finset.mem_union, Finset.mem_sdiff, mem_vertsOf,
+    Finset.mem_filter, Finset.mem_singleton]
+  constructor
+  · rintro ⟨⟨t, ⟨ht₁ | ht₂, hvt⟩, hwt⟩, hwv⟩
+    · exact Or.inl ⟨⟨t, ⟨ht₁, hvt⟩, hwt⟩, hwv⟩
+    · exact Or.inr ⟨⟨t, ⟨ht₂, hvt⟩, hwt⟩, hwv⟩
+  · rintro (⟨⟨t, ⟨ht, hvt⟩, hwt⟩, hwv⟩ | ⟨⟨t, ⟨ht, hvt⟩, hwt⟩, hwv⟩)
+    · exact ⟨⟨t, ⟨Or.inl ht, hvt⟩, hwt⟩, hwv⟩
+    · exact ⟨⟨t, ⟨Or.inr ht, hvt⟩, hwt⟩, hwv⟩
 
 /-- Vertex-link graphs grow with the tet-set. -/
 lemma vertexLinkGraph_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (v : V) :

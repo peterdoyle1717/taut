@@ -25,7 +25,8 @@
 `cleanGlueStep_eligible` is effectively UNCONDITIONAL. (NB: `taut_edgeLinkConnected` does NOT take
 `hPure` — it derives it internally.)
 
-## NEXT: `prime_step_clean` ⟹ `theorem3_clean`/`theorem2_clean` (Codex `primeclean-architect`, BLOCK on case-2 reuse; case-1 unblocked)
+## NEXT: `prime_step_clean` ⟹ `theorem3_clean`/`theorem2_clean` (Codex `primeclean-architect`)
+- **case-1 (¬Flip) — DONE.** `exists_clean_shelling_prime_case1` CHECKED (`66db683`, std-3). [recipe below kept for reference]
 - **case-1 (¬Flip) — FULLY UNBLOCKED.** Add `exists_clean_shelling_prime_case1` (mirror weak
   `exists_shelling_prime_case1`, IH→FreelyCleanShellable). Recipe: pair `e,u`+`hdisj` from
   `aleph_disjoint_eligible_pair`; `hfree_e := IH (removeTet M e)`; `hPMu := removeTet_isPseudomanifold …

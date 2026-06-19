@@ -1,0 +1,133 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1244-case2-internals-architect-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1244-case2-internals-architect-summary.txt
+
+=== raw size ===
+    1742   95891 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1244-case2-internals-architect-raw.txt
+
+=== extracted markers ===
+1619:PLAN
+1621:Verdict: start with the **generic one-side clean bridge**, not `CleanRelShellingFrom` or append transport. Those are scaffolding; the first real bounded target is the clean analogue of `relShelling_over_insert_boundary_face` with an explicit foreign accumulator `Δ`.
+1682:PLAN
+1684:Verdict: start with the **generic one-side clean bridge**, not `CleanRelShellingFrom` or append transport. Those are scaffolding; the first real bounded target is the clean analogue of `relShelling_over_insert_boundary_face` with an explicit foreign accumulator `Δ`.
+
+=== final tail ===
+Recommended patch shape: add/prove this in `lean/Taut/CleanShelling.lean`:
+
+```lean
+lemma freelyCleanShellable_cleanRelShelling_over_bridge
+    {Δ τ₂ σ₂' K σ : Finset (Finset V)} {f₄ Bside e : Finset V}
+    (hfree : FreelyCleanShellable τ₂ σ₂')
+    (huniq : ∃! t, t ∈ τ₂ ∧ f₄ ⊆ t)
+    (hf₄card : f₄.card = 3)
+    (hΔdisj : Disjoint Δ τ₂)
+    (hΔB : ∀ d ∈ Δ, ∀ x ∈ d, x ∈ Bside → x ∈ f₄)
+    (hτ₂B : ∀ t ∈ τ₂, t ⊆ Bside)
+    (he_mem : e ∈ Δ) (hf₄e : f₄ ⊆ e) (hf₄countΔ : faceCount Δ f₄ ≤ 1)
+    (hKdisj : ∀ t ∈ τ₂, Disjoint (tetFaces t) K)
+    (hσ : σ = σ₂'.erase f₄ ∪ K) :
+    CleanRelShellingFrom Δ τ₂ (insert f₄ K) σ
+```
+
+Proof route:
+1. Choose the unique head `head ∈ τ₂` containing `f₄`.
+2. Use `hfree head hheadτ` to get a clean shelling headed by `head`.
+3. Build the first glue:
+   `CleanGlueStep head Δ (insert f₄ K) ((tetFaces head).erase f₄ ∪ K)`.
+4. Transport the tail boundary with `CleanShellFrom_erase_union_disjoint`.
+5. Enlarge the tail accumulator with `CleanShellFrom_prepend_crossSeam`.
+6. Return `⟨head :: tail, hlτ, hlnodup, ...⟩`.
+
+Files to edit:
+- `lean/Taut/CleanShelling.lean` first.
+- Only after this checks, edit `lean/Taut/PrimeStep.lean` to instantiate it twice inside a later `flipEdgePresent_side_clean_bridge`.
+
+Local lemmas needed:
+- `cleanGlueStep_crossSeam_head`
+- `CleanGlueStep.prepend_crossSeam`
+- `CleanShellFrom_prepend_crossSeam`
+- `CleanShellFrom_erase_union_disjoint`
+- `CleanRelShellingFrom`
+- `CleanShellFrom_append`
+- `IsCleanShelling_append_cleanShellFrom`
+- `faceCount_union_of_disjoint`
+- `faceCount_eq_zero`
+- `edgeLinkVerts_union`
+- `vertexLinkVerts_union`
+- `edgeLinkVerts_eq_empty`
+- `vertexLinkVerts_eq_empty`
+
+AlephProver targets to try:
+- `cleanGlueStep_crossSeam_head`
+- `CleanGlueStep.prepend_crossSeam`
+- small seam facts proving `hsharef₄`
+- small link nonempty facts from `f₄ ⊆ t₄`, `t₄.card = 4`, `f₄.card = 3`
+- tail facts: `htailDisj`, `htailf₄`, `htailΔ`
+
+Hard stop conditions:
+- Stop if proving the lemma requires changing `CleanGlueStep`, `CleanShellFrom`, or `FreelyCleanShellable`.
+- Stop if the first glue cannot prove `hpmc/helc/hvlc` from `hΔB`, `he_mem`, `hf₄e`, and `hf₄countΔ`.
+- Stop if the tail accumulator enlargement needs global chain hypotheses; this generic lemma must stay chain-free.
+- Do not start full `prime_step_clean` until this one-side bridge checks.
+tokens used
+38,513
+PLAN
+
+Verdict: start with the **generic one-side clean bridge**, not `CleanRelShellingFrom` or append transport. Those are scaffolding; the first real bounded target is the clean analogue of `relShelling_over_insert_boundary_face` with an explicit foreign accumulator `Δ`.
+
+Recommended patch shape: add/prove this in `lean/Taut/CleanShelling.lean`:
+
+```lean
+lemma freelyCleanShellable_cleanRelShelling_over_bridge
+    {Δ τ₂ σ₂' K σ : Finset (Finset V)} {f₄ Bside e : Finset V}
+    (hfree : FreelyCleanShellable τ₂ σ₂')
+    (huniq : ∃! t, t ∈ τ₂ ∧ f₄ ⊆ t)
+    (hf₄card : f₄.card = 3)
+    (hΔdisj : Disjoint Δ τ₂)
+    (hΔB : ∀ d ∈ Δ, ∀ x ∈ d, x ∈ Bside → x ∈ f₄)
+    (hτ₂B : ∀ t ∈ τ₂, t ⊆ Bside)
+    (he_mem : e ∈ Δ) (hf₄e : f₄ ⊆ e) (hf₄countΔ : faceCount Δ f₄ ≤ 1)
+    (hKdisj : ∀ t ∈ τ₂, Disjoint (tetFaces t) K)
+    (hσ : σ = σ₂'.erase f₄ ∪ K) :
+    CleanRelShellingFrom Δ τ₂ (insert f₄ K) σ
+```
+
+Proof route:
+1. Choose the unique head `head ∈ τ₂` containing `f₄`.
+2. Use `hfree head hheadτ` to get a clean shelling headed by `head`.
+3. Build the first glue:
+   `CleanGlueStep head Δ (insert f₄ K) ((tetFaces head).erase f₄ ∪ K)`.
+4. Transport the tail boundary with `CleanShellFrom_erase_union_disjoint`.
+5. Enlarge the tail accumulator with `CleanShellFrom_prepend_crossSeam`.
+6. Return `⟨head :: tail, hlτ, hlnodup, ...⟩`.
+
+Files to edit:
+- `lean/Taut/CleanShelling.lean` first.
+- Only after this checks, edit `lean/Taut/PrimeStep.lean` to instantiate it twice inside a later `flipEdgePresent_side_clean_bridge`.
+
+Local lemmas needed:
+- `cleanGlueStep_crossSeam_head`
+- `CleanGlueStep.prepend_crossSeam`
+- `CleanShellFrom_prepend_crossSeam`
+- `CleanShellFrom_erase_union_disjoint`
+- `CleanRelShellingFrom`
+- `CleanShellFrom_append`
+- `IsCleanShelling_append_cleanShellFrom`
+- `faceCount_union_of_disjoint`
+- `faceCount_eq_zero`
+- `edgeLinkVerts_union`
+- `vertexLinkVerts_union`
+- `edgeLinkVerts_eq_empty`
+- `vertexLinkVerts_eq_empty`
+
+AlephProver targets to try:
+- `cleanGlueStep_crossSeam_head`
+- `CleanGlueStep.prepend_crossSeam`
+- small seam facts proving `hsharef₄`
+- small link nonempty facts from `f₄ ⊆ t₄`, `t₄.card = 4`, `f₄.card = 3`
+- tail facts: `htailDisj`, `htailf₄`, `htailΔ`
+
+Hard stop conditions:
+- Stop if proving the lemma requires changing `CleanGlueStep`, `CleanShellFrom`, or `FreelyCleanShellable`.
+- Stop if the first glue cannot prove `hpmc/helc/hvlc` from `hΔB`, `he_mem`, `hf₄e`, and `hf₄countΔ`.
+- Stop if the tail accumulator enlargement needs global chain hypotheses; this generic lemma must stay chain-free.
+- Do not start full `prime_step_clean` until this one-side bridge checks.
