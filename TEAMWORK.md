@@ -583,12 +583,33 @@ sphere/ball definitions.
   not needed. Implemented by subagents. **The combinatorial Theorem 2/3 is COMPLETE (weak route).**
 - CODEX-OUTPUT SAFETY (2026-06-18, `dcd9927`): `scripts/codex-consult-safe.sh` + the "Codex consult
   safety" rule above (never `cat` raw codex output; wrapper archives raw + prints bounded summary).
-- NEXT (the weak→clean migration + other open targets): theorem2/theorem3 conclude the OLD WEAK
-  `IsBall`/`FreelyShellable` (NOT the clean predicates) — the clean-predicate migration
-  (`IsCleanBall`/`FreelyCleanShellable`/`Clean3Complex`, the M-CS1 stack) is the main remaining
-  structural work (clean reassembly analogues discharging a `CleanGlueStep` at each graft; the PM
-  carry already supplies TriangleBounded3). Other open targets: Corollary 1 (ℚ-fillings), |A∩B|≤1
-  cases of Th1, Th4 (S³⊄B³).
+- WEAK→CLEAN MIGRATION IN PROGRESS (2026-06-18 overnight). theorem2/theorem3 still conclude the OLD
+  WEAK `IsBall`/`FreelyShellable` (locked, unchanged). Progress this session (all additive, build
+  green, ZERO sorries, weak milestone intact):
+  - `f678524` clean reassembly helpers (`CleanShellFrom_snoc`, `IsCleanShelling_snoc`,
+    `FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old` [the main graft],
+    `.insert_of_cleanGlueStep`) — in CleanShelling.lean.
+  - `935b2ca` clean skeleton + base — NEW `Theorem3Clean.lean`: `theorem3_core_clean` (the clean
+    parallel strong-induction SKELETON, mirrors `theorem3_core`, concludes `FreelyCleanShellable`,
+    takes `base_clean`/`deg3_step_clean`/`prime_step_clean` as explicit HYPOTHESES — proven modulo
+    them, no sorry) + `base_free_clean` (DISCHARGED, singleton).
+  - `b1afeff` clean K-transport (`CleanGlueStep.erase_union_disjoint`,
+    `CleanShellFrom_erase_union_disjoint` — boundary-only transport; τ-only fields unchanged).
+  - `a648c03` star clean-glue field discharge (`cleanGlueStep_star_of_remainder` + reusable
+    `mem_edgeLinkVerts_iff`/`mem_vertexLinkVerts_iff`): **CHECKED** that all 6 CleanGlueStep fields
+    for the deg-3 star onto the FIXED remainder discharge in Lean — incl. helc/hvlc via the
+    third-γ-vertex apex + t₀ (the earlier flagged risk is RESOLVED for the fixed-τ / old-target case).
+- NAMED REMAINING OBLIGATIONS for theorem3_clean: (1) `deg3_step_clean` — old-target half assembles
+  from `cleanGlueStep_star_of_remainder` + `exists_shelling_insert_of_cleanGlueStep_old`; star-target
+  half needs a CLEAN STAR-START (`CleanShellFrom {starTet} (tetFaces starTet) l σ`) whose accumulated
+  τ GROWS — and there the **helc τ-extension subtlety** is still open (ASSERTED, not yet Lean-attempted):
+  adding starTet to τ makes `edgeLinkVerts (insert starTet τ) e` nonempty for a γ-edge `e`, and an MR
+  tet `≠ t₀` containing `e` but not the third γ-vertex `w` may fail the Nonempty disjunct — needs a
+  shelling-order argument or a deeper γ-edge fact. (2) `prime_step_clean` — case-1 clean snoc (like
+  deg3 old-target) + case-2 clean bridge (mirror H2's `relShelling_over_insert_boundary_face` at the
+  clean level — the hardest). (3) `theorem3_clean`/`theorem2_clean` = assemble once (1)+(2) done.
+  Both deg3/prime clean steps also need the deg-3/eligible PREAMBLE re-derived (or the weak preamble
+  exposed). Other open targets: Corollary 1 (ℚ-fillings), |A∩B|≤1 Th1 cases, Th4 (S³⊄B³).
 
 ## Design decisions of record (G1-audited)
 
