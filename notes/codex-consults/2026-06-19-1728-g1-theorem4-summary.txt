@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1728-g1-theorem4-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1728-g1-theorem4-summary.txt
+
+=== raw size ===
+    2323  180636 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1728-g1-theorem4-raw.txt
+
+=== extracted markers ===
+2128:PLAN
+2130:Verdict: approve the Theorem 4 route with two corrections.
+2221:Blockers:
+2227:PLAN
+2229:Verdict: approve the Theorem 4 route with two corrections.
+2320:Blockers:
+
+=== final tail ===
+
+- New eligible-tet counting lemmas are needed.
+- Current exposed engine gives `aleph_disjoint_eligible_pair`, enough for clean-shelling reinsertions, not enough for “≥4 flips avoiding 3 edges” or K4/octahedron counting.
+- So add bounded targets for:
+  - `exists_good_flip_emptyK3`
+  - `exists_good_flip_emptyK4`
+  - octahedron special-case lemma
+  - “at most two disjoint eligible tets hit forbidden faces ABC/BCD”
+
+First bounded target:
+
+Implement only definitions plus the K5 obstruction first:
+
+- `IsFlagComplex`, taboo predicates, `NoTaboo.to_flag`
+- `no_k5Clique_of_no_emptyK3_no_emptyK4_taut`
+- endpoint stub can remain absent or `theorem4_flag` can be introduced last.
+
+Blockers:
+
+- No conceptual blocker.
+- Full theorem should not be attempted until the new flip-avoidance counting lemmas exist; they are not already exposed by the clean-shelling engine.
+tokens used
+63,908
+PLAN
+
+Verdict: approve the Theorem 4 route with two corrections.
+
+1. `IsFlagComplex` should be the general clique predicate, not the taboo predicate.
+2. Q2 is not a pure `faceCount ≤ 2` contradiction. The K5 step should be killed by a closed nonzero subchain contradicting `IsTaut`.
+
+Recommended patch shape:
+
+- Add `lean/Taut/Theorem4.lean`.
+- Add `import Taut.Theorem3Clean`.
+- Add `import Taut` entry in [lean/Taut.lean](/Users/doyle/Dropbox/taut/lean/Taut.lean:1).
+
+Definitions on `τ : Finset (Finset V)`:
+
+- `SimplexOf τ s := s = ∅ ∨ ∃ t ∈ τ, s ⊆ t`
+- `EdgeOf τ e := e.card = 2 ∧ SimplexOf τ e`
+- `CliqueInOneSkeleton τ s := s ⊆ vertsOf τ ∧ ∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e`
+- `IsFlagComplex τ := ∀ s, CliqueInOneSkeleton τ s → SimplexOf τ s`
+
+Then define operational taboos as lemmas/predicates, not the public endpoint:
+
+- `HasEmptyK3 τ`
+- `HasEmptyK4 τ`
+- `HasK5Clique τ`
+- `NoTaboo τ := ¬ HasEmptyK3 τ ∧ ¬ HasEmptyK4 τ ∧ ¬ HasK5Clique τ`
+
+Prove `NoTaboo → IsFlagComplex` for nonempty pure 3-complexes. This is the bridge from paper-proof operational form to the theorem statement.
+
+Q2 route:
+
+Use route (b), with `faceCount` only as a support-control tool.
+
+Given a K5 clique `S.card = 5`, and assuming no empty K3/K4:
+
+- no empty K3 gives every triangle of `S` is contained in some tet;
+- no empty K4 upgrades every 4-subset of `S` to a tet in `M.support`;
+- hence the five 4-subsets of `S` are exactly the tets in `M.support` contained in `S`;
+- for each triangle `f ⊆ S`, exactly two of those five tets contain `f`;
+- `taut_isPseudomanifold` / `IsPseudomanifold` gives no third tet contains `f`;
+- if `f ∈ σ`, then `bdry M f = ±1` by `UnitOn`, contradicting `faceCount_ne_two_of_boundary`;
+- therefore all those triangle boundary coefficients are zero;
+- so `U := M.filter (fun t => t ⊆ S)` has `bdry U = 0`;
+- `U` is a nonzero subchain of taut `M`, so `hT.subChain (subChain_filter _ M)` makes `U` taut;
+- since `bdry U = 0`, prove `Zvol 0 = 0` using `Zvol_le rfl` with `0`, hence `nrm U = 0`;
+- contradiction with the five K5 tets in `U.support`.
+
+No `IsSphere3` definition is needed. Avoid it.
+
+Existing lemmas this rides on:
+
+- `faceCount` / `IsPseudomanifold` from [Pseudomanifold.lean](/Users/doyle/Dropbox/taut/lean/Taut/Pseudomanifold.lean:22)
+- `faceCount_ne_two_of_boundary` from [Stickerball.lean](/Users/doyle/Dropbox/taut/lean/Taut/Stickerball.lean:104)
+- `taut_isPseudomanifold` from [PrimeStep.lean](/Users/doyle/Dropbox/taut/lean/Taut/PrimeStep.lean:1637)
+- `SubChain`, `subChain_filter`, `IsTaut.subChain`, `Zvol_le` from [Zvol.lean](/Users/doyle/Dropbox/taut/lean/Taut/Zvol.lean:27)
+- `nrm_eq_zero_iff`, `nrm_zero` from [Chains.lean](/Users/doyle/Dropbox/taut/lean/Taut/Chains.lean:437)
+
+Q3 wrapper reuse:
+
+Reuse the reduction infrastructure, but do not pretend the existing clean-shelling theorem directly proves the taboo ruleouts.
+
+Reuse points:
+
+- `theorem3_core_clean` induction pattern: same strong induction measure, `nrm M`.
+- degree-3 side: `deg3_step_clean` is not directly reusable as a theorem, but its ingredients are: `degree3_cut_setup`, `degree3_cut_star_side_glue`, side filters, `IsTaut.splits`, and the existing reassembly facts.
+- prime side: reuse `EligibleTet`, `removeTet`, `FlipEdgePresent`, `unitOn_flipBoundary_of_eligible`, case-(a)/(b) split lemmas in `PrimeStep` / `FlipGeom`.
+- `taut_edgeLinkConnected`, `prime_step_clean`, `exists_clean_shelling_prime_case1/2` are proof patterns/supporting geometry, not direct endpoints for taboo predicates.
+
+New glue needed:
+
+- K3/K4 persistence under degree-3 peel.
+- K3/K4 persistence under a good eligible flip.
+- case-(b) localization: a K3/K4 in the almost-disjoint union lies on one side.
+- flip-avoidance counting.
+
+Counting status:
+
+- New eligible-tet counting lemmas are needed.
+- Current exposed engine gives `aleph_disjoint_eligible_pair`, enough for clean-shelling reinsertions, not enough for “≥4 flips avoiding 3 edges” or K4/octahedron counting.
+- So add bounded targets for:
+  - `exists_good_flip_emptyK3`
+  - `exists_good_flip_emptyK4`
+  - octahedron special-case lemma
+  - “at most two disjoint eligible tets hit forbidden faces ABC/BCD”
+
+First bounded target:
+
+Implement only definitions plus the K5 obstruction first:
+
+- `IsFlagComplex`, taboo predicates, `NoTaboo.to_flag`
+- `no_k5Clique_of_no_emptyK3_no_emptyK4_taut`
+- endpoint stub can remain absent or `theorem4_flag` can be introduced last.
+
+Blockers:
+
+- No conceptual blocker.
+- Full theorem should not be attempted until the new flip-avoidance counting lemmas exist; they are not already exposed by the clean-shelling engine.

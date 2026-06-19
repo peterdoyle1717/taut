@@ -1,0 +1,2323 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019ee1c8-c082-7b62-94a6-3aa969a7138d
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+G1 DESIGN SPEC — Theorem 4 (flag-complex theorem): proof-route approval + IsFlagComplex convention.
+
+Reviewer: codex, ARCHITECT. Claude has AUDITED the Lean state (below) but is NOT
+architecting the route — that is your call. Give a PLAN. The project is COMBINATORIAL
+(no topology); the paper's one topological step ("S^3 not a subcomplex of B^3") must be
+discharged combinatorially — that is the crux (Q2). Argue back; cite definitions.
+
+=====================================================================
+PAPER STATEMENT (taut/taut.tex:963 — 4th theorem env, UNLABELED, auto-numbers "Theorem 4")
+=====================================================================
+"If sigma is a simplicial triangulation of S^2, any taut filling tau of sigma is a flag complex."
+Flag (taut.tex:944-951): every clique in the 1-skeleton occurs as a simplex; for a
+triangulation of S^2, flag <=> prime AND not the boundary of a tetrahedron.
+
+PROOF (taut.tex:969-1037) rules out 3 taboo configs in tau:
+  1. empty triangle: the 3 edges of {A,B,C} present, no 2-simplex ABC.
+  2. empty K4: the 6 edges of {A,B,C,D} present, no 3-simplex ABCD.
+  3. empty K5: the 10 edges of {A,B,C,D,E} present.
+  Config 3 <= (1 & 2 ruled out): the K5 + its 5 associated 3-simplices = boundary of a
+    4-simplex ~ S^3, "not possible as a subcomplex of the topological 3-ball tau".
+    [THE topological step — must be replaced by a COMBINATORIAL obstruction.]
+  Rule out 1,2: minimal counterexample + edge flip (remove an eligible tet) / deg-3 peel:
+    deg-3 vertex => connected sum with a single tet, pull off => smaller counterexample;
+    no deg-3 => maxdeg>=4 disjointly eligible tets, remove one = edge flip on sigma; case
+    (a) result is still an S^2 triangulation (smaller ctrex directly), or case (b) becomes an
+    almost-disjoint union of two triangulations joined along an edge (a K3/K4 then lands on
+    one side => counterexample). Config-1: >=4 flip choices vs 3 forbidden edges. Config-2:
+    octahedron handled as a special case => assume maxdeg>=5; at most 2 eligible tets contain
+    a forbidden face ABC/BCD => >= maxdeg-2 good flips.
+
+CORRECTION (this audit): the baton/STATUS/memory shorthand "Theorem 4 = S^3 not in B^3"
+MISLABELS it. Theorem 4 IS the flag-complex theorem; "S^3 not in B^3" is ONLY the config-3
+sub-step. The actual conclusion is "flag complex."
+
+=====================================================================
+CHECKED LEAN STATE (HEAD 792e7ed; build green 8272; grep ZERO; std-3 axioms)
+=====================================================================
+- NO theorem4 / IsFlagComplex / IsSphere3 / clique / taboo anywhere in lean/. No endpoint exists.
+- Dependencies present + CHECKED (file:line):
+  - theorem2_clean   (Theorem3Clean.lean:3600): taut filling of S^2 ==> IsCleanBall M.support sigma.
+  - theorem3_clean   (Theorem3Clean.lean:3592): ==> FreelyCleanShellable M.support sigma.
+  - Zvol_add_of_almost_disjoint_full (Theorem1.lean:434); IsTaut.splits_full (Splitting.lean:534).
+- ESTABLISHED minimal-counterexample / flip / peel ENGINE (ALREADY in the project; NOT new —
+  it is the same engine behind the clean migration):
+  - EligibleTet, aleph_disjoint_eligible_pair (Eligible.lean / FlipGeom.lean / PrimeStep.lean).
+  - removeTet, FlipEdgePresent, flipEdgePresent_side_sets / _algebra (FlipGeom.lean).
+  - case-(a)/(b) split + deg-3 peel: taut_edgeLinkConnected / prime_step_clean /
+    exists_clean_shelling_prime_case1/2 / deg3_step_clean (Theorem3Clean.lean).
+  - IsCleanBall, IsPseudomanifold, TriangleBounded3 (faceCount<=2), EdgeLinkConnected,
+    VertexLinkConnected, faceCount_eq_one_of_boundary (Pseudomanifold.lean / CleanShelling.lean).
+- Corollary 1: NO Lean endpoint (and NOT a Theorem-4 dependency).
+
+MISSING (Theorem-4-specific; not yet implemented):
+  (i)   IsFlagComplex predicate + the conclusion form.
+  (ii)  the config-3 COMBINATORIAL obstruction (the replacement for "S^3 not in B^3").
+  (iii) the Theorem-4 wrapper applying the established engine to the taboo configs.
+
+PROPOSED endpoint (mirrors theorem2_clean's hyp block exactly; IsFlagComplex also PROPOSED —
+final form is YOUR call):
+  theorem theorem4_flag {sigma : Finset (Finset V)} {X M : Chain V} (hsigma : IsSphere2 sigma)
+      (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+      (hS : SimplicialChain M) : IsFlagComplex M.support
+
+=====================================================================
+QUESTIONS (give a PLAN; pick the route — these are candidate options FOR YOU TO CHOOSE, not a
+chosen design)
+=====================================================================
+Q1 IsFlagComplex CONVENTION. Which form is load-bearing AND provable here:
+   (a) general "every clique of the 1-skeleton is a face", or
+   (b) the operational taboo form "no empty K3 AND no empty K4 AND no empty K5"?
+   Are (a) and (b) equivalent for a 3-dim clean ball, or do we prove (b) and derive (a)?
+   Exact Lean predicate signature, and on which complex (M.support)?
+
+Q2 CONFIG-3 COMBINATORIALLY (the crux — the project has NO topology). The paper kills
+   config-3 via "boundary-of-4-simplex ~ S^3 cannot be a subcomplex of the 3-ball tau".
+   Candidate combinatorial replacements (pick / correct one):
+   (a) faceCount: the 5 tets of the would-be S^3 force each of its 10 triangles to faceCount 2
+       (closed), but in IsCleanBall M.support the boundary triangles sit at faceCount 1 — does
+       a pure faceCount/pseudomanifold contradiction on the 5-vertex subcomplex close config-3,
+       with NO S^3 notion at all?
+   (b) nrm / Euler / Zvol bookkeeping giving the obstruction;
+   (c) config-3 needs no own argument once config-1 & config-2 are ruled out (it falls out of
+       faceCount on the 5 filled tets).
+   Which route? Name the exact existing lemmas (faceCount_*, IsPseudomanifold/IsCleanBall fields)
+   it rides on. Is a new IsSphere3 def needed, or avoidable?
+
+Q3 WRAPPER REUSE. Confirm the wrapper reuses the ESTABLISHED engine; specify the exact reuse
+   entry points + the genuinely-new glue:
+   - which of {taut_edgeLinkConnected, prime_step_clean, deg3_step_clean,
+     exists_clean_shelling_prime_case1/2, EligibleTet, removeTet, FlipEdgePresent} are reuse points;
+   - the induction MEASURE (nrm M? maxdeg? counterexample size) — is it the SAME measure already
+     used by the established engine, or a new minimal-counterexample order;
+   - config-1 (>=4 flips vs 3 forbidden) and config-2 (octahedron special case => maxdeg>=5;
+     <=2 tets hit ABC/BCD) flip-avoidance: do these need NEW eligible-tet-counting lemmas, or are
+     the counts already available from the engine?
+
+Q4 FIRST BOUNDED TARGET. What is the FIRST buildable piece (def IsFlagComplex + stub
+   theorem4_flag? the config-3 obstruction? a flip-avoidance counting lemma?), so Claude
+   implements ONE audited piece at a time and re-consults if the route forks?
+
+FILES: new lean/Taut/Theorem4.lean (proposed); reuse Theorem3Clean / FlipGeom / Pseudomanifold /
+Eligible / CleanShelling. PAPER: taut/taut.tex:963-1037. BUILD: cd lean && lake build.
+codex
+I’ll verify the relevant Lean definitions and theorem shapes before giving the route, so the plan names actual predicates and reuse points rather than relying on the audit shorthand.
+exec
+/bin/zsh -lc "sed -n '930,1045p' taut/taut.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+Pick one such tet $t$ that shares no face with $t_1$.
+If $\tau-t$ doesn't fall apart,
+remove $t$ and shuck $\tau-t$ ending with $t_1$.
+If $\tau-t$ falls apart
+into the almost disjoint union of $\tau_1$ and $\tau_2$,
+assume $t \in \tau_1$;
+let $t_2$ be the tet where $t$ attaches to $\tau_2$;
+shuck $\tau_2$ ending with $t_2$;
+remove $t$;
+shuck $\tau_1$ ending with $t_1$.
+\proofend
+
+\section{Flag complex}
+
+A simplicial complex is a \emph{flag complex}
+if every clique in
+its $1$-skeleton occurs as a simplex.
+(Through gritted teeth we say that the complex `is flag'.)
+A simplicial triangulation $\sigma$ of $S^2$
+is flag just if it is \emph{prime}
+(not the connected sum of smaller complexes)
+and not the boundary of a tetrahedron.
+
+We can decompose any $\sigma$ as the connected sum of
+prime components $\sigma_i$.
+(Of course, to reconstruct $\sigma$ we need more than this, we need to know
+just how they are connected.)
+From the point of taut fillings these components are independent:
+Any taut filling $\tau$ of $\sigma$ is a union of taut fillings $\tau_i$.
+
+Now we want to show that, whether or not $\sigma$ itself is prime,
+any taut filling of $\sigma$ is a flag complex.
+
+\begin{theorem}
+If $\sigma$ is a simplicial triangulation of $S^2$,
+any taut filling $\tau$ of $\sigma$
+is a flag complex.
+\end{theorem}
+
+\proofstart
+The goal here is to show that none of these
+three taboo configurations occurs
+in $\tau$:
+\begin{enumerate}
+\item
+The three edges of triangle $\{A,B,C\}$ without the 2-simplex $ABC$.
+\item
+The six edges of the $K_4$ $\{A,B,C,D\}$ without the 3-simplex $ABCD$.
+\item
+The ten edges of the $K_5$ $\{A,B,C,D,E\}$.
+\end{enumerate}
+
+If we can rule out 1 and 2 then 3 will follow, because
+along with the $K_5$ we would have the five associated 3-simplices:
+Together these would form an $S^3$, which is not possible as a subcomplex
+of the topological 3-ball $\tau$.
+
+To rule out 1 and 2,
+the strategy will be to consider a minimal counterexample,
+and find a modification that would produce a smaller counterexample.
+
+If $\sigma$ has a vertex of degree 3,
+it is a connected sum with one summand a single tetrahedron.
+We can pull off the vertex from $\sigma$, while removing the associated
+tet from $\tau$, to produce a smaller counterexample.
+
+If $\sigma$ has no vertex of degree 3.
+there are at least $\maxdeg \geq 4$ disjointly eligible tet.
+Removing any one of these tets performs an `edge flip' on the boundary
+$\sigma$,
+which either (a) remains a triangulation of the 2-sphere,
+or (b) becomes an almost disjoint union where
+two such triangulations are joined along an edge.
+We will show that some choice for the flip does not remove the taboo
+configuration.
+In case (a) we have a smaller counterexample already.
+In case (b) the key is that if a $K_3$ or $K_4$ occurs
+in the almost disjoint union, it occurs on one side or the other,
+also giving a counterexample.
+
+Configuration 1:
+When we remove an eligible tet from $\tau$ to flip an edge of $\sigma$,
+the only edge that disappears from $\tau$ is the edge that gets flipped.
+There are at least four choices of the edge to flip, and three edges we must
+avoid flipping to preserve the taboo $K_3$.
+
+Configuration 2:
+Now there are six edges we must avoid flipping.
+Having dealt with configuration 1,
+we know that along with the six edges of $\{A,B,C,D\}$,
+$\tau$ must contain all four of the unoriented faces
+$ABC$, $ABD$, $ACD$, $BCD$.
+At most two of these can be boundary faces, because
+$\sigma$ has no vertex of degree 3.
+So at most five of the $K_5$ edges are on the boundary.
+By treating the octahedron separately as a special case,
+we can assume $\maxdeg \geq 5$,
+so we have at least five boundary edges we can flip.
+The only potential problem is if five of the six $K_4$ edges are
+on the boundary.
+Say the interior edge is $AD$,
+so that the $K_4$ includes the faces $ABC,BCD$.
+If an eligible tet contains neither of these as one of its two boundary faces,
+we are fine.
+But at most two of our disjointly eligible tets
+can contain one of the faces $ABC,BCD$,
+leaving us at least $\maxdeg-2$ other flipping options.
+\proofend
+
+\bibliography{taut}
+\bibliographystyle{amsplain}
+\end{document}
+
+exec
+/bin/zsh -lc 'rg -n "def nrm|def Zvol|IsTaut|SimplicialChain|support|IsSphere2|UnitOn" lean/Taut | head -200' in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc 'rg -n "def IsCleanBall|structure IsCleanBall|class IsCleanBall|faceCount|TriangleBounded3|IsPseudomanifold|EligibleTet|theorem theorem2_clean|theorem theorem3_clean|prime_step_clean|deg3_step_clean|exists_clean_shelling_prime_case|taut_edgeLinkConnected|FlipEdgePresent|removeTet|aleph_disjoint_eligible_pair" lean/Taut' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Stickerball.lean:7:`faceCount`/`IsPseudomanifold` are combinatorial (set counts on the support),
+lean/Taut/Stickerball.lean:9:This file connects them: for a simplicial chain with pure support, a boundary
+lean/Taut/Stickerball.lean:10:triangle (`bdry M f = ±1`) of a pseudomanifold support lies in **exactly one**
+lean/Taut/Stickerball.lean:41:face (the rest of the support contributes nothing). -/
+lean/Taut/Stickerball.lean:43:    bdry M f = ∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f := by
+lean/Taut/Stickerball.lean:55:simplicial chain with pure support, a triangle whose boundary coefficient is `±1`
+lean/Taut/Stickerball.lean:56:sits in exactly one tet of the support: at most two by `IsPseudomanifold`, and
+lean/Taut/Stickerball.lean:59:    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Stickerball.lean:60:    (hPM : IsPseudomanifold M.support) {f : Finset V} (hf : f.card = 3)
+lean/Taut/Stickerball.lean:62:    faceCount M.support f = 1 := by
+lean/Taut/Stickerball.lean:63:  have hle : faceCount M.support f ≤ 2 := hPM f hf
+lean/Taut/Stickerball.lean:65:  have hterm : ∀ t ∈ M.support.filter (fun t => f ⊆ t),
+lean/Taut/Stickerball.lean:73:      · exact absurd h (Finsupp.mem_support_iff.mp htM)
+lean/Taut/Stickerball.lean:81:  have hge : 1 ≤ faceCount M.support f := by
+lean/Taut/Stickerball.lean:88:  have hne2 : faceCount M.support f ≠ 2 := by
+lean/Taut/Stickerball.lean:104:    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Stickerball.lean:106:    faceCount M.support f ≠ 2 := by
+lean/Taut/Stickerball.lean:109:  have hterm : ∀ t ∈ M.support.filter (fun t => f ⊆ t),
+lean/Taut/Stickerball.lean:117:      · exact absurd h (Finsupp.mem_support_iff.mp htM)
+lean/Taut/OrientedBridge.lean:13:making both closed, with `X₁ + X₂ = X`. This feeds `IsTaut.splits` (`n = 2`,
+lean/Taut/OrientedBridge.lean:16:This file's foundation: a closed 1-chain supported on the three edges of a triangle
+lean/Taut/OrientedBridge.lean:30:`bdry C = 0` and every face in `C.support` is a 2-edge of the triangle `γ` (card
+lean/Taut/OrientedBridge.lean:32:lemma closed_one_chain_supported_on_triangle {γ : Finset V} (hγ3 : γ.card = 3)
+lean/Taut/OrientedBridge.lean:34:    (hCsupp : ∀ e ∈ C.support, e ∈ γ.powersetCard 2) :
+lean/Taut/OrientedBridge.lean:55:          have hmem := Finset.mem_powersetCard.mp (hCsupp _ (Finsupp.mem_support_iff.mpr hCne))
+lean/Taut/OrientedBridge.lean:67:identified as `bdry X₁ = c • bdryGen γ` (via `closed_one_chain_supported_on_triangle`
+lean/Taut/Theorem2.lean:7:This file builds toward the central theorem (taut filling of `IsSphere2 σ`
+lean/Taut/Theorem2.lean:12:* **M20 (here): the chain/facet bridge.** `UnitOn` (a `±1`-chain supported on
+lean/Taut/Theorem2.lean:13:  σ), `SimplicialChain` (coefficients in `{-1,0,1}`), and the bridge
+lean/Taut/Theorem2.lean:14:  `nrm_eq_support_card_of_simplicial` (`|M| = #support` when simplicial). These
+lean/Taut/Theorem2.lean:16:  `M.support` that the `IsBall`/`FreelyShellable` certificates live on.
+lean/Taut/Theorem2.lean:19:oriented separation bridge to `IsTaut.splits` (M23), the connected-sum/degree-3
+lean/Taut/Theorem2.lean:29:/-- A chain `X` is a *unit chain on `σ`* if it is supported exactly on `σ` with
+lean/Taut/Theorem2.lean:32:def UnitOn (X : Chain V) (σ : Finset (Finset V)) : Prop :=
+lean/Taut/Theorem2.lean:33:  X.support = σ ∧ ∀ s ∈ σ, X s = 1 ∨ X s = -1
+lean/Taut/Theorem2.lean:38:def SimplicialChain (M : Chain V) : Prop :=
+lean/Taut/Theorem2.lean:41:lemma SimplicialChain.natAbs_eq_one {M : Chain V} (h : SimplicialChain M) {s : Finset V}
+lean/Taut/Theorem2.lean:42:    (hs : s ∈ M.support) : (M s).natAbs = 1 := by
+lean/Taut/Theorem2.lean:43:  have hne : M s ≠ 0 := Finsupp.mem_support_iff.mp hs
+lean/Taut/Theorem2.lean:49:/-- **The norm/support bridge.** For a simplicial chain the norm `|M|` counts
+lean/Taut/Theorem2.lean:50:its support: `nrm M = #(M.support)`. This is what lets the induction on `|M|`
+lean/Taut/Theorem2.lean:51:(`nrm`) talk to the ball's facet count (`M.support.card`). -/
+lean/Taut/Theorem2.lean:52:lemma nrm_eq_support_card_of_simplicial {M : Chain V} (h : SimplicialChain M) :
+lean/Taut/Theorem2.lean:53:    nrm M = M.support.card := by
+lean/Taut/Theorem2.lean:58:lemma UnitOn.simplicialChain {X : Chain V} {σ : Finset (Finset V)} (h : UnitOn X σ) :
+lean/Taut/Theorem2.lean:59:    SimplicialChain X := by
+lean/Taut/Theorem2.lean:61:  by_cases ht : t ∈ X.support
+lean/Taut/Theorem2.lean:65:  · exact Or.inr (Or.inl (Finsupp.notMem_support_iff.mp ht))
+lean/Taut/Theorem2.lean:68:lemma UnitOn.nrm_eq {X : Chain V} {σ : Finset (Finset V)} (h : UnitOn X σ) :
+lean/Taut/Theorem2.lean:70:  rw [nrm_eq_support_card_of_simplicial h.simplicialChain, h.1]
+lean/Taut/Theorem2.lean:88:  tetFaces t ∩ (bdry M).support
+lean/Taut/Theorem2.lean:100:  t.card = 4 ∧ t ∈ M.support ∧ (sharedFaces M t).card = 2 ∧
+lean/Taut/Theorem2.lean:148:lemma support_removeTet_of_mem {M : Chain V} {t : Finset V} (ht : t ∈ M.support) :
+lean/Taut/Theorem2.lean:149:    (removeTet M t).support = M.support.erase t := by
+lean/Taut/Theorem2.lean:151:  simp only [Finset.mem_erase, Finsupp.mem_support_iff]
+lean/Taut/Theorem2.lean:156:lemma simplicialChain_removeTet {M : Chain V} {t : Finset V} (hS : SimplicialChain M) :
+lean/Taut/Theorem2.lean:157:    SimplicialChain (removeTet M t) := by
+lean/Taut/Theorem2.lean:164:    (hS : SimplicialChain M) (ht : t ∈ M.support) :
+lean/Taut/Theorem2.lean:166:  rw [nrm_eq_support_card_of_simplicial (simplicialChain_removeTet hS),
+lean/Taut/Theorem2.lean:167:    nrm_eq_support_card_of_simplicial hS, support_removeTet_of_mem ht,
+lean/Taut/Theorem2.lean:169:  have : 0 < M.support.card := Finset.card_pos.mpr ⟨t, ht⟩
+lean/Taut/Theorem2.lean:173:    (hS : SimplicialChain M) (ht : t ∈ M.support) :
+lean/Taut/Theorem2.lean:237:  exact hs.2 ⟨hs.1, Finsupp.mem_support_iff.mpr h0⟩
+lean/Taut/Theorem2.lean:239:/-- **The flip on supports.** Removing an eligible tet drops its two shared
+lean/Taut/Theorem2.lean:241:theorem support_flipBoundary_of_eligible {M : Chain V} {t : Finset V} (h : EligibleTet M t) :
+lean/Taut/Theorem2.lean:242:    (bdry (removeTet M t)).support
+lean/Taut/Theorem2.lean:243:      = ((bdry M).support \ sharedFaces M t) ∪ exposedFaces M t := by
+lean/Taut/Theorem2.lean:245:  have htM' : M t ≠ 0 := Finsupp.mem_support_iff.mp htM
+lean/Taut/Theorem2.lean:247:  simp only [Finsupp.mem_support_iff, bdry_removeTet, Finsupp.sub_apply, Finset.mem_union,
+lean/Taut/Theorem2.lean:273:    (hS : SimplicialChain M) (h : EligibleTet M t) : M t = 1 ∨ M t = -1 := by
+lean/Taut/Theorem2.lean:274:  have htM : M t ≠ 0 := Finsupp.mem_support_iff.mp h.2.1
+lean/Taut/Theorem2.lean:293:    (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (h : EligibleTet M t) :
+lean/Taut/Theorem2.lean:294:    UnitOn (bdry (removeTet M t)) ((σ \ sharedFaces M t) ∪ exposedFaces M t) := by
+lean/Taut/Theorem2.lean:297:  refine ⟨by rw [support_flipBoundary_of_eligible h, hU.1], ?_⟩
+lean/Taut/Theorem2.lean:302:    have hssupp : s ∈ (bdry M).support := by rw [hU.1]; exact hs.1
+lean/Taut/Theorem2.lean:316:chain supported on one edge must vanish. This is the orientation/coherence fact
+lean/Taut/Theorem2.lean:317:the paper hides; it is what lets `IsTaut.splits` apply to the integral split. -/
+lean/Taut/Theorem2.lean:323:    (hvanish : ∀ s ∈ X.support, ¬ P s → bdryGen s u = 0) :
+lean/Taut/Theorem2.lean:328:    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Theorem2.lean:337:chain supported on the single shared edge `A ∩ B`, hence zero
+lean/Taut/Theorem2.lean:341:    (hXc : bdry X = 0) (hXsupp : ∀ s ∈ X.support, s.card = 3 ∧ (s ⊆ A ∨ s ⊆ B))
+lean/Taut/Theorem2.lean:348:  have hfaces : ∀ s ∈ (X.filter (fun s => s ⊆ A)).support, s ⊆ A ∧ s.card = 2 + 1 := by
+lean/Taut/Theorem2.lean:350:    rw [Finsupp.support_filter, Finset.mem_filter] at hs
+lean/Taut/Theorem2.lean:361:    exact Finsupp.mem_support_iff.mp hu hcross
+lean/Taut/Ball.lean:105:* `glueStep_preserves_isSphere2 (hg : GlueStep t B B') : IsSphere2 B → IsSphere2 B'`
+lean/Taut/Ball.lean:106:* `ShellFrom.isSphere2_of_seed (h : ShellFrom B₀ l B) : IsSphere2 B₀ → IsSphere2 B`
+lean/Taut/Ball.lean:109:`M.support` is `σ`, which is given as a sphere. -/
+lean/Taut/Complex2.lean:10:`IsSphere2 σ` is the combinatorial replacement for "simplicial
+lean/Taut/Complex2.lean:86:/-- Connectivity of a graph on a prescribed finite support. -/
+lean/Taut/Complex2.lean:93:two faces, connected vertex links, connected. This is `IsSphere2` minus the
+lean/Taut/Complex2.lean:95:r₁ = V−1) actually rests on. Euler enters `IsSphere2` only via nonemptiness. -/
+lean/Taut/Complex2.lean:105:structure IsSphere2 (σ : Finset (Finset V)) : Prop where
+lean/Taut/Complex2.lean:113:def IsSphere2.toClosedSurface {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Complex2.lean:120:theorem three_mul_card_faces {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Complex2.lean:152:theorem three_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Complex2.lean:159:theorem two_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Complex2.lean:235:lemma mem_linkVerts_iff_edge {σ : Finset (Finset V)} (h : IsSphere2 σ)
+lean/Taut/Complex2.lean:255:theorem link_two_regular {σ : Finset (Finset V)} (h : IsSphere2 σ)
+lean/Taut/Complex2.lean:312:theorem three_le_card_linkVerts {σ : Finset (Finset V)} (h : IsSphere2 σ)
+lean/Taut/Complex2.lean:550:    IsSphere2 (tetraBdry a b c d) := by
+lean/Taut/Complex2.lean:610:    IsSphere2 (t.powersetCard 3) := by
+lean/Taut/Chains.lean:10:supported function `Finset V →₀ ℤ`, a generator being an unoriented simplex
+lean/Taut/Chains.lean:186:noncomputable def vert (M : Chain V) : Finset V := M.support.biUnion id
+lean/Taut/Chains.lean:189:    x ∈ vert M ↔ ∃ s ∈ M.support, x ∈ s := by
+lean/Taut/Chains.lean:199:    exact Finsupp.mem_support_iff.mp hs (by simpa using this)
+lean/Taut/Chains.lean:205:      exact h (mem_vert.mpr ⟨s, Finsupp.mem_support_iff.mpr (by simpa using hMs), by assumption⟩)
+lean/Taut/Chains.lean:380:/-- A chain supported away from `x` has boundary supported away from `x`. -/
+lean/Taut/Chains.lean:413:/-- Cone injectivity: if the cone of `N` vanishes, `N` was supported on
+lean/Taut/Chains.lean:430:noncomputable def nrm (M : Chain V) : ℕ := ∑ s ∈ M.support, (M s).natAbs
+lean/Taut/Chains.lean:433:    (h : M.support ⊆ t) : nrm M = ∑ s ∈ t, (M s).natAbs := by
+lean/Taut/Chains.lean:435:  rw [Finsupp.notMem_support_iff.mp hs, Int.natAbs_zero]
+lean/Taut/Chains.lean:443:    by_cases hs : s ∈ M.support
+lean/Taut/Chains.lean:446:    · simpa using Finsupp.notMem_support_iff.mp hs
+lean/Taut/Chains.lean:453:  · rw [nrm, Finsupp.support_single_ne_zero s hc, Finset.sum_singleton,
+lean/Taut/Chains.lean:457:  rw [nrm, nrm, Finsupp.support_neg]
+lean/Taut/Chains.lean:461:  rw [nrm_eq_sum_subset (Finsupp.support_add),
+lean/Taut/Chains.lean:462:    nrm_eq_sum_subset (M := M) (t := M.support ∪ N.support)
+lean/Taut/Chains.lean:464:    nrm_eq_sum_subset (M := N) (t := M.support ∪ N.support)
+lean/Taut/Chains.lean:474:  have h1 : (M.filter p).support ⊆ M.support := by
+lean/Taut/Chains.lean:475:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:476:  have h2 : (M.filter fun s => ¬ p s).support ⊆ M.support := by
+lean/Taut/Chains.lean:477:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:507:  have hfree : ∀ t ∈ F.support, x ∉ t := by
+lean/Taut/Chains.lean:509:    rw [hF, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Chains.lean:511:  have himg : (cone x F).support ⊆ F.support.image (insert x) := by
+lean/Taut/Chains.lean:513:    rw [Finsupp.mem_support_iff, cone_apply] at hu
+lean/Taut/Chains.lean:517:      exact Finset.mem_image.mpr ⟨u.erase x, Finsupp.mem_support_iff.mpr hFu,
+lean/Taut/Chains.lean:520:  have hinj : ∀ t₁ ∈ F.support, ∀ t₂ ∈ F.support,
+lean/Taut/Splitting.lean:9:`M_X` a taut filling of `X` and `M_Y` of `Y` (`IsTaut.splits`).
+lean/Taut/Splitting.lean:47:/-- The boundary as a sum over the support. -/
+lean/Taut/Splitting.lean:49:    bdry M = ∑ t ∈ M.support, M t • bdryGen t := by
+lean/Taut/Splitting.lean:53:/-- A simplex in the support of `bdryGen t` is a facet of `t`. -/
+lean/Taut/Splitting.lean:64:/-- Pointwise boundary formula over the support. -/
+lean/Taut/Splitting.lean:66:    bdry M s = ∑ t ∈ M.support, M t * bdryGen t s := by
+lean/Taut/Splitting.lean:73:    (h : ∀ t ∈ M.support, t ⊆ B ∧ t.card = k + 1) :
+lean/Taut/Splitting.lean:74:    ∀ s ∈ (bdry M).support, s ⊆ B ∧ s.card = k := by
+lean/Taut/Splitting.lean:76:  rw [Finsupp.mem_support_iff, bdry_apply_eq_sum] at hs
+lean/Taut/Splitting.lean:85:argument: if `U` is supported on simplices containing `x` and its
+lean/Taut/Splitting.lean:129:    (hkill : ∀ t ∈ M.support, Kkills A p t ∨ Kkills B q t)
+lean/Taut/Splitting.lean:130:    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support)
+lean/Taut/Splitting.lean:135:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:136:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:137:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:138:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:142:      = ∑ s ∈ M.support, if s = t₀ then (M t₀).natAbs else 0 := by
+lean/Taut/Splitting.lean:143:    rw [Finset.sum_ite_eq' M.support t₀ fun _ => (M t₀).natAbs, if_pos ht₀]
+lean/Taut/Splitting.lean:163:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:164:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:166:    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+lean/Taut/Splitting.lean:168:    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support)
+lean/Taut/Splitting.lean:170:  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Splitting.lean:173:    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Splitting.lean:176:  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Splitting.lean:178:  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Splitting.lean:180:  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+lean/Taut/Splitting.lean:204:  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+lean/Taut/Splitting.lean:206:    Int.natAbs_ne_zero.mpr (Finsupp.mem_support_iff.mp ht₀)
+lean/Taut/Splitting.lean:218:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:219:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:221:    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+lean/Taut/Splitting.lean:222:    (hpure : ∀ s ∈ M.support, s.card = n + 2)
+lean/Taut/Splitting.lean:223:    (hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B)
+lean/Taut/Splitting.lean:224:    {t : Finset V} (ht : t ∈ M.support) :
+lean/Taut/Splitting.lean:309:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:310:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:312:    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+lean/Taut/Splitting.lean:313:    (hpure : ∀ s ∈ M.support, s.card = n + 2)
+lean/Taut/Splitting.lean:314:    (hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B)
+lean/Taut/Splitting.lean:315:    {t₀ : Finset V} (ht₀ : t₀ ∈ M.support) {y₀ : V}
+lean/Taut/Splitting.lean:330:  have hUstruct : ∀ t ∈ U.support,
+lean/Taut/Splitting.lean:333:    rw [hU, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:357:  have ht₀U : t₀ ∈ U.support := by
+lean/Taut/Splitting.lean:358:    rw [Finsupp.mem_support_iff, hUt₀]
+lean/Taut/Splitting.lean:359:    exact Finsupp.mem_support_iff.mp ht₀
+lean/Taut/Splitting.lean:385:            exact hy₀A ((hX s (Finsupp.mem_support_iff.mpr h)).1 hys)
+lean/Taut/Splitting.lean:388:            have hsB := (hY s (Finsupp.mem_support_iff.mpr h)).1
+lean/Taut/Splitting.lean:418:    exact Finsupp.mem_support_iff.mp ht₀U happ.symm
+lean/Taut/Splitting.lean:426:      (mem_vert.mpr ⟨t₀.erase y₀, Finsupp.mem_support_iff.mpr hWne, hx'⟩)
+lean/Taut/Splitting.lean:435:theorem IsTaut.splits {A B : Finset V} {n : ℕ}
+lean/Taut/Splitting.lean:439:    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:440:    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+lean/Taut/Splitting.lean:442:    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+lean/Taut/Splitting.lean:445:    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+lean/Taut/Splitting.lean:446:    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+lean/Taut/Splitting.lean:451:  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+lean/Taut/Splitting.lean:454:    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+lean/Taut/Splitting.lean:457:  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+lean/Taut/Splitting.lean:459:  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+lean/Taut/Splitting.lean:461:  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+lean/Taut/Splitting.lean:469:  have hdich : ∀ t ∈ M.support, t ⊆ A ∨ t ⊆ B := by
+lean/Taut/Splitting.lean:481:      have hsuppBA : ∀ t' ∈ M.support, t' ⊆ B ∪ A := by
+lean/Taut/Splitting.lean:493:  have hMxsupp : ∀ t ∈ Mx.support, t ⊆ A ∧ t.card = n + 2 := by
+lean/Taut/Splitting.lean:495:    rw [hMx, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:497:  have hMysupp : ∀ t ∈ My.support, t ⊆ B ∧ t.card = n + 2 := by
+lean/Taut/Splitting.lean:499:    rw [hMy, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:519:  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+lean/Taut/Splitting.lean:522:  have hMxt : IsTaut Mx := by rw [IsTaut, hbx]; omega
+lean/Taut/Splitting.lean:523:  have hMyt : IsTaut My := by rw [IsTaut, hby]; omega
+lean/Taut/Splitting.lean:529:`IsTaut.splits`; when `|A ∩ B| ≤ 1` we enlarge both sides by the same
+lean/Taut/Splitting.lean:533:the fresh set `F`, so `t ⊆ A' ↔ t ⊆ A` on `M.support`. -/
+
+ succeeded in 0ms:
+lean/Taut/Eligible.lean:100:    ∃ t, EligibleTet M t := by
+lean/Taut/Eligible.lean:305:    ∃ t, EligibleTet M t :=
+lean/Taut/Theorem3.lean:93:    (hv : (vertsOf σ).card ≤ 4) : IsPseudomanifold M.support := by
+lean/Taut/Theorem3.lean:109:    FreelyShellable M.support σ ∧ IsPseudomanifold M.support := by
+lean/Taut/Theorem3.lean:229:    (hPMR : IsPseudomanifold MR.support)
+lean/Taut/Theorem3.lean:256:  -- 5. faceCount = 1 (PM + pure + unit boundary ⟹ exactly one tet at γ).
+lean/Taut/Theorem3.lean:257:  have hfc1 : faceCount MR.support γ = 1 :=
+lean/Taut/Theorem3.lean:258:    faceCount_eq_one_of_boundary hSimpR hPureR hPMR hγ3' hbd
+lean/Taut/Theorem3.lean:428:exactly one remainder tet by `faceCount_eq_one_of_boundary`. -/
+lean/Taut/Theorem3.lean:433:    (hPMR : IsPseudomanifold R.support) (hSR : SimplicialChain R)
+lean/Taut/Theorem3.lean:436:    ∀ f, f.card = 3 → f ⊆ starTet σ v → faceCount R.support f ≤ 1 := by
+lean/Taut/Theorem3.lean:441:    have h0 : faceCount R.support f = 0 := by
+lean/Taut/Theorem3.lean:442:      apply faceCount_eq_zero
+lean/Taut/Theorem3.lean:462:    have h1 : faceCount R.support f = 1 :=
+lean/Taut/Theorem3.lean:463:      faceCount_eq_one_of_boundary hSR hPureR hPMR hf3 hURγ
+lean/Taut/Theorem3.lean:478:      IsPseudomanifold M'.support) :
+lean/Taut/Theorem3.lean:479:    IsPseudomanifold M.support := by
+lean/Taut/Theorem3.lean:529:    have hPMR : IsPseudomanifold MR.support :=
+lean/Taut/Theorem3.lean:604:    have hPML : IsPseudomanifold ML.support :=
+lean/Taut/Theorem3.lean:653:      FreelyShellable M'.support sigma' ∧ IsPseudomanifold M'.support) :
+lean/Taut/Theorem3.lean:654:    FreelyShellable M.support sigma ∧ IsPseudomanifold M.support := by
+lean/Taut/Theorem3.lean:702:        IsPseudomanifold MR.support :=
+lean/Taut/Theorem3.lean:710:    have hPMR : IsPseudomanifold MR.support := hIHR.2
+lean/Taut/Theorem3.lean:816:        IsPseudomanifold ML.support :=
+lean/Taut/Theorem3.lean:822:    have hPML : IsPseudomanifold ML.support := hIHL.2
+lean/Taut/StickerballRuleouts.lean:9:This file carries `IsPseudomanifold` through the eligible-tet flip:
+lean/Taut/StickerballRuleouts.lean:16:The carried invariant is just `IsPseudomanifold M.support` alongside the existing
+lean/Taut/StickerballRuleouts.lean:49:    (h₁ : IsPseudomanifold (τ.filter (fun t => t ⊆ A)))
+lean/Taut/StickerballRuleouts.lean:50:    (h₂ : IsPseudomanifold (τ.filter (fun t => t ⊆ B))) :
+lean/Taut/StickerballRuleouts.lean:51:    IsPseudomanifold τ := by
+lean/Taut/StickerballRuleouts.lean:54:  · -- every tet of τ containing f is ⊆ A, so faceCount τ f = faceCount (filter ⊆A) f
+lean/Taut/StickerballRuleouts.lean:64:    unfold faceCount at this ⊢
+lean/Taut/StickerballRuleouts.lean:79:    unfold faceCount at this ⊢
+lean/Taut/Theorem2.lean:83:noncomputable def removeTet (M : Chain V) (t : Finset V) : Chain V :=
+lean/Taut/Theorem2.lean:99:def EligibleTet (M : Chain V) (t : Finset V) : Prop :=
+lean/Taut/Theorem2.lean:104:def FlipEdgePresent (σ : Finset (Finset V)) (f₃ f₄ : Finset V) : Prop :=
+lean/Taut/Theorem2.lean:124:lemma exposedFaces_card_of_eligible {M : Chain V} {t : Finset V} (h : EligibleTet M t) :
+lean/Taut/Theorem2.lean:135:lemma bdry_removeTet (M : Chain V) (t : Finset V) :
+lean/Taut/Theorem2.lean:136:    bdry (removeTet M t) = bdry M - tetContribution M t := by
+lean/Taut/Theorem2.lean:137:  rw [removeTet, tetContribution, map_sub]
+lean/Taut/Theorem2.lean:139:/-! ### `removeTet` as a chain -/
+lean/Taut/Theorem2.lean:141:@[simp] lemma removeTet_apply_self (M : Chain V) (t : Finset V) : removeTet M t t = 0 := by
+lean/Taut/Theorem2.lean:142:  simp [removeTet, Finsupp.single_eq_same]
+lean/Taut/Theorem2.lean:144:lemma removeTet_apply_ne {M : Chain V} {t s : Finset V} (h : s ≠ t) :
+lean/Taut/Theorem2.lean:145:    removeTet M t s = M s := by
+lean/Taut/Theorem2.lean:146:  simp [removeTet, Finsupp.single_eq_of_ne h]
+lean/Taut/Theorem2.lean:148:lemma support_removeTet_of_mem {M : Chain V} {t : Finset V} (ht : t ∈ M.support) :
+lean/Taut/Theorem2.lean:149:    (removeTet M t).support = M.support.erase t := by
+lean/Taut/Theorem2.lean:153:  · subst hst; simp [removeTet_apply_self]
+lean/Taut/Theorem2.lean:154:  · simp [removeTet_apply_ne hst, hst]
+lean/Taut/Theorem2.lean:156:lemma simplicialChain_removeTet {M : Chain V} {t : Finset V} (hS : SimplicialChain M) :
+lean/Taut/Theorem2.lean:157:    SimplicialChain (removeTet M t) := by
+lean/Taut/Theorem2.lean:160:  · subst hst; rw [removeTet_apply_self]; exact Or.inr (Or.inl rfl)
+lean/Taut/Theorem2.lean:161:  · rw [removeTet_apply_ne hst]; exact hS s
+lean/Taut/Theorem2.lean:163:lemma nrm_removeTet_add_one_of_simplicial {M : Chain V} {t : Finset V}
+lean/Taut/Theorem2.lean:165:    nrm (removeTet M t) + 1 = nrm M := by
+lean/Taut/Theorem2.lean:166:  rw [nrm_eq_support_card_of_simplicial (simplicialChain_removeTet hS),
+lean/Taut/Theorem2.lean:167:    nrm_eq_support_card_of_simplicial hS, support_removeTet_of_mem ht,
+lean/Taut/Theorem2.lean:172:lemma nrm_removeTet_of_simplicial {M : Chain V} {t : Finset V}
+lean/Taut/Theorem2.lean:174:    nrm (removeTet M t) = nrm M - 1 := by
+lean/Taut/Theorem2.lean:175:  have := nrm_removeTet_add_one_of_simplicial hS ht; omega
+lean/Taut/Theorem2.lean:241:theorem support_flipBoundary_of_eligible {M : Chain V} {t : Finset V} (h : EligibleTet M t) :
+lean/Taut/Theorem2.lean:242:    (bdry (removeTet M t)).support
+lean/Taut/Theorem2.lean:247:  simp only [Finsupp.mem_support_iff, bdry_removeTet, Finsupp.sub_apply, Finset.mem_union,
+lean/Taut/Theorem2.lean:273:    (hS : SimplicialChain M) (h : EligibleTet M t) : M t = 1 ∨ M t = -1 := by
+lean/Taut/Theorem2.lean:293:    (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (h : EligibleTet M t) :
+lean/Taut/Theorem2.lean:294:    UnitOn (bdry (removeTet M t)) ((σ \ sharedFaces M t) ∪ exposedFaces M t) := by
+lean/Taut/Theorem2.lean:305:    rw [bdry_removeTet, Finsupp.sub_apply, tetContribution_apply_of_not_mem_tetFaces ht4 hsf,
+lean/Taut/Theorem2.lean:308:  · rw [bdry_removeTet, Finsupp.sub_apply, bdry_apply_eq_zero_of_mem_exposedFaces hs, zero_sub]
+lean/Taut/Pseudomanifold.lean:22:def faceCount (τ : Finset (Finset V)) (f : Finset V) : ℕ :=
+lean/Taut/Pseudomanifold.lean:28:def IsPseudomanifold (τ : Finset (Finset V)) : Prop :=
+lean/Taut/Pseudomanifold.lean:29:  ∀ f, f.card = 3 → faceCount τ f ≤ 2
+lean/Taut/Pseudomanifold.lean:31:/-- `TriangleBounded3` — the preferred name for the triangle-count condition
+lean/Taut/Pseudomanifold.lean:32:(`IsPseudomanifold`): every triangle lies in at most two tets.  This is a
+lean/Taut/Pseudomanifold.lean:35:abbrev TriangleBounded3 (τ : Finset (Finset V)) : Prop := IsPseudomanifold τ
+lean/Taut/Pseudomanifold.lean:39:lemma faceCount_eq_zero {τ : Finset (Finset V)} {f : Finset V}
+lean/Taut/Pseudomanifold.lean:40:    (h : ∀ t ∈ τ, ¬ f ⊆ t) : faceCount τ f = 0 := by
+lean/Taut/Pseudomanifold.lean:41:  unfold faceCount
+lean/Taut/Pseudomanifold.lean:45:lemma faceCount_insert_of_not_mem {τ : Finset (Finset V)} {t : Finset V}
+lean/Taut/Pseudomanifold.lean:47:    faceCount (insert t τ) f = faceCount τ f + (if f ⊆ t then 1 else 0) := by
+lean/Taut/Pseudomanifold.lean:48:  unfold faceCount
+lean/Taut/Pseudomanifold.lean:58:    IsPseudomanifold ({t} : Finset (Finset V)) := by
+lean/Taut/Pseudomanifold.lean:60:  have h : faceCount ({t} : Finset (Finset V)) f ≤ 1 := by
+lean/Taut/Pseudomanifold.lean:61:    unfold faceCount
+lean/Taut/Pseudomanifold.lean:73:    (hτ : IsPseudomanifold τ) (ht : t ∉ τ)
+lean/Taut/Pseudomanifold.lean:74:    (hclean : ∀ f, f.card = 3 → f ⊆ t → faceCount τ f ≤ 1) :
+lean/Taut/Pseudomanifold.lean:75:    IsPseudomanifold (insert t τ) := by
+lean/Taut/Pseudomanifold.lean:77:  rw [faceCount_insert_of_not_mem ht]
+lean/Taut/Pseudomanifold.lean:84:`IsPseudomanifold` controls triangle incidence, but a boundary-tracking shelling
+lean/Taut/Pseudomanifold.lean:240:every triangle in at most two tets (`IsPseudomanifold`) and every edge-link
+lean/Taut/Pseudomanifold.lean:245:  FreelyShellable τ B ∧ IsPseudomanifold τ ∧ EdgeLinkConnected τ
+lean/Taut/Pseudomanifold.lean:263:    (hpm : IsPseudomanifold τ) (hel : EdgeLinkConnected τ)
+lean/Taut/Pseudomanifold.lean:265:    (hpmc : ∀ f, f.card = 3 → f ⊆ tt → faceCount τ f ≤ 1)
+lean/Taut/Pseudomanifold.lean:275:reusable cores: a surviving over-incident triangle breaks `IsPseudomanifold`, and
+lean/Taut/Pseudomanifold.lean:279:lemma faceCount_le_of_subset {τ τ' : Finset (Finset V)} (h : τ' ⊆ τ) (f : Finset V) :
+lean/Taut/Pseudomanifold.lean:280:    faceCount τ' f ≤ faceCount τ f := by
+lean/Taut/Pseudomanifold.lean:281:  unfold faceCount
+lean/Taut/Pseudomanifold.lean:287:lemma faceCount_union_of_disjoint {τ₁ τ₂ : Finset (Finset V)} (hd : Disjoint τ₁ τ₂)
+lean/Taut/Pseudomanifold.lean:288:    (f : Finset V) : faceCount (τ₁ ∪ τ₂) f = faceCount τ₁ f + faceCount τ₂ f := by
+lean/Taut/Pseudomanifold.lean:289:  unfold faceCount
+lean/Taut/Pseudomanifold.lean:294:`IsPseudomanifold τ'`. -/
+lean/Taut/Pseudomanifold.lean:295:lemma not_isPseudomanifold_of_faceCount {τ' : Finset (Finset V)} {f : Finset V}
+lean/Taut/Pseudomanifold.lean:296:    (hf : f.card = 3) (h3 : 3 ≤ faceCount τ' f) : ¬ IsPseudomanifold τ' :=
+lean/Taut/Pseudomanifold.lean:461:`TriangleBounded3 ∧ EdgeLinkConnected` is still not the right invariant — it omits
+lean/Taut/Pseudomanifold.lean:470:(no-pinch) condition.  `TriangleBounded3 ∧ EdgeLinkConnected` alone is not normal. -/
+lean/Taut/Pseudomanifold.lean:478:  Pure3 τ ∧ TriangleBounded3 τ ∧ Normal3 τ
+lean/Taut/Pseudomanifold.lean:501:    (hpmc : ∀ f, f.card = 3 → f ⊆ t → faceCount τ f ≤ 1)
+lean/Taut/Theorem3Clean.lean:19:    (deg3_step_clean : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+lean/Taut/Theorem3Clean.lean:26:    (prime_step_clean : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+lean/Taut/Theorem3Clean.lean:48:      · refine deg3_step_clean σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+lean/Taut/Theorem3Clean.lean:52:        refine prime_step_clean σ X M hσ hv hU hXc hMX hT hS hno3 ?_
+lean/Taut/Theorem3Clean.lean:79:mechanically: the only quantitative input is `faceCount τ γ ≤ 1` (carried from the
+lean/Taut/Theorem3Clean.lean:106:`faceCount τ γ ≤ 1` (`hγcount`), all six `CleanGlueStep` fields are discharged: the
+lean/Taut/Theorem3Clean.lean:117:    (hγcount : faceCount τ γ ≤ 1)
+lean/Taut/Theorem3Clean.lean:159:      have : faceCount τ f = 0 := faceCount_eq_zero (fun s hsτ hfs => hvτ s hsτ (hfs hvf))
+lean/Taut/Theorem3Clean.lean:418:    rw [faceCount_insert_of_not_mem hstarNotτ]
+lean/Taut/Theorem3Clean.lean:585:`v`-free face of `t₀` lies in `γ ⊆ starTet σ v` (and a singleton's `faceCount ≤ 1`),
+lean/Taut/Theorem3Clean.lean:630:  · -- hpmc: a singleton's `faceCount` is ≤ 1 (`card_filter_le`).
+lean/Taut/Theorem3Clean.lean:632:    unfold faceCount
+lean/Taut/Theorem3Clean.lean:689:`deg3_step_clean` mirrors `deg3_step_free` (the cut, the ML/MR split, the star-side
+lean/Taut/Theorem3Clean.lean:691:`FreelyShellable ∧ IsPseudomanifold`, here the IH delivers
+lean/Taut/Theorem3Clean.lean:693:`IsPseudomanifold` facts the preamble + `degree3_hanchor` still need are *derived*
+lean/Taut/Theorem3Clean.lean:700:/-- **deg3_step_clean** (the discharged degree-3 hole of `theorem3_core_clean`).
+lean/Taut/Theorem3Clean.lean:702:theorem deg3_step_clean (sigma : Finset (Finset V)) (X M : Chain V)
+lean/Taut/Theorem3Clean.lean:779:    have hPMR : IsPseudomanifold MR.support :=
+lean/Taut/Theorem3Clean.lean:823:    have hγcount : faceCount MR.support γ = 1 :=
+lean/Taut/Theorem3Clean.lean:824:      faceCount_eq_one_of_boundary hSimpR hPureR hPMR hγ3' hbdγ
+lean/Taut/Theorem3Clean.lean:825:    -- recover `γ ⊆ t₀`: the unique γ-containing tet (faceCount = 1) is `t₀` by `huniqγ`.
+lean/Taut/Theorem3Clean.lean:923:    have hPML : IsPseudomanifold ML.support :=
+lean/Taut/Theorem3Clean.lean:964:    have hγcount : faceCount ML.support γ = 1 :=
+lean/Taut/Theorem3Clean.lean:965:      faceCount_eq_one_of_boundary hSimpL hPureL hPML hγ3' hbdγ
+lean/Taut/Theorem3Clean.lean:1000:remainder `removeTet M e` (boundary the `flipBoundary`, ending at `σ`).  The four
+lean/Taut/Theorem3Clean.lean:1005:`e` is a unit boundary face of `removeTet M e`, so it sits in exactly one remaining
+lean/Taut/Theorem3Clean.lean:1006:tet (`faceCount = 1`), which then supplies an apex vertex of `e \ e'`.
+lean/Taut/Theorem3Clean.lean:1014:emptiness is **edge-manifold content not carried by `IsPseudomanifold`**, so it is
+lean/Taut/Theorem3Clean.lean:1026:side separation.  (The case-1 half — `¬ FlipEdgePresent`, where the remainder is a
+lean/Taut/Theorem3Clean.lean:1032:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+lean/Taut/Theorem3Clean.lean:1033:    (hFlip : FlipEdgePresent σ f₃ f₄) :
+lean/Taut/Theorem3Clean.lean:1034:    edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅ := by
+lean/Taut/Theorem3Clean.lean:1117:boundary face of `removeTet M e`, hence lies in exactly one remaining tet.  This
+lean/Taut/Theorem3Clean.lean:1118:packages the `faceCount_eq_one_of_boundary` extraction used to read off an apex. -/
+lean/Taut/Theorem3Clean.lean:1124:    (hPMe : IsPseudomanifold (removeTet M e).support)
+lean/Taut/Theorem3Clean.lean:1125:    (he : EligibleTet M e) (hf : f ∈ exposedFaces M e) :
+lean/Taut/Theorem3Clean.lean:1126:    ∃ t ∈ (removeTet M e).support, f ⊆ t := by
+lean/Taut/Theorem3Clean.lean:1131:  have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
+lean/Taut/Theorem3Clean.lean:1134:  have hbd : bdry (removeTet M e) f = 1 ∨ bdry (removeTet M e) f = -1 := hUe.2 f hfflip
+lean/Taut/Theorem3Clean.lean:1135:  have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
+lean/Taut/Theorem3Clean.lean:1136:  have hPureE : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+lean/Taut/Theorem3Clean.lean:1138:    rw [support_removeTet_of_mem he.2.1] at ht
+lean/Taut/Theorem3Clean.lean:1140:  have h1 : faceCount (removeTet M e).support f = 1 :=
+lean/Taut/Theorem3Clean.lean:1141:    faceCount_eq_one_of_boundary hSe hPureE hPMe hf3 hbd
+lean/Taut/Theorem3Clean.lean:1142:  unfold faceCount at h1
+lean/Taut/Theorem3Clean.lean:1144:  have htmem : t ∈ (removeTet M e).support.filter (fun s => f ⊆ s) :=
+lean/Taut/Theorem3Clean.lean:1152:theorem `taut_edgeLinkConnected`, not yet available. -/
+lean/Taut/Theorem3Clean.lean:1158:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+lean/Taut/Theorem3Clean.lean:1160:    edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅ := by
+lean/Taut/Theorem3Clean.lean:1227:  have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
+lean/Taut/Theorem3Clean.lean:1261:    have hfc1 : faceCount M.support (insert p {z₃, z₄}) = 1 :=
+lean/Taut/Theorem3Clean.lean:1262:      faceCount_eq_one_of_boundary hS hPure hPM hg_card hbd
+lean/Taut/Theorem3Clean.lean:1263:    unfold faceCount at hfc1
+lean/Taut/Theorem3Clean.lean:1274:  rw [support_removeTet_of_mem he.2.1, Finset.mem_erase] at ht
+lean/Taut/Theorem3Clean.lean:1329:/-- **Edge-link analogue of LEMMA C** (`faceCount_removeTet_sharedFace_eq_zero`):
+lean/Taut/Theorem3Clean.lean:1330:rules out the flip-opposite edge `e \ (f₃ ∩ f₄)` from `removeTet M e` using the
+lean/Taut/Theorem3Clean.lean:1331:IH-level `EdgeLinkConnected (removeTet M u).support` for a SECOND eligible tet `u`
+lean/Taut/Theorem3Clean.lean:1335:second remainder `(removeTet M u).support` instead of `M.support`. -/
+lean/Taut/Theorem3Clean.lean:1341:    (he : EligibleTet M e) (hu : EligibleTet M u)
+lean/Taut/Theorem3Clean.lean:1344:    (hConnOu : ConnOn (edgeLinkGraph (removeTet M u).support (e \ (f₃ ∩ f₄)))
+lean/Taut/Theorem3Clean.lean:1345:      (edgeLinkVerts (removeTet M u).support (e \ (f₃ ∩ f₄)))) :
+lean/Taut/Theorem3Clean.lean:1346:    edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅ := by
+lean/Taut/Theorem3Clean.lean:1413:  have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
+lean/Taut/Theorem3Clean.lean:1415:  -- (M-level, reused because the closure tets live in `removeTet M u ⊆ M.support`.)
+lean/Taut/Theorem3Clean.lean:1448:    have hfc1 : faceCount M.support (insert p {z₃, z₄}) = 1 :=
+lean/Taut/Theorem3Clean.lean:1449:      faceCount_eq_one_of_boundary hS hPure hPM hg_card hbd
+lean/Taut/Theorem3Clean.lean:1450:    unfold faceCount at hfc1
+lean/Taut/Theorem3Clean.lean:1459:  -- containing it survive the SECOND removal `removeTet M u`.
+lean/Taut/Theorem3Clean.lean:1461:  have hsuppU : (removeTet M u).support = M.support.erase u := support_removeTet_of_mem hu.2.1
+lean/Taut/Theorem3Clean.lean:1463:  have heU : e ∈ (removeTet M u).support := by
+lean/Taut/Theorem3Clean.lean:1468:  rw [support_removeTet_of_mem he.2.1, Finset.mem_erase] at ht
+lean/Taut/Theorem3Clean.lean:1471:  have htU : t ∈ (removeTet M u).support := by
+lean/Taut/Theorem3Clean.lean:1484:    -- edge-link contradiction inside `(removeTet M u).support`.
+lean/Taut/Theorem3Clean.lean:1489:    have hw_link : w ∈ edgeLinkVerts (removeTet M u).support ({z₃, z₄} : Finset V) := by
+lean/Taut/Theorem3Clean.lean:1496:    have hp₁_link : p₁ ∈ edgeLinkVerts (removeTet M u).support ({z₃, z₄} : Finset V) := by
+lean/Taut/Theorem3Clean.lean:1499:    -- in `removeTet M u` gives a tet in `M.support` (erase ⊆), so M-level `huniq` applies.
+lean/Taut/Theorem3Clean.lean:1501:        (edgeLinkGraph (removeTet M u).support ({z₃, z₄} : Finset V)).Adj u' v →
+lean/Taut/Theorem3Clean.lean:1526:    have hnr : ¬ (edgeLinkGraph (removeTet M u).support ({z₃, z₄} : Finset V)).Reachable p₁ w := by
+lean/Taut/Theorem3Clean.lean:1542:    (ht : EligibleTet M t) (hexp : exposedFaces M t = {a, b}) (hab : a ≠ b) :
+lean/Taut/Theorem3Clean.lean:1704:    (ht : EligibleTet M t) (hexp : exposedFaces M t = {a, b}) (hab : a ≠ b)
+lean/Taut/Theorem3Clean.lean:1766:    (he : EligibleTet M e) (hu : EligibleTet M u) (hne : e ≠ u)
+lean/Taut/Theorem3Clean.lean:1807:`f` survives in a unique neighbour tet of `removeTet M e`, whose third vertex
+lean/Taut/Theorem3Clean.lean:1816:    (hPMe : IsPseudomanifold (removeTet M e).support)
+lean/Taut/Theorem3Clean.lean:1817:    (he : EligibleTet M e) (hf : f ∈ exposedFaces M e)
+lean/Taut/Theorem3Clean.lean:1819:    ((e \ e') ∩ edgeLinkVerts (removeTet M e).support e').Nonempty := by
+lean/Taut/Theorem3Clean.lean:1836:`f₃ ∩ f₄` is absent from `σ`, `removeTet M e` is itself a strictly smaller single-sphere
+lean/Taut/Theorem3Clean.lean:1837:taut filling, so the strong IH gives `EdgeLinkConnected (removeTet M e).support` directly.
+lean/Taut/Theorem3Clean.lean:1838:(Mirror of `removeTet_isPseudomanifold` case 1.) -/
+lean/Taut/Theorem3Clean.lean:1839:private lemma removeTet_edgeLinkConnected_noFlip {σ : Finset (Finset V)} {X M : Chain V}
+lean/Taut/Theorem3Clean.lean:1842:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+lean/Taut/Theorem3Clean.lean:1844:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄)
+lean/Taut/Theorem3Clean.lean:1848:    EdgeLinkConnected (removeTet M e).support := by
+lean/Taut/Theorem3Clean.lean:1853:  have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
+lean/Taut/Theorem3Clean.lean:1854:  have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
+lean/Taut/Theorem3Clean.lean:1855:  have hlt : nrm (removeTet M e) < nrm M := by
+lean/Taut/Theorem3Clean.lean:1856:    have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
+lean/Taut/Theorem3Clean.lean:1857:  exact IHelc _ (bdry (removeTet M e)) (removeTet M e) hlt hσe hUe (bdry_bdry _) rfl hTe hSe
+lean/Taut/Theorem3Clean.lean:1860:Re-glues the eligible tet `e` onto its edge-link-connected remainder `removeTet M e`.
+lean/Taut/Theorem3Clean.lean:1871:    (he : EligibleTet M e) (hu : EligibleTet M u)
+lean/Taut/Theorem3Clean.lean:1872:    (hPMe : IsPseudomanifold (removeTet M e).support)
+lean/Taut/Theorem3Clean.lean:1875:    (hELMe : EdgeLinkConnected (removeTet M e).support)
+lean/Taut/Theorem3Clean.lean:1876:    (hConnOu : ConnOn (edgeLinkGraph (removeTet M u).support (e \ (f₃ ∩ f₄)))
+lean/Taut/Theorem3Clean.lean:1877:      (edgeLinkVerts (removeTet M u).support (e \ (f₃ ∩ f₄)))) :
+lean/Taut/Theorem3Clean.lean:1880:  -- `M = insert e (removeTet M e)`, then glue the new tet onto the connected remainder.
+lean/Taut/Theorem3Clean.lean:1881:  rw [← support_insert_removeTet_of_mem he.2.1]
+lean/Taut/Theorem3Clean.lean:1972:an edge that lives entirely on one side) up to `removeTet M u`. -/
+lean/Taut/Theorem3Clean.lean:2001:the flip edge of the eligible `u` is already in `σ`, `removeTet M u` splits into two
+lean/Taut/Theorem3Clean.lean:2005:`connOn_oppEdge_of_subset_local` pushes it back up to `removeTet M u`. -/
+lean/Taut/Theorem3Clean.lean:2006:private lemma flipPresent_removeTet_connOn_at_nonflip_edge {σ : Finset (Finset V)}
+lean/Taut/Theorem3Clean.lean:2010:    (hu : EligibleTet M u) (heU : e ∈ (removeTet M u).support)
+lean/Taut/Theorem3Clean.lean:2013:    (hFlipu : FlipEdgePresent σ g₃ g₄)
+lean/Taut/Theorem3Clean.lean:2017:    ConnOn (edgeLinkGraph (removeTet M u).support O) (edgeLinkVerts (removeTet M u).support O) := by
+lean/Taut/Theorem3Clean.lean:2036:    have hloc : ∀ t ∈ (removeTet M u).support, O ⊆ t → t ∈
+lean/Taut/Theorem3Clean.lean:2037:        ((removeTet M u).filter (fun t => t ⊆ A)).support := by
+lean/Taut/Theorem3Clean.lean:2044:    have helcA : EdgeLinkConnected ((removeTet M u).filter (fun t => t ⊆ A)).support :=
+lean/Taut/Theorem3Clean.lean:2046:        (bdry ((removeTet M u).filter (fun t => t ⊆ A)))
+lean/Taut/Theorem3Clean.lean:2047:        ((removeTet M u).filter (fun t => t ⊆ A)) hnrmA hsphA hUA hbA rfl hTA hSA
+lean/Taut/Theorem3Clean.lean:2051:    have hloc : ∀ t ∈ (removeTet M u).support, O ⊆ t → t ∈
+lean/Taut/Theorem3Clean.lean:2052:        ((removeTet M u).filter (fun t => t ⊆ B)).support := by
+lean/Taut/Theorem3Clean.lean:2059:    have helcB : EdgeLinkConnected ((removeTet M u).filter (fun t => t ⊆ B)).support :=
+lean/Taut/Theorem3Clean.lean:2061:        (bdry ((removeTet M u).filter (fun t => t ⊆ B)))
+lean/Taut/Theorem3Clean.lean:2062:        ((removeTet M u).filter (fun t => t ⊆ B)) hnrmB hsphB hUB hbB rfl hTB hSB
+lean/Taut/Theorem3Clean.lean:2066:/-- **Dispatcher: `ConnOn` at `e`'s opposite edge inside `removeTet M u`.** Cases on
+lean/Taut/Theorem3Clean.lean:2067:whether `u`'s flip edge is present: no-flip ⟹ full `EdgeLinkConnected (removeTet M u)` from
+lean/Taut/Theorem3Clean.lean:2068:the IH (`removeTet_edgeLinkConnected_noFlip`), specialized at the edge; flip-present ⟹ the
+lean/Taut/Theorem3Clean.lean:2069:side-local `flipPresent_removeTet_connOn_at_nonflip_edge`.  This supplies the `hConnOu`
+lean/Taut/Theorem3Clean.lean:2071:private lemma removeTet_connOn_oppEdge_of_disjoint_eligible {σ : Finset (Finset V)}
+lean/Taut/Theorem3Clean.lean:2075:    (he : EligibleTet M e) (hu : EligibleTet M u)
+lean/Taut/Theorem3Clean.lean:2081:    ConnOn (edgeLinkGraph (removeTet M u).support (e \ (f₃ ∩ f₄)))
+lean/Taut/Theorem3Clean.lean:2082:      (edgeLinkVerts (removeTet M u).support (e \ (f₃ ∩ f₄))) := by
+lean/Taut/Theorem3Clean.lean:2087:  have heU : e ∈ (removeTet M u).support := by
+lean/Taut/Theorem3Clean.lean:2088:    rw [support_removeTet_of_mem hu.2.1]; exact Finset.mem_erase.mpr ⟨heu, he.2.1⟩
+lean/Taut/Theorem3Clean.lean:2090:  by_cases hFlipu : FlipEdgePresent σ g₃ g₄
+lean/Taut/Theorem3Clean.lean:2091:  · exact flipPresent_removeTet_connOn_at_nonflip_edge hσ hU hXc hMX hT hS hu heU hOe hOu hO2
+lean/Taut/Theorem3Clean.lean:2093:  · exact (removeTet_edgeLinkConnected_noFlip hσ hU hXc hMX hT hS hu hexpu hg₃₄ hFlipu IHelc) _ hO2
+lean/Taut/Theorem3Clean.lean:2096:`removeTet M e` (boundary the flip-boundary, ending at `σ`).  All fields are
+lean/Taut/Theorem3Clean.lean:2105:    (he : EligibleTet M e) (hu : EligibleTet M u)
+lean/Taut/Theorem3Clean.lean:2107:    (hPMu : IsPseudomanifold (removeTet M u).support)
+lean/Taut/Theorem3Clean.lean:2108:    (hPMe : IsPseudomanifold (removeTet M e).support)
+lean/Taut/Theorem3Clean.lean:2110:    (hOppEmpty : edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅) :
+lean/Taut/Theorem3Clean.lean:2111:    CleanGlueStep e (removeTet M e).support
+lean/Taut/Theorem3Clean.lean:2117:  have he_not_old : e ∉ (removeTet M e).support := by
+lean/Taut/Theorem3Clean.lean:2118:    rw [support_removeTet_of_mem he.2.1]; exact Finset.notMem_erase e M.support
+lean/Taut/Theorem3Clean.lean:2133:  have hshared0 : ∀ r ∈ sharedFaces M e, faceCount (removeTet M e).support r = 0 :=
+lean/Taut/Theorem3Clean.lean:2135:      faceCount_removeTet_sharedFace_eq_zero hσ hU hXc hMX hT hS hPure he hu hdisj hPMu hr
+lean/Taut/Theorem3Clean.lean:2161:    have hPureE : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+lean/Taut/Theorem3Clean.lean:2163:      rw [support_removeTet_of_mem he.2.1] at ht
+lean/Taut/Theorem3Clean.lean:2211:      have hwapex : w ∈ edgeLinkVerts (removeTet M e).support ({z₃, z₄} : Finset V) := by
+lean/Taut/Theorem3Clean.lean:2231:    · have h0 : faceCount (removeTet M e).support f = 0 := hshared0 f hsh
+lean/Taut/Theorem3Clean.lean:2234:      have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
+lean/Taut/Theorem3Clean.lean:2238:      have hbd : bdry (removeTet M e) f = 1 ∨ bdry (removeTet M e) f = -1 := hUe.2 f hfflip
+lean/Taut/Theorem3Clean.lean:2239:      have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
+lean/Taut/Theorem3Clean.lean:2240:      have hPureE : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+lean/Taut/Theorem3Clean.lean:2242:        rw [support_removeTet_of_mem he.2.1] at ht
+lean/Taut/Theorem3Clean.lean:2244:      have h1 : faceCount (removeTet M e).support f = 1 :=
+lean/Taut/Theorem3Clean.lean:2245:        faceCount_eq_one_of_boundary hSe hPureE hPMe hf3 hbd
+lean/Taut/Theorem3Clean.lean:2403:`removeTet M e` splits into two sphere-fillings `s₁, s₂` pinched along `cd`.  The
+lean/Taut/Theorem3Clean.lean:2664:against the side-1 accumulator `s₁` (not the full `removeTet M e`), which is what the
+lean/Taut/Theorem3Clean.lean:2674:* `hpmc` — `faceCount s₁ f ≤ 1` from `faceCount (s₁ ∪ s₂) f ≤ 1` (`hpmcFull`) by
+lean/Taut/Theorem3Clean.lean:2692:    (hpmcFull : ∀ f, f.card = 3 → f ⊆ e → faceCount (s₁ ∪ s₂) f ≤ 1) :
+lean/Taut/Theorem3Clean.lean:2733:  · -- hpmc: `faceCount s₁ f ≤ faceCount (s₁ ∪ s₂) f ≤ 1`.
+lean/Taut/Theorem3Clean.lean:2735:    exact le_trans (faceCount_le_of_subset Finset.subset_union_left f) (hpmcFull f hf3 hfe)
+lean/Taut/Theorem3Clean.lean:2763:pair `f₃, f₄` already spans a flip edge of `σ`, `removeTet M e` splits along the seam
+lean/Taut/Theorem3Clean.lean:2775:    (hPMe : IsPseudomanifold (removeTet M e).support)
+lean/Taut/Theorem3Clean.lean:2776:    (he : EligibleTet M e)
+lean/Taut/Theorem3Clean.lean:2778:    (hFlip : FlipEdgePresent σ f₃ f₄)
+lean/Taut/Theorem3Clean.lean:2790:  set M₁ := (removeTet M e).filter (fun t => t ⊆ A) with hM₁
+lean/Taut/Theorem3Clean.lean:2791:  set M₂ := (removeTet M e).filter (fun t => t ⊆ B) with hM₂
+lean/Taut/Theorem3Clean.lean:2822:  -- ### `(removeTet M e).support = M₁.support ∪ M₂.support` (from `hsupp`, `e ∉` each).
+lean/Taut/Theorem3Clean.lean:2823:  have hsuppU : (removeTet M e).support = M₁.support ∪ M₂.support := by
+lean/Taut/Theorem3Clean.lean:2824:    rw [support_removeTet_of_mem he.2.1, hsupp, Finset.erase_insert]
+lean/Taut/Theorem3Clean.lean:2857:eligible pair (`aleph_disjoint_eligible_pair`).  Orientation
+lean/Taut/Theorem3Clean.lean:2863:`removeTet_edgeLinkConnected_noFlip`) and the avoided edge's link in
+lean/Taut/Theorem3Clean.lean:2864:`removeTet M w` is connected (`removeTet_connOn_oppEdge_of_disjoint_eligible`),
+lean/Taut/Theorem3Clean.lean:2880:      IsPseudomanifold M'.support :=
+lean/Taut/Theorem3Clean.lean:2883:  have key : ∀ (r w r₃ r₄ : Finset V), EligibleTet M r → EligibleTet M w → r ≠ w →
+lean/Taut/Theorem3Clean.lean:2887:    have hPMr : IsPseudomanifold (removeTet M r).support :=
+lean/Taut/Theorem3Clean.lean:2888:      removeTet_isPseudomanifold hσ hU hXc hMX hT hS hr IHpm
+lean/Taut/Theorem3Clean.lean:2889:    by_cases hFlip : FlipEdgePresent σ r₃ r₄
+lean/Taut/Theorem3Clean.lean:2891:    · have hELMr : EdgeLinkConnected (removeTet M r).support :=
+lean/Taut/Theorem3Clean.lean:2892:        removeTet_edgeLinkConnected_noFlip hσ hU hXc hMX hT hS hr hrexp hr₃₄ hFlip IHelc
+lean/Taut/Theorem3Clean.lean:2893:      have hConnOw : ConnOn (edgeLinkGraph (removeTet M w).support (r \ (r₃ ∩ r₄)))
+lean/Taut/Theorem3Clean.lean:2894:          (edgeLinkVerts (removeTet M w).support (r \ (r₃ ∩ r₄))) :=
+lean/Taut/Theorem3Clean.lean:2895:        removeTet_connOn_oppEdge_of_disjoint_eligible hσ hU hXc hMX hT hS hr hw hrexp hr₃₄ hOu IHelc
+lean/Taut/Theorem3Clean.lean:2898:  obtain ⟨e₀, u₀, hne, he₀, hu₀, hdisj⟩ := aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+lean/Taut/Theorem3Clean.lean:2931:tet via `faceCount_eq_one_of_boundary`) is supplied by the standalone
+lean/Taut/Theorem3Clean.lean:2991:    have hPMR : IsPseudomanifold MR.support :=
+lean/Taut/Theorem3Clean.lean:3024:    -- γ sits in a unique remainder tet (faceCount = 1), giving the apex `t₀`.
+lean/Taut/Theorem3Clean.lean:3025:    have hγcount1 : faceCount MR.support γ = 1 :=
+lean/Taut/Theorem3Clean.lean:3026:      faceCount_eq_one_of_boundary hSimpR hPureMR hPMR hγ3' hURγ
+lean/Taut/Theorem3Clean.lean:3083:    have hPML : IsPseudomanifold ML.support :=
+lean/Taut/Theorem3Clean.lean:3114:    have hγcount1 : faceCount ML.support γ = 1 :=
+lean/Taut/Theorem3Clean.lean:3115:      faceCount_eq_one_of_boundary hSimpL hPureML hPML hγ3' hURγ
+lean/Taut/Theorem3Clean.lean:3144:theorem taut_edgeLinkConnected {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+lean/Taut/Theorem3Clean.lean:3169:(`¬ FlipEdgePresent σ f₃ f₄`), removing the eligible tet `e` (with a paired eligible
+lean/Taut/Theorem3Clean.lean:3173:`oppEdge_empty_of_full_edgeLinkConnected` + `taut_edgeLinkConnected`).  For an old target
+lean/Taut/Theorem3Clean.lean:3174:`s ≠ e` the clean shelling is `(removeTet M e)'s clean shelling from s ++ [e]`
+lean/Taut/Theorem3Clean.lean:3176:theorem exists_clean_shelling_prime_case1 {σ : Finset (Finset V)} {X M : Chain V}
+lean/Taut/Theorem3Clean.lean:3183:    (he : EligibleTet M e) (hu : EligibleTet M u)
+lean/Taut/Theorem3Clean.lean:3187:    (hFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+lean/Taut/Theorem3Clean.lean:3196:      IsPseudomanifold M'.support :=
+lean/Taut/Theorem3Clean.lean:3198:  have hPMu : IsPseudomanifold (removeTet M u).support :=
+lean/Taut/Theorem3Clean.lean:3199:    removeTet_isPseudomanifold hσ hU hXc hMX hT hS hu IHpm
+lean/Taut/Theorem3Clean.lean:3200:  have hPMe : IsPseudomanifold (removeTet M e).support :=
+lean/Taut/Theorem3Clean.lean:3201:    removeTet_isPseudomanifold hσ hU hXc hMX hT hS he IHpm
+lean/Taut/Theorem3Clean.lean:3202:  have hOppEmpty : edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅ :=
+lean/Taut/Theorem3Clean.lean:3204:      (taut_edgeLinkConnected hσ hU hXc hMX hT hS)
+lean/Taut/Theorem3Clean.lean:3205:  have hglue : CleanGlueStep e (removeTet M e).support
+lean/Taut/Theorem3Clean.lean:3208:  -- `removeTet M e` is a strictly smaller single-sphere taut filling (case 1 has no flip).
+lean/Taut/Theorem3Clean.lean:3211:  have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
+lean/Taut/Theorem3Clean.lean:3213:  have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
+lean/Taut/Theorem3Clean.lean:3214:  have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
+lean/Taut/Theorem3Clean.lean:3215:  have hlt : nrm (removeTet M e) < nrm M := by
+lean/Taut/Theorem3Clean.lean:3216:    have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
+lean/Taut/Theorem3Clean.lean:3217:  have hfree_e : FreelyCleanShellable (removeTet M e).support
+lean/Taut/Theorem3Clean.lean:3219:    IH _ (bdry (removeTet M e)) (removeTet M e) hlt hσe hUe (bdry_bdry _) rfl hTe hSe
+lean/Taut/Theorem3Clean.lean:3220:  have he_not_old : e ∉ (removeTet M e).support := by
+lean/Taut/Theorem3Clean.lean:3221:    rw [support_removeTet_of_mem he.2.1]; exact Finset.notMem_erase e M.support
+lean/Taut/Theorem3Clean.lean:3222:  have hs_old : s ∈ (removeTet M e).support := by
+lean/Taut/Theorem3Clean.lean:3223:    rw [support_removeTet_of_mem he.2.1]
+lean/Taut/Theorem3Clean.lean:3229:  rw [hfin, support_removeTet_of_mem he.2.1, Finset.insert_erase he.2.1]
+lean/Taut/Theorem3Clean.lean:3272:    (hpmcFull : ∀ f, f.card = 3 → f ⊆ e → faceCount (M₁ ∪ M₂) f ≤ 1)
+lean/Taut/Theorem3Clean.lean:3277:    (hfaceΔf₄ : faceCount (insert e M₁) f₄ ≤ 1)
+lean/Taut/Theorem3Clean.lean:3326:theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain V}
+lean/Taut/Theorem3Clean.lean:3333:    (he : EligibleTet M e) (hne_es : e ≠ s) (hs : s ∈ M.support)
+lean/Taut/Theorem3Clean.lean:3335:    (hFlip : FlipEdgePresent σ f₃ f₄) :
+lean/Taut/Theorem3Clean.lean:3342:  have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
+lean/Taut/Theorem3Clean.lean:3345:      IsPseudomanifold M'.support :=
+lean/Taut/Theorem3Clean.lean:3347:  have hPMe : IsPseudomanifold (removeTet M e).support :=
+lean/Taut/Theorem3Clean.lean:3348:    removeTet_isPseudomanifold hσ hU hXc hMX hT hS he IHpm
+lean/Taut/Theorem3Clean.lean:3354:  set M₁ := (removeTet M e).filter (fun t => t ⊆ A) with hM₁
+lean/Taut/Theorem3Clean.lean:3355:  set M₂ := (removeTet M e).filter (fun t => t ⊆ B) with hM₂
+lean/Taut/Theorem3Clean.lean:3393:  have hsuppU : (removeTet M e).support = M₁.support ∪ M₂.support := by
+lean/Taut/Theorem3Clean.lean:3394:    rw [support_removeTet_of_mem he.2.1, hsuppM, Finset.erase_insert (by
+lean/Taut/Theorem3Clean.lean:3408:    rw [support_removeTet_of_mem he.2.1] at ht₃R; exact Finset.mem_of_mem_erase ht₃R)
+lean/Taut/Theorem3Clean.lean:3410:    rw [support_removeTet_of_mem he.2.1] at ht₄R; exact Finset.mem_of_mem_erase ht₄R)
+lean/Taut/Theorem3Clean.lean:3426:  -- ### faceCount over the union ≤ 1 for triangles of `e` (PM of `M.support` minus `e`).
+lean/Taut/Theorem3Clean.lean:3427:  have hpmcFull : ∀ f, f.card = 3 → f ⊆ e → faceCount (M₁.support ∪ M₂.support) f ≤ 1 := by
+lean/Taut/Theorem3Clean.lean:3430:    have hsuppRe : (removeTet M e).support = M.support.erase e := support_removeTet_of_mem he.2.1
+lean/Taut/Theorem3Clean.lean:3432:    have hcard : faceCount (removeTet M e).support f + 1 = faceCount M.support f := by
+lean/Taut/Theorem3Clean.lean:3433:      unfold faceCount; rw [hsuppRe, Finset.filter_erase, Finset.card_erase_add_one hemem]
+lean/Taut/Theorem3Clean.lean:3435:  -- ### Uniqueness of the `f₃`/`f₄` tet on each side (via `faceCount_eq_one_of_boundary`).
+lean/Taut/Theorem3Clean.lean:3440:  have hPMM₁ : IsPseudomanifold M₁.support := taut_isPseudomanifold hsphA hUA hbA rfl hTA hSA
+lean/Taut/Theorem3Clean.lean:3441:  have hPMM₂ : IsPseudomanifold M₂.support := taut_isPseudomanifold hsphB hUB hbB rfl hTB hSB
+lean/Taut/Theorem3Clean.lean:3445:    have hfc : faceCount M₁.support f₃ = 1 := faceCount_eq_one_of_boundary hSA hpureM₁ hPMM₁ hf₃3 hbd
+lean/Taut/Theorem3Clean.lean:3446:    rw [faceCount, Finset.card_eq_one] at hfc
+lean/Taut/Theorem3Clean.lean:3457:    have hfc : faceCount M₂.support f₄ = 1 := faceCount_eq_one_of_boundary hSB hpureM₂ hPMM₂ hf₄3 hbd
+lean/Taut/Theorem3Clean.lean:3458:    rw [faceCount, Finset.card_eq_one] at hfc
+lean/Taut/Theorem3Clean.lean:3466:  -- ### `faceCount (insert e Mᵢ.support) fⱼ ≤ 1` (`e` contributes 1; the side adds 0).
+lean/Taut/Theorem3Clean.lean:3467:  have hfaceΔf₄ : faceCount (insert e M₁.support) f₄ ≤ 1 := by
+lean/Taut/Theorem3Clean.lean:3468:    rw [faceCount_insert_of_not_mem heM₁ f₄]
+lean/Taut/Theorem3Clean.lean:3469:    have h0 : faceCount M₁.support f₄ = 0 := by
+lean/Taut/Theorem3Clean.lean:3470:      apply faceCount_eq_zero; intro t ht hf₄t
+lean/Taut/Theorem3Clean.lean:3473:  have hfaceΔf₃ : faceCount (insert e M₂.support) f₃ ≤ 1 := by
+lean/Taut/Theorem3Clean.lean:3474:    rw [faceCount_insert_of_not_mem heM₂ f₃]
+lean/Taut/Theorem3Clean.lean:3475:    have h0 : faceCount M₂.support f₃ = 0 := by
+lean/Taut/Theorem3Clean.lean:3476:      apply faceCount_eq_zero; intro t ht hf₃t
+lean/Taut/Theorem3Clean.lean:3534:  have hs_old : s ∈ (removeTet M e).support := by
+lean/Taut/Theorem3Clean.lean:3535:    rw [support_removeTet_of_mem he.2.1]; exact Finset.mem_erase.mpr ⟨Ne.symm hne_es, hs⟩
+lean/Taut/Theorem3Clean.lean:3548:    have hpmcFull' : ∀ f, f.card = 3 → f ⊆ e → faceCount (M₂.support ∪ M₁.support) f ≤ 1 := by
+lean/Taut/Theorem3Clean.lean:3556:/-- **prime_step_clean** (the `theorem3_core_clean` hole): a no-degree-3 taut filling
+lean/Taut/Theorem3Clean.lean:3559:present (case 2, `exists_clean_shelling_prime_case2`) or absent (case 1,
+lean/Taut/Theorem3Clean.lean:3560:`exists_clean_shelling_prime_case1`). -/
+lean/Taut/Theorem3Clean.lean:3561:theorem prime_step_clean (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+lean/Taut/Theorem3Clean.lean:3574:    aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+lean/Taut/Theorem3Clean.lean:3577:      ∃ e u, EligibleTet M e ∧ EligibleTet M u ∧
+lean/Taut/Theorem3Clean.lean:3583:  by_cases hFlip : FlipEdgePresent σ f₃ f₄
+lean/Taut/Theorem3Clean.lean:3584:  · exact exists_clean_shelling_prime_case2 hσ hU hXc hMX hT hS IH he hne_es hs hexp hf₃₄ hFlip
+lean/Taut/Theorem3Clean.lean:3585:  · exact exists_clean_shelling_prime_case1 hσ hU hXc hMX hT hS IH he hu hdu hne_es hs hexp
+lean/Taut/Theorem3Clean.lean:3590:the three discharged clean steps (`base_free_clean`, `deg3_step_clean`, `prime_step_clean`) via
+lean/Taut/Theorem3Clean.lean:3592:theorem theorem3_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+lean/Taut/Theorem3Clean.lean:3595:  theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean hσ hU hXc hMX hT hS
+lean/Taut/Theorem3Clean.lean:3600:theorem theorem2_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+lean/Taut/Theorem23.lean:104:      FreelyShellable M.support σ ∧ IsPseudomanifold M.support)
+lean/Taut/Theorem23.lean:110:        FreelyShellable M'.support σ' ∧ IsPseudomanifold M'.support) →
+lean/Taut/Theorem23.lean:111:      FreelyShellable M.support σ ∧ IsPseudomanifold M.support)
+lean/Taut/Theorem23.lean:117:        FreelyShellable M'.support σ' ∧ IsPseudomanifold M'.support) →
+lean/Taut/Theorem23.lean:118:      FreelyShellable M.support σ ∧ IsPseudomanifold M.support)
+lean/Taut/Theorem23.lean:121:    FreelyShellable M.support σ ∧ IsPseudomanifold M.support := by
+lean/Taut/Theorem23.lean:124:      FreelyShellable M.support σ ∧ IsPseudomanifold M.support by
+lean/Taut/Stickerball.lean:7:`faceCount`/`IsPseudomanifold` are combinatorial (set counts on the support),
+lean/Taut/Stickerball.lean:56:sits in exactly one tet of the support: at most two by `IsPseudomanifold`, and
+lean/Taut/Stickerball.lean:58:lemma faceCount_eq_one_of_boundary {M : Chain V}
+lean/Taut/Stickerball.lean:60:    (hPM : IsPseudomanifold M.support) {f : Finset V} (hf : f.card = 3)
+lean/Taut/Stickerball.lean:62:    faceCount M.support f = 1 := by
+lean/Taut/Stickerball.lean:63:  have hle : faceCount M.support f ≤ 2 := hPM f hf
+lean/Taut/Stickerball.lean:81:  have hge : 1 ≤ faceCount M.support f := by
+lean/Taut/Stickerball.lean:84:    unfold faceCount at h0
+lean/Taut/Stickerball.lean:88:  have hne2 : faceCount M.support f ≠ 2 := by
+lean/Taut/Stickerball.lean:90:    unfold faceCount at h2
+lean/Taut/Stickerball.lean:103:lemma faceCount_ne_two_of_boundary {M : Chain V}
+lean/Taut/Stickerball.lean:106:    faceCount M.support f ≠ 2 := by
+lean/Taut/Stickerball.lean:125:  unfold faceCount at h2
+lean/Taut/FlipGeom.lean:8:2-sphere `σ`.  When the flipped edge is absent (`¬ FlipEdgePresent`, case 1) the new
+lean/Taut/FlipGeom.lean:10:removed filling `removeTet M e` is again taut, and gluing `e` back is a `GlueStep`.
+lean/Taut/FlipGeom.lean:11:These three facts — `IsSphere2 σe`, `IsTaut (removeTet M e)`, `GlueStep e σe σ` — are
+lean/Taut/FlipGeom.lean:24:/-- **Gluing the eligible tet back.** Pure set algebra (no `FlipEdgePresent` needed):
+lean/Taut/FlipGeom.lean:27:    {e : Finset V} (hU : UnitOn (bdry M) σ) (he : EligibleTet M e) :
+lean/Taut/FlipGeom.lean:53:/-- **Removing any tet preserves tautness.** `removeTet M e` is a sub-chain of `M`
+lean/Taut/FlipGeom.lean:56:theorem isTaut_removeTet {M : Chain V} {e : Finset V} (hT : IsTaut M) :
+lean/Taut/FlipGeom.lean:57:    IsTaut (removeTet M e) := by
+lean/Taut/FlipGeom.lean:60:  simp only [removeTet, Finsupp.sub_apply, Finsupp.single_apply]
+lean/Taut/FlipGeom.lean:137:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:138:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+lean/Taut/FlipGeom.lean:172:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:173:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+lean/Taut/FlipGeom.lean:185:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:186:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+lean/Taut/FlipGeom.lean:291:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:292:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+lean/Taut/FlipGeom.lean:502:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:503:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄)
+lean/Taut/FlipGeom.lean:591:          unfold FlipEdgePresent
+lean/Taut/FlipGeom.lean:670:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:671:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+lean/Taut/FlipGeom.lean:784:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:785:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) {v : V} (hvnew : v ∈ f₃ ∩ f₄) :
+lean/Taut/FlipGeom.lean:846:      unfold FlipEdgePresent
+lean/Taut/FlipGeom.lean:1004:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:1005:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) {v : V} (hve : v ∈ e) (hvnotnew : v ∉ f₃ ∩ f₄) :
+lean/Taut/FlipGeom.lean:1404:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:1405:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) {v : V} (hve : v ∈ e) (hvnotnew : v ∉ f₃ ∩ f₄) :
+lean/Taut/FlipGeom.lean:1420:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:1421:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+lean/Taut/FlipGeom.lean:1509:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:1510:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+lean/Taut/FlipGeom.lean:1549:    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+lean/Taut/FlipGeom.lean:1550:    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+lean/Taut/CleanShelling.lean:22:compatibilities (`faceCount ≤ 1`, link attachment) that `clean3Complex_insert`
+lean/Taut/CleanShelling.lean:56:  hpmc : ∀ f, f.card = 3 → f ⊆ t → faceCount τ f ≤ 1
+lean/Taut/CleanShelling.lean:80:def IsCleanBall (τ B : Finset (Finset V)) : Prop :=
+lean/Taut/CleanShelling.lean:483:  · -- hpmc: faceCount splits; the `Δ`-part is `0` (a triangle of `t` in `Δ` lies in
+lean/Taut/CleanShelling.lean:486:    rw [faceCount_union_of_disjoint hdisj]
+lean/Taut/CleanShelling.lean:487:    have hΔ0 : faceCount Δ f = 0 := by
+lean/Taut/CleanShelling.lean:488:      apply faceCount_eq_zero
+lean/Taut/CleanShelling.lean:537:    (he_mem : e ∈ Δ) (hf₄e : f₄ ⊆ e) (hf₄countΔ : faceCount Δ f₄ ≤ 1) :
+lean/Taut/CleanShelling.lean:561:    · rw [faceCount_eq_zero]; · omega
+lean/Taut/CleanShelling.lean:666:    (he_mem : e ∈ Δ) (hf₄e : f₄ ⊆ e) (hf₄countΔ : faceCount Δ f₄ ≤ 1)
+lean/Taut/Theorem2Aleph.lean:12:connected-sum reduction) — together with M25b (`aleph_disjoint_eligible_pair`).
+lean/Taut/Theorem2Aleph.lean:1182:    EligibleTet M (τ : Finset V) ∧ sharedFaces M (τ : Finset V) = alephChosenFaceFiber f τ := by
+lean/Taut/Theorem2Aleph.lean:1380:theorem aleph_disjoint_eligible_pair {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Theorem2Aleph.lean:1383:    ∃ t₁ t₂, t₁ ≠ t₂ ∧ EligibleTet M t₁ ∧ EligibleTet M t₂ ∧
+lean/Taut/PrimeStep.lean:8:The `¬FlipEdgePresent` half of `theorem3_core`'s `prime_step`, per target `s`
+lean/Taut/PrimeStep.lean:10:eligible pair) an eligible tet `e ≠ s`, so `s` stays an OLD tet of `removeTet M e`.
+lean/Taut/PrimeStep.lean:11:When the flipped edge is absent, `removeTet M e` is a strictly smaller taut filling
+lean/Taut/PrimeStep.lean:14:`isTaut_removeTet`, `simplicialChain_removeTet`, `nrm_removeTet_add_one_of_simplicial`).
+lean/Taut/PrimeStep.lean:25:/-- Re-insert the removed tet: `insert e (removeTet M e).support = M.support`. -/
+lean/Taut/PrimeStep.lean:26:lemma support_insert_removeTet_of_mem {M : Chain V} {e : Finset V} (he : e ∈ M.support) :
+lean/Taut/PrimeStep.lean:27:    insert e (removeTet M e).support = M.support := by
+lean/Taut/PrimeStep.lean:28:  rw [support_removeTet_of_mem he, Finset.insert_erase he]
+lean/Taut/PrimeStep.lean:31:lemma exposedFaces_eq_pair_of_eligible {M : Chain V} {e : Finset V} (he : EligibleTet M e) :
+lean/Taut/PrimeStep.lean:45:The two side chains are explicitly filters of `removeTet M e` by vertex-side
+lean/Taut/PrimeStep.lean:64:  M₁_eq : M₁ = (removeTet M e).filter (fun t => t ⊆ A)
+lean/Taut/PrimeStep.lean:65:  M₂_eq : M₂ = (removeTet M e).filter (fun t => t ⊆ B)
+lean/Taut/PrimeStep.lean:80:  side_coverage : ∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B
+lean/Taut/PrimeStep.lean:82:    ∀ t ∈ (removeTet M e).support, (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A)
+lean/Taut/PrimeStep.lean:138:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:155:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:185:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:188:    (hFlip : FlipEdgePresent σ f₃ f₄) :
+lean/Taut/PrimeStep.lean:194:  unfold FlipEdgePresent at hFlip
+lean/Taut/PrimeStep.lean:274:theorem flipEdgePresent_removeTet_support_partition {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ A B : Finset V}
+lean/Taut/PrimeStep.lean:281:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:284:    (hFlip : FlipEdgePresent σ f₃ f₄)
+lean/Taut/PrimeStep.lean:288:    (∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B) ∧
+lean/Taut/PrimeStep.lean:289:      (∀ t ∈ (removeTet M e).support,
+lean/Taut/PrimeStep.lean:292:  let M' : Chain V := removeTet M e
+lean/Taut/PrimeStep.lean:346:  have hM't : IsTaut M' := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:416:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:419:    (hFlip : FlipEdgePresent σ f₃ f₄) :
+lean/Taut/PrimeStep.lean:560:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:563:    (hFlip : FlipEdgePresent σ f₃ f₄)
+lean/Taut/PrimeStep.lean:627:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:630:    (hFlip : FlipEdgePresent σ f₃ f₄)
+lean/Taut/PrimeStep.lean:674:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:677:    (hFlip : FlipEdgePresent σ f₃ f₄) :
+lean/Taut/PrimeStep.lean:890:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:893:    (hFlip : FlipEdgePresent σ f₃ f₄) :
+lean/Taut/PrimeStep.lean:1093:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1096:    (hFlip : FlipEdgePresent σ f₃ f₄) :
+lean/Taut/PrimeStep.lean:1171:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1174:    (hFlip : FlipEdgePresent σ f₃ f₄) :
+lean/Taut/PrimeStep.lean:1180:      (∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B) ∧
+lean/Taut/PrimeStep.lean:1181:      (∀ t ∈ (removeTet M e).support,
+lean/Taut/PrimeStep.lean:1187:  rcases flipEdgePresent_removeTet_support_partition hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd hfaceCover with ⟨hcover, hsep⟩
+lean/Taut/PrimeStep.lean:1232:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1233:    (hcover : ∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B)
+lean/Taut/PrimeStep.lean:1234:    (hsep : ∀ t ∈ (removeTet M e).support,
+lean/Taut/PrimeStep.lean:1236:    Disjoint ((removeTet M e).filter (fun t => t ⊆ A)).support
+lean/Taut/PrimeStep.lean:1237:      ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+lean/Taut/PrimeStep.lean:1240:        (((removeTet M e).filter (fun t => t ⊆ A)).support ∪
+lean/Taut/PrimeStep.lean:1241:          ((removeTet M e).filter (fun t => t ⊆ B)).support) := by
+lean/Taut/PrimeStep.lean:1243:  let R := removeTet M e
+lean/Taut/PrimeStep.lean:1272:    have hins := support_insert_removeTet_of_mem he.2.1
+lean/Taut/PrimeStep.lean:1278:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e) :
+lean/Taut/PrimeStep.lean:1279:    IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1280:      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1281:      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1282:      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1283:      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1284:      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1285:      e ∉ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧
+lean/Taut/PrimeStep.lean:1286:      e ∉ ((removeTet M e).filter (fun t => t ⊆ B)).support := by
+lean/Taut/PrimeStep.lean:1287:  let R := removeTet M e
+lean/Taut/PrimeStep.lean:1288:  have hTR : IsTaut R := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:1291:  have hSR : SimplicialChain R := simplicialChain_removeTet hS
+lean/Taut/PrimeStep.lean:1307:    have hEq : nrm R + 1 = nrm M := nrm_removeTet_add_one_of_simplicial hS he.2.1
+lean/Taut/PrimeStep.lean:1317:  have hsuppR : R.support = M.support.erase e := support_removeTet_of_mem he.2.1
+lean/Taut/PrimeStep.lean:1338:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1341:    (hsep : ∀ t ∈ (removeTet M e).support,
+lean/Taut/PrimeStep.lean:1343:    UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ A)))
+lean/Taut/PrimeStep.lean:1345:      UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ B)))
+lean/Taut/PrimeStep.lean:1349:  have hUflip : UnitOn (bdry (removeTet M e)) (flipBoundary σ M e) := by
+lean/Taut/PrimeStep.lean:1351:  have hpure : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+lean/Taut/PrimeStep.lean:1355:    have hR : (removeTet M e).support = M.support.erase e :=
+lean/Taut/PrimeStep.lean:1356:      support_removeTet_of_mem he.2.1
+lean/Taut/PrimeStep.lean:1362:  have hbdA : bdry ((removeTet M e).filter (fun t => t ⊆ A)) =
+lean/Taut/PrimeStep.lean:1363:      (bdry (removeTet M e)).filter (fun f => f ⊆ A) := by
+lean/Taut/PrimeStep.lean:1365:  have hsepBA : ∀ t ∈ (removeTet M e).support,
+lean/Taut/PrimeStep.lean:1374:  have hbdB : bdry ((removeTet M e).filter (fun t => t ⊆ B)) =
+lean/Taut/PrimeStep.lean:1375:      (bdry (removeTet M e)).filter (fun f => f ⊆ B) := by
+lean/Taut/PrimeStep.lean:1376:    exact bdry_filter_eq_filter_bdry_of_side_sep (M := removeTet M e) (A := B) (B := A) hpure hsepBA hBA2
+lean/Taut/PrimeStep.lean:1399:`IsTaut.splits`, `nrm_filter_add_nrm_filter_neg`, `simplicialChain_removeTet`,
+lean/Taut/PrimeStep.lean:1408:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1411:    (hFlip : FlipEdgePresent σ f₃ f₄)
+lean/Taut/PrimeStep.lean:1414:    (hcover : ∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B)
+lean/Taut/PrimeStep.lean:1415:    (hsep : ∀ t ∈ (removeTet M e).support,
+lean/Taut/PrimeStep.lean:1417:    UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ A)))
+lean/Taut/PrimeStep.lean:1419:      UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ B)))
+lean/Taut/PrimeStep.lean:1421:      bdry (bdry ((removeTet M e).filter (fun t => t ⊆ A))) = 0 ∧
+lean/Taut/PrimeStep.lean:1422:      bdry (bdry ((removeTet M e).filter (fun t => t ⊆ B))) = 0 ∧
+lean/Taut/PrimeStep.lean:1423:      IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1424:      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1425:      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1426:      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1427:      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1428:      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1429:      e ∉ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧
+lean/Taut/PrimeStep.lean:1430:      e ∉ ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+lean/Taut/PrimeStep.lean:1431:      Disjoint ((removeTet M e).filter (fun t => t ⊆ A)).support
+lean/Taut/PrimeStep.lean:1432:        ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+lean/Taut/PrimeStep.lean:1435:          (((removeTet M e).filter (fun t => t ⊆ A)).support ∪
+lean/Taut/PrimeStep.lean:1436:            ((removeTet M e).filter (fun t => t ⊆ B)).support) := by
+lean/Taut/PrimeStep.lean:1448:shellable complex, true once we carry `IsPseudomanifold` through the induction.  The
+lean/Taut/PrimeStep.lean:1449:two pieces here are the engine: `removeTet_isPseudomanifold` (the smaller filling is a
+lean/Taut/PrimeStep.lean:1451:`faceCount_removeTet_sharedFace_eq_zero` (the eligible tet's shared faces vanish on
+lean/Taut/PrimeStep.lean:1454:/-- **LEMMA B (removeTet is a pseudomanifold).** For an eligible `u` in a taut
+lean/Taut/PrimeStep.lean:1455:filling `M` of the sphere `σ`, the smaller filling `removeTet M u` is a
+lean/Taut/PrimeStep.lean:1460:lemma removeTet_isPseudomanifold {σ : Finset (Finset V)} {X M : Chain V} {u : Finset V}
+lean/Taut/PrimeStep.lean:1462:    (hT : IsTaut M) (hS : SimplicialChain M) (hu : EligibleTet M u)
+lean/Taut/PrimeStep.lean:1465:      IsPseudomanifold M'.support) :
+lean/Taut/PrimeStep.lean:1466:    IsPseudomanifold (removeTet M u).support := by
+lean/Taut/PrimeStep.lean:1470:  by_cases hFlip : FlipEdgePresent σ f₃ f₄
+lean/Taut/PrimeStep.lean:1471:  · -- case 2: removeTet M u splits into two smaller single-sphere taut fillings
+lean/Taut/PrimeStep.lean:1476:    have hPM₁ : IsPseudomanifold ((removeTet M u).filter (fun t => t ⊆ A)).support :=
+lean/Taut/PrimeStep.lean:1477:      IHpm _ (bdry ((removeTet M u).filter (fun t => t ⊆ A)))
+lean/Taut/PrimeStep.lean:1478:        ((removeTet M u).filter (fun t => t ⊆ A)) hsm₁ hsph₁ hu₁ hc₁ rfl hT₁ hS₁
+lean/Taut/PrimeStep.lean:1479:    have hPM₂ : IsPseudomanifold ((removeTet M u).filter (fun t => t ⊆ B)).support :=
+lean/Taut/PrimeStep.lean:1480:      IHpm _ (bdry ((removeTet M u).filter (fun t => t ⊆ B)))
+lean/Taut/PrimeStep.lean:1481:        ((removeTet M u).filter (fun t => t ⊆ B)) hsm₂ hsph₂ hu₂ hc₂ rfl hT₂ hS₂
+lean/Taut/PrimeStep.lean:1485:  · -- case 1: removeTet M u is itself a smaller single-sphere taut filling
+lean/Taut/PrimeStep.lean:1488:    have hTe : IsTaut (removeTet M u) := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:1489:    have hSe : SimplicialChain (removeTet M u) := simplicialChain_removeTet hS
+lean/Taut/PrimeStep.lean:1490:    have hlt : nrm (removeTet M u) < nrm M := by
+lean/Taut/PrimeStep.lean:1491:      have h := nrm_removeTet_add_one_of_simplicial hS hu.2.1; omega
+lean/Taut/PrimeStep.lean:1492:    exact IHpm _ (bdry (removeTet M u)) (removeTet M u) hlt hσe hUe (bdry_bdry _) rfl hTe hSe
+lean/Taut/PrimeStep.lean:1495:when `e` is removed: a shared face `r` lies in NO tet of `removeTet M e`.  If it
+lean/Taut/PrimeStep.lean:1497:disjoint from `e`'s, from `aleph_disjoint_eligible_pair`) keeps both `e` and `w`,
+lean/Taut/PrimeStep.lean:1498:so `r` lies in ≥ 2 tets of `removeTet M u`; by parity it is ≥ 3, contradicting
+lean/Taut/PrimeStep.lean:1499:`removeTet M u` being a pseudomanifold (LEMMA B). -/
+lean/Taut/PrimeStep.lean:1500:lemma faceCount_removeTet_sharedFace_eq_zero {σ : Finset (Finset V)} {X M : Chain V}
+lean/Taut/PrimeStep.lean:1505:    (he : EligibleTet M e) (hu : EligibleTet M u)
+lean/Taut/PrimeStep.lean:1507:    (hPMu : IsPseudomanifold (removeTet M u).support)
+lean/Taut/PrimeStep.lean:1509:    faceCount (removeTet M e).support r = 0 := by
+lean/Taut/PrimeStep.lean:1524:  have hSu : SimplicialChain (removeTet M u) := simplicialChain_removeTet hS
+lean/Taut/PrimeStep.lean:1525:  have hsuppU : (removeTet M u).support = M.support.erase u := support_removeTet_of_mem hu.2.1
+lean/Taut/PrimeStep.lean:1526:  have hPureU : ∀ t ∈ (removeTet M u).support, t.card = 4 := by
+lean/Taut/PrimeStep.lean:1528:  -- r is a boundary face of removeTet M u (it's in σ \ sharedFaces M u ⊆ flipBoundary)
+lean/Taut/PrimeStep.lean:1529:  have hUe : UnitOn (bdry (removeTet M u)) ((σ \ sharedFaces M u) ∪ exposedFaces M u) :=
+lean/Taut/PrimeStep.lean:1534:  have hrbdU : bdry (removeTet M u) r = 1 ∨ bdry (removeTet M u) r = -1 :=
+lean/Taut/PrimeStep.lean:1537:  apply faceCount_eq_zero
+lean/Taut/PrimeStep.lean:1539:  rw [support_removeTet_of_mem he.2.1] at hw
+lean/Taut/PrimeStep.lean:1542:  -- e, w are both ≠ u, hence both in removeTet M u
+lean/Taut/PrimeStep.lean:1545:  have heU : e ∈ (removeTet M u).support := by
+lean/Taut/PrimeStep.lean:1547:  have hwU : w ∈ (removeTet M u).support := by
+lean/Taut/PrimeStep.lean:1549:  -- faceCount (removeTet M u).support r ≥ 2
+lean/Taut/PrimeStep.lean:1550:  have hpair : ({e, w} : Finset (Finset V)) ⊆ (removeTet M u).support.filter (fun t => r ⊆ t) := by
+lean/Taut/PrimeStep.lean:1556:  have h2le : 2 ≤ faceCount (removeTet M u).support r := by
+lean/Taut/PrimeStep.lean:1560:  -- parity: faceCount ≠ 2
+lean/Taut/PrimeStep.lean:1561:  have hne2 : faceCount (removeTet M u).support r ≠ 2 :=
+lean/Taut/PrimeStep.lean:1562:    faceCount_ne_two_of_boundary hSu hPureU hr3 hrbdU
+lean/Taut/PrimeStep.lean:1564:  have h3 : 3 ≤ faceCount (removeTet M u).support r := by omega
+lean/Taut/PrimeStep.lean:1565:  exact not_isPseudomanifold_of_faceCount hr3 h3 hPMu
+lean/Taut/PrimeStep.lean:1571:but carrying `IsPseudomanifold M.support` instead of `FreelyShellable`. This
+lean/Taut/PrimeStep.lean:1577:is one. Pick a disjoint eligible pair `e, u` (M25b); each `removeTet` is a PM by
+lean/Taut/PrimeStep.lean:1578:the recursion (`removeTet_isPseudomanifold`); re-insert `e` via
+lean/Taut/PrimeStep.lean:1580:rule-out (`faceCount_removeTet_sharedFace_eq_zero`) on shared faces and by the
+lean/Taut/PrimeStep.lean:1581:unit boundary (`faceCount_eq_one_of_boundary`) on exposed faces. -/
+lean/Taut/PrimeStep.lean:1587:      IsPseudomanifold M'.support) :
+lean/Taut/PrimeStep.lean:1588:    IsPseudomanifold M.support := by
+lean/Taut/PrimeStep.lean:1594:    aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+lean/Taut/PrimeStep.lean:1595:  have hPMu : IsPseudomanifold (removeTet M u).support :=
+lean/Taut/PrimeStep.lean:1596:    removeTet_isPseudomanifold hσ hU hXc hMX hT hS hu IHpm
+lean/Taut/PrimeStep.lean:1597:  -- re-insert e onto the smaller PM (removeTet M e)
+lean/Taut/PrimeStep.lean:1598:  have hPMe : IsPseudomanifold (removeTet M e).support :=
+lean/Taut/PrimeStep.lean:1599:    removeTet_isPseudomanifold hσ hU hXc hMX hT hS he IHpm
+lean/Taut/PrimeStep.lean:1600:  rw [← support_insert_removeTet_of_mem he.2.1]
+lean/Taut/PrimeStep.lean:1602:  · -- e ∉ (removeTet M e).support
+lean/Taut/PrimeStep.lean:1603:    rw [support_removeTet_of_mem he.2.1]
+lean/Taut/PrimeStep.lean:1605:  · -- clean glue: every triangle of e lies in ≤ 1 tet of removeTet M e
+lean/Taut/PrimeStep.lean:1610:      have h0 : faceCount (removeTet M e).support f = 0 :=
+lean/Taut/PrimeStep.lean:1611:        faceCount_removeTet_sharedFace_eq_zero hσ hU hXc hMX hT hS hPure he hu hdisj hPMu hsh
+lean/Taut/PrimeStep.lean:1613:    · -- exposed face: it is a unit boundary face of removeTet M e, so exactly one tet
+lean/Taut/PrimeStep.lean:1615:      have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
+lean/Taut/PrimeStep.lean:1619:      have hbd : bdry (removeTet M e) f = 1 ∨ bdry (removeTet M e) f = -1 :=
+lean/Taut/PrimeStep.lean:1621:      have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
+lean/Taut/PrimeStep.lean:1622:      have hPureE : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+lean/Taut/PrimeStep.lean:1624:        rw [support_removeTet_of_mem he.2.1] at ht
+lean/Taut/PrimeStep.lean:1626:      have h1 : faceCount (removeTet M e).support f = 1 :=
+lean/Taut/PrimeStep.lean:1627:        faceCount_eq_one_of_boundary hSe hPureE hPMe hf3 hbd
+lean/Taut/PrimeStep.lean:1632:carrying `IsPseudomanifold M.support` (each triangle in ≤ 2 tets). Base case
+lean/Taut/PrimeStep.lean:1639:    (hS : SimplicialChain M) : IsPseudomanifold M.support := by
+lean/Taut/PrimeStep.lean:1642:      IsPseudomanifold M.support by
+lean/Taut/PrimeStep.lean:1667:    (hU : UnitOn X σ) (hMX : bdry M = X) (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1794:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1796:    (hFlip : FlipEdgePresent σ f₃ f₄) (hAB : A ∩ B = f₃ ∩ f₄) (hcd : (f₃ ∩ f₄).card = 2)
+lean/Taut/PrimeStep.lean:1841:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1843:    (hFlip : FlipEdgePresent σ f₃ f₄) (hAB : A ∩ B = f₃ ∩ f₄) (hcd : (f₃ ∩ f₄).card = 2)
+lean/Taut/PrimeStep.lean:1888:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1998:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:2025:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:2028:    (hFlip : FlipEdgePresent σ f₃ f₄)
+lean/Taut/PrimeStep.lean:2034:      FreelyShellable ((removeTet M e).filter (fun t => t ⊆ A)).support
+lean/Taut/PrimeStep.lean:2037:      FreelyShellable ((removeTet M e).filter (fun t => t ⊆ B)).support
+lean/Taut/PrimeStep.lean:2043:    (hcover : ∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B)
+lean/Taut/PrimeStep.lean:2044:    (hsep : ∀ t ∈ (removeTet M e).support,
+lean/Taut/PrimeStep.lean:2046:    (huniq₂ : ∃! t, t ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support ∧ f₄ ⊆ t)
+lean/Taut/PrimeStep.lean:2047:    (huniq₁ : ∃! t, t ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧ f₃ ⊆ t)
+lean/Taut/PrimeStep.lean:2056:      RelShelling ((removeTet M e).filter (fun t => t ⊆ B)).support Bmid₁₂ σ ∧
+lean/Taut/PrimeStep.lean:2057:      RelShelling ((removeTet M e).filter (fun t => t ⊆ A)).support Bmid₂₁ σ := by
+lean/Taut/PrimeStep.lean:2125:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:2128:    (hFlip : FlipEdgePresent σ f₃ f₄)
+lean/Taut/PrimeStep.lean:2159:      FreelyShellable ((removeTet M e).filter (fun t => t ⊆ A)).support
+lean/Taut/PrimeStep.lean:2161:    IH _ (bdry ((removeTet M e).filter (fun t => t ⊆ A)))
+lean/Taut/PrimeStep.lean:2162:      ((removeTet M e).filter (fun t => t ⊆ A))
+lean/Taut/PrimeStep.lean:2165:      FreelyShellable ((removeTet M e).filter (fun t => t ⊆ B)).support
+lean/Taut/PrimeStep.lean:2167:    IH _ (bdry ((removeTet M e).filter (fun t => t ⊆ B)))
+lean/Taut/PrimeStep.lean:2168:      ((removeTet M e).filter (fun t => t ⊆ B))
+lean/Taut/PrimeStep.lean:2186:  have huniq₂ : ∃! t, t ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support ∧ f₄ ⊆ t := by
+lean/Taut/PrimeStep.lean:2187:    have hPM₂ : IsPseudomanifold ((removeTet M e).filter (fun t => t ⊆ B)).support :=
+lean/Taut/PrimeStep.lean:2189:    have hpure₂ : ∀ t ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support, t.card = 4 :=
+lean/Taut/PrimeStep.lean:2193:    have hbd₂ : bdry ((removeTet M e).filter (fun t => t ⊆ B)) f₄ = 1 ∨
+lean/Taut/PrimeStep.lean:2194:        bdry ((removeTet M e).filter (fun t => t ⊆ B)) f₄ = -1 := hunit₂.2 f₄ hf₄σ₂
+lean/Taut/PrimeStep.lean:2195:    have hfc : faceCount ((removeTet M e).filter (fun t => t ⊆ B)).support f₄ = 1 :=
+lean/Taut/PrimeStep.lean:2196:      faceCount_eq_one_of_boundary hsimp₂ hpure₂ hPM₂ hf₄card hbd₂
+lean/Taut/PrimeStep.lean:2197:    rw [faceCount, Finset.card_eq_one] at hfc
+lean/Taut/PrimeStep.lean:2200:    · have : t₀ ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support.filter (fun t => f₄ ⊆ t) := by
+lean/Taut/PrimeStep.lean:2204:      have : y ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support.filter (fun t => f₄ ⊆ t) :=
+lean/Taut/PrimeStep.lean:2207:  have huniq₁ : ∃! t, t ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧ f₃ ⊆ t := by
+lean/Taut/PrimeStep.lean:2208:    have hPM₁ : IsPseudomanifold ((removeTet M e).filter (fun t => t ⊆ A)).support :=
+lean/Taut/PrimeStep.lean:2210:    have hpure₁ : ∀ t ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support, t.card = 4 :=
+lean/Taut/PrimeStep.lean:2214:    have hbd₁ : bdry ((removeTet M e).filter (fun t => t ⊆ A)) f₃ = 1 ∨
+lean/Taut/PrimeStep.lean:2215:        bdry ((removeTet M e).filter (fun t => t ⊆ A)) f₃ = -1 := hunit₁.2 f₃ hf₃σ₁
+lean/Taut/PrimeStep.lean:2216:    have hfc : faceCount ((removeTet M e).filter (fun t => t ⊆ A)).support f₃ = 1 :=
+lean/Taut/PrimeStep.lean:2217:      faceCount_eq_one_of_boundary hsimp₁ hpure₁ hPM₁ hf₃card hbd₁
+lean/Taut/PrimeStep.lean:2218:    rw [faceCount, Finset.card_eq_one] at hfc
+lean/Taut/PrimeStep.lean:2221:    · have : t₀ ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support.filter (fun t => f₃ ⊆ t) := by
+lean/Taut/PrimeStep.lean:2225:      have : y ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support.filter (fun t => f₃ ⊆ t) :=
+lean/Taut/PrimeStep.lean:2252:      M₁ := (removeTet M e).filter (fun t => t ⊆ A)
+lean/Taut/PrimeStep.lean:2253:      M₂ := (removeTet M e).filter (fun t => t ⊆ B)
+lean/Taut/PrimeStep.lean:2295:    (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:2298:    (hFlip : FlipEdgePresent σ f₃ f₄)
+lean/Taut/PrimeStep.lean:2313:    (he : EligibleTet M e) (hne_es : e ≠ s) (hs : s ∈ M.support)
+lean/Taut/PrimeStep.lean:2315:    (hFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+lean/Taut/PrimeStep.lean:2319:  have hs_old : s ∈ (removeTet M e).support := by
+lean/Taut/PrimeStep.lean:2320:    rw [support_removeTet_of_mem he.2.1]
+lean/Taut/PrimeStep.lean:2322:  have he_not_old : e ∉ (removeTet M e).support := by
+lean/Taut/PrimeStep.lean:2323:    rw [support_removeTet_of_mem he.2.1]; simp
+lean/Taut/PrimeStep.lean:2326:  have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
+lean/Taut/PrimeStep.lean:2328:  have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:2329:  have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
+lean/Taut/PrimeStep.lean:2330:  have hlt : nrm (removeTet M e) < nrm M := by
+lean/Taut/PrimeStep.lean:2331:    have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
+lean/Taut/PrimeStep.lean:2332:  have hfree_e : FreelyShellable (removeTet M e).support
+lean/Taut/PrimeStep.lean:2334:    IH _ (bdry (removeTet M e)) (removeTet M e) hlt hσe hUe (bdry_bdry _) rfl hTe hSe
+lean/Taut/PrimeStep.lean:2340:  rw [hfin, support_removeTet_of_mem he.2.1, Finset.insert_erase he.2.1]
+lean/Taut/PrimeStep.lean:2356:    (he : EligibleTet M e) (hne_es : e ≠ s) (hs : s ∈ M.support)
+lean/Taut/PrimeStep.lean:2358:    (hFlip : FlipEdgePresent σ f₃ f₄) :
+lean/Taut/PrimeStep.lean:2453:      FreelyShellable M'.support σ' ∧ IsPseudomanifold M'.support) :
+lean/Taut/PrimeStep.lean:2454:    FreelyShellable M.support σ ∧ IsPseudomanifold M.support := by
+lean/Taut/PrimeStep.lean:2468:    aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+lean/Taut/PrimeStep.lean:2469:  obtain ⟨e, he, hne_es⟩ : ∃ e, EligibleTet M e ∧ e ≠ s := by
+lean/Taut/PrimeStep.lean:2474:  by_cases hFlip : FlipEdgePresent σ f₃ f₄
+
+codex
+The current code confirms the project’s “ball” facts are combinatorial: `IsPseudomanifold` is just triangle `faceCount ≤ 2`, and `faceCount_eq_one_of_boundary` is already the boundary-triangle bridge. I’m checking the clean-ball theorem shape and shelling fields now so the plan can distinguish what is reusable from what still needs new glue.
+exec
+/bin/zsh -lc 'rg -n "def IsCleanBall|structure IsCleanBall|abbrev IsCleanBall|def Pure3|def Normal3|def EdgeLinkConnected|def VertexLinkConnected|faceCount_eq_one_of_boundary|taut_isPseudomanifold" lean/Taut' in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '3550,3620p' lean/Taut/Theorem3Clean.lean && sed -n '1,80p' lean/Taut/Theorem3Clean.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Stickerball.lean:58:lemma faceCount_eq_one_of_boundary {M : Chain V}
+lean/Taut/Theorem3Clean.lean:824:      faceCount_eq_one_of_boundary hSimpR hPureR hPMR hγ3' hbdγ
+lean/Taut/Theorem3Clean.lean:965:      faceCount_eq_one_of_boundary hSimpL hPureL hPML hγ3' hbdγ
+lean/Taut/Theorem3Clean.lean:1118:packages the `faceCount_eq_one_of_boundary` extraction used to read off an apex. -/
+lean/Taut/Theorem3Clean.lean:1141:    faceCount_eq_one_of_boundary hSe hPureE hPMe hf3 hbd
+lean/Taut/Theorem3Clean.lean:1227:  have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
+lean/Taut/Theorem3Clean.lean:1262:      faceCount_eq_one_of_boundary hS hPure hPM hg_card hbd
+lean/Taut/Theorem3Clean.lean:1413:  have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
+lean/Taut/Theorem3Clean.lean:1449:      faceCount_eq_one_of_boundary hS hPure hPM hg_card hbd
+lean/Taut/Theorem3Clean.lean:2245:        faceCount_eq_one_of_boundary hSe hPureE hPMe hf3 hbd
+lean/Taut/Theorem3Clean.lean:2877:  -- Reusable PM supplier for the smaller fillings (`taut_isPseudomanifold` is standalone).
+lean/Taut/Theorem3Clean.lean:2881:    fun σ' X' M' _ hσ' hU' hXc' hMX' hT' hS' => taut_isPseudomanifold hσ' hU' hXc' hMX' hT' hS'
+lean/Taut/Theorem3Clean.lean:2931:tet via `faceCount_eq_one_of_boundary`) is supplied by the standalone
+lean/Taut/Theorem3Clean.lean:2932:`taut_isPseudomanifold`. -/
+lean/Taut/Theorem3Clean.lean:2992:      taut_isPseudomanifold hσRdef hURMR (bdry_bdry _) rfl hTRMR hSimpR
+lean/Taut/Theorem3Clean.lean:3026:      faceCount_eq_one_of_boundary hSimpR hPureMR hPMR hγ3' hURγ
+lean/Taut/Theorem3Clean.lean:3084:      taut_isPseudomanifold hσLdef hULML (bdry_bdry _) rfl hTLML hSimpL
+lean/Taut/Theorem3Clean.lean:3115:      faceCount_eq_one_of_boundary hSimpL hPureML hPML hγ3' hURγ
+lean/Taut/Theorem3Clean.lean:3140:induction parallel to `taut_isPseudomanifold`: base case (≤ 4 vertices) by
+lean/Taut/Theorem3Clean.lean:3197:    fun σ' X' M' _ h1 h2 h3 h4 h5 h6 => taut_isPseudomanifold h1 h2 h3 h4 h5 h6
+lean/Taut/Theorem3Clean.lean:3342:  have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
+lean/Taut/Theorem3Clean.lean:3346:    fun σ' X' M' _ h1 h2 h3 h4 h5 h6 => taut_isPseudomanifold h1 h2 h3 h4 h5 h6
+lean/Taut/Theorem3Clean.lean:3435:  -- ### Uniqueness of the `f₃`/`f₄` tet on each side (via `faceCount_eq_one_of_boundary`).
+lean/Taut/Theorem3Clean.lean:3440:  have hPMM₁ : IsPseudomanifold M₁.support := taut_isPseudomanifold hsphA hUA hbA rfl hTA hSA
+lean/Taut/Theorem3Clean.lean:3441:  have hPMM₂ : IsPseudomanifold M₂.support := taut_isPseudomanifold hsphB hUB hbB rfl hTB hSB
+lean/Taut/Theorem3Clean.lean:3445:    have hfc : faceCount M₁.support f₃ = 1 := faceCount_eq_one_of_boundary hSA hpureM₁ hPMM₁ hf₃3 hbd
+lean/Taut/Theorem3Clean.lean:3457:    have hfc : faceCount M₂.support f₄ = 1 := faceCount_eq_one_of_boundary hSB hpureM₂ hPMM₂ hf₄3 hbd
+lean/Taut/Pseudomanifold.lean:105:def EdgeLinkConnected (τ : Finset (Finset V)) : Prop :=
+lean/Taut/Pseudomanifold.lean:333:def VertexLinkConnected (τ : Finset (Finset V)) : Prop :=
+lean/Taut/Pseudomanifold.lean:467:def Pure3 (τ : Finset (Finset V)) : Prop := ∀ t ∈ τ, t.card = 4
+lean/Taut/Pseudomanifold.lean:471:def Normal3 (τ : Finset (Finset V)) : Prop :=
+lean/Taut/Theorem3.lean:258:    faceCount_eq_one_of_boundary hSimpR hPureR hPMR hγ3' hbd
+lean/Taut/Theorem3.lean:428:exactly one remainder tet by `faceCount_eq_one_of_boundary`. -/
+lean/Taut/Theorem3.lean:463:      faceCount_eq_one_of_boundary hSR hPureR hPMR hf3 hURγ
+lean/Taut/PrimeStep.lean:1581:unit boundary (`faceCount_eq_one_of_boundary`) on exposed faces. -/
+lean/Taut/PrimeStep.lean:1627:        faceCount_eq_one_of_boundary hSe hPureE hPMe hf3 hbd
+lean/Taut/PrimeStep.lean:1637:theorem taut_isPseudomanifold {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+lean/Taut/PrimeStep.lean:2188:      taut_isPseudomanifold hsphere₂ hunit₂ hclosed₂ rfl htaut₂ hsimp₂
+lean/Taut/PrimeStep.lean:2196:      faceCount_eq_one_of_boundary hsimp₂ hpure₂ hPM₂ hf₄card hbd₂
+lean/Taut/PrimeStep.lean:2209:      taut_isPseudomanifold hsphere₁ hunit₁ hclosed₁ rfl htaut₁ hsimp₁
+lean/Taut/PrimeStep.lean:2217:      faceCount_eq_one_of_boundary hsimp₁ hpure₁ hPM₁ hf₃card hbd₁
+lean/Taut/CleanShelling.lean:80:def IsCleanBall (τ B : Finset (Finset V)) : Prop :=
+
+ succeeded in 0ms:
+    have hsuppM' : M.support = insert e (M₂.support ∪ M₁.support) := by
+      rw [hsuppM, Finset.union_comm]
+    exact clean_case2_sideA he4 hAB' hcd2' hf₄e hf₃e hf₄3 hf₃3 he_eq' hf₄B hf₃A hs₂B hs₁A
+      ht₄M₂ hf₄t₄ ht₃M₁ hf₃t₃ ht₃card hOppEmpty' heM₂ heM₁ hdisj12.symm hsharedeq₂ hBnf hpmcFull'
+      hglue₂₁ hfree₂ hfree₁ huniq₁ hfaceΔf₃ hKdisj₁ hrecon₁ hsuppM' hs₂
+
+/-- **prime_step_clean** (the `theorem3_core_clean` hole): a no-degree-3 taut filling
+is a *free clean* sticker ball.  Per target `s`, pick (via the disjoint eligible pair)
+an eligible tet `e ≠ s` so `s` stays old, then dispatch on whether the flipped edge is
+present (case 2, `exists_clean_shelling_prime_case2`) or absent (case 1,
+`exists_clean_shelling_prime_case1`). -/
+theorem prime_step_clean (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+    (IH : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      FreelyCleanShellable M'.support σ') :
+    FreelyCleanShellable M.support σ := by
+  classical
+  intro s hs
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+    fun t ht => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
+  obtain ⟨e₁, e₂, hne12, he₁, he₂, hdisjE⟩ :=
+    aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+  -- pick an eligible `e ≠ s` together with a partner `u ≠ e` whose shared faces avoid `e`'s.
+  obtain ⟨e, u, he, hu, hdu, hne_es⟩ :
+      ∃ e u, EligibleTet M e ∧ EligibleTet M u ∧
+        Disjoint (sharedFaces M e) (sharedFaces M u) ∧ e ≠ s := by
+    by_cases hse1 : s = e₁
+    · exact ⟨e₂, e₁, he₂, he₁, hdisjE.symm, by rw [hse1]; exact Ne.symm hne12⟩
+    · exact ⟨e₁, e₂, he₁, he₂, hdisjE, fun h => hse1 h.symm⟩
+  obtain ⟨f₃, f₄, hf₃₄, hexp⟩ := exposedFaces_eq_pair_of_eligible he
+  by_cases hFlip : FlipEdgePresent σ f₃ f₄
+  · exact exists_clean_shelling_prime_case2 hσ hU hXc hMX hT hS IH he hne_es hs hexp hf₃₄ hFlip
+  · exact exists_clean_shelling_prime_case1 hσ hU hXc hMX hT hS IH he hu hdu hne_es hs hexp
+      hf₃₄ hFlip
+
+/-- **Theorem 3 (clean route)**: a taut filling of a combinatorial 2-sphere is a *freely
+clean-shellable* sticker ball — the faithful-stickerball upgrade of `theorem3`, assembled from
+the three discharged clean steps (`base_free_clean`, `deg3_step_clean`, `prime_step_clean`) via
+the clean induction skeleton `theorem3_core_clean`. -/
+theorem theorem3_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : FreelyCleanShellable M.support σ :=
+  theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean hσ hU hXc hMX hT hS
+
+/-- **Theorem 2 (clean route)**: a taut filling of a combinatorial 2-sphere `σ` is a *clean ball*
+— it admits a clean shelling (self-certifying `Clean3Complex`), the faithful-stickerball upgrade of
+`theorem2`.  Immediate from `theorem3_clean` at any tet of the (nonempty) support. -/
+theorem theorem2_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsCleanBall M.support σ := by
+  obtain ⟨t, ht⟩ := aleph_base_support_nonempty hσ hU hMX
+  obtain ⟨l, _, hlτ, hlnodup, hlshell⟩ := theorem3_clean hσ hU hXc hMX hT hS t ht
+  exact ⟨l, hlτ, hlnodup, hlshell⟩
+
+end Taut
+import Taut.CleanShelling
+import Taut.PrimeStep
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-- **Theorem 3 (core), clean-shelling route — SKELETON.** Mirror of `theorem3_core`,
+carrying `FreelyCleanShellable M.support σ` instead of the boundary
+`FreelyShellable M.support σ` (and without the pseudomanifold conjunct). The three
+reduction steps are taken as explicit hypotheses: the base case is discharged
+(`base_free_clean`), while the degree-3 and prime steps remain the named, unproven
+obligations. The strong-induction plumbing is identical to `theorem3_core`; only the
+conclusion type changed, which the proof body never mentions. -/
+theorem theorem3_core_clean
+    (base_clean : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ → UnitOn X σ →
+      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+      FreelyCleanShellable M.support σ)
+    (deg3_step_clean : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+      SimplicialChain M → HasDegree3Vertex σ →
+      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+        FreelyCleanShellable M'.support σ') →
+      FreelyCleanShellable M.support σ)
+    (prime_step_clean : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+      SimplicialChain M → NoDegree3Vertex σ →
+      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+        FreelyCleanShellable M'.support σ') →
+      FreelyCleanShellable M.support σ)
+    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
+    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+    FreelyCleanShellable M.support σ := by
+  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+      FreelyCleanShellable M.support σ by
+    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N IH =>
+    intro σ X M hN hσ hU hXc hMX hT hS
+    by_cases hv : (vertsOf σ).card ≤ 4
+    · exact base_clean σ X M hσ hU hMX hT hS hv
+    · push_neg at hv
+      by_cases hd3 : HasDegree3Vertex σ
+      · refine deg3_step_clean σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+        refine prime_step_clean σ X M hσ hv hU hXc hMX hT hS hno3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+
+/-- **base_free_clean** (the discharged base hole of `theorem3_core_clean`): a taut
+filling of a 2-sphere on ≤ 4 vertices is a *free clean* sticker ball — it is a single
+tetrahedron (`freelyCleanShellable_singleton`). Reuses the Aleph base lemmas verbatim;
+only the final step changes from `freelyShellable_singleton` to
+`freelyCleanShellable_singleton`. -/
+theorem base_free_clean (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+    (hv : (vertsOf σ).card ≤ 4) : FreelyCleanShellable M.support σ := by
+  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+  have hσeq : σ = (vertsOf σ).powersetCard 3 := aleph_base_sphere_eq_powersetCard3 hσ hcard
+  have hsuppInfo := aleph_base_taut_support_card4_subset_verts hσ hU hMX hT
+  have hne := aleph_base_support_nonempty hσ hU hMX
+  have hsupp : M.support = {vertsOf σ} :=
+    aleph_base_support_eq_singleton_of_four_vertices hcard hsuppInfo hne
+  rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+  exact freelyCleanShellable_singleton hcard
+
+/-! ## Degree-3 star glue: one reusable `CleanGlueStep` constructor
+
+For the degree-3 reduction the new tet is the star `starTet σ v = insert v γ`
+(with `γ = linkVerts σ v`, `|γ| = 3`) glued onto the remainder tet-set `τ`, where
+`v` is absent from every remainder tet and `γ` sits inside a (unique) remainder
+tet `t₀`.  Under those geometric facts every `CleanGlueStep` field is discharged
+mechanically: the only quantitative input is `faceCount τ γ ≤ 1` (carried from the
+PM bound at the call site); the link/clean fields all come from the apex `t₀`. -/
+
+exec
+/bin/zsh -lc "sed -n '1,140p' lean/Taut/Pseudomanifold.lean && sed -n '470,520p' lean/Taut/Pseudomanifold.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Ball
+import Taut.Complex2
+
+/-!
+# Pseudomanifold invariant — the "simplicial" half of a sticker ball
+
+`FreelyShellable`/`IsBall` originally tracked only the shelling (boundary by
+symmetric difference), which admits non-simplicial configurations: a triangle
+can be re-exposed into a third tet (an edge "flipped back and forth").  A sticker
+ball *for us* is a shellable **simplicial** complex, so we carry the
+pseudomanifold condition — every triangle lies in at most two tets — as part of
+the invariant.  This file sets up the face-incidence bookkeeping.
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-- Number of tets of `τ` that contain the face `f`. -/
+def faceCount (τ : Finset (Finset V)) (f : Finset V) : ℕ :=
+  (τ.filter (fun t => f ⊆ t)).card
+
+/-- `τ` is a 3-pseudomanifold: every triangle lies in at most two tets.
+With a unit boundary this forces every boundary triangle into exactly one tet
+(two would cancel to `0` or sum to `±2`, never the boundary value `±1`). -/
+def IsPseudomanifold (τ : Finset (Finset V)) : Prop :=
+  ∀ f, f.card = 3 → faceCount τ f ≤ 2
+
+/-- `TriangleBounded3` — the preferred name for the triangle-count condition
+(`IsPseudomanifold`): every triangle lies in at most two tets.  This is a
+low-level helper only; it is *not* a normal/clean pseudomanifold (it admits two
+balls joined along an edge, or along a single vertex). -/
+abbrev TriangleBounded3 (τ : Finset (Finset V)) : Prop := IsPseudomanifold τ
+
+/-- A face contained in no tet has incidence zero — used to discharge the
+triangle-cleanliness hypothesis from the triangle rule-out (`s₁,s₂ ∉ M−t`). -/
+lemma faceCount_eq_zero {τ : Finset (Finset V)} {f : Finset V}
+    (h : ∀ t ∈ τ, ¬ f ⊆ t) : faceCount τ f = 0 := by
+  unfold faceCount
+  rw [Finset.filter_false_of_mem h]; rfl
+
+/-- Inserting a fresh tet bumps the count of exactly the faces it contains. -/
+lemma faceCount_insert_of_not_mem {τ : Finset (Finset V)} {t : Finset V}
+    (ht : t ∉ τ) (f : Finset V) :
+    faceCount (insert t τ) f = faceCount τ f + (if f ⊆ t then 1 else 0) := by
+  unfold faceCount
+  rw [Finset.filter_insert]
+  by_cases h : f ⊆ t
+  · have hnm : t ∉ τ.filter (fun s => f ⊆ s) :=
+      fun hmem => ht (Finset.mem_of_mem_filter t hmem)
+    simp only [if_pos h, Finset.card_insert_of_notMem hnm]
+  · simp only [if_neg h, Nat.add_zero]
+
+/-- A single tetrahedron is a pseudomanifold (each triangle is in at most one tet). -/
+lemma isPseudomanifold_singleton (t : Finset V) :
+    IsPseudomanifold ({t} : Finset (Finset V)) := by
+  intro f _
+  have h : faceCount ({t} : Finset (Finset V)) f ≤ 1 := by
+    unfold faceCount
+    have hle := Finset.card_filter_le ({t} : Finset (Finset V)) (fun s => f ⊆ s)
+    simpa using hle
+  omega
+
+/-- **Clean glue preserves the pseudomanifold property.** Inserting a fresh tet
+`t` whose every *triangle* lies in at most one existing tet keeps `τ` a
+pseudomanifold.  The hypothesis `hclean` is exactly the "no re-exposure"
+condition the forward construction must supply at each shelling step; here it is
+discharged into the bookkeeping, isolating the genuine content (proving `hclean`
+for the flipped-back eligible tet) from the mechanical part. -/
+lemma isPseudomanifold_insert {τ : Finset (Finset V)} {t : Finset V}
+    (hτ : IsPseudomanifold τ) (ht : t ∉ τ)
+    (hclean : ∀ f, f.card = 3 → f ⊆ t → faceCount τ f ≤ 1) :
+    IsPseudomanifold (insert t τ) := by
+  intro f hf
+  rw [faceCount_insert_of_not_mem ht]
+  by_cases h : f ⊆ t
+  · rw [if_pos h]; have := hclean f hf h; omega
+  · rw [if_neg h]; have := hτ f hf; omega
+
+/-! ## Edge-link connectedness — the manifold-along-edges half of a stickerball
+
+`IsPseudomanifold` controls triangle incidence, but a boundary-tracking shelling
+cannot see when an edge acquires a disconnected link (a stray ring of tets).  A
+genuine simplicial ball has connected edge-links, so a faithful stickerball must
+carry that too. -/
+
+/-- The link of an edge `e` in a tet-set `τ`, as a simple graph on apexes:
+`x ~ y` iff `e ∪ {x, y}` is a tet of `τ`. -/
+def edgeLinkGraph (τ : Finset (Finset V)) (e : Finset V) : SimpleGraph V where
+  Adj x y := x ≠ y ∧ insert x (insert y e) ∈ τ
+  symm := by
+    intro x y h
+    exact ⟨h.1.symm, by rw [Finset.insert_comm]; exact h.2⟩
+  loopless := ⟨fun _ h => h.1 rfl⟩
+
+/-- The apexes of edge `e` in `τ`: the vertices of the tets containing `e`, with
+`e` itself removed. -/
+def edgeLinkVerts (τ : Finset (Finset V)) (e : Finset V) : Finset V :=
+  vertsOf (τ.filter (fun t => e ⊆ t)) \ e
+
+/-- `τ` is *edge-link connected*: for every edge, its apexes are mutually
+reachable in the edge-link graph (one connected ring, no stray components). -/
+def EdgeLinkConnected (τ : Finset (Finset V)) : Prop :=
+  ∀ e : Finset V, e.card = 2 → ConnOn (edgeLinkGraph τ e) (edgeLinkVerts τ e)
+
+/-- An edge contained in no tet has empty apex set — used to discharge the
+edge-cleanliness hypothesis from the edge rule-out (`ab ∉ M−t`). -/
+lemma edgeLinkVerts_eq_empty {τ : Finset (Finset V)} {e : Finset V}
+    (h : ∀ t ∈ τ, ¬ e ⊆ t) : edgeLinkVerts τ e = ∅ := by
+  unfold edgeLinkVerts vertsOf
+  rw [Finset.filter_false_of_mem h]; simp
+
+/-- Edge-link graphs grow with the tet-set. -/
+lemma edgeLinkGraph_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (e : Finset V) :
+    edgeLinkGraph τ e ≤ edgeLinkGraph τ' e :=
+  fun _ _ hxy => ⟨hxy.1, h hxy.2⟩
+
+/-- Reachability in a smaller tet-set's edge-link transfers to the larger one;
+contrapositively, **deleting tets cannot reconnect a split edge-link** — the
+key fact behind the edge rule-out. -/
+lemma edgeLink_reachable_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (e : Finset V)
+    {x y : V} (hr : (edgeLinkGraph τ e).Reachable x y) :
+    (edgeLinkGraph τ' e).Reachable x y :=
+  hr.mono (edgeLinkGraph_mono h e)
+
+/-- A single tetrahedron is edge-link connected. -/
+lemma edgeLinkConnected_singleton {t : Finset V} (ht : t.card = 4) :
+    EdgeLinkConnected ({t} : Finset (Finset V)) := by
+  intro e he x hx y hy
+  simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+    Finset.mem_singleton] at hx hy
+  obtain ⟨⟨_, ⟨rfl, hesub⟩, hxt⟩, hxe⟩ := hx
+  obtain ⟨⟨_, ⟨rfl, _⟩, hyt⟩, hye⟩ := hy
+  by_cases hxy : x = y
+  · subst hxy; exact ⟨SimpleGraph.Walk.nil⟩
+  · refine SimpleGraph.Adj.reachable ⟨hxy, ?_⟩
+    rw [Finset.mem_singleton]
+    have hxni : x ∉ insert y e := by
+(no-pinch) condition.  `TriangleBounded3 ∧ EdgeLinkConnected` alone is not normal. -/
+def Normal3 (τ : Finset (Finset V)) : Prop :=
+  EdgeLinkConnected τ ∧ VertexLinkConnected τ
+
+/-- `Clean3Complex τ`: pure, triangle-bounded, and normal — the honest
+"simplicial triangulation of a 3-ball" invariant the public shelling must carry,
+not the boundary-only trace. -/
+def Clean3Complex (τ : Finset (Finset V)) : Prop :=
+  Pure3 τ ∧ TriangleBounded3 τ ∧ Normal3 τ
+
+lemma pure3_singleton {t : Finset V} (ht : t.card = 4) :
+    Pure3 ({t} : Finset (Finset V)) := by
+  intro s hs; rw [Finset.mem_singleton] at hs; subst hs; exact ht
+
+lemma normal3_singleton {t : Finset V} (ht : t.card = 4) :
+    Normal3 ({t} : Finset (Finset V)) :=
+  ⟨edgeLinkConnected_singleton ht, vertexLinkConnected_singleton t⟩
+
+/-- The base of the clean induction: one tetrahedron is a clean 3-complex. -/
+lemma clean3Complex_singleton {t : Finset V} (ht : t.card = 4) :
+    Clean3Complex ({t} : Finset (Finset V)) :=
+  ⟨pure3_singleton ht, isPseudomanifold_singleton t, normal3_singleton ht⟩
+
+/-- **Clean insertion preserves `Clean3Complex`.** The combiner bundling the three
+per-dimension preservation lemmas (triangle count, edge link, vertex link).  These
+three compatibilities are discharged from the chain geometry of the shelling step
+(unit boundary ⇒ a boundary face lies in exactly one tet); `CleanGlueStep.clean`
+gives the no-rogue *shape* but not these quantitative facts on its own (G1
+2026-06-18, session 019ed979). -/
+lemma clean3Complex_insert {τ : Finset (Finset V)} {t : Finset V}
+    (ht : t.card = 4) (httτ : t ∉ τ) (hτ : Clean3Complex τ)
+    (hpmc : ∀ f, f.card = 3 → f ⊆ t → faceCount τ f ≤ 1)
+    (helc : ∀ e, e ⊆ t → e.card = 2 →
+      edgeLinkVerts τ e = ∅ ∨ ((t \ e) ∩ edgeLinkVerts τ e).Nonempty)
+    (hvlc : ∀ v ∈ t, vertexLinkVerts τ v = ∅ ∨
+      ((t \ {v}) ∩ vertexLinkVerts τ v).Nonempty) :
+    Clean3Complex (insert t τ) := by
+  obtain ⟨hpure, hpm, hel, hvl⟩ := hτ
+  refine ⟨?_, isPseudomanifold_insert hpm httτ hpmc,
+    edgeLinkConnected_insert ht hel helc, vertexLinkConnected_insert hvl hvlc⟩
+  intro s hs
+  rcases Finset.mem_insert.mp hs with rfl | hsτ
+  · exact ht
+  · exact hpure s hsτ
+
+end Taut
+
+exec
+/bin/zsh -lc "sed -n '70,92p' lean/Taut/CleanShelling.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '50,112p' lean/Taut/Stickerball.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+
+/-- A clean shelling with final boundary `B`: the head tet is the initial
+tetrahedron (accumulated set `{t}`, boundary `tetFaces t`, no glue step), and the
+rest are glued on cleanly in order. -/
+def IsCleanShelling : List (Finset V) → Finset (Finset V) → Prop
+  | [],     _ => False
+  | t :: l, B => t.card = 4 ∧ CleanShellFrom {t} (tetFaces t) l B
+
+/-- A *clean ball*: a tet-set admitting a clean shelling (a nodup ordering of its
+tets gluing up cleanly to boundary `B`). -/
+def IsCleanBall (τ B : Finset (Finset V)) : Prop :=
+  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ IsCleanShelling l B
+
+/-- *Freely clean shellable*: **any** tet can serve as the head of a clean
+shelling.  This is the public free-sticker-ball predicate Theorem 3 exports. -/
+def FreelyCleanShellable (τ B : Finset (Finset V)) : Prop :=
+  ∀ t ∈ τ, ∃ l : List (Finset V),
+    l.head? = some t ∧ l.toFinset = τ ∧ l.Nodup ∧ IsCleanShelling l B
+
+/-! ## Projection to boundary shelling — keeps the banked reassembly usable -/
+
+/-- A clean glue step is a boundary glue step. -/
+lemma CleanGlueStep.toBoundary {t : Finset V} {τ B B' : Finset (Finset V)}
+
+ succeeded in 0ms:
+    obtain ⟨w, _, hfe⟩ := exists_facet_of_bdryGen_ne_zero h0
+    exact hnsub (by rw [hfe]; exact Finset.erase_subset _ _)
+  rw [hg, mul_zero]
+
+/-- **Boundary triangle of a pseudomanifold lies in exactly one tet.** For a
+simplicial chain with pure support, a triangle whose boundary coefficient is `±1`
+sits in exactly one tet of the support: at most two by `IsPseudomanifold`, and
+two would cancel to `0` or sum to `±2`, never the boundary value `±1`. -/
+lemma faceCount_eq_one_of_boundary {M : Chain V}
+    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hPM : IsPseudomanifold M.support) {f : Finset V} (hf : f.card = 3)
+    (hb : bdry M f = 1 ∨ bdry M f = -1) :
+    faceCount M.support f = 1 := by
+  have hle : faceCount M.support f ≤ 2 := hPM f hf
+  have hsum := bdry_eq_sum_facets (M := M) (f := f)
+  have hterm : ∀ t ∈ M.support.filter (fun t => f ⊆ t),
+      M t * bdryGen t f = 1 ∨ M t * bdryGen t f = -1 := by
+    intro t ht
+    rw [Finset.mem_filter] at ht
+    obtain ⟨htM, htf⟩ := ht
+    have hMt : M t = 1 ∨ M t = -1 := by
+      rcases hS t with h | h | h
+      · exact Or.inr h
+      · exact absurd h (Finsupp.mem_support_iff.mp htM)
+      · exact Or.inl h
+    have hgen : bdryGen t f = 1 ∨ bdryGen t f = -1 := by
+      rcases bdryGen_apply_mem_pm t f with h | h | h
+      · exact Or.inr h
+      · exact absurd h (bdryGen_ne_zero_of_subset (hPure t htM) hf htf)
+      · exact Or.inl h
+    rcases hMt with h1 | h1 <;> rcases hgen with h2 | h2 <;> rw [h1, h2] <;> decide
+  have hge : 1 ≤ faceCount M.support f := by
+    rw [Nat.one_le_iff_ne_zero]
+    intro h0
+    unfold faceCount at h0
+    rw [Finset.card_eq_zero] at h0
+    rw [h0, Finset.sum_empty] at hsum
+    rcases hb with h | h <;> rw [h] at hsum <;> omega
+  have hne2 : faceCount M.support f ≠ 2 := by
+    intro h2
+    unfold faceCount at h2
+    obtain ⟨t1, t2, hne, heq⟩ := Finset.card_eq_two.mp h2
+    rw [heq, Finset.sum_pair hne] at hsum
+    have e1 := hterm t1 (by rw [heq]; exact Finset.mem_insert_self _ _)
+    have e2 := hterm t2 (by rw [heq]; exact Finset.mem_insert_of_mem (Finset.mem_singleton.mpr rfl))
+    rcases hb with hb | hb <;> rcases e1 with e1 | e1 <;> rcases e2 with e2 | e2 <;>
+      rw [hb, e1, e2] at hsum <;> omega
+  omega
+
+/-- **A boundary triangle is in an odd number of tets — never exactly two.** This
+is the parity half of the bridge (no pseudomanifold assumption): two tets would
+give `bdry ∈ {-2,0,2} ≠ ±1`. The triangle rule-out uses it to bump "`s` is in `t`
+and `w` (≥ 2)" up to "`s` is in ≥ 3 tets" (since it can't be exactly 2). -/
+lemma faceCount_ne_two_of_boundary {M : Chain V}
+    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    {f : Finset V} (hf : f.card = 3) (hb : bdry M f = 1 ∨ bdry M f = -1) :
+    faceCount M.support f ≠ 2 := by
+  intro h2
+  have hsum := bdry_eq_sum_facets (M := M) (f := f)
+  have hterm : ∀ t ∈ M.support.filter (fun t => f ⊆ t),
+      M t * bdryGen t f = 1 ∨ M t * bdryGen t f = -1 := by
+    intro t ht
+    rw [Finset.mem_filter] at ht
+
+exec
+/bin/zsh -lc "sed -n '1630,1650p' lean/Taut/PrimeStep.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+/-- **PM-carry: every taut filling of a combinatorial 2-sphere is a
+pseudomanifold.** A standalone strong induction parallel to `theorem3_core`,
+carrying `IsPseudomanifold M.support` (each triangle in ≤ 2 tets). Base case
+(≤ 4 vertices) by `base_isPM`; degree-3 vertex by `deg3_isPM`; otherwise by
+`prime_isPM`; the strong induction hypothesis is threaded to both non-base
+steps. This exposes the triangle-incidence half of a faithful stickerball to
+downstream proofs without modifying the free-shelling induction. -/
+theorem taut_isPseudomanifold {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsPseudomanifold M.support := by
+  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+      IsPseudomanifold M.support by
+    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N IH =>
+    intro σ X M hN hσ hU hXc hMX hT hS
+    by_cases hv : (vertsOf σ).card ≤ 4
+    · exact base_isPM σ X M hσ hU hMX hT hS hv
+    · push_neg at hv
+
+exec
+/bin/zsh -lc 'rg -n "def Zvol|Zvol_le|le_Zvol|Zvol.*bdry|IsTaut" lean/Taut' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Eligible.lean:97:    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M)
+lean/Taut/Eligible.lean:115:    have h2 := Zvol_add_deg_le x (bdry_bdry M)
+lean/Taut/Eligible.lean:303:    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M)
+lean/Taut/Zvol.lean:8:* `IsTaut M` — `M` is an optimal filling of its boundary.
+lean/Taut/Zvol.lean:9:* Proposition 1 (`IsTaut.subChain`): sub-chains of taut chains are taut.
+lean/Taut/Zvol.lean:14:* Proposition 4 (`IsTaut.no_internal_vertex`): a taut chain (in dimensions
+lean/Taut/Zvol.lean:76:noncomputable def Zvol (X : Chain V) : ℕ :=
+lean/Taut/Zvol.lean:80:def IsTaut (M : Chain V) : Prop := nrm M = Zvol (bdry M)
+lean/Taut/Zvol.lean:82:lemma Zvol_le {X M : Chain V} (h : bdry M = X) : Zvol X ≤ nrm M :=
+lean/Taut/Zvol.lean:95:    ∃ M : Chain V, bdry M = bdry W ∧ nrm M = Zvol (bdry W) := by
+lean/Taut/Zvol.lean:102:theorem IsTaut.subChain {M U : Chain V} (hM : IsTaut M) (hU : SubChain U M) :
+lean/Taut/Zvol.lean:103:    IsTaut U := by
+lean/Taut/Zvol.lean:109:  have hle : Zvol (bdry M) ≤ nrm (M - U) + nrm W :=
+lean/Taut/Zvol.lean:110:    le_trans (Zvol_le hbd) (nrm_add_le _ _)
+lean/Taut/Zvol.lean:112:  have h1 : Zvol (bdry U) ≤ nrm U := Zvol_le rfl
+lean/Taut/Zvol.lean:113:  rw [IsTaut] at hM ⊢
+lean/Taut/Zvol.lean:118:theorem Zvol_add_deg_le (x : V) {X : Chain V} (hX : bdry X = 0) :
+lean/Taut/Zvol.lean:120:  have h1 : Zvol X ≤ nrm (cone x X) := Zvol_le (bdry_cone_of_closed hX)
+lean/Taut/Zvol.lean:128:    (hM : IsTaut M) (hU : SubChain (cone x W) M) (hW : bdry W = 0)
+lean/Taut/Zvol.lean:130:  have hUt : IsTaut (cone x W) := hM.subChain hU
+lean/Taut/Zvol.lean:134:  rw [IsTaut, hbd] at hUt
+lean/Taut/Zvol.lean:139:theorem IsTaut.no_internal_vertex {M : Chain V} (hM : IsTaut M) {x : V}
+lean/Taut/Homology2.lean:24:fundamental cycle when packaging the split for `IsTaut.splits`.
+lean/Taut/FlipGeom.lean:11:These three facts — `IsSphere2 σe`, `IsTaut (removeTet M e)`, `GlueStep e σe σ` — are
+lean/Taut/FlipGeom.lean:55:(`IsTaut.subChain`, Prop 1); eligibility/simpliciality are not needed. -/
+lean/Taut/FlipGeom.lean:56:theorem isTaut_removeTet {M : Chain V} {e : Finset V} (hT : IsTaut M) :
+lean/Taut/FlipGeom.lean:57:    IsTaut (removeTet M e) := by
+lean/Taut/Theorem1.lean:27:* `IsTaut.dim_pure` — a taut chain with pure-dimensional boundary is
+lean/Taut/Theorem1.lean:29:* `IsTaut.vert_subset` — a taut filling has no vertices beyond its
+lean/Taut/Theorem1.lean:141:theorem IsTaut.dim_pure {M : Chain V} (hM : IsTaut M) {k : ℕ}
+lean/Taut/Theorem1.lean:148:  have h1 : Zvol (bdry M) ≤ nrm P := Zvol_le hbdP
+lean/Taut/Theorem1.lean:150:  rw [IsTaut] at hM
+lean/Taut/Theorem1.lean:159:theorem IsTaut.vert_subset {M : Chain V} (hM : IsTaut M)
+lean/Taut/Theorem1.lean:332:lemma exists_fill_eq_Zvol {X : Chain V} (W : Chain V) (hW : bdry W = X) :
+lean/Taut/Theorem1.lean:375:  obtain ⟨Mx, hMx, hMxn⟩ := exists_fill_eq_Zvol (cone p X) (bdry_cone_of_closed hXc)
+lean/Taut/Theorem1.lean:376:  obtain ⟨My, hMy, hMyn⟩ := exists_fill_eq_Zvol (cone p Y) (bdry_cone_of_closed hYc)
+lean/Taut/Theorem1.lean:378:    exists_fill_eq_Zvol (cone p (X + Y)) (bdry_cone_of_closed hXYc)
+lean/Taut/Theorem1.lean:382:    calc Zvol (X + Y) ≤ nrm (Mx + My) := Zvol_le hbd
+lean/Taut/Theorem1.lean:386:    have hMt : IsTaut M := by rw [IsTaut, hM1]; exact hM2
+lean/Taut/Theorem1.lean:424:    have h4 : Zvol X ≤ nrm (Kmap A p M) := Zvol_le hbx
+lean/Taut/Theorem1.lean:425:    have h5 : Zvol Y ≤ nrm (Kmap B q M) := Zvol_le hby
+lean/Taut/Theorem3Clean.lean:17:      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+lean/Taut/Theorem3Clean.lean:20:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem3Clean.lean:23:        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:27:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem3Clean.lean:30:        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:34:    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+lean/Taut/Theorem3Clean.lean:37:      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+lean/Taut/Theorem3Clean.lean:62:    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:705:    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
+lean/Taut/Theorem3Clean.lean:708:      IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:784:    have hTRMR : IsTaut MR := by dsimp [MR, A, γ]; exact hTR
+lean/Taut/Theorem3Clean.lean:927:    have hTLML : IsTaut ML := by dsimp [ML, A, γ]; exact hTL
+lean/Taut/Theorem3Clean.lean:1031:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:1122:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:1156:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:1339:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:1814:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:1842:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+lean/Taut/Theorem3Clean.lean:1846:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:1853:  have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
+lean/Taut/Theorem3Clean.lean:1869:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:2009:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:2015:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:2074:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:2079:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:2103:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:2773:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:2780:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:2868:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/Theorem3Clean.lean:2870:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:2879:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:2911:    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M)
+lean/Taut/Theorem3Clean.lean:2935:    (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex σ)
+lean/Taut/Theorem3Clean.lean:2937:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:2989:    have hTRMR : IsTaut MR := by dsimp [MR, A, γ]; exact hTR
+lean/Taut/Theorem3Clean.lean:3081:    have hTLML : IsTaut ML := by dsimp [ML, A, γ]; exact hTL
+lean/Taut/Theorem3Clean.lean:3145:    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+lean/Taut/Theorem3Clean.lean:3148:      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+lean/Taut/Theorem3Clean.lean:3179:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:3181:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:3195:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:3213:  have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
+lean/Taut/Theorem3Clean.lean:3329:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3Clean.lean:3331:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:3344:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:3563:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/Theorem3Clean.lean:3565:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3Clean.lean:3593:    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+lean/Taut/Theorem3Clean.lean:3601:    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+lean/Taut/Theorem2.lean:19:oriented separation bridge to `IsTaut.splits` (M23), the connected-sum/degree-3
+lean/Taut/Theorem2.lean:317:the paper hides; it is what lets `IsTaut.splits` apply to the integral split. -/
+lean/Taut/Splitting.lean:9:`M_X` a taut filling of `X` and `M_Y` of `Y` (`IsTaut.splits`).
+lean/Taut/Splitting.lean:166:    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+lean/Taut/Splitting.lean:201:  have h4 : Zvol X ≤ nrm (Kmap A p' M) := Zvol_le hbx
+lean/Taut/Splitting.lean:202:  have h5 : Zvol Y ≤ nrm (Kmap B q' M) := Zvol_le hby
+lean/Taut/Splitting.lean:204:  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+lean/Taut/Splitting.lean:221:    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+lean/Taut/Splitting.lean:312:    {M : Chain V} (hM1 : bdry M = X + Y) (hMt : IsTaut M)
+lean/Taut/Splitting.lean:435:theorem IsTaut.splits {A B : Finset V} {n : ℕ}
+lean/Taut/Splitting.lean:442:    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+lean/Taut/Splitting.lean:445:    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+lean/Taut/Splitting.lean:446:    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+lean/Taut/Splitting.lean:519:  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+lean/Taut/Splitting.lean:520:  have h4 : Zvol X ≤ nrm Mx := Zvol_le hbx
+lean/Taut/Splitting.lean:521:  have h5 : Zvol Y ≤ nrm My := Zvol_le hby
+lean/Taut/Splitting.lean:522:  have hMxt : IsTaut Mx := by rw [IsTaut, hbx]; omega
+lean/Taut/Splitting.lean:523:  have hMyt : IsTaut My := by rw [IsTaut, hby]; omega
+lean/Taut/Splitting.lean:529:`IsTaut.splits`; when `|A ∩ B| ≤ 1` we enlarge both sides by the same
+lean/Taut/Splitting.lean:534:theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+lean/Taut/Splitting.lean:540:    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+lean/Taut/Splitting.lean:543:    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+lean/Taut/Splitting.lean:544:    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+lean/Taut/Splitting.lean:549:    exact IsTaut.splits hn hp hq hpq hC hX hY hXc hYc hMt hM1
+lean/Taut/Splitting.lean:592:      IsTaut.splits hn hp hq hpq hC' hX' hY' hXc hYc hMt hM1
+lean/Taut/OrientedBridge.lean:13:making both closed, with `X₁ + X₂ = X`. This feeds `IsTaut.splits` (`n = 2`,
+lean/Taut/Theorem23.lean:42:      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+lean/Taut/Theorem23.lean:45:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem23.lean:48:        IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
+lean/Taut/Theorem23.lean:52:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem23.lean:55:        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem23.lean:59:    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+lean/Taut/Theorem23.lean:63:      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+lean/Taut/Theorem23.lean:103:      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+lean/Taut/Theorem23.lean:106:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem23.lean:109:        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem23.lean:113:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem23.lean:116:        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem23.lean:120:    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+lean/Taut/Theorem23.lean:123:      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+lean/Taut/Theorem3.lean:92:    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3.lean:107:    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem3.lean:228:    (hTautR : IsTaut MR)
+lean/Taut/Theorem3.lean:475:    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex σ)
+lean/Taut/Theorem3.lean:477:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3.lean:527:    have hTRMR : IsTaut MR := by dsimp [MR, A, γ]; exact hTR
+lean/Taut/Theorem3.lean:602:    have hTLML : IsTaut ML := by dsimp [ML, A, γ]; exact hTL
+lean/Taut/Theorem3.lean:649:    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
+lean/Taut/Theorem3.lean:652:      IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem3.lean:731:      have hTRMR : IsTaut MR := by
+lean/Taut/Theorem3.lean:843:      have hTLML : IsTaut ML := by
+lean/Taut/PrimeStep.lean:72:  taut₁ : IsTaut M₁
+lean/Taut/PrimeStep.lean:73:  taut₂ : IsTaut M₂
+lean/Taut/PrimeStep.lean:279:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:346:  have hM't : IsTaut M' := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:625:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:672:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:888:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:1091:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:1169:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:1278:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e) :
+lean/Taut/PrimeStep.lean:1279:    IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1280:      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1288:  have hTR : IsTaut R := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:1289:  have hTA : IsTaut (R.filter (fun t => t ⊆ A)) := hTR.subChain (subChain_filter _ R)
+lean/Taut/PrimeStep.lean:1290:  have hTB : IsTaut (R.filter (fun t => t ⊆ B)) := hTR.subChain (subChain_filter _ R)
+lean/Taut/PrimeStep.lean:1336:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:1399:`IsTaut.splits`, `nrm_filter_add_nrm_filter_neg`, `simplicialChain_removeTet`,
+lean/Taut/PrimeStep.lean:1406:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:1423:      IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1424:      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1462:    (hT : IsTaut M) (hS : SimplicialChain M) (hu : EligibleTet M u)
+lean/Taut/PrimeStep.lean:1464:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/PrimeStep.lean:1488:    have hTe : IsTaut (removeTet M u) := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:1503:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/PrimeStep.lean:1583:    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:1586:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/PrimeStep.lean:1638:    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:1641:      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+lean/Taut/PrimeStep.lean:1794:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1841:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1888:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:1998:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+lean/Taut/PrimeStep.lean:2023:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:2123:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:2131:      IsTaut M' → SimplicialChain M' → FreelyShellable M'.support σ') :
+lean/Taut/PrimeStep.lean:2293:    (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:2301:      IsTaut M' → SimplicialChain M' → FreelyShellable M'.support σ') :
+lean/Taut/PrimeStep.lean:2308:    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:2311:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/PrimeStep.lean:2328:  have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:2352:    (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/PrimeStep.lean:2354:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/PrimeStep.lean:2450:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/PrimeStep.lean:2452:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/PrimeStep.lean:2460:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/PrimeStep.lean:2487:    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+lean/Taut/PrimeStep.lean:2494:    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+lean/Taut/Theorem2Aleph.lean:98:    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) :
+lean/Taut/Theorem2Aleph.lean:152:    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+lean/Taut/Theorem2Aleph.lean:673:    (hU : UnitOn Y (tetFaces T)) (hbd : bdry Mstar = Y) (hMt : IsTaut Mstar)
+lean/Taut/Theorem2Aleph.lean:786:    (hMX : bdry M = X) (hT : IsTaut M) :
+lean/Taut/Theorem2Aleph.lean:789:    IsTaut (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+lean/Taut/Theorem2Aleph.lean:790:    IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+lean/Taut/Theorem2Aleph.lean:871:  have hs := IsTaut.splits (A := A) (B := B) (n := 2) (M := M)
+lean/Taut/Theorem2Aleph.lean:923:    (hTL : IsTaut (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
+lean/Taut/Theorem2Aleph.lean:924:    (hTR : IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
+lean/Taut/Theorem2Aleph.lean:933:      IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
+lean/Taut/Theorem2Aleph.lean:1081:    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex σ) :
+lean/Taut/Theorem2Aleph.lean:1083:      IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
+lean/Taut/Theorem2Aleph.lean:1309:    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M) :
+lean/Taut/Theorem2Aleph.lean:1318:  have hprop := Zvol_add_deg_le v (bdry_bdry M)
+lean/Taut/Theorem2Aleph.lean:1319:  have hvol : Zvol (bdry M) = nrm M := hT.symm
+lean/Taut/Theorem2Aleph.lean:1381:    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M)
+lean/Taut/Theorem2Aleph.lean:1431:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem2Aleph.lean:1434:        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+lean/Taut/Theorem2Aleph.lean:1438:    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+
+codex
+One important correction is emerging: the K5 step should not be a pure `faceCount ≤ 2` contradiction. The five tets make every internal triangle have count exactly 2, so the contradiction has to use taut minimality after extracting a closed 3-chain.
+exec
+/bin/zsh -lc 'rg -n "maxdeg|max degree|degree|NoDegree3Vertex|eligible.*card|at least|octa|octahedron|boundary edges|disjointly eligible" lean/Taut' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Complex2.lean:310:/-- Minimum degree three: every vertex of a sphere has at least three
+lean/Taut/Eligible.lean:6:For the Theorem-2 induction we need, in a no-degree-3 taut filling, an *eligible*
+lean/Taut/Eligible.lean:92:/-- **One eligible tet exists** (M25a), given the no-degree-3 face bound
+lean/Taut/Eligible.lean:147:/-! ## M25a': the no-degree-3 face bound (architect: codex 019ec428, Q2)
+lean/Taut/Eligible.lean:149:The hard combinatorial step: a tet with three boundary faces forces a degree-3
+lean/Taut/Eligible.lean:155:/-- A vertex of `σ` whose link has exactly three vertices (degree 3). -/
+lean/Taut/Eligible.lean:159:/-- `σ` has no degree-3 vertex (the primality consequence the count needs). -/
+lean/Taut/Eligible.lean:160:def NoDegree3Vertex (σ : Finset (Finset V)) : Prop :=
+lean/Taut/Eligible.lean:171:/-- **Three boundary faces force a degree-3 vertex.** If three of an eligible
+lean/Taut/Eligible.lean:174:lemma exists_degree3Vertex_of_three_sharedFaces {σ : Finset (Finset V)}
+lean/Taut/Eligible.lean:289:/-- **The no-degree-3 face bound** (discharges `exists_eligibleTet`'s hypothesis):
+lean/Taut/Eligible.lean:290:if `σ` has no degree-3 vertex, no tet has more than two boundary faces. -/
+lean/Taut/Eligible.lean:293:    (hNo3 : NoDegree3Vertex σ) (ht4 : t.card = 4) :
+lean/Taut/Eligible.lean:296:  obtain ⟨v, hv, hcard⟩ := exists_degree3Vertex_of_three_sharedFaces hσ hU ht4 (by omega)
+lean/Taut/Eligible.lean:299:/-- **One eligible tet exists in a no-degree-3 taut filling** (M25, combining M25a
+lean/Taut/Eligible.lean:300:and M25a'): the `sharedFaces ≤ 2` bound is now discharged from `NoDegree3Vertex
+lean/Taut/Eligible.lean:301:σ`. (Deriving `NoDegree3Vertex` from primality is M24, separate.) -/
+lean/Taut/Eligible.lean:304:    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+lean/Taut/Chains.lean:485:/-- The degree of a vertex in a chain: the mass of its neighborhood. -/
+lean/Taut/Zvol.lean:11:  `X` (the paper's `Zvol(X) ≤ |X| − maxdeg(X)`, per vertex).
+lean/Taut/Zvol.lean:116:/-- Proposition 2 (maxdeg bound, per vertex): for closed `X`,
+lean/Taut/Zvol.lean:138:at least two vertices has no internal vertices. -/
+lean/Taut/Homology2.lean:423:/-- A sphere has at least one vertex. -/
+lean/Taut/Projection.lean:18:* `nrm_Kmap_add_killed_le` : norm accounting — `K` loses at least the mass
+lean/Taut/Projection.lean:358:/-- Norm accounting: `K` loses at least the mass of the killed
+lean/Taut/Ball.lean:218:This is the degree-3 star-start transport target: after the first remainder tet
+lean/Taut/Degree3.lean:6:A degree-3 vertex `v` of a 2-sphere `σ` (its link is a triangle) gives a non-face
+lean/Taut/Degree3.lean:11:* `linkGraph_complete_of_linkVerts_card_three` — a degree-3 link is a triangle;
+lean/Taut/Degree3.lean:36:/-- **A degree-3 link is a triangle.** With exactly three link vertices, any two
+lean/Taut/Degree3.lean:51:/-- **A degree-3 link spans edges of σ:** each pair of its three vertices is an
+lean/Taut/Degree3.lean:69:/-- **The degree-3 link triangle is a non-face** once `σ` has more than four
+lean/Taut/Degree3.lean:158:/-- **The degree-3 cut datum** (M24a): from a degree-3 vertex of a 2-sphere on more
+lean/Taut/Degree3.lean:161:lemma degree3_link_triangle_cut_data {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+lean/Taut/Separation.lean:99:/-- The edge-degree in a capped side splits into the γ-contribution and the
+lean/Taut/FlipGeom.lean:65:theorem connOn_erase_of_degree_two_bypass {G H : SimpleGraph V} [DecidableRel G.Adj] {S : Finset V} {x p q : V}
+lean/Taut/FlipGeom.lean:1224:      exact (Finset.eq_of_subset_of_card_le hnewPair_sub_exp (by rw [exposedFaces_card_of_eligible he, Finset.card_pair hnew_ne])).symm
+lean/Taut/FlipGeom.lean:1414:  exact connOn_erase_of_degree_two_bypass (G := linkGraph σ v) (H := linkGraph τ v)
+lean/Taut/Theorem1.lean:340:killed by `K_{B,q}`, when every generator is killed on at least one side. -/
+lean/Taut/Theorem3Clean.lean:12:(`base_free_clean`), while the degree-3 and prime steps remain the named, unproven
+lean/Taut/Theorem3Clean.lean:28:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/Theorem3Clean.lean:51:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem3Clean.lean:75:For the degree-3 reduction the new tet is the star `starTet σ v = insert v γ`
+lean/Taut/Theorem3Clean.lean:101:/-- **One clean glue step for the degree-3 star tet onto a fixed remainder.**
+lean/Taut/Theorem3Clean.lean:217:/-! ## τ-extension of the link-compat fields (degree-3 star-start glue)
+lean/Taut/Theorem3Clean.lean:242:degree-3 reduction glue onto `insert (starTet σ v) τ`; this transports the
+lean/Taut/Theorem3Clean.lean:346:starting at `s`.  This is the old-target half of the degree-3 reduction; it composes
+lean/Taut/Theorem3Clean.lean:361:The star-start (new-target) half of the degree-3 reduction.  Here the *star* tet
+lean/Taut/Theorem3Clean.lean:363:The data is the clean analogue of the weak `degree3_star_start_shellFrom`
+lean/Taut/Theorem3Clean.lean:435:/-- **Combined per-step upgrade for the degree-3 star-start shelling.**  Compose the
+lean/Taut/Theorem3Clean.lean:452:/-- **The degree-3 star-start transport (the heart).**  Clean analogue of
+lean/Taut/Theorem3Clean.lean:500:`degree3_star_start_shellFrom`.  From a clean free shelling of the remainder `τ`
+lean/Taut/Theorem3Clean.lean:512:lemma degree3_star_start_cleanShellFrom (σ B τ : Finset (Finset V)) {v : V}
+lean/Taut/Theorem3Clean.lean:687:/-! ## The clean degree-3 step: assemble the two halves
+lean/Taut/Theorem3Clean.lean:690:dichotomy, `degree3_hanchor`), but where the weak step applies its IH to get
+lean/Taut/Theorem3Clean.lean:693:`IsPseudomanifold` facts the preamble + `degree3_hanchor` still need are *derived*
+lean/Taut/Theorem3Clean.lean:697:`degree3_star_start_cleanShellFrom` (whose first non-head glue is the new
+lean/Taut/Theorem3Clean.lean:700:/-- **deg3_step_clean** (the discharged degree-3 hole of `theorem3_core_clean`).
+lean/Taut/Theorem3Clean.lean:713:    degree3_cut_setup sigma hsigma hbig hd3
+lean/Taut/Theorem3Clean.lean:724:  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
+lean/Taut/Theorem3Clean.lean:727:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3Clean.lean:791:        degree3_apex_notMem_right_verts_of_left_star (σ := sigma) (v := v) (W := W)
+lean/Taut/Theorem3Clean.lean:801:      exact degree3_hanchor sigma (insert γ (cutSet sigma (W + fun _ => 1))) MR
+lean/Taut/Theorem3Clean.lean:851:      degree3_star_start_cleanShellFrom sigma
+lean/Taut/Theorem3Clean.lean:859:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3Clean.lean:933:        degree3_apex_notMem_left_verts_of_right_star (σ := sigma) (v := v) (W := W)
+lean/Taut/Theorem3Clean.lean:943:      exact degree3_hanchor sigma (insert γ (cutSet sigma W)) ML
+lean/Taut/Theorem3Clean.lean:989:      degree3_star_start_cleanShellFrom sigma
+lean/Taut/Theorem3Clean.lean:1863:second eligible tet `u` carries the IH-level connectivity); every other card-2 face of
+lean/Taut/Theorem3Clean.lean:2855:/-- **Prime (no-degree-3) step of the edge-link-connectedness induction.**
+lean/Taut/Theorem3Clean.lean:2856:Mirror of `prime_isPM`: when `σ` has no degree-3 vertex, pick a face-disjoint
+lean/Taut/Theorem3Clean.lean:2868:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/Theorem3Clean.lean:2922:/-- **deg3_edgeLinkConnected** (edge-link degree-3 step): a taut filling of a
+lean/Taut/Theorem3Clean.lean:2923:2-sphere with a degree-3 vertex is edge-link connected, given that every strictly
+lean/Taut/Theorem3Clean.lean:2930:`degree3_cut_star_side_glue`).  The remainder PM (needed to pin `γ` into a unique
+lean/Taut/Theorem3Clean.lean:2942:    degree3_cut_setup σ hσ hbig hd3
+lean/Taut/Theorem3Clean.lean:2953:  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv hγ3 hW
+lean/Taut/Theorem3Clean.lean:2954:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
+lean/Taut/Theorem3Clean.lean:3007:        degree3_apex_notMem_right_verts_of_left_star (σ := σ) (v := v) (W := W)
+lean/Taut/Theorem3Clean.lean:3099:        degree3_apex_notMem_left_verts_of_right_star (σ := σ) (v := v) (W := W)
+lean/Taut/Theorem3Clean.lean:3141:`base_edgeLinkConnected`; degree-3 vertex by `deg3_edgeLinkConnected`; otherwise by
+lean/Taut/Theorem3Clean.lean:3162:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem3Clean.lean:3556:/-- **prime_step_clean** (the `theorem3_core_clean` hole): a no-degree-3 taut filling
+lean/Taut/Theorem3Clean.lean:3563:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/Theorem2.lean:19:oriented separation bridge to `IsTaut.splits` (M23), the connected-sum/degree-3
+lean/Taut/Splitting.lean:100:/-- Two distinct elements of a set with at least two elements. -/
+lean/Taut/Splitting.lean:319:  -- the cone candidate: simplices with y₀ and at least two X-vertices
+lean/Taut/OrientedBridge.lean:6:For the connected-sum (degree-3) reduction, a non-face triangle `γ` cuts the unit
+lean/Taut/Theorem23.lean:18:* `deg3_split` — a sphere with a degree-3 vertex splits (connected sum along the
+lean/Taut/Theorem23.lean:21:* `prime_step` — a no-degree-3 ("prime") sphere: remove an eligible tet
+lean/Taut/Theorem23.lean:53:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/Theorem23.lean:77:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem23.lean:114:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/Theorem23.lean:137:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem3.lean:124:`GlueStep` alone.  The actual degree-3 use also needs a first remainder tet `t₀`
+lean/Taut/Theorem3.lean:129:lemma degree3_star_start_shellFrom (σ B τ : Finset (Finset V)) {v : V}
+lean/Taut/Theorem3.lean:159:/-- If the `W` capped side is the degree-3 star, then the opposite capped side has
+lean/Taut/Theorem3.lean:162:lemma degree3_apex_notMem_right_verts_of_left_star {σ : Finset (Finset V)}
+lean/Taut/Theorem3.lean:171:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem3.lean:184:/-- If the `W + 1` capped side is the degree-3 star, then the opposite capped side
+lean/Taut/Theorem3.lean:186:lemma degree3_apex_notMem_left_verts_of_right_star {σ : Finset (Finset V)}
+lean/Taut/Theorem3.lean:195:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem3.lean:208:/-- **Degree-3 anchor target.** In the degree-3 cut context, once one side is the
+lean/Taut/Theorem3.lean:217:lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
+lean/Taut/Theorem3.lean:278:  have hstarcard : T.card = 4 := by rw [hT]; exact starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3.lean:283:  -- γ ∉ σ (a degree-3 link triangle is not itself a face).
+lean/Taut/Theorem3.lean:368:    have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
+lean/Taut/Theorem3.lean:424:degree-3 star tet onto the remainder side `R`. A triangle `f` of `starTet σ v`
+lean/Taut/Theorem3.lean:466:/-- **deg3_isPM** (PM degree-3 step): a taut filling of a 2-sphere with a degree-3
+lean/Taut/Theorem3.lean:472:by `deg3_clean_glue_of_remainder`. Does NOT use `degree3_hanchor`. -/
+lean/Taut/Theorem3.lean:482:    degree3_cut_setup σ hσ hbig hd3
+lean/Taut/Theorem3.lean:492:  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv hγ3 hW
+lean/Taut/Theorem3.lean:493:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
+lean/Taut/Theorem3.lean:543:        degree3_apex_notMem_right_verts_of_left_star (σ := σ) (v := v) (W := W)
+lean/Taut/Theorem3.lean:618:        degree3_apex_notMem_left_verts_of_right_star (σ := σ) (v := v) (W := W)
+lean/Taut/Theorem3.lean:643:/-- Degree-3 step for the free-shelling induction: cut off the degree-3 star,
+lean/Taut/Theorem3.lean:659:    degree3_cut_setup sigma hsigma hbig hd3
+lean/Taut/Theorem3.lean:669:  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
+lean/Taut/Theorem3.lean:672:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3.lean:726:        degree3_apex_notMem_right_verts_of_left_star (σ := sigma) (v := v) (W := W)
+lean/Taut/Theorem3.lean:749:      exact degree3_hanchor sigma (insert γ (cutSet sigma (W + fun _ => 1))) MR
+lean/Taut/Theorem3.lean:761:      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma (W + fun _ => 1)))
+lean/Taut/Theorem3.lean:775:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3.lean:838:        degree3_apex_notMem_left_verts_of_right_star (σ := sigma) (v := v) (W := W)
+lean/Taut/Theorem3.lean:863:      exact degree3_hanchor sigma (insert γ (cutSet sigma W)) ML
+lean/Taut/Theorem3.lean:875:      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma W)) ML.support
+lean/Taut/PrimeStep.lean:9:(architect: codex assembly pass). With no degree-3 vertex, pick (via M25b's disjoint
+lean/Taut/PrimeStep.lean:1398:`unitOn_flipBoundary_of_eligible`, `bdry_filter_subset_eq_zero_of_inter_card_two`,
+lean/Taut/PrimeStep.lean:1575:/-- **prime_isPM** (PM no-degree-3 step): a no-degree-3 taut filling of a 2-sphere
+lean/Taut/PrimeStep.lean:1584:    (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/PrimeStep.lean:1633:(≤ 4 vertices) by `base_isPM`; degree-3 vertex by `deg3_isPM`; otherwise by
+lean/Taut/PrimeStep.lean:1655:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/PrimeStep.lean:2444:/-- **prime_step** (the `theorem3_core` hole): a no-degree-3 taut filling is a free
+lean/Taut/PrimeStep.lean:2450:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/StickerballRuleouts.lean:6:The two remaining geometry holes (`degree3_hanchor`, `flipEdgePresent_side_bridge`)
+lean/Taut/Theorem2Aleph.lean:11:`aleph_base` (minimal-sphere base case) and `aleph_deg3_split` (degree-3 /
+lean/Taut/Theorem2Aleph.lean:14:Provenance: the proofs and the auxiliary `aleph_*` / `degree3_*` / `cut*` lemma
+lean/Taut/Theorem2Aleph.lean:20:dependent on a single remaining step `prime_step` (the no-degree-3 inductive step,
+lean/Taut/Theorem2Aleph.lean:426:theorem degree3_cut_setup (σ : Finset (Finset V)) (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card)
+lean/Taut/Theorem2Aleph.lean:435:  rcases degree3_link_triangle_cut_data hσ hv h3 hbig with ⟨hγ3, hγe, hγσ⟩
+lean/Taut/Theorem2Aleph.lean:458:theorem starTet_card_of_degree3 (σ : Finset (Finset V)) {v : V} (h3 : (linkVerts σ v).card = 3) :
+lean/Taut/Theorem2Aleph.lean:465:theorem degree3_cut_star_side_glue (σ : Finset (Finset V)) {v : V} {W : C2 σ}
+lean/Taut/Theorem2Aleph.lean:476:  have hdata := degree3_link_triangle_cut_data hσ hv h3 hbig
+lean/Taut/Theorem2Aleph.lean:484:    simpa [T, starTet, γ] using starTet_card_of_degree3 σ (v := v) h3
+lean/Taut/Theorem2Aleph.lean:909:theorem degree3_reassemble_from_cut_split (σ : Finset (Finset V)) (X M : Chain V) {v : V} {W : C2 σ} {c : ℤ}
+lean/Taut/Theorem2Aleph.lean:941:  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv h3 hW
+lean/Taut/Theorem2Aleph.lean:963:    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:980:      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:1016:    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:1045:      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:1076:/-- M26 hole `deg3_split`: a 2-sphere with a degree-3 vertex (> 4 vertices) splits,
+lean/Taut/Theorem2Aleph.lean:1086:  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ := degree3_cut_setup σ hσ hbig hd3
+lean/Taut/Theorem2Aleph.lean:1089:  exact degree3_reassemble_from_cut_split σ X M hσ hbig hv hγ3 hW hσL hσR hUL hXLc hUR hXRc hML hMR hTL hTR hSuppL hSuppR hMsum hS
+lean/Taut/Theorem2Aleph.lean:1378:/-- M25b: a no-degree-3 taut filling has two distinct eligible tets whose shared
+lean/Taut/Theorem2Aleph.lean:1382:    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+lean/Taut/Theorem2Aleph.lean:1428:filling of a 2-sphere is a ball provided the no-degree-3 step `prime_step` holds. -/
+lean/Taut/Theorem2Aleph.lean:1432:      SimplicialChain M → NoDegree3Vertex σ →
+
+exec
+/bin/zsh -lc "ls lean/Taut.lean lean/Taut | head && sed -n '1,120p' lean/Taut.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut.lean
+
+lean/Taut:
+Ball.lean
+Chains.lean
+CleanShelling.lean
+Complex2.lean
+Degree3.lean
+Eligible.lean
+FlipGeom.lean
+import Taut.Chains
+import Taut.Zvol
+import Taut.Projection
+import Taut.Theorem1
+import Taut.Splitting
+import Taut.Complex2
+import Taut.Ball
+import Taut.Homology2
+import Taut.Separation
+import Taut.Theorem2
+import Taut.Eligible
+import Taut.Degree3
+import Taut.Theorem23
+import Taut.OrientedBridge
+import Taut.Theorem2Aleph
+import Taut.Theorem3
+import Taut.Pseudomanifold
+import Taut.Stickerball
+import Taut.StickerballRuleouts
+import Taut.FlipGeom
+import Taut.PrimeStep
+import Taut.CleanShelling
+import Taut.Theorem3Clean
+
+exec
+/bin/zsh -lc 'rg -n "Zvol.*0|zero.*Zvol|nrm.*0|nrm_eq_zero|SubChain|subChain_filter" lean/Taut/Zvol.lean lean/Taut/*.lean' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Zvol.lean:6:* `SubChain U M` — the paper's sub-multiset relation `U ⊂ M`.
+lean/Taut/Zvol.lean:27:def SubChain (U M : Chain V) : Prop :=
+lean/Taut/Zvol.lean:30:lemma SubChain.support_subset {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:40:lemma SubChain.sub_support_subset {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:53:lemma SubChain.nrm_add_nrm_sub {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:62:lemma subChain_filter (p : Finset V → Prop) [DecidablePred p] (M : Chain V) :
+lean/Taut/Zvol.lean:63:    SubChain (M.filter p) M := by
+lean/Taut/Zvol.lean:70:lemma subChain_nbhd (x : V) (M : Chain V) : SubChain (nbhd x M) M :=
+lean/Taut/Zvol.lean:71:  subChain_filter _ M
+lean/Taut/Zvol.lean:102:theorem IsTaut.subChain {M U : Chain V} (hM : IsTaut M) (hU : SubChain U M) :
+lean/Taut/Zvol.lean:118:theorem Zvol_add_deg_le (x : V) {X : Chain V} (hX : bdry X = 0) :
+lean/Taut/Zvol.lean:128:    (hM : IsTaut M) (hU : SubChain (cone x W) M) (hW : bdry W = 0)
+lean/Taut/PrimeStep.lean:1289:  have hTA : IsTaut (R.filter (fun t => t ⊆ A)) := hTR.subChain (subChain_filter _ R)
+lean/Taut/PrimeStep.lean:1290:  have hTB : IsTaut (R.filter (fun t => t ⊆ B)) := hTR.subChain (subChain_filter _ R)
+lean/Taut/Theorem2Aleph.lean:449:    have hnz : nrm (M.filter P) ≠ 0 := by
+lean/Taut/Theorem2Aleph.lean:451:      exact hpos_nonzero (nrm_eq_zero_iff.mp hn)
+lean/Taut/Theorem1.lean:145:  have hPM : SubChain P M := subChain_filter _ M
+lean/Taut/Theorem1.lean:151:  have h0 : nrm (M - P) = 0 := by omega
+lean/Taut/Theorem1.lean:152:  have hMP : M = P := sub_eq_zero.mp (nrm_eq_zero_iff.mp h0)
+lean/Taut/Chains.lean:22:`deg`, `SubChain`.
+lean/Taut/Chains.lean:437:@[simp] lemma nrm_zero : nrm (0 : Chain V) = 0 := by simp [nrm]
+lean/Taut/Chains.lean:439:lemma nrm_eq_zero_iff {M : Chain V} : nrm M = 0 ↔ M = 0 := by
+lean/Taut/Chains.lean:489:  rw [deg, nrm_eq_zero_iff, nbhd_eq_zero_iff]
+lean/Taut/Splitting.lean:321:  have hUsub : SubChain U M := subChain_filter _ M
+lean/Taut/Zvol.lean:6:* `SubChain U M` — the paper's sub-multiset relation `U ⊂ M`.
+lean/Taut/Zvol.lean:27:def SubChain (U M : Chain V) : Prop :=
+lean/Taut/Zvol.lean:30:lemma SubChain.support_subset {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:40:lemma SubChain.sub_support_subset {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:53:lemma SubChain.nrm_add_nrm_sub {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:62:lemma subChain_filter (p : Finset V → Prop) [DecidablePred p] (M : Chain V) :
+lean/Taut/Zvol.lean:63:    SubChain (M.filter p) M := by
+lean/Taut/Zvol.lean:70:lemma subChain_nbhd (x : V) (M : Chain V) : SubChain (nbhd x M) M :=
+lean/Taut/Zvol.lean:71:  subChain_filter _ M
+lean/Taut/Zvol.lean:102:theorem IsTaut.subChain {M U : Chain V} (hM : IsTaut M) (hU : SubChain U M) :
+lean/Taut/Zvol.lean:118:theorem Zvol_add_deg_le (x : V) {X : Chain V} (hX : bdry X = 0) :
+lean/Taut/Zvol.lean:128:    (hM : IsTaut M) (hU : SubChain (cone x W) M) (hW : bdry W = 0)
+
+exec
+/bin/zsh -lc "sed -n '72,90p' lean/Taut/Zvol.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+
+/-! ## Zvol and tautness -/
+
+/-- The filling volume: the least L¹ norm of a chain with boundary `X`. -/
+noncomputable def Zvol (X : Chain V) : ℕ :=
+  sInf {n | ∃ M : Chain V, bdry M = X ∧ nrm M = n}
+
+/-- `M` is an optimal filling of its own boundary. -/
+def IsTaut (M : Chain V) : Prop := nrm M = Zvol (bdry M)
+
+lemma Zvol_le {X M : Chain V} (h : bdry M = X) : Zvol X ≤ nrm M :=
+  Nat.sInf_le ⟨M, h, rfl⟩
+
+/-- Coning fills a closed chain. -/
+lemma bdry_cone_of_closed {x : V} {X : Chain V} (hX : bdry X = 0) :
+    bdry (cone x X) = X := by
+  have h := bdry_cone_add_cone_bdry x X
+  rw [hX, map_zero, add_zero] at h
+  exact h
+
+codex
+PLAN
+
+Verdict: approve the Theorem 4 route with two corrections.
+
+1. `IsFlagComplex` should be the general clique predicate, not the taboo predicate.
+2. Q2 is not a pure `faceCount ≤ 2` contradiction. The K5 step should be killed by a closed nonzero subchain contradicting `IsTaut`.
+
+Recommended patch shape:
+
+- Add `lean/Taut/Theorem4.lean`.
+- Add `import Taut.Theorem3Clean`.
+- Add `import Taut` entry in [lean/Taut.lean](/Users/doyle/Dropbox/taut/lean/Taut.lean:1).
+
+Definitions on `τ : Finset (Finset V)`:
+
+- `SimplexOf τ s := s = ∅ ∨ ∃ t ∈ τ, s ⊆ t`
+- `EdgeOf τ e := e.card = 2 ∧ SimplexOf τ e`
+- `CliqueInOneSkeleton τ s := s ⊆ vertsOf τ ∧ ∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e`
+- `IsFlagComplex τ := ∀ s, CliqueInOneSkeleton τ s → SimplexOf τ s`
+
+Then define operational taboos as lemmas/predicates, not the public endpoint:
+
+- `HasEmptyK3 τ`
+- `HasEmptyK4 τ`
+- `HasK5Clique τ`
+- `NoTaboo τ := ¬ HasEmptyK3 τ ∧ ¬ HasEmptyK4 τ ∧ ¬ HasK5Clique τ`
+
+Prove `NoTaboo → IsFlagComplex` for nonempty pure 3-complexes. This is the bridge from paper-proof operational form to the theorem statement.
+
+Q2 route:
+
+Use route (b), with `faceCount` only as a support-control tool.
+
+Given a K5 clique `S.card = 5`, and assuming no empty K3/K4:
+
+- no empty K3 gives every triangle of `S` is contained in some tet;
+- no empty K4 upgrades every 4-subset of `S` to a tet in `M.support`;
+- hence the five 4-subsets of `S` are exactly the tets in `M.support` contained in `S`;
+- for each triangle `f ⊆ S`, exactly two of those five tets contain `f`;
+- `taut_isPseudomanifold` / `IsPseudomanifold` gives no third tet contains `f`;
+- if `f ∈ σ`, then `bdry M f = ±1` by `UnitOn`, contradicting `faceCount_ne_two_of_boundary`;
+- therefore all those triangle boundary coefficients are zero;
+- so `U := M.filter (fun t => t ⊆ S)` has `bdry U = 0`;
+- `U` is a nonzero subchain of taut `M`, so `hT.subChain (subChain_filter _ M)` makes `U` taut;
+- since `bdry U = 0`, prove `Zvol 0 = 0` using `Zvol_le rfl` with `0`, hence `nrm U = 0`;
+- contradiction with the five K5 tets in `U.support`.
+
+No `IsSphere3` definition is needed. Avoid it.
+
+Existing lemmas this rides on:
+
+- `faceCount` / `IsPseudomanifold` from [Pseudomanifold.lean](/Users/doyle/Dropbox/taut/lean/Taut/Pseudomanifold.lean:22)
+- `faceCount_ne_two_of_boundary` from [Stickerball.lean](/Users/doyle/Dropbox/taut/lean/Taut/Stickerball.lean:104)
+- `taut_isPseudomanifold` from [PrimeStep.lean](/Users/doyle/Dropbox/taut/lean/Taut/PrimeStep.lean:1637)
+- `SubChain`, `subChain_filter`, `IsTaut.subChain`, `Zvol_le` from [Zvol.lean](/Users/doyle/Dropbox/taut/lean/Taut/Zvol.lean:27)
+- `nrm_eq_zero_iff`, `nrm_zero` from [Chains.lean](/Users/doyle/Dropbox/taut/lean/Taut/Chains.lean:437)
+
+Q3 wrapper reuse:
+
+Reuse the reduction infrastructure, but do not pretend the existing clean-shelling theorem directly proves the taboo ruleouts.
+
+Reuse points:
+
+- `theorem3_core_clean` induction pattern: same strong induction measure, `nrm M`.
+- degree-3 side: `deg3_step_clean` is not directly reusable as a theorem, but its ingredients are: `degree3_cut_setup`, `degree3_cut_star_side_glue`, side filters, `IsTaut.splits`, and the existing reassembly facts.
+- prime side: reuse `EligibleTet`, `removeTet`, `FlipEdgePresent`, `unitOn_flipBoundary_of_eligible`, case-(a)/(b) split lemmas in `PrimeStep` / `FlipGeom`.
+- `taut_edgeLinkConnected`, `prime_step_clean`, `exists_clean_shelling_prime_case1/2` are proof patterns/supporting geometry, not direct endpoints for taboo predicates.
+
+New glue needed:
+
+- K3/K4 persistence under degree-3 peel.
+- K3/K4 persistence under a good eligible flip.
+- case-(b) localization: a K3/K4 in the almost-disjoint union lies on one side.
+- flip-avoidance counting.
+
+Counting status:
+
+- New eligible-tet counting lemmas are needed.
+- Current exposed engine gives `aleph_disjoint_eligible_pair`, enough for clean-shelling reinsertions, not enough for “≥4 flips avoiding 3 edges” or K4/octahedron counting.
+- So add bounded targets for:
+  - `exists_good_flip_emptyK3`
+  - `exists_good_flip_emptyK4`
+  - octahedron special-case lemma
+  - “at most two disjoint eligible tets hit forbidden faces ABC/BCD”
+
+First bounded target:
+
+Implement only definitions plus the K5 obstruction first:
+
+- `IsFlagComplex`, taboo predicates, `NoTaboo.to_flag`
+- `no_k5Clique_of_no_emptyK3_no_emptyK4_taut`
+- endpoint stub can remain absent or `theorem4_flag` can be introduced last.
+
+Blockers:
+
+- No conceptual blocker.
+- Full theorem should not be attempted until the new flip-avoidance counting lemmas exist; they are not already exposed by the clean-shelling engine.
+tokens used
+63,908
+PLAN
+
+Verdict: approve the Theorem 4 route with two corrections.
+
+1. `IsFlagComplex` should be the general clique predicate, not the taboo predicate.
+2. Q2 is not a pure `faceCount ≤ 2` contradiction. The K5 step should be killed by a closed nonzero subchain contradicting `IsTaut`.
+
+Recommended patch shape:
+
+- Add `lean/Taut/Theorem4.lean`.
+- Add `import Taut.Theorem3Clean`.
+- Add `import Taut` entry in [lean/Taut.lean](/Users/doyle/Dropbox/taut/lean/Taut.lean:1).
+
+Definitions on `τ : Finset (Finset V)`:
+
+- `SimplexOf τ s := s = ∅ ∨ ∃ t ∈ τ, s ⊆ t`
+- `EdgeOf τ e := e.card = 2 ∧ SimplexOf τ e`
+- `CliqueInOneSkeleton τ s := s ⊆ vertsOf τ ∧ ∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e`
+- `IsFlagComplex τ := ∀ s, CliqueInOneSkeleton τ s → SimplexOf τ s`
+
+Then define operational taboos as lemmas/predicates, not the public endpoint:
+
+- `HasEmptyK3 τ`
+- `HasEmptyK4 τ`
+- `HasK5Clique τ`
+- `NoTaboo τ := ¬ HasEmptyK3 τ ∧ ¬ HasEmptyK4 τ ∧ ¬ HasK5Clique τ`
+
+Prove `NoTaboo → IsFlagComplex` for nonempty pure 3-complexes. This is the bridge from paper-proof operational form to the theorem statement.
+
+Q2 route:
+
+Use route (b), with `faceCount` only as a support-control tool.
+
+Given a K5 clique `S.card = 5`, and assuming no empty K3/K4:
+
+- no empty K3 gives every triangle of `S` is contained in some tet;
+- no empty K4 upgrades every 4-subset of `S` to a tet in `M.support`;
+- hence the five 4-subsets of `S` are exactly the tets in `M.support` contained in `S`;
+- for each triangle `f ⊆ S`, exactly two of those five tets contain `f`;
+- `taut_isPseudomanifold` / `IsPseudomanifold` gives no third tet contains `f`;
+- if `f ∈ σ`, then `bdry M f = ±1` by `UnitOn`, contradicting `faceCount_ne_two_of_boundary`;
+- therefore all those triangle boundary coefficients are zero;
+- so `U := M.filter (fun t => t ⊆ S)` has `bdry U = 0`;
+- `U` is a nonzero subchain of taut `M`, so `hT.subChain (subChain_filter _ M)` makes `U` taut;
+- since `bdry U = 0`, prove `Zvol 0 = 0` using `Zvol_le rfl` with `0`, hence `nrm U = 0`;
+- contradiction with the five K5 tets in `U.support`.
+
+No `IsSphere3` definition is needed. Avoid it.
+
+Existing lemmas this rides on:
+
+- `faceCount` / `IsPseudomanifold` from [Pseudomanifold.lean](/Users/doyle/Dropbox/taut/lean/Taut/Pseudomanifold.lean:22)
+- `faceCount_ne_two_of_boundary` from [Stickerball.lean](/Users/doyle/Dropbox/taut/lean/Taut/Stickerball.lean:104)
+- `taut_isPseudomanifold` from [PrimeStep.lean](/Users/doyle/Dropbox/taut/lean/Taut/PrimeStep.lean:1637)
+- `SubChain`, `subChain_filter`, `IsTaut.subChain`, `Zvol_le` from [Zvol.lean](/Users/doyle/Dropbox/taut/lean/Taut/Zvol.lean:27)
+- `nrm_eq_zero_iff`, `nrm_zero` from [Chains.lean](/Users/doyle/Dropbox/taut/lean/Taut/Chains.lean:437)
+
+Q3 wrapper reuse:
+
+Reuse the reduction infrastructure, but do not pretend the existing clean-shelling theorem directly proves the taboo ruleouts.
+
+Reuse points:
+
+- `theorem3_core_clean` induction pattern: same strong induction measure, `nrm M`.
+- degree-3 side: `deg3_step_clean` is not directly reusable as a theorem, but its ingredients are: `degree3_cut_setup`, `degree3_cut_star_side_glue`, side filters, `IsTaut.splits`, and the existing reassembly facts.
+- prime side: reuse `EligibleTet`, `removeTet`, `FlipEdgePresent`, `unitOn_flipBoundary_of_eligible`, case-(a)/(b) split lemmas in `PrimeStep` / `FlipGeom`.
+- `taut_edgeLinkConnected`, `prime_step_clean`, `exists_clean_shelling_prime_case1/2` are proof patterns/supporting geometry, not direct endpoints for taboo predicates.
+
+New glue needed:
+
+- K3/K4 persistence under degree-3 peel.
+- K3/K4 persistence under a good eligible flip.
+- case-(b) localization: a K3/K4 in the almost-disjoint union lies on one side.
+- flip-avoidance counting.
+
+Counting status:
+
+- New eligible-tet counting lemmas are needed.
+- Current exposed engine gives `aleph_disjoint_eligible_pair`, enough for clean-shelling reinsertions, not enough for “≥4 flips avoiding 3 edges” or K4/octahedron counting.
+- So add bounded targets for:
+  - `exists_good_flip_emptyK3`
+  - `exists_good_flip_emptyK4`
+  - octahedron special-case lemma
+  - “at most two disjoint eligible tets hit forbidden faces ABC/BCD”
+
+First bounded target:
+
+Implement only definitions plus the K5 obstruction first:
+
+- `IsFlagComplex`, taboo predicates, `NoTaboo.to_flag`
+- `no_k5Clique_of_no_emptyK3_no_emptyK4_taut`
+- endpoint stub can remain absent or `theorem4_flag` can be introduced last.
+
+Blockers:
+
+- No conceptual blocker.
+- Full theorem should not be attempted until the new flip-avoidance counting lemmas exist; they are not already exposed by the clean-shelling engine.

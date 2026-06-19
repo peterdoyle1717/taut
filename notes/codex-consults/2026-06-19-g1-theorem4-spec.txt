@@ -1,0 +1,102 @@
+G1 DESIGN SPEC — Theorem 4 (flag-complex theorem): proof-route approval + IsFlagComplex convention.
+
+Reviewer: codex, ARCHITECT. Claude has AUDITED the Lean state (below) but is NOT
+architecting the route — that is your call. Give a PLAN. The project is COMBINATORIAL
+(no topology); the paper's one topological step ("S^3 not a subcomplex of B^3") must be
+discharged combinatorially — that is the crux (Q2). Argue back; cite definitions.
+
+=====================================================================
+PAPER STATEMENT (taut/taut.tex:963 — 4th theorem env, UNLABELED, auto-numbers "Theorem 4")
+=====================================================================
+"If sigma is a simplicial triangulation of S^2, any taut filling tau of sigma is a flag complex."
+Flag (taut.tex:944-951): every clique in the 1-skeleton occurs as a simplex; for a
+triangulation of S^2, flag <=> prime AND not the boundary of a tetrahedron.
+
+PROOF (taut.tex:969-1037) rules out 3 taboo configs in tau:
+  1. empty triangle: the 3 edges of {A,B,C} present, no 2-simplex ABC.
+  2. empty K4: the 6 edges of {A,B,C,D} present, no 3-simplex ABCD.
+  3. empty K5: the 10 edges of {A,B,C,D,E} present.
+  Config 3 <= (1 & 2 ruled out): the K5 + its 5 associated 3-simplices = boundary of a
+    4-simplex ~ S^3, "not possible as a subcomplex of the topological 3-ball tau".
+    [THE topological step — must be replaced by a COMBINATORIAL obstruction.]
+  Rule out 1,2: minimal counterexample + edge flip (remove an eligible tet) / deg-3 peel:
+    deg-3 vertex => connected sum with a single tet, pull off => smaller counterexample;
+    no deg-3 => maxdeg>=4 disjointly eligible tets, remove one = edge flip on sigma; case
+    (a) result is still an S^2 triangulation (smaller ctrex directly), or case (b) becomes an
+    almost-disjoint union of two triangulations joined along an edge (a K3/K4 then lands on
+    one side => counterexample). Config-1: >=4 flip choices vs 3 forbidden edges. Config-2:
+    octahedron handled as a special case => assume maxdeg>=5; at most 2 eligible tets contain
+    a forbidden face ABC/BCD => >= maxdeg-2 good flips.
+
+CORRECTION (this audit): the baton/STATUS/memory shorthand "Theorem 4 = S^3 not in B^3"
+MISLABELS it. Theorem 4 IS the flag-complex theorem; "S^3 not in B^3" is ONLY the config-3
+sub-step. The actual conclusion is "flag complex."
+
+=====================================================================
+CHECKED LEAN STATE (HEAD 792e7ed; build green 8272; grep ZERO; std-3 axioms)
+=====================================================================
+- NO theorem4 / IsFlagComplex / IsSphere3 / clique / taboo anywhere in lean/. No endpoint exists.
+- Dependencies present + CHECKED (file:line):
+  - theorem2_clean   (Theorem3Clean.lean:3600): taut filling of S^2 ==> IsCleanBall M.support sigma.
+  - theorem3_clean   (Theorem3Clean.lean:3592): ==> FreelyCleanShellable M.support sigma.
+  - Zvol_add_of_almost_disjoint_full (Theorem1.lean:434); IsTaut.splits_full (Splitting.lean:534).
+- ESTABLISHED minimal-counterexample / flip / peel ENGINE (ALREADY in the project; NOT new —
+  it is the same engine behind the clean migration):
+  - EligibleTet, aleph_disjoint_eligible_pair (Eligible.lean / FlipGeom.lean / PrimeStep.lean).
+  - removeTet, FlipEdgePresent, flipEdgePresent_side_sets / _algebra (FlipGeom.lean).
+  - case-(a)/(b) split + deg-3 peel: taut_edgeLinkConnected / prime_step_clean /
+    exists_clean_shelling_prime_case1/2 / deg3_step_clean (Theorem3Clean.lean).
+  - IsCleanBall, IsPseudomanifold, TriangleBounded3 (faceCount<=2), EdgeLinkConnected,
+    VertexLinkConnected, faceCount_eq_one_of_boundary (Pseudomanifold.lean / CleanShelling.lean).
+- Corollary 1: NO Lean endpoint (and NOT a Theorem-4 dependency).
+
+MISSING (Theorem-4-specific; not yet implemented):
+  (i)   IsFlagComplex predicate + the conclusion form.
+  (ii)  the config-3 COMBINATORIAL obstruction (the replacement for "S^3 not in B^3").
+  (iii) the Theorem-4 wrapper applying the established engine to the taboo configs.
+
+PROPOSED endpoint (mirrors theorem2_clean's hyp block exactly; IsFlagComplex also PROPOSED —
+final form is YOUR call):
+  theorem theorem4_flag {sigma : Finset (Finset V)} {X M : Chain V} (hsigma : IsSphere2 sigma)
+      (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+      (hS : SimplicialChain M) : IsFlagComplex M.support
+
+=====================================================================
+QUESTIONS (give a PLAN; pick the route — these are candidate options FOR YOU TO CHOOSE, not a
+chosen design)
+=====================================================================
+Q1 IsFlagComplex CONVENTION. Which form is load-bearing AND provable here:
+   (a) general "every clique of the 1-skeleton is a face", or
+   (b) the operational taboo form "no empty K3 AND no empty K4 AND no empty K5"?
+   Are (a) and (b) equivalent for a 3-dim clean ball, or do we prove (b) and derive (a)?
+   Exact Lean predicate signature, and on which complex (M.support)?
+
+Q2 CONFIG-3 COMBINATORIALLY (the crux — the project has NO topology). The paper kills
+   config-3 via "boundary-of-4-simplex ~ S^3 cannot be a subcomplex of the 3-ball tau".
+   Candidate combinatorial replacements (pick / correct one):
+   (a) faceCount: the 5 tets of the would-be S^3 force each of its 10 triangles to faceCount 2
+       (closed), but in IsCleanBall M.support the boundary triangles sit at faceCount 1 — does
+       a pure faceCount/pseudomanifold contradiction on the 5-vertex subcomplex close config-3,
+       with NO S^3 notion at all?
+   (b) nrm / Euler / Zvol bookkeeping giving the obstruction;
+   (c) config-3 needs no own argument once config-1 & config-2 are ruled out (it falls out of
+       faceCount on the 5 filled tets).
+   Which route? Name the exact existing lemmas (faceCount_*, IsPseudomanifold/IsCleanBall fields)
+   it rides on. Is a new IsSphere3 def needed, or avoidable?
+
+Q3 WRAPPER REUSE. Confirm the wrapper reuses the ESTABLISHED engine; specify the exact reuse
+   entry points + the genuinely-new glue:
+   - which of {taut_edgeLinkConnected, prime_step_clean, deg3_step_clean,
+     exists_clean_shelling_prime_case1/2, EligibleTet, removeTet, FlipEdgePresent} are reuse points;
+   - the induction MEASURE (nrm M? maxdeg? counterexample size) — is it the SAME measure already
+     used by the established engine, or a new minimal-counterexample order;
+   - config-1 (>=4 flips vs 3 forbidden) and config-2 (octahedron special case => maxdeg>=5;
+     <=2 tets hit ABC/BCD) flip-avoidance: do these need NEW eligible-tet-counting lemmas, or are
+     the counts already available from the engine?
+
+Q4 FIRST BOUNDED TARGET. What is the FIRST buildable piece (def IsFlagComplex + stub
+   theorem4_flag? the config-3 obstruction? a flip-avoidance counting lemma?), so Claude
+   implements ONE audited piece at a time and re-consults if the route forks?
+
+FILES: new lean/Taut/Theorem4.lean (proposed); reuse Theorem3Clean / FlipGeom / Pseudomanifold /
+Eligible / CleanShelling. PAPER: taut/taut.tex:963-1037. BUILD: cd lean && lake build.

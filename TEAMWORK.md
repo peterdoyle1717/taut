@@ -36,9 +36,44 @@ sphere/ball definitions.
   paper's hypothesis `|A∩B| ≤ n+1` (no `p,q`) — `Zvol_add_of_almost_disjoint_full` /
   `IsTaut.splits_full` (`202678b`) via the fresh-vertex WLOG enlargement (`[Infinite V]`); the
   `|A∩B| ≤ 1` cases are ABSORBED by the enlargement, NOT separate missing lemmas.
-  Remaining work is OUTSIDE the clean migration: Corollary 1 (ℚ-fillings), Theorem 4 (S³⊄B³). (AlephProver currently
+  Remaining work is OUTSIDE the clean migration: Corollary 1 (ℚ-fillings), Theorem 4 (flag complex). (AlephProver currently
   unusable for taut — server-side mathlib build-validation failure; migration closed manually. See
   `notes/aleph-requests.md` / `STATUS.md`.)
+- **🔎 AUDIT (2026-06-19): Theorem 4 — flag-complex theorem. AUDIT-ONLY, no Lean written.**
+  **Correction:** the baton/STATUS/memory shorthand "Theorem 4 = S³⊄B³" MISLABELS it. The paper's
+  4th theorem (`taut/taut.tex:963`, unlabeled, auto-numbers Theorem 4) is: *"If σ is a simplicial
+  triangulation of S², any taut filling τ of σ is a flag complex."* "S³ not a subcomplex of B³" is
+  ONLY the config-3 (empty-K₅) sub-step of its proof (`taut.tex:984-985`), not the statement.
+  • **No Lean endpoint exists** (no `theorem4`/`IsFlagComplex`/`IsSphere3`/clique/taboo in `lean/`).
+  • **Deps CHECKED:** `theorem2_clean` (`Theorem3Clean.lean:3600`, `IsCleanBall`), `theorem3_clean`
+    (`:3592`), `Zvol_add_of_almost_disjoint_full` (`Theorem1.lean:434`), `IsTaut.splits_full`
+    (`Splitting.lean:534`). Corollary 1 is NOT done and NOT a Theorem-4 dependency.
+  • **Established (NOT new) engine reused:** minimal-counterexample / edge-flip / deg-3-peel —
+    `EligibleTet`, `removeTet`, `FlipEdgePresent`, `taut_edgeLinkConnected`, `prime_step_clean`,
+    `deg3_step_clean`, `exists_clean_shelling_prime_case1/2`. Same engine as the clean migration.
+  • **Missing (Theorem-4-specific):** (i) `IsFlagComplex` def + conclusion form; (ii) the config-3
+    COMBINATORIAL obstruction replacing "S³⊄B³" (project has no topology); (iii) the wrapper tying
+    the engine to the taboo configs.
+  • **PROPOSED endpoint** (mirrors `theorem2_clean` hyps; `IsFlagComplex` PROPOSED):
+    `theorem4_flag … (hσ : IsSphere2 σ) … : IsFlagComplex M.support`.
+  • **G1 CONSULT DONE → PLAN** (spec `notes/codex-consults/2026-06-19-g1-theorem4-spec.txt`, raw/summary
+    `…-1728-g1-theorem4-{raw,summary}.txt`). Codex APPROVED the route with two corrections, both
+    skeptical-reviewed by Claude and ACCEPTED: (1) `IsFlagComplex` = the GENERAL clique predicate
+    (taboos are operational lemmas, bridged by `NoTaboo.to_flag`); (2) kill config-3 NOT by pure
+    `faceCount` but by **"a taut filling has no nonzero closed subchain"** — the would-be S³ (∂Δ⁴ on 5
+    vertices) is a closed nonzero subchain `U = M.filter(·⊆S)`, and `IsTaut U` + `bdry U = 0` ⇒
+    `nrm U = Zvol 0 = 0` ⇒ `U = 0`, contradiction. No `IsSphere3` needed. Refinement Claude verified:
+    the K5 obstruction needs only `¬HasEmptyK4` (not `¬HasEmptyK3`).
+- **✅ MILESTONE (2026-06-19): Theorem 4 — FIRST BOUNDED TARGET CHECKED.** New file
+  `lean/Taut/Theorem4.lean` (+ import in `Taut.lean`). Public predicate `IsFlagComplex` + `SimplexOf`/
+  `CliqueInOneSkeleton`/`HasEmptyK3`/`HasEmptyK4`/`HasK5Clique`/`NoTaboo`; **`NoTaboo.to_flag`**
+  (combinatorial operational→statement bridge) and **`no_k5Clique_of_no_emptyK4_taut`** (the config-3
+  combinatorial S³⊄B³ replacement, via the closed-subchain-contradicts-taut argument) — BOTH CHECKED.
+  Independently verified: `lake build` green (8273 jobs), grep ZERO on `Theorem4.lean`, both theorems
+  `#print axioms = [propext, Classical.choice, Quot.sound]`. **NEXT:** the deferred wrapper needs NEW
+  flip-avoidance COUNTING lemmas (`exists_good_flip_emptyK3/K4`, octahedron special case, "≤2 disjoint
+  eligible tets hit forbidden faces") — `aleph_disjoint_eligible_pair` alone is NOT enough; requires a
+  SECOND G1 Codex consult before the `theorem4_flag` endpoint. AlephProver still not relevant/usable.
 - Lean project: `lean/` (Mathlib v4.29.1, packages cached at
   `~/.cache/taut-lean/packages`, APFS-cloned from glove). Builds:
   `cd lean && lake build`.
