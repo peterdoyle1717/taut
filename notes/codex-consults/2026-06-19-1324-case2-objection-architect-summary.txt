@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1324-case2-objection-architect-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1324-case2-objection-architect-summary.txt
+
+=== raw size ===
+    4624  624608 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1324-case2-objection-architect-raw.txt
+
+=== extracted markers ===
+4541:PASS
+4543:Verdict: revise the first bounded target to `cleanGlueStep_crossSeam_head`. Claude’s objection is valid: the bundled bridge lemma hides the first real failure point.
+4580:Blockers:
+4584:PASS
+4586:Verdict: revise the first bounded target to `cleanGlueStep_crossSeam_head`. Claude’s objection is valid: the bundled bridge lemma hides the first real failure point.
+4623:Blockers:
+
+=== final tail ===
+      have hcard : (f₄ \ {x}).card = 2 := by
+        rw [Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.mpr hxf₄), hf₄card,
+          Finset.card_singleton]
+      obtain ⟨w, hw⟩ := Finset.card_pos.mp (by rw [hcard]; norm_num : 0 < (f₄ \ {x}).card)
+      rw [Finset.mem_sdiff, Finset.mem_singleton] at hw
+      obtain ⟨hwf₄, hwx⟩ := hw
+      refine ⟨w, Finset.mem_inter.mpr ⟨?_, ?_⟩⟩
+      · rw [Finset.mem_sdiff, Finset.mem_singleton]; exact ⟨hf₄t₄ hwf₄, hwx⟩
+      · simp only [vertexLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+          Finset.mem_singleton]
+        exact ⟨⟨e, ⟨he_mem, hf₄e hxf₄⟩, hf₄e hwf₄⟩, hwx⟩
+    · left
+      apply vertexLinkVerts_eq_empty
+      intro d hdΔ hxd
+      exact hxf₄ (hΔB d hdΔ x hxd (ht₄B hx))
+
+/-- **Prepend a disjoint cross-seam block to a whole clean shelling-from** (tail
+shelling).  Folds `CleanGlueStep.prepend_crossSeam` along a `CleanShellFrom τ₀ B₀ l B`
+of side-2 tets (`l`), all contained in `Bside` (`hlB`), disjoint from `Δ` (`hlΔ`), and
+not containing the bridge face `f₄` (`hlf₄` — they are the *tail*, after the unique
+`f₄`-tet `t₄` has been shelled).  With `Δ` meeting `Bside` only inside `f₄` (`hΔB`) and
+the `f₄`-tet `t₄` already in the accumulator (`ht₄τ`, preserved as the accumulator
+grows), the shelling stays clean with `Δ` prepended: `CleanShellFrom (Δ ∪ τ₀) B₀ l B`. -/
+lemma CleanShellFrom_prepend_crossSeam {Δ : Finset (Finset V)}
+    {f₄ Bside t₄ : Finset V} {l : List (Finset V)}
+
+exec
+/bin/zsh -lc 'lake env lean lean/Taut/CleanShelling.lean' in /Users/doyle/Dropbox/taut
+ exited 1 in 831ms:
+lean/Taut/CleanShelling.lean:1:0: error: unknown module prefix 'Taut'
+
+No directory 'Taut' or file 'Taut.olean' in the search path entries:
+/Users/doyle/.elan/toolchains/leanprover--lean4---v4.31.0/lib/lean
+/Users/doyle/.elan/toolchains/leanprover--lean4---v4.31.0/lib/lean
+
+codex
+PASS
+
+Verdict: revise the first bounded target to `cleanGlueStep_crossSeam_head`. Claude’s objection is valid: the bundled bridge lemma hides the first real failure point.
+
+Exact patch shape: add/prove the isolated lemma in `lean/Taut/CleanShelling.lean`, before any `CleanRelShellingFrom` bridge assembly.
+
+```lean
+lemma cleanGlueStep_crossSeam_head {t₄ f₄ Bside e : Finset V} {Δ B B' : Finset (Finset V)}
+    (hweak : BoundaryGlueStep t₄ B B')
+    (ht₄Δ : t₄ ∉ Δ) (ht₄B : t₄ ⊆ Bside) (ht₄card : t₄.card = 4)
+    (hΔB : ∀ d ∈ Δ, ∀ x ∈ d, x ∈ Bside → x ∈ f₄)
+    (hf₄t₄ : f₄ ⊆ t₄) (hf₄card : f₄.card = 3) (hf₄B : f₄ ∈ B)
+    (he_mem : e ∈ Δ) (hf₄e : f₄ ⊆ e) (hf₄countΔ : faceCount Δ f₄ ≤ 1) :
+    CleanGlueStep t₄ Δ B B'
+```
+
+For the proposed first bridge call, instantiate:
+`B := insert f₄ K`, `B' := (tetFaces head).erase f₄ ∪ K`, `t₄ := head`, `hf₄B := Finset.mem_insert_self f₄ K`.
+
+Files to edit:
+`lean/Taut/CleanShelling.lean` first. Later, only after this checks, wire it from `lean/Taut/Theorem3Clean.lean`.
+
+Proof route:
+`weak`: supplied separately by the same one-face boundary calculation as `relShelling_over_insert_boundary_face`, using `hKdisj head hheadτ`.
+`newTet`: from `hΔdisj` plus `head ∈ τ₂`, passed as `ht₄Δ`.
+`clean`: local sublemma `hsharef₄ : f ⊆ t₄ → (∃ d ∈ Δ, f ⊆ d) → f ⊆ f₄`, from `hΔB` and `ht₄B`; choose `f₄ ∈ tetFaces t₄ ∩ B`.
+`hpmc`: if a card-3 face is shared with `Δ`, `hsharef₄` plus equal card gives `f = f₄`, then use `hf₄countΔ`; otherwise use `faceCount_eq_zero`.
+`helc`: if edge `ε ⊆ f₄`, choose the remaining vertex of `f₄ \ ε` as apex via `e ∈ Δ` and `f₄ ⊆ e`; otherwise use `edgeLinkVerts_eq_empty` and `hsharef₄`.
+`hvlc`: if vertex `x ∈ f₄`, choose an apex from `f₄ \ {x}` via `e`; otherwise use `vertexLinkVerts_eq_empty` and `hΔB`.
+
+Local lemmas needed:
+`hsharef₄` inside the lemma.
+Card facts for `f₄ \ ε` and `f₄ \ {x}`.
+Existing: `faceCount_eq_zero`, `edgeLinkVerts_eq_empty`, `vertexLinkVerts_eq_empty`.
+No core definition changes.
+
+Try with AlephProver first:
+`cleanGlueStep_crossSeam_head`.
+
+Blockers:
+If `hΔB` is not available at the case-2 call site in exactly this strength, prove that local geometric fact first. Hard-stop remains: do not change `CleanGlueStep`, `CleanShellFrom`, or `FreelyCleanShellable`.
+tokens used
+75,577
+PASS
+
+Verdict: revise the first bounded target to `cleanGlueStep_crossSeam_head`. Claude’s objection is valid: the bundled bridge lemma hides the first real failure point.
+
+Exact patch shape: add/prove the isolated lemma in `lean/Taut/CleanShelling.lean`, before any `CleanRelShellingFrom` bridge assembly.
+
+```lean
+lemma cleanGlueStep_crossSeam_head {t₄ f₄ Bside e : Finset V} {Δ B B' : Finset (Finset V)}
+    (hweak : BoundaryGlueStep t₄ B B')
+    (ht₄Δ : t₄ ∉ Δ) (ht₄B : t₄ ⊆ Bside) (ht₄card : t₄.card = 4)
+    (hΔB : ∀ d ∈ Δ, ∀ x ∈ d, x ∈ Bside → x ∈ f₄)
+    (hf₄t₄ : f₄ ⊆ t₄) (hf₄card : f₄.card = 3) (hf₄B : f₄ ∈ B)
+    (he_mem : e ∈ Δ) (hf₄e : f₄ ⊆ e) (hf₄countΔ : faceCount Δ f₄ ≤ 1) :
+    CleanGlueStep t₄ Δ B B'
+```
+
+For the proposed first bridge call, instantiate:
+`B := insert f₄ K`, `B' := (tetFaces head).erase f₄ ∪ K`, `t₄ := head`, `hf₄B := Finset.mem_insert_self f₄ K`.
+
+Files to edit:
+`lean/Taut/CleanShelling.lean` first. Later, only after this checks, wire it from `lean/Taut/Theorem3Clean.lean`.
+
+Proof route:
+`weak`: supplied separately by the same one-face boundary calculation as `relShelling_over_insert_boundary_face`, using `hKdisj head hheadτ`.
+`newTet`: from `hΔdisj` plus `head ∈ τ₂`, passed as `ht₄Δ`.
+`clean`: local sublemma `hsharef₄ : f ⊆ t₄ → (∃ d ∈ Δ, f ⊆ d) → f ⊆ f₄`, from `hΔB` and `ht₄B`; choose `f₄ ∈ tetFaces t₄ ∩ B`.
+`hpmc`: if a card-3 face is shared with `Δ`, `hsharef₄` plus equal card gives `f = f₄`, then use `hf₄countΔ`; otherwise use `faceCount_eq_zero`.
+`helc`: if edge `ε ⊆ f₄`, choose the remaining vertex of `f₄ \ ε` as apex via `e ∈ Δ` and `f₄ ⊆ e`; otherwise use `edgeLinkVerts_eq_empty` and `hsharef₄`.
+`hvlc`: if vertex `x ∈ f₄`, choose an apex from `f₄ \ {x}` via `e`; otherwise use `vertexLinkVerts_eq_empty` and `hΔB`.
+
+Local lemmas needed:
+`hsharef₄` inside the lemma.
+Card facts for `f₄ \ ε` and `f₄ \ {x}`.
+Existing: `faceCount_eq_zero`, `edgeLinkVerts_eq_empty`, `vertexLinkVerts_eq_empty`.
+No core definition changes.
+
+Try with AlephProver first:
+`cleanGlueStep_crossSeam_head`.
+
+Blockers:
+If `hΔB` is not available at the case-2 call site in exactly this strength, prove that local geometric fact first. Hard-stop remains: do not change `CleanGlueStep`, `CleanShellFrom`, or `FreelyCleanShellable`.

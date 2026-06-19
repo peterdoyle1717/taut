@@ -87,3 +87,25 @@ Exact command (from `lean/`, keys eval'd from `~/.zshrc`):
 **Verdict: FAILED-ALEPHPROVER for this target** (AlephProver cannot build the project server-side;
 local `lake build` is green). Per protocol, resuming the bounded manual/Codex route from the exposed
 goal. (If the AlephProver build-validation is fixed later, the same target can be resubmitted.)
+
+## 2026-06-19 — AlephProver SERVER-SIDE UNAVAILABLE (diagnosed; corrects the packagesDir guess)
+
+Four submissions all FAILED identically — `Validation Error | We couldn't build your Lean project`,
+failing at the `prove`/build stage in 32-40s, cost 0.00, BEFORE any proving:
+- `3d0c22ca`, `063af707` (oppEdge_empty_of_full_edgeLinkConnected, real project).
+- `cc4d6562` (portable smoke copy: absolute `packagesDir` removed → default `.lake/packages`).
+- `96a16e7e` (MINIMAL 4-file project: just `require mathlib @ v4.29.1` + one `theorem … := by sorry`).
+
+CONCLUSION (evidence-based): the failure is **AlephProver server-side**, building a `mathlib @ v4.29.1`
+project — NOT our code (local `lake build` green, 8272 jobs), NOT login/key (all 4 keys SET, submissions
+accepted with Request IDs), NOT the absolute `packagesDir` (portable copy failed identically — my earlier
+high-confidence packagesDir claim was WRONG), NOT project size (a minimal 4-file mathlib project failed
+the same). Toolchain + mathlib pin are IDENTICAL to `db3e30a` (2026-06-14) when AlephProver DID work and
+banked aleph_base/aleph_deg3_split/M25b — so AlephProver's server environment for `mathlib v4.29.1`
+changed in the intervening 5 days (most likely: the prebuilt mathlib cache for our pinned commit is no
+longer fetchable on their end, so their `lake build` can't produce mathlib within the ~35s validation
+window). The 1.4 KB result artifact for the minimal run confirms the server never built mathlib.
+
+NOT fixable from this repo without changing the mathlib version (risky — would ripple through all proofs).
+Per protocol: record FAILED-ALEPHPROVER and proceed manually until AlephProver's mathlib-v4.29.1 build
+is restored on their side.
