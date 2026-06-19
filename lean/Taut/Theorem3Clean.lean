@@ -3585,4 +3585,23 @@ theorem prime_step_clean (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSpher
   · exact exists_clean_shelling_prime_case1 hσ hU hXc hMX hT hS IH he hu hdu hne_es hs hexp
       hf₃₄ hFlip
 
+/-- **Theorem 3 (clean route)**: a taut filling of a combinatorial 2-sphere is a *freely
+clean-shellable* sticker ball — the faithful-stickerball upgrade of `theorem3`, assembled from
+the three discharged clean steps (`base_free_clean`, `deg3_step_clean`, `prime_step_clean`) via
+the clean induction skeleton `theorem3_core_clean`. -/
+theorem theorem3_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : FreelyCleanShellable M.support σ :=
+  theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean hσ hU hXc hMX hT hS
+
+/-- **Theorem 2 (clean route)**: a taut filling of a combinatorial 2-sphere `σ` is a *clean ball*
+— it admits a clean shelling (self-certifying `Clean3Complex`), the faithful-stickerball upgrade of
+`theorem2`.  Immediate from `theorem3_clean` at any tet of the (nonempty) support. -/
+theorem theorem2_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsCleanBall M.support σ := by
+  obtain ⟨t, ht⟩ := aleph_base_support_nonempty hσ hU hMX
+  obtain ⟨l, _, hlτ, hlnodup, hlshell⟩ := theorem3_clean hσ hU hXc hMX hT hS t ht
+  exact ⟨l, hlτ, hlnodup, hlshell⟩
+
 end Taut
