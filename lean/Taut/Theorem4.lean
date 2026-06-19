@@ -370,4 +370,60 @@ theorem theorem4_flag_from_no_emptyK3K4
     no_k5Clique_of_no_emptyK4_taut hσ hU hXc hMX hT hS hPure hK4
   exact NoTaboo.to_flag ⟨hK3, hK4, hK5⟩
 
+/-! ### Persistence of the taboo configurations under removing a tet
+
+In the minimal-counterexample induction (`no_emptyK3K4_of_taut`, to come) we remove a tet — a
+degree-3 star or an eligible flip — and need the taboo configuration to SURVIVE in the smaller
+complex.  Removing a tet only *removes* simplices, so `¬ SimplexOf` of the witness is automatic
+(monotonicity); the content is that each witness EDGE keeps a witness tet other than the one removed.
+This is pure `SimplexOf` bookkeeping over `M.support.erase e` (= `(removeTet M e).support`). -/
+
+omit [LinearOrder V] in
+/-- `SimplexOf` is monotone in the complex. -/
+lemma SimplexOf.mono {τ τ' : Finset (Finset V)} {s : Finset V}
+    (h : τ ⊆ τ') (hs : SimplexOf τ s) : SimplexOf τ' s := by
+  rcases hs with h0 | ⟨t, ht, hst⟩
+  · exact Or.inl h0
+  · exact Or.inr ⟨t, h ht, hst⟩
+
+/-- Empty-K3 persists when erasing a tet `e` that is not the sole witness of any edge of the
+witness triangle. -/
+lemma hasEmptyK3_erase_of_witness {τ : Finset (Finset V)} {e s : Finset V}
+    (hs3 : s.card = 3)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → ∃ t ∈ τ, t ≠ e ∧ x ⊆ t)
+    (hno : ¬ SimplexOf τ s) : HasEmptyK3 (τ.erase e) := by
+  refine ⟨s, hs3, ?_, ?_⟩
+  · intro x hxs hx2
+    obtain ⟨t, htτ, htne, hxt⟩ := hedges x hxs hx2
+    exact Or.inr ⟨t, Finset.mem_erase.mpr ⟨htne, htτ⟩, hxt⟩
+  · exact fun hcon => hno (hcon.mono (Finset.erase_subset _ _))
+
+/-- Empty-K4 persists when erasing a tet `e` that is not the sole witness of any edge of the
+witness `K4`. -/
+lemma hasEmptyK4_erase_of_witness {τ : Finset (Finset V)} {e s : Finset V}
+    (hs4 : s.card = 4)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → ∃ t ∈ τ, t ≠ e ∧ x ⊆ t)
+    (hno : ¬ SimplexOf τ s) : HasEmptyK4 (τ.erase e) := by
+  refine ⟨s, hs4, ?_, ?_⟩
+  · intro x hxs hx2
+    obtain ⟨t, htτ, htne, hxt⟩ := hedges x hxs hx2
+    exact Or.inr ⟨t, Finset.mem_erase.mpr ⟨htne, htτ⟩, hxt⟩
+  · exact fun hcon => hno (hcon.mono (Finset.erase_subset _ _))
+
+/-- `removeTet` form of empty-K3 persistence. -/
+lemma hasEmptyK3_removeTet_of_witness {M : Chain V} {e s : Finset V} (he : e ∈ M.support)
+    (hs3 : s.card = 3)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t)
+    (hno : ¬ SimplexOf M.support s) : HasEmptyK3 (removeTet M e).support := by
+  rw [support_removeTet_of_mem he]
+  exact hasEmptyK3_erase_of_witness hs3 hedges hno
+
+/-- `removeTet` form of empty-K4 persistence. -/
+lemma hasEmptyK4_removeTet_of_witness {M : Chain V} {e s : Finset V} (he : e ∈ M.support)
+    (hs4 : s.card = 4)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t)
+    (hno : ¬ SimplexOf M.support s) : HasEmptyK4 (removeTet M e).support := by
+  rw [support_removeTet_of_mem he]
+  exact hasEmptyK4_erase_of_witness hs4 hedges hno
+
 end Taut

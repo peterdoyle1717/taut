@@ -84,9 +84,18 @@ sphere/ball definitions.
   (`¬HasEmptyK3 → ¬HasEmptyK4 → IsFlagComplex M.support`, composing `NoTaboo.to_flag` +
   `no_k5Clique_of_no_emptyK4_taut` + purity from `aleph_base_taut_support_card4_subset_verts`) —
   CHECKED, std-3 axioms, build green 8273. **So the ENTIRE remaining gap to the full `theorem4_flag`
-  endpoint is the single theorem `no_emptyK3K4_of_taut`.** NEXT sub-target (Codex order): pure
-  `removeTet` persistence (`HasEmptyK3/K4.removeTet_of_avoids`), then no-flip persistence, then
-  case-(b) localization, then the counting lemmas + induction branches. AlephProver still unusable.
+  endpoint is the single theorem `no_emptyK3K4_of_taut`.**
+- **✅ MILESTONE (2026-06-19): Theorem 4 — sub-target 2 (persistence) CHECKED.** In `Theorem4.lean`:
+  `SimplexOf.mono` + `hasEmptyK3/K4_erase_of_witness` + `hasEmptyK3/K4_removeTet_of_witness` — pure
+  `SimplexOf` bookkeeping: a taboo config SURVIVES removing a tet `e` provided each witness edge keeps
+  a witness `≠ e` (`¬SimplexOf` of the witness set is automatic by monotonicity). Build green 8273,
+  grep ZERO, std-3 axioms (`SimplexOf.mono` even axiom-light: `[propext, Quot.sound]`). Committed +
+  pushed. **REMAINING (Codex order, harder geometric/combinatorial core):** sub-target 3 = no-flip
+  persistence wrapper (removing an eligible tet drops only the flip edge — needs the flip geometry
+  `exposedFaces_eq_pair_of_eligible`/`flipEdgePresent_side_*`); sub-target 4 = case-(b) side
+  localization; sub-target 5 = the flip-avoidance COUNTING lemmas (Codex's honest BLOCKERS — no
+  `≥4`/`≥5`-disjoint-eligible-family, no octahedron, no "≤2 hit forbidden faces" lemma exists yet) +
+  the `nrm M` induction branches assembling `no_emptyK3K4_of_taut`. AlephProver still unusable.
 - Lean project: `lean/` (Mathlib v4.29.1, packages cached at
   `~/.cache/taut-lean/packages`, APFS-cloned from glove). Builds:
   `cd lean && lake build`.
