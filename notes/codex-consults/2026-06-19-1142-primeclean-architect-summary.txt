@@ -1,0 +1,131 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1142-primeclean-architect-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1142-primeclean-architect-summary.txt
+
+=== raw size ===
+    2953  400960 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1142-primeclean-architect-raw.txt
+
+=== extracted markers ===
+2838:BLOCK
+2897:BLOCK
+
+=== final tail ===
+lean/Taut/Theorem3Clean.lean:1:import Taut.CleanShelling
+lean/Taut/Theorem3Clean.lean:2:import Taut.PrimeStep
+
+codex
+BLOCK
+
+**Verdict**
+Case-1 is fully unblocked. Case-2 is not: the weak `RelShelling` bridge cannot be reused for clean shelling because `CleanShellFrom` threads the accumulated tet-set, and the weak package only stores `GlueStep`/`RelShelling`.
+
+**Recommended Patch Shape**
+Add `prime_step_clean` in [lean/Taut/Theorem3Clean.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean), mirroring `prime_step_free`.
+
+Case-1 helper:
+`exists_clean_shelling_prime_case1`
+
+Shape:
+- Same as `exists_shelling_prime_case1`, but with `IH : ... → FreelyCleanShellable ...`.
+- Also pass the paired eligible tet `u` and `hdisj` from `aleph_disjoint_eligible_pair`.
+- Build `hfree_e` by IH on `removeTet M e`.
+- Build `hPMu` via `removeTet_isPseudomanifold ... (fun ... => taut_isPseudomanifold ...)`.
+- Build `hPMe` via `taut_isPseudomanifold` on the flip-boundary smaller filling.
+- Build `hOppEmpty` inline using:
+  `oppEdge_empty_of_full_edgeLinkConnected ... (taut_edgeLinkConnected hσ hU hXc hMX hT hS)`.
+- Then:
+  `hglue := cleanGlueStep_eligible ... he hu hdisj hPMu hPMe hexp hf₃₄ hOppEmpty`
+- Close old target `s` with:
+  `FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old hfree_e hglue he_not_old hs_old`.
+
+Case-1 does not need `insert_of_cleanGlueStep`; the old-target helper is the exact closer.
+
+**Files To Edit**
+- [lean/Taut/Theorem3Clean.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean): add `exists_clean_shelling_prime_case1`, later `prime_step_clean`.
+- [lean/Taut/CleanShelling.lean](/Users/doyle/Dropbox/taut/lean/Taut/CleanShelling.lean): add generic clean relative/append helpers for case-2.
+- Possibly [lean/Taut/Theorem3Clean.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean) again for the prime case-2 clean bridge, because it depends on `PrimeStep` side data.
+
+**Local Lemmas Needed**
+For case-1:
+- No new topology lemma.
+- Only local plumbing lemma `exists_clean_shelling_prime_case1`.
+
+For case-2:
+- Define:
+  `CleanRelShellingFrom τ₀ τ B₀ B := ∃ l, l.toFinset = τ ∧ l.Nodup ∧ CleanShellFrom τ₀ B₀ l B`.
+- Add append helper:
+  `IsCleanShelling_append_cleanShellFrom`
+  consuming `IsCleanShelling l₁ Bmid` and `CleanShellFrom l₁.toFinset Bmid l₂ B`.
+- Add hard bridge theorem:
+  `flipEdgePresent_side_clean_bridge`
+  producing symmetric fields:
+  `CleanGlueStep e M₁.support σ₁ Bmid₁₂`,
+  `CleanGlueStep e M₂.support σ₂ Bmid₂₁`,
+  `CleanRelShellingFrom (insert e M₁.support) M₂.support Bmid₁₂ σ`,
+  `CleanRelShellingFrom (insert e M₂.support) M₁.support Bmid₂₁ σ`.
+
+**Case-2 Hard Stop**
+Do not claim case-2 from `FreelyShellable.relShelling_over_insert_boundary_face`. The missing clean content is accumulator-sensitive ambient transport: side shelling steps must remain clean after adding `insert e M₁.support` or `insert e M₂.support` to the old tet-set.
+
+This appears to need clean reassembly/side-separation facts, not full `EdgeLinkConnected` or a vertex-link analogue as an external theorem. Hard-stop precisely on `flipEdgePresent_side_clean_bridge` if it cannot prove `clean`, `hpmc`, `helc`, `hvlc` under the enlarged accumulator.
+
+**Next Target**
+Implement only `exists_clean_shelling_prime_case1` and wire the non-flip branch of `prime_step_clean`. Stop before case-2 unless `flipEdgePresent_side_clean_bridge` is stated and isolated.
+tokens used
+71,249
+BLOCK
+
+**Verdict**
+Case-1 is fully unblocked. Case-2 is not: the weak `RelShelling` bridge cannot be reused for clean shelling because `CleanShellFrom` threads the accumulated tet-set, and the weak package only stores `GlueStep`/`RelShelling`.
+
+**Recommended Patch Shape**
+Add `prime_step_clean` in [lean/Taut/Theorem3Clean.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean), mirroring `prime_step_free`.
+
+Case-1 helper:
+`exists_clean_shelling_prime_case1`
+
+Shape:
+- Same as `exists_shelling_prime_case1`, but with `IH : ... → FreelyCleanShellable ...`.
+- Also pass the paired eligible tet `u` and `hdisj` from `aleph_disjoint_eligible_pair`.
+- Build `hfree_e` by IH on `removeTet M e`.
+- Build `hPMu` via `removeTet_isPseudomanifold ... (fun ... => taut_isPseudomanifold ...)`.
+- Build `hPMe` via `taut_isPseudomanifold` on the flip-boundary smaller filling.
+- Build `hOppEmpty` inline using:
+  `oppEdge_empty_of_full_edgeLinkConnected ... (taut_edgeLinkConnected hσ hU hXc hMX hT hS)`.
+- Then:
+  `hglue := cleanGlueStep_eligible ... he hu hdisj hPMu hPMe hexp hf₃₄ hOppEmpty`
+- Close old target `s` with:
+  `FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old hfree_e hglue he_not_old hs_old`.
+
+Case-1 does not need `insert_of_cleanGlueStep`; the old-target helper is the exact closer.
+
+**Files To Edit**
+- [lean/Taut/Theorem3Clean.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean): add `exists_clean_shelling_prime_case1`, later `prime_step_clean`.
+- [lean/Taut/CleanShelling.lean](/Users/doyle/Dropbox/taut/lean/Taut/CleanShelling.lean): add generic clean relative/append helpers for case-2.
+- Possibly [lean/Taut/Theorem3Clean.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean) again for the prime case-2 clean bridge, because it depends on `PrimeStep` side data.
+
+**Local Lemmas Needed**
+For case-1:
+- No new topology lemma.
+- Only local plumbing lemma `exists_clean_shelling_prime_case1`.
+
+For case-2:
+- Define:
+  `CleanRelShellingFrom τ₀ τ B₀ B := ∃ l, l.toFinset = τ ∧ l.Nodup ∧ CleanShellFrom τ₀ B₀ l B`.
+- Add append helper:
+  `IsCleanShelling_append_cleanShellFrom`
+  consuming `IsCleanShelling l₁ Bmid` and `CleanShellFrom l₁.toFinset Bmid l₂ B`.
+- Add hard bridge theorem:
+  `flipEdgePresent_side_clean_bridge`
+  producing symmetric fields:
+  `CleanGlueStep e M₁.support σ₁ Bmid₁₂`,
+  `CleanGlueStep e M₂.support σ₂ Bmid₂₁`,
+  `CleanRelShellingFrom (insert e M₁.support) M₂.support Bmid₁₂ σ`,
+  `CleanRelShellingFrom (insert e M₂.support) M₁.support Bmid₂₁ σ`.
+
+**Case-2 Hard Stop**
+Do not claim case-2 from `FreelyShellable.relShelling_over_insert_boundary_face`. The missing clean content is accumulator-sensitive ambient transport: side shelling steps must remain clean after adding `insert e M₁.support` or `insert e M₂.support` to the old tet-set.
+
+This appears to need clean reassembly/side-separation facts, not full `EdgeLinkConnected` or a vertex-link analogue as an external theorem. Hard-stop precisely on `flipEdgePresent_side_clean_bridge` if it cannot prove `clean`, `hpmc`, `helc`, `hvlc` under the enlarged accumulator.
+
+**Next Target**
+Implement only `exists_clean_shelling_prime_case1` and wire the non-flip branch of `prime_step_clean`. Stop before case-2 unless `flipEdgePresent_side_clean_bridge` is stated and isolated.

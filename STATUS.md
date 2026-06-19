@@ -25,13 +25,23 @@
 `cleanGlueStep_eligible` is effectively UNCONDITIONAL. (NB: `taut_edgeLinkConnected` does NOT take
 `hPure` — it derives it internally.)
 
-## NEXT: `prime_step_clean` ⟹ `theorem3_clean`/`theorem2_clean`
-- `prime_step_clean` case-1 (¬FlipEdgePresent): assemble using the now-unconditional `cleanGlueStep_eligible`
-  (mirror the weak `exists_shelling_prime_case1` / `prime_step_free`) — UNBLOCKED.
-- `prime_step_clean` case-2 (FlipEdgePresent): the **clean RelShelling bridge** — a `CleanShellFrom`-based
-  analogue of `FreelyShellable.relShelling_over_insert_boundary_face` (Ball.lean:281). Separate substantial
-  development (the H2 analog at the clean level). Authorized; NEXT architectural target (Codex consult).
-- Then `theorem3_clean = theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean`; `theorem2_clean`.
+## NEXT: `prime_step_clean` ⟹ `theorem3_clean`/`theorem2_clean` (Codex `primeclean-architect`, BLOCK on case-2 reuse; case-1 unblocked)
+- **case-1 (¬Flip) — FULLY UNBLOCKED.** Add `exists_clean_shelling_prime_case1` (mirror weak
+  `exists_shelling_prime_case1`, IH→FreelyCleanShellable). Recipe: pair `e,u`+`hdisj` from
+  `aleph_disjoint_eligible_pair`; `hfree_e := IH (removeTet M e)`; `hPMu := removeTet_isPseudomanifold …
+  (fun…=>taut_isPseudomanifold…)`; `hPMe := taut_isPseudomanifold` on flip-boundary smaller filling;
+  `hOppEmpty := oppEdge_empty_of_full_edgeLinkConnected … (taut_edgeLinkConnected hσ hU hXc hMX hT hS)`;
+  `hglue := cleanGlueStep_eligible … hOppEmpty`; CLOSE old target `s` via
+  `FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old hfree_e hglue he_not_old hs_old`
+  (NOT `insert_of_cleanGlueStep` — the old-target helper is the closer). No new topology.
+- **case-2 (Flip) — HARD STOP, isolated as `flipEdgePresent_side_clean_bridge`.** Weak RelShelling does
+  NOT transport (CleanShellFrom threads the accumulated tet-set). Needs: a `CleanRelShellingFrom` def +
+  `IsCleanShelling_append_cleanShellFrom` helper + the bridge `flipEdgePresent_side_clean_bridge` proving
+  `clean/hpmc/helc/hvlc` under the ENLARGED accumulator (`insert e Mᵢ.support` added to the old tet-set).
+  This is accumulator-sensitive ambient transport / side-separation — NOT an EdgeLinkConnected/vertex-link
+  external theorem. Codex: "Stop before case-2 unless flipEdgePresent_side_clean_bridge is stated/isolated."
+- Then `prime_step_clean` = case1 + case2; `theorem3_clean = theorem3_core_clean base_free_clean
+  deg3_step_clean prime_step_clean`; `theorem2_clean` downstream.
 
 ## Authorization (2026-06-19): clean-route topology AUTHORIZED
 User authorized proceeding through the remaining clean-route topology WITHOUT per-lemma approval.
