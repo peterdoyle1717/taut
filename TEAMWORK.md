@@ -70,10 +70,23 @@ sphere/ball definitions.
   (combinatorial operational→statement bridge) and **`no_k5Clique_of_no_emptyK4_taut`** (the config-3
   combinatorial S³⊄B³ replacement, via the closed-subchain-contradicts-taut argument) — BOTH CHECKED.
   Independently verified: `lake build` green (8273 jobs), grep ZERO on `Theorem4.lean`, both theorems
-  `#print axioms = [propext, Classical.choice, Quot.sound]`. **NEXT:** the deferred wrapper needs NEW
-  flip-avoidance COUNTING lemmas (`exists_good_flip_emptyK3/K4`, octahedron special case, "≤2 disjoint
-  eligible tets hit forbidden faces") — `aleph_disjoint_eligible_pair` alone is NOT enough; requires a
-  SECOND G1 Codex consult before the `theorem4_flag` endpoint. AlephProver still not relevant/usable.
+  `#print axioms = [propext, Classical.choice, Quot.sound]`. Committed `39c30a1`, pushed.
+- **✅ MILESTONE (2026-06-19): Theorem 4 — WRAPPER consult done + interface LOCKED.** Second G1 consult
+  (spec `…-g1-theorem4-wrapper-spec.txt`, raw/summary `…-1750-g1-theorem4-wrapper-{raw,summary}.txt`):
+  Codex PLAN = ONE strong induction on `nrm M` (mirroring `taut_isPseudomanifold`) proving
+  **`no_emptyK3K4_of_taut : ¬HasEmptyK3 M.support ∧ ¬HasEmptyK4 M.support`**; reuse the named engine
+  (`degree3_cut_setup`/`…_star_side_glue`, `IsTaut.splits`, `removeTet`/`isTaut_removeTet`/
+  `nrm_removeTet_add_one_of_simplicial`, `isSphere2_flipBoundary_of_eligible`,
+  `flipEdgePresent_side_{sets,algebra,supports}`, `exposedFaces_eq_pair_of_eligible`); NEW glue =
+  K3/K4 persistence under peel/flip, case-(b) side localization, and the flip-avoidance COUNTING
+  (the honest blockers: no ≥4/≥5 disjoint-eligible-family, no octahedron, no "≤2 hit forbidden faces"
+  lemma exists yet). Sub-target 1 (interface lock) DONE: **`theorem4_flag_from_no_emptyK3K4`**
+  (`¬HasEmptyK3 → ¬HasEmptyK4 → IsFlagComplex M.support`, composing `NoTaboo.to_flag` +
+  `no_k5Clique_of_no_emptyK4_taut` + purity from `aleph_base_taut_support_card4_subset_verts`) —
+  CHECKED, std-3 axioms, build green 8273. **So the ENTIRE remaining gap to the full `theorem4_flag`
+  endpoint is the single theorem `no_emptyK3K4_of_taut`.** NEXT sub-target (Codex order): pure
+  `removeTet` persistence (`HasEmptyK3/K4.removeTet_of_avoids`), then no-flip persistence, then
+  case-(b) localization, then the counting lemmas + induction branches. AlephProver still unusable.
 - Lean project: `lean/` (Mathlib v4.29.1, packages cached at
   `~/.cache/taut-lean/packages`, APFS-cloned from glove). Builds:
   `cd lean && lake build`.

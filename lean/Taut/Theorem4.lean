@@ -351,4 +351,23 @@ theorem no_k5Clique_of_no_emptyK4_taut
   simp only [Finsupp.coe_zero, Pi.zero_apply] at hUq
   exact hMq hUq.symm
 
+/-- **Theorem 4, public assembly (interface lock).** Once the two taboo configurations
+`HasEmptyK3` / `HasEmptyK4` are ruled out for a taut filling `M` of a 2-sphere `σ`, the support
+is a flag complex.  This composes the combinatorial bridge `NoTaboo.to_flag` with the config-3
+obstruction `no_k5Clique_of_no_emptyK4_taut` (which supplies `¬ HasK5Clique` from `¬ HasEmptyK4`),
+deriving purity from `aleph_base_taut_support_card4_subset_verts`.  The remaining work for the full
+`theorem4_flag` endpoint is exactly `no_emptyK3K4_of_taut` (the minimal-counterexample / edge-flip
+induction). -/
+theorem theorem4_flag_from_no_emptyK3K4
+    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M)
+    (hK3 : ¬ HasEmptyK3 M.support) (hK4 : ¬ HasEmptyK4 M.support) :
+    IsFlagComplex M.support := by
+  have hPure : ∀ t ∈ M.support, t.card = 4 := fun t ht =>
+    (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
+  have hK5 : ¬ HasK5Clique M.support :=
+    no_k5Clique_of_no_emptyK4_taut hσ hU hXc hMX hT hS hPure hK4
+  exact NoTaboo.to_flag ⟨hK3, hK4, hK5⟩
+
 end Taut

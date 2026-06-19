@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1750-g1-theorem4-wrapper-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1750-g1-theorem4-wrapper-summary.txt
+
+=== raw size ===
+    3938  288529 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1750-g1-theorem4-wrapper-raw.txt
+
+=== extracted markers ===
+3799:PLAN
+3801:Verdict: use one strong induction on `nrm M`, proving both ruleouts together.
+3864:Blockers:
+3870:PLAN
+3872:Verdict: use one strong induction on `nrm M`, proving both ruleouts together.
+3935:Blockers:
+
+=== final tail ===
+- induction model: `taut_isPseudomanifold`
+- degree-3 setup: `degree3_cut_setup`, `degree3_cut_star_side_glue`, `starTet_card_of_degree3`
+- split plumbing: `capped_cut_splits_unit`, `taut_splits_for_capped_cut`, `IsTaut.splits`
+- eligible removal: `removeTet`, `support_removeTet_of_mem`, `simplicialChain_removeTet`, `nrm_removeTet_add_one_of_simplicial`, `isTaut_removeTet`
+- no-flip sphere: `isSphere2_flipBoundary_of_eligible`, `unitOn_flipBoundary_of_eligible`
+- flip-present sides: `flipEdgePresent_side_sets`, `flipEdgePresent_side_algebra`, `flipEdgePresent_side_supports`
+- eligible data: `EligibleTet`, `exposedFaces_eq_pair_of_eligible`, `FlipEdgePresent`, `aleph_disjoint_eligible_pair`
+- final assembly: `NoTaboo.to_flag`, `no_k5Clique_of_no_emptyK4_taut`, `aleph_base_taut_support_card4_subset_verts`
+
+Recommended patch shape:
+1. Add trivial public assembly first:
+```lean
+theorem theorem4_flag_from_no_emptyK3K4 ... :
+    ¬ HasEmptyK3 M.support -> ¬ HasEmptyK4 M.support -> IsFlagComplex M.support
+```
+derive `hPure`, call `no_k5Clique_of_no_emptyK4_taut`, build `NoTaboo`.
+
+2. Add generic persistence under removing a tet:
+```lean
+lemma HasEmptyK3.removeTet_of_avoids ...
+lemma HasEmptyK4.removeTet_of_avoids ...
+```
+where “avoids” says the removed tet is not the only witness for `SimplexOf` of any witness edge and does not contain the witness set. This should be pure `SimplexOf`/`support_removeTet_of_mem`.
+
+3. Add no-flip persistence wrappers:
+if eligible `e` has flip edge `f₃ ∩ f₄` avoiding all witness edges, then the same K3/K4 survives in `(removeTet M e).support`.
+
+4. Add flip-present localization:
+using `flipEdgePresent_side_sets`/`flipEdgePresent_side_algebra` and support union, prove a K3/K4 in `(removeTet M e).support` lies in one side filter support. New local lemma: a clique/config over a disjoint union of side supports with `A ∩ B` an edge cannot straddle both sides unless it uses the seam edge only, hence all 3/4 vertices land on one side.
+
+5. Add counting interfaces, then the induction branches:
+- K3: `exists_good_flip_emptyK3`
+- K4: `exists_good_flip_emptyK4`
+- octahedron special-case lemma
+- `at_most_two_disjoint_eligible_hit_forbidden_faces`
+
+Local lemmas needed:
+- `SimplexOf` monotonicity under support erase when the spanning tet is not erased.
+- erased eligible changes only the flip edge, stated in terms of `exposedFaces_eq_pair_of_eligible`.
+- side-local `SimplexOf` transfer from `M.support`/`removeTet` to side filter support.
+- K3/K4 witness localization across side union.
+- stronger eligible family/counting beyond `aleph_disjoint_eligible_pair`; current pair lemma is not enough.
+
+Q4: first bounded sub-target should be `theorem4_flag_from_no_emptyK3K4` in `Theorem4.lean`. It is independent, locks the public interface, and catches signature drift. Next audited target should be pure removeTet persistence, before any counting or degree-3 work.
+
+Blockers:
+- No existing `>=4`/`>=5` disjoint eligible family lemma found.
+- No existing octahedron special-case lemma found.
+- No existing “at most two disjoint eligible tets hit forbidden faces” lemma found.
+tokens used
+82,108
+PLAN
+
+Verdict: use one strong induction on `nrm M`, proving both ruleouts together.
+
+Exact wrapper shape:
+```lean
+theorem no_emptyK3K4_of_taut
+    {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0)
+    (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+    ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support
+```
+Internally mirror `taut_isPseudomanifold`: `H : ∀ N σ X M, nrm M = N -> ... -> ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support`.
+
+Files to edit:
+- `lean/Taut/Theorem4.lean`: public endpoints, local persistence/localization lemmas.
+- Probably new helper section in `lean/Taut/PrimeStep.lean` or `Theorem4.lean` for flip-counting interfaces.
+- Reuse `Theorem2.lean`, `Theorem2Aleph.lean`, `FlipGeom.lean`, `PrimeStep.lean`.
+
+Existing lemmas to call:
+- induction model: `taut_isPseudomanifold`
+- degree-3 setup: `degree3_cut_setup`, `degree3_cut_star_side_glue`, `starTet_card_of_degree3`
+- split plumbing: `capped_cut_splits_unit`, `taut_splits_for_capped_cut`, `IsTaut.splits`
+- eligible removal: `removeTet`, `support_removeTet_of_mem`, `simplicialChain_removeTet`, `nrm_removeTet_add_one_of_simplicial`, `isTaut_removeTet`
+- no-flip sphere: `isSphere2_flipBoundary_of_eligible`, `unitOn_flipBoundary_of_eligible`
+- flip-present sides: `flipEdgePresent_side_sets`, `flipEdgePresent_side_algebra`, `flipEdgePresent_side_supports`
+- eligible data: `EligibleTet`, `exposedFaces_eq_pair_of_eligible`, `FlipEdgePresent`, `aleph_disjoint_eligible_pair`
+- final assembly: `NoTaboo.to_flag`, `no_k5Clique_of_no_emptyK4_taut`, `aleph_base_taut_support_card4_subset_verts`
+
+Recommended patch shape:
+1. Add trivial public assembly first:
+```lean
+theorem theorem4_flag_from_no_emptyK3K4 ... :
+    ¬ HasEmptyK3 M.support -> ¬ HasEmptyK4 M.support -> IsFlagComplex M.support
+```
+derive `hPure`, call `no_k5Clique_of_no_emptyK4_taut`, build `NoTaboo`.
+
+2. Add generic persistence under removing a tet:
+```lean
+lemma HasEmptyK3.removeTet_of_avoids ...
+lemma HasEmptyK4.removeTet_of_avoids ...
+```
+where “avoids” says the removed tet is not the only witness for `SimplexOf` of any witness edge and does not contain the witness set. This should be pure `SimplexOf`/`support_removeTet_of_mem`.
+
+3. Add no-flip persistence wrappers:
+if eligible `e` has flip edge `f₃ ∩ f₄` avoiding all witness edges, then the same K3/K4 survives in `(removeTet M e).support`.
+
+4. Add flip-present localization:
+using `flipEdgePresent_side_sets`/`flipEdgePresent_side_algebra` and support union, prove a K3/K4 in `(removeTet M e).support` lies in one side filter support. New local lemma: a clique/config over a disjoint union of side supports with `A ∩ B` an edge cannot straddle both sides unless it uses the seam edge only, hence all 3/4 vertices land on one side.
+
+5. Add counting interfaces, then the induction branches:
+- K3: `exists_good_flip_emptyK3`
+- K4: `exists_good_flip_emptyK4`
+- octahedron special-case lemma
+- `at_most_two_disjoint_eligible_hit_forbidden_faces`
+
+Local lemmas needed:
+- `SimplexOf` monotonicity under support erase when the spanning tet is not erased.
+- erased eligible changes only the flip edge, stated in terms of `exposedFaces_eq_pair_of_eligible`.
+- side-local `SimplexOf` transfer from `M.support`/`removeTet` to side filter support.
+- K3/K4 witness localization across side union.
+- stronger eligible family/counting beyond `aleph_disjoint_eligible_pair`; current pair lemma is not enough.
+
+Q4: first bounded sub-target should be `theorem4_flag_from_no_emptyK3K4` in `Theorem4.lean`. It is independent, locks the public interface, and catches signature drift. Next audited target should be pure removeTet persistence, before any counting or degree-3 work.
+
+Blockers:
+- No existing `>=4`/`>=5` disjoint eligible family lemma found.
+- No existing octahedron special-case lemma found.
+- No existing “at most two disjoint eligible tets hit forbidden faces” lemma found.

@@ -1,0 +1,87 @@
+G1 DESIGN SPEC — Theorem 4 WRAPPER: rule out empty-K3 / empty-K4 for a taut filling (the deferred half).
+
+Reviewer: codex, ARCHITECT. This is the continuation of your approved Theorem-4 PLAN
+(2026-06-19-g1-theorem4-spec.txt + ...-1728-g1-theorem4-{raw,summary}.txt). The FIRST bounded target
+is now DONE + CHECKED (committed 39c30a1). Now design the WRAPPER. Give a PLAN. Argue back; cite
+exact existing lemma names. The project is COMBINATORIAL (no topology).
+
+=====================================================================
+DONE + CHECKED (this is the ground you build on; file lean/Taut/Theorem4.lean, std-3 axioms, green)
+=====================================================================
+Predicates on tau : Finset (Finset V):
+  SimplexOf tau s            := s = empty OR exists t in tau, s subseteq t
+  CliqueInOneSkeleton tau s  := s subseteq vertsOf tau AND (forall e subseteq s, e.card=2 -> SimplexOf tau e)
+  IsFlagComplex tau          := forall s, CliqueInOneSkeleton tau s -> SimplexOf tau s     [PUBLIC endpoint predicate]
+  HasEmptyK3 tau := exists s, s.card=3 AND (all 2-subsets SimplexOf) AND NOT SimplexOf tau s
+  HasEmptyK4 tau := exists s, s.card=4 AND (all 2-subsets SimplexOf) AND NOT SimplexOf tau s
+  HasK5Clique tau := exists s, s.card=5 AND (all 2-subsets SimplexOf)
+  NoTaboo tau := NOT HasEmptyK3 tau AND NOT HasEmptyK4 tau AND NOT HasK5Clique tau
+Theorems:
+  NoTaboo.to_flag : NoTaboo tau -> IsFlagComplex tau                              [CHECKED, combinatorial]
+  no_k5Clique_of_no_emptyK4_taut (hsigma hU hXc hMX hT hS hPure hK4)
+      : NOT HasK5Clique M.support                                                 [CHECKED; the config-3
+      obstruction = "taut filling has no nonzero closed subchain". NOTE: needs only NOT HasEmptyK4.]
+
+So the ONLY remaining gap to theorem4_flag is:
+  prove  NOT HasEmptyK3 M.support  AND  NOT HasEmptyK4 M.support  for a taut filling M of a 2-sphere.
+Then: NoTaboo (combine with no_k5Clique) -> IsFlagComplex M.support = theorem4_flag. (Trivial assembly.)
+
+=====================================================================
+PAPER ROUTE for ruling out config-1 (empty K3) and config-2 (empty K4)  (taut.tex:987-1037)
+=====================================================================
+Minimal counterexample + edge flip / deg-3 peel:
+  - deg-3 vertex of sigma => connected sum with a single tet; pull off vertex + remove its tet =>
+    smaller counterexample.
+  - no deg-3 => maxdeg>=4 disjointly eligible tets; remove one = edge flip of sigma; case (a) result
+    still an S^2 triangulation (smaller ctrex), or case (b) almost-disjoint union of two triangulations
+    along an edge (a K3/K4 lands on ONE side => ctrex there).
+  - config-1: >=4 flip choices vs 3 forbidden edges => a good flip exists.
+  - config-2: octahedron handled as a special case => assume maxdeg>=5; <=2 eligible tets contain a
+    forbidden face ABC/BCD => >= maxdeg-2 good flips.
+
+=====================================================================
+EXISTING ENGINE (your PLAN's Q3 list — please confirm/extend with EXACT names + signatures to call)
+=====================================================================
+- Strong-induction pattern on nrm M: theorem3_core_clean / taut_isPseudomanifold (PrimeStep.lean:1637).
+- deg-3 side ingredients: degree3_cut_setup, degree3_cut_star_side_glue, IsTaut.splits, side filters.
+- prime side: EligibleTet, removeTet, FlipEdgePresent, unitOn_flipBoundary_of_eligible, the case-(a)/(b)
+  split lemmas in PrimeStep / FlipGeom; aleph_disjoint_eligible_pair (you flagged: NOT enough for the
+  >=4 / octahedron counting).
+
+=====================================================================
+QUESTIONS (give a PLAN; these are options FOR YOU TO CHOOSE)
+=====================================================================
+Q1 WRAPPER STATEMENT + MEASURE. Give the EXACT inductive statement to prove. Candidates:
+   (a) single strong induction on nrm M (mirror taut_isPseudomanifold's `H : forall N, ...`), proving
+       `NOT HasEmptyK3 M.support AND NOT HasEmptyK4 M.support` directly;
+   (b) two separate inductions (one per config);
+   (c) a minimal-counterexample contrapositive (assume a config, derive a smaller taut filling with the
+       same config).
+   Which? Is the measure nrm M (same as the established engine), and does the deg-3 / eligible-flip
+   dispatch match base_isPM / the (vertsOf sigma).card <= 4 base case used by taut_isPseudomanifold?
+
+Q2 PERSISTENCE + LOCALIZATION (the genuinely-new glue). Exact statements for:
+   - K3/K4 persistence under the deg-3 peel (config survives in M - (peeled tet));
+   - K3/K4 persistence under a good eligible flip (config survives in M - (eligible tet) in case (a));
+   - case-(b) localization: a K3/K4 present in the almost-disjoint union lies entirely on one side
+     (so it is a config in that side's smaller taut filling).
+   Which existing lemmas discharge each, and what is genuinely new?
+
+Q3 FLIP-AVOIDANCE COUNTING. Exact statements for the lemmas you named:
+   - exists_good_flip_emptyK3 (>=4 disjoint eligible tets, <=3 forbidden edges => an eligible tet whose
+     flip edge avoids all forbidden edges);
+   - exists_good_flip_emptyK4 (with the <=2-tets-hit-forbidden-faces + octahedron maxdeg>=5 inputs);
+   - octahedron special-case lemma;
+   - "at most two disjoint eligible tets contain a forbidden face ABC/BCD".
+   Which are pure finite combinatorics over EligibleTet/the flip edge, and which need the flip geometry
+   (flipEdgePresent_side_sets etc.)? What is the minimal NEW interface on EligibleTet needed (e.g. "the
+   flip edge of an eligible tet", "eligible tets are disjoint => their flip edges are distinct/disjoint")?
+
+Q4 FIRST BOUNDED SUB-TARGET. Of all the above, which SINGLE piece should Claude implement first
+   (independently buildable, no forward dependence): a persistence lemma? the octahedron/counting? the
+   deg-3 reduction? the assembly theorem4_flag taking the two ruleouts as hypotheses (to lock the
+   interface early)? Recommend the order so Claude implements one audited piece at a time and re-consults
+   if the route forks.
+
+FILES: lean/Taut/Theorem4.lean (extend); reuse PrimeStep / FlipGeom / Theorem3Clean / Splitting /
+Eligible / Pseudomanifold. PAPER: taut/taut.tex:987-1037. BUILD: cd lean && lake build.
