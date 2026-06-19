@@ -269,6 +269,95 @@ invariant the case-2 bridge needs but `IsBall` does not supply. -/
 def RelShelling (τ B₀ B : Finset (Finset V)) : Prop :=
   ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ ShellFrom B₀ l B
 
+/-- **Relative shelling over an inserted boundary face.** A freely shellable ball
+`τ` (boundary `B`) which has a *unique* tet `head` containing a given triangle
+`γ` (and whose tets are otherwise disjoint from an ambient piece `K`) admits a
+relative shelling onto the ambient boundary `insert γ K`, ending at `B.erase γ ∪ K`.
+
+This is the case-2 bridge engine: the bridge tet `e` exposes `γ` on the second
+side's boundary; gluing `e` first consumes `head` (sharing the single face `γ`),
+exposing the three other faces of `head` while carrying `K` along, and the
+remaining tets glue on disjointly from `K`. -/
+lemma FreelyShellable.relShelling_over_insert_boundary_face
+    {τ B K : Finset (Finset V)} {γ : Finset V} {σ : Finset (Finset V)}
+    (hfree : FreelyShellable τ B)
+    (hγ3 : γ.card = 3)
+    (huniq : ∃! t, t ∈ τ ∧ γ ⊆ t)
+    (hKdisj : ∀ t ∈ τ, Disjoint (tetFaces t) K)
+    (hσ : σ = B.erase γ ∪ K) :
+    RelShelling τ (insert γ K) σ := by
+  classical
+  obtain ⟨head, ⟨hheadτ, hγhead⟩, huniq'⟩ := huniq
+  -- `γ` is a face of `head`.
+  have hγhd : γ ∈ tetFaces head :=
+    Finset.mem_powersetCard.mpr ⟨hγhead, hγ3⟩
+  -- The shelling list starting at `head`.
+  obtain ⟨l, hlhead, hlτ, hlnodup, hlshell⟩ := hfree head hheadτ
+  -- Destruct the list: it is nonempty with head `head`.
+  cases l with
+  | nil => simp at hlhead
+  | cons hd tail =>
+    have hhd : hd = head := by
+      simpa only [List.head?_cons, Option.some.injEq] using hlhead
+    subst hhd
+    simp only [IsShelling] at hlshell
+    obtain ⟨hcard4, hshellfrom⟩ := hlshell
+    -- Disjointness of `hd` from `K`, hence `tetFaces hd ∩ insert γ K = {γ}`.
+    have hheadK : Disjoint (tetFaces hd) K := hKdisj hd hheadτ
+    have hinter : tetFaces hd ∩ insert γ K = {γ} := by
+      ext s
+      simp only [Finset.mem_inter, Finset.mem_insert, Finset.mem_singleton]
+      constructor
+      · rintro ⟨hsT, hsγ | hsK⟩
+        · exact hsγ
+        · exact absurd hsK (fun h => (Finset.disjoint_left.mp hheadK) hsT h)
+      · rintro rfl; exact ⟨hγhd, Or.inl rfl⟩
+    -- The first glue step: glue `hd` onto `insert γ K`.
+    have hfirstGlue : GlueStep hd (insert γ K) ((tetFaces hd).erase γ ∪ K) := by
+      refine ⟨hcard4, ?_, ?_⟩
+      · rw [hinter, Finset.card_singleton]; exact Or.inl rfl
+      · -- newBdry: (insert γ K \ tetFaces hd) ∪ (tetFaces hd \ insert γ K)
+        --        = (tetFaces hd).erase γ ∪ K
+        ext s
+        simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_insert,
+          Finset.mem_erase]
+        by_cases hsK : s ∈ K
+        · have hsT : s ∉ tetFaces hd :=
+            fun h => (Finset.disjoint_left.mp hheadK) h hsK
+          tauto
+        · by_cases hsT : s ∈ tetFaces hd
+          · by_cases hsγ : s = γ
+            · subst hsγ; tauto
+            · tauto
+          · -- s ∉ tetFaces hd and s ∉ K; in particular s ≠ γ since γ ∈ tetFaces hd
+            have hsγ : s ≠ γ := fun h => hsT (h ▸ hγhd)
+            tauto
+    -- The tail tets all avoid `insert γ K`: disjoint from `K` (hKdisj) and do not
+    -- contain `γ` (uniqueness of `head`).
+    have htailDisj : ∀ t ∈ tail, Disjoint (tetFaces t) (insert γ K) := by
+      intro t ht
+      have htτ : t ∈ τ := by
+        rw [← hlτ]; exact List.mem_toFinset.mpr (List.mem_cons_of_mem _ ht)
+      have htK : Disjoint (tetFaces t) K := hKdisj t htτ
+      have hγnt : ¬ γ ⊆ t := by
+        intro hγt
+        have : t = hd := huniq' t ⟨htτ, hγt⟩
+        subst this
+        exact (List.nodup_cons.mp hlnodup).1 ht
+      have hγnT : γ ∉ tetFaces t := fun h => hγnt (Finset.mem_powersetCard.mp h).1
+      rw [Finset.disjoint_left]
+      intro x hxT hxins
+      rcases Finset.mem_insert.mp hxins with hxγ | hxK
+      · exact hγnT (hxγ ▸ hxT)
+      · exact (Finset.disjoint_left.mp htK) hxT hxK
+    -- Transport the tail shelling onto the erased/adjoined boundary.
+    have htailShell :
+        ShellFrom ((tetFaces hd).erase γ ∪ K) tail (B.erase γ ∪ K) :=
+      ShellFrom_erase_union_disjoint hshellfrom htailDisj
+    refine ⟨hd :: tail, hlτ, hlnodup, ?_⟩
+    rw [hσ]
+    exact ⟨(tetFaces hd).erase γ ∪ K, hfirstGlue, htailShell⟩
+
 /-- **Case-2 bridge (tautological given the relative shelling).** A ball `τ₁`,
 a `GlueStep` tet `t` onto its boundary, and a relative shelling of `τ₂` onto the
 resulting boundary, assemble into one ball. The hard part — that the separated
