@@ -1,28 +1,37 @@
 # STATUS — clean-shelling migration, hOppEmpty case-1
 
 ## Branch / commit
-- Branch `claude/clean-shelling`, HEAD `0c79b53`.
+- Branch `claude/clean-shelling`, HEAD `ac1c0bb`.
 - Working tree CLEAN; full `lake build` green (8272 jobs); grep `sorry/admit/axiom/native_decide` over `lean/Taut` → ZERO.
 
 ## Checked facts (all std-3 axioms: propext, Classical.choice, Quot.sound)
 - Weak `theorem2`/`theorem3` LOCKED and intact (`4e52d07`), statements unchanged.
-- `deg3_step_clean` CHECKED (`6f6931f`).
-- `theorem3_core_clean` + `base_free_clean` CHECKED (`935b2ca`).
-- `cleanGlueStep_eligible` CHECKED (`4f75b83`) — re-glues the eligible tet `e`, consuming `hOppEmpty : edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅`.
-- `oppEdge_empty_of_flipEdgePresent` CHECKED (`9bbc633`) — the `FlipEdgePresent` half of `hOppEmpty` (combinatorial, side-separation).
-- **`oppEdge_empty_of_full_edgeLinkConnected` CHECKED (`0c79b53`)** — the reduction lemma: GIVEN `hELM : EdgeLinkConnected M.support`, the flip-opposite edge lies in no remaining tet (proof: rogue-tet apex is unreachable from the Adj-closed flip-edge pair, contradicting `EdgeLinkConnected`). `#print axioms` = std-3.
+- `deg3_step_clean` CHECKED (`6f6931f`); `theorem3_core_clean` + `base_free_clean` CHECKED (`935b2ca`).
+- `cleanGlueStep_eligible` CHECKED (`4f75b83`) — re-glues the eligible tet, consuming `hOppEmpty`.
+- `oppEdge_empty_of_flipEdgePresent` (`9bbc633`) + `oppEdge_empty_of_full_edgeLinkConnected` (`0c79b53`):
+  the two halves / reduction of `hOppEmpty`.
+- **`taut_edgeLinkConnected` CHECKED + COMPLETE (`ac1c0bb`)** — PUBLIC theorem "every taut filling of a
+  2-sphere is `EdgeLinkConnected M.support`", std-3, sorryAx-free. Full stack banked this session:
+  `eligible_pair_oriented_opp_avoidance`, `oppEdge_empty_of_disjoint_eligible_remainder` (weakened to
+  single-edge `ConnOn`), `edgeLinkCompat_nonOpp_of_exposed_face`, `removeTet_edgeLinkConnected_noFlip`,
+  `flipPresent_removeTet_connOn_at_nonflip_edge` (+`connOn_oppEdge_of_subset_local`),
+  `removeTet_connOn_oppEdge_of_disjoint_eligible`, `prime_edgeLinkConnected_case1`,
+  `edgeLinkConnected_insert_flipBridge` (+3 flipBridge helpers), `prime_edgeLinkConnected_case2`,
+  `prime_edgeLinkConnected`, `base_edgeLinkConnected`, `deg3_edgeLinkConnected`.
 
-## hOppEmpty case-1 now reduces to ONE input
-`hOppEmpty` (case-1, `¬FlipEdgePresent`) is fully reduced to the single hypothesis
-**`EdgeLinkConnected M.support`** via the CHECKED `oppEdge_empty_of_full_edgeLinkConnected`. That
-input is exactly the new theorem
-```lean
-theorem taut_edgeLinkConnected {σ : Finset (Finset V)} {X M : Chain V}
-    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0)
-    (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
-    (hPure : ∀ t ∈ M.support, t.card = 4) :
-    EdgeLinkConnected M.support
-```
+## hOppEmpty case-1 — NOW DISCHARGEABLE (taut_edgeLinkConnected done)
+`hOppEmpty` for `cleanGlueStep_eligible` is now obtained inline at any call site as
+`oppEdge_empty_of_full_edgeLinkConnected … (taut_edgeLinkConnected hσ hU hXc hMX hT hS)`. So
+`cleanGlueStep_eligible` is effectively UNCONDITIONAL. (NB: `taut_edgeLinkConnected` does NOT take
+`hPure` — it derives it internally.)
+
+## NEXT: `prime_step_clean` ⟹ `theorem3_clean`/`theorem2_clean`
+- `prime_step_clean` case-1 (¬FlipEdgePresent): assemble using the now-unconditional `cleanGlueStep_eligible`
+  (mirror the weak `exists_shelling_prime_case1` / `prime_step_free`) — UNBLOCKED.
+- `prime_step_clean` case-2 (FlipEdgePresent): the **clean RelShelling bridge** — a `CleanShellFrom`-based
+  analogue of `FreelyShellable.relShelling_over_insert_boundary_face` (Ball.lean:281). Separate substantial
+  development (the H2 analog at the clean level). Authorized; NEXT architectural target (Codex consult).
+- Then `theorem3_clean = theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean`; `theorem2_clean`.
 
 ## Authorization (2026-06-19): clean-route topology AUTHORIZED
 User authorized proceeding through the remaining clean-route topology WITHOUT per-lemma approval.
