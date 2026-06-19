@@ -10,6 +10,11 @@
 > design audit before new load-bearing code, G2 gate on every commit.
 > Run codex with `< /dev/null` (no stdin redirect ⇒ it hangs; not infra).
 
+> **Codex consult safety:** Never `cat` raw Codex output. Save raw logs under
+> `notes/codex-consults/`. Expose only compact summaries or bounded tail/grep
+> extracts. Use `scripts/codex-consult-safe.sh SPEC TOPIC` for future Codex
+> consults (it archives the raw log and prints only a bounded summary/tail).
+
 ## Goal
 
 Formalize the results of `taut/taut.tex` (Doyle–Ellison–Wang, "Taut
