@@ -25,6 +25,17 @@ sphere/ball definitions.
 
 ## Live state (update on every milestone)
 
+- **✅ MILESTONE (2026-06-19): weak→clean migration COMPLETE.** `theorem2_clean`
+  (`IsCleanBall M.support σ`) and `theorem3_clean` (`FreelyCleanShellable M.support σ`)
+  are CHECKED (`43faa7d`); `#print axioms` = `[propext, Classical.choice, Quot.sound]` for both.
+  `theorem3_clean = theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean` — all three
+  clean steps CHECKED (`base_free_clean`, `deg3_step_clean`, `prime_step_clean`@`e27ba91`), via the new
+  `taut_edgeLinkConnected` (`ac1c0bb`) + the case-2 clean-shelling bridge. Weak `theorem2`/`theorem3`
+  (`PrimeStep.lean`) UNCHANGED + intact. Full `lake build` green (8272 jobs), grep ZERO, std-3 axioms.
+  Branch `claude/clean-shelling`, HEAD `481c2b6`. Remaining work is OUTSIDE the clean migration:
+  Corollary 1 (ℚ-fillings), |A∩B|≤1 Theorem-1 cases, Theorem 4 (S³⊄B³). (AlephProver currently
+  unusable for taut — server-side mathlib build-validation failure; migration closed manually. See
+  `notes/aleph-requests.md` / `STATUS.md`.)
 - Lean project: `lean/` (Mathlib v4.29.1, packages cached at
   `~/.cache/taut-lean/packages`, APFS-cloned from glove). Builds:
   `cd lean && lake build`.
