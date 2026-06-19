@@ -523,4 +523,117 @@ theorem IsTaut.splits {A B : Finset V} {n : ℕ}
   have hMyt : IsTaut My := by rw [IsTaut, hby]; omega
   exact ⟨hbx, hby, hMxt, hMyt, hsum⟩
 
+/-- **Theorem 1, splitting (full paper statement)**: for `n ≥ 2`, the
+hypothesis `(A ∩ B).card ≤ n + 1` alone suffices — no witnessing pair
+`p ≠ q` is needed.  When `|A ∩ B| ≥ 2` we extract a pair and invoke
+`IsTaut.splits`; when `|A ∩ B| ≤ 1` we enlarge both sides by the same
+fresh vertices `F` to reach `|A' ∩ B'| = 2 ≤ n + 1`, run the split along
+`· ⊆ A'`, then transfer it back to `· ⊆ A`.  The transfer is valid because
+every generator of the filling `M` lies in `A ∪ B`, hence is disjoint from
+the fresh set `F`, so `t ⊆ A' ↔ t ⊆ A` on `M.support`. -/
+theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 2 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+  classical
+  by_cases h2 : 2 ≤ (A ∩ B).card
+  · obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.mp h2
+    exact IsTaut.splits hn hp hq hpq hC hX hY hXc hYc hMt hM1
+  · push_neg at h2
+    have hn1 : 1 ≤ n := by omega
+    -- enlarge both sides by a fresh set `F` capping the intersection at two
+    have hle : (A ∪ B).card ≤ (A ∪ B).card + (2 - (A ∩ B).card) := Nat.le_add_right _ _
+    obtain ⟨W, hWsub, hWcard⟩ :=
+      Infinite.exists_superset_card_eq (A ∪ B) _ hle
+    set F := W \ (A ∪ B) with hF
+    have hFdisj : Disjoint F (A ∪ B) := Finset.sdiff_disjoint
+    have hFcard : F.card = 2 - (A ∩ B).card := by
+      have hkey : F.card + (A ∪ B).card = (A ∪ B).card + (2 - (A ∩ B).card) := by
+        rw [hF, Finset.card_sdiff_add_card_eq_card hWsub, hWcard]
+      omega
+    set A' := A ∪ F with hA'
+    set B' := B ∪ F with hB'
+    have hinter : A' ∩ B' = (A ∩ B) ∪ F := by
+      ext x
+      simp only [hA', hB', Finset.mem_inter, Finset.mem_union]
+      constructor
+      · rintro ⟨hxA | hxF, hxB | hxF⟩
+        · exact Or.inl ⟨hxA, hxB⟩
+        · exact Or.inr hxF
+        · exact Or.inr hxF
+        · exact Or.inr hxF
+      · rintro (⟨hxA, hxB⟩ | hxF)
+        · exact ⟨Or.inl hxA, Or.inl hxB⟩
+        · exact ⟨Or.inr hxF, Or.inr hxF⟩
+    have hABFdisj : Disjoint (A ∩ B) F :=
+      (hFdisj.mono_right (Finset.inter_subset_left.trans Finset.subset_union_left)).symm
+    have hcard' : (A' ∩ B').card = 2 := by
+      rw [hinter, Finset.card_union_of_disjoint hABFdisj, hFcard]
+      omega
+    have h1lt : 1 < (A' ∩ B').card := by rw [hcard']; omega
+    obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.mp h1lt
+    have hC' : (A' ∩ B').card ≤ n + 1 := by rw [hcard']; omega
+    have hAA' : A ⊆ A' := Finset.subset_union_left
+    have hBB' : B ⊆ B' := Finset.subset_union_left
+    have hX' : ∀ s ∈ X.support, s ⊆ A' ∧ s.card = n + 1 :=
+      fun s hs => ⟨(hX s hs).1.trans hAA', (hX s hs).2⟩
+    have hY' : ∀ s ∈ Y.support, s ⊆ B' ∧ s.card = n + 1 :=
+      fun s hs => ⟨(hY s hs).1.trans hBB', (hY s hs).2⟩
+    -- run the split along `· ⊆ A'`
+    obtain ⟨hbx', hby', hMxt', hMyt', hsum'⟩ :=
+      IsTaut.splits hn hp hq hpq hC' hX' hY' hXc hYc hMt hM1
+    -- every generator of `M` lives in `A ∪ B`, hence is disjoint from `F`
+    have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+      intro s hs
+      rw [hM1] at hs
+      rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+      · exact (hX s h).2
+      · exact (hY s h).2
+    have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+      fun s hs => hMt.dim_pure hbdsupp s hs
+    have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+      intro s hs; rw [hpure s hs]; omega
+    have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+      intro t ht
+      refine (supp_subset_vert ht).trans ((hMt.vert_subset hdim2).trans ?_)
+      rw [hM1]
+      exact (vert_add_subset X Y).trans (Finset.union_subset_union
+        (vert_subset_of_supp fun s hs => (hX s hs).1)
+        (vert_subset_of_supp fun s hs => (hY s hs).1))
+    -- on `M.support`, `t ⊆ A' ↔ t ⊆ A`
+    have hiff : ∀ t ∈ M.support, (t ⊆ A' ↔ t ⊆ A) := by
+      intro t ht
+      have hdisj : Disjoint t F := (hFdisj.mono_right (hsuppAB t ht)).symm
+      constructor
+      · intro htA' x hx
+        rcases Finset.mem_union.mp (htA' hx) with h | h
+        · exact h
+        · exact absurd h (Finset.disjoint_left.mp hdisj hx)
+      · intro htA
+        exact htA.trans hAA'
+    -- transfer the two filters from `A'` to `A`
+    have hfilt_pos : M.filter (fun t => t ⊆ A') = M.filter (fun t => t ⊆ A) := by
+      ext s
+      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+      by_cases hs : s ∈ M.support
+      · simp only [hiff s hs]
+      · rw [Finsupp.notMem_support_iff.mp hs]; simp
+    have hfilt_neg : M.filter (fun t => ¬ t ⊆ A') = M.filter (fun t => ¬ t ⊆ A) := by
+      ext s
+      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+      by_cases hs : s ∈ M.support
+      · simp only [hiff s hs]
+      · rw [Finsupp.notMem_support_iff.mp hs]; simp
+    rw [hfilt_pos] at hbx' hMxt' hsum'
+    rw [hfilt_neg] at hby' hMyt' hsum'
+    exact ⟨hbx', hby', hMxt', hMyt', hsum'⟩
+
 end Taut

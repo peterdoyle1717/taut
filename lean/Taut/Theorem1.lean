@@ -425,4 +425,66 @@ theorem Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n : ℕ}
     have h5 : Zvol Y ≤ nrm (Kmap B q M) := Zvol_le hby
     omega
 
+/-- **Theorem 1, additivity (full paper statement)**: the hypothesis
+`(A ∩ B).card ≤ n + 1` alone (with `n ≥ 1`) suffices — no witnessing pair
+`p ≠ q` is needed.  When `|A ∩ B| ≥ 2` we extract a pair and invoke
+`Zvol_add_of_almost_disjoint`; when `|A ∩ B| ≤ 1` we enlarge both `A` and
+`B` by the same fresh vertices to reach exactly `|A' ∩ B'| = 2` (still
+`≤ n + 1`), which never changes `X`, `Y`, or the conclusion. -/
+theorem Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 1 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0) :
+    Zvol (X + Y) = Zvol X + Zvol Y := by
+  classical
+  by_cases h2 : 2 ≤ (A ∩ B).card
+  · obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.mp h2
+    exact Zvol_add_of_almost_disjoint hn hp hq hpq hC hX hY hXc hYc
+  · push_neg at h2
+    -- `|A ∩ B| ≤ 1`: enlarge both sides by `F`, a fresh set capping the
+    -- intersection to exactly two shared vertices.
+    have hle : (A ∪ B).card ≤ (A ∪ B).card + (2 - (A ∩ B).card) := Nat.le_add_right _ _
+    obtain ⟨W, hWsub, hWcard⟩ :=
+      Infinite.exists_superset_card_eq (A ∪ B) _ hle
+    set F := W \ (A ∪ B) with hF
+    have hFdisj : Disjoint F (A ∪ B) := Finset.sdiff_disjoint
+    have hFcard : F.card = 2 - (A ∩ B).card := by
+      have hkey : F.card + (A ∪ B).card = (A ∪ B).card + (2 - (A ∩ B).card) := by
+        rw [hF, Finset.card_sdiff_add_card_eq_card hWsub, hWcard]
+      omega
+    set A' := A ∪ F with hA'
+    set B' := B ∪ F with hB'
+    have hFA : Disjoint F A := hFdisj.mono_right Finset.subset_union_left
+    have hFB : Disjoint F B := hFdisj.mono_right Finset.subset_union_right
+    -- the new intersection is exactly `(A ∩ B) ∪ F`
+    have hinter : A' ∩ B' = (A ∩ B) ∪ F := by
+      ext x
+      simp only [hA', hB', Finset.mem_inter, Finset.mem_union]
+      constructor
+      · rintro ⟨hxA | hxF, hxB | hxF⟩
+        · exact Or.inl ⟨hxA, hxB⟩
+        · exact Or.inr hxF
+        · exact Or.inr hxF
+        · exact Or.inr hxF
+      · rintro (⟨hxA, hxB⟩ | hxF)
+        · exact ⟨Or.inl hxA, Or.inl hxB⟩
+        · exact ⟨Or.inr hxF, Or.inr hxF⟩
+    have hABFdisj : Disjoint (A ∩ B) F :=
+      (hFdisj.mono_right (Finset.inter_subset_left.trans Finset.subset_union_left)).symm
+    have hcard' : (A' ∩ B').card = 2 := by
+      rw [hinter, Finset.card_union_of_disjoint hABFdisj, hFcard]
+      omega
+    have h1lt : 1 < (A' ∩ B').card := by rw [hcard']; omega
+    obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.mp h1lt
+    have hC' : (A' ∩ B').card ≤ n + 1 := by rw [hcard']; omega
+    have hAA' : A ⊆ A' := Finset.subset_union_left
+    have hBB' : B ⊆ B' := Finset.subset_union_left
+    have hX' : ∀ s ∈ X.support, s ⊆ A' ∧ s.card = n + 1 :=
+      fun s hs => ⟨(hX s hs).1.trans hAA', (hX s hs).2⟩
+    have hY' : ∀ s ∈ Y.support, s ⊆ B' ∧ s.card = n + 1 :=
+      fun s hs => ⟨(hY s hs).1.trans hBB', (hY s hs).2⟩
+    exact Zvol_add_of_almost_disjoint hn hp hq hpq hC' hX' hY' hXc hYc
+
 end Taut
