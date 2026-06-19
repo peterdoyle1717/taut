@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1000-prime-elc-architect-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1000-prime-elc-architect-summary.txt
+
+=== raw size ===
+    4075  792682 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1000-prime-elc-architect-raw.txt
+
+=== extracted markers ===
+3990:WARN
+3992:Verdict: the `prime_edgeLinkConnected` route is correct only for the `¬ FlipEdgePresent` eligible-removal case. As stated, the companion
+4031:Blocker: full assembly is blocked by the false global `removeTet_edgeLinkConnected`. Next bounded target: prove `eligible_pair_oriented_opp_avoidance` plus `prime_edgeLinkConnected_case1`. Hard-stop if the orientation lemma cannot be proved from `hσ.closed`, `hU/hMX`, eligibility, and `Disjoint sharedFaces`.
+4034:WARN
+4036:Verdict: the `prime_edgeLinkConnected` route is correct only for the `¬ FlipEdgePresent` eligible-removal case. As stated, the companion
+4075:Blocker: full assembly is blocked by the false global `removeTet_edgeLinkConnected`. Next bounded target: prove `eligible_pair_oriented_opp_avoidance` plus `prime_edgeLinkConnected_case1`. Hard-stop if the orientation lemma cannot be proved from `hσ.closed`, `hU/hMX`, eligibility, and `Disjoint sharedFaces`.
+
+=== final tail ===
+    IsPseudomanifold τ := by
+  intro f hf
+  by_cases hfA : f ⊆ A
+  · -- every tet of τ containing f is ⊆ A, so faceCount τ f = faceCount (filter ⊆A) f
+    have hset : τ.filter (fun t => f ⊆ t) = (τ.filter (fun t => t ⊆ A)).filter (fun t => f ⊆ t) := by
+      rw [Finset.filter_filter]
+      apply Finset.filter_congr
+      intro t ht
+      constructor
+      · intro hft
+        exact ⟨subset_left_of_face_subset hAB hf hfA (hcov t ht) hft, hft⟩
+      · intro h; exact h.2
+    have := h₁ f hf
+    unfold faceCount at this ⊢
+    rw [hset]; exact this
+  · -- f ⊄ A, so every tet of τ containing f is ⊆ B
+    have hset : τ.filter (fun t => f ⊆ t) = (τ.filter (fun t => t ⊆ B)).filter (fun t => f ⊆ t) := by
+      rw [Finset.filter_filter]
+      apply Finset.filter_congr
+      intro t ht
+      constructor
+      · intro hft
+        refine ⟨?_, hft⟩
+        rcases hcov t ht with h | h
+        · exact absurd (hft.trans h) hfA
+        · exact h
+      · intro h; exact h.2
+    have := h₂ f hf
+    unfold faceCount at this ⊢
+    rw [hset]; exact this
+
+end Taut
+
+codex
+WARN
+
+Verdict: the `prime_edgeLinkConnected` route is correct only for the `¬ FlipEdgePresent` eligible-removal case. As stated, the companion
+
+`removeTet_edgeLinkConnected : EdgeLinkConnected (removeTet M e).support`
+
+is not valid in the flip-present split case: the remainder is two fillings meeting only along the flip edge, and that edge-link can be disconnected until `e` is reinserted.
+
+Exact recommended patch shape:
+
+1. Do not prove a global `removeTet_edgeLinkConnected`.
+2. Add `removeTet_edgeLinkConnected_noFlip`, using IH exactly like `removeTet_isPseudomanifold` case 1.
+3. Add an orientation lemma for the survivor gap:
+   `eligible_pair_oriented_opp_avoidance`
+   returning either
+   `¬ (e \ (f₃ ∩ f₄)) ⊆ u`
+   or, after swapping,
+   `¬ (u \ (g₃ ∩ g₄)) ⊆ e`.
+   This uses `exists_two_faces hσ.toClosedSurface`, not a strengthened M25b.
+4. Prove `prime_edgeLinkConnected_case1` with `edgeLinkConnected_insert`.
+5. Hard-stop before full `taut_edgeLinkConnected` unless you also add a separate flip-present bridge lemma:
+   `prime_edgeLinkConnected_case2` or `edgeLinkConnected_insert_flipBridge`.
+
+Files to edit:
+
+- `lean/Taut/PrimeStep.lean`
+- likely `lean/Taut/Pseudomanifold.lean` only if adding reusable edge-link insertion/bridge helpers
+- avoid modifying `Theorem2Aleph.lean` for M25b unless the orientation lemma fails
+
+Local lemmas needed:
+
+- `eligible_sharedFaces_eq_complement_exposed_pair`
+- `eligible_oppEdge_eq_sharedFaces_inter`
+- `eligible_pair_oriented_opp_avoidance`
+- `edgeLinkCompat_nonOpp_of_exposed_face`
+- `removeTet_edgeLinkConnected_noFlip`
+- `prime_edgeLinkConnected_case1`
+- later: `prime_edgeLinkConnected_case2`
+
+The 5 non-opposite-edge argument is sound: for any edge `e' ⊆ e` other than `O`, choose an exposed face containing `e'`; `exposed_triangle_unique_remaining_tet` gives a remaining tet, and the third vertex of that face lies in `(e \ e') ∩ edgeLinkVerts`.
+
+Blocker: full assembly is blocked by the false global `removeTet_edgeLinkConnected`. Next bounded target: prove `eligible_pair_oriented_opp_avoidance` plus `prime_edgeLinkConnected_case1`. Hard-stop if the orientation lemma cannot be proved from `hσ.closed`, `hU/hMX`, eligibility, and `Disjoint sharedFaces`.
+tokens used
+80,391
+WARN
+
+Verdict: the `prime_edgeLinkConnected` route is correct only for the `¬ FlipEdgePresent` eligible-removal case. As stated, the companion
+
+`removeTet_edgeLinkConnected : EdgeLinkConnected (removeTet M e).support`
+
+is not valid in the flip-present split case: the remainder is two fillings meeting only along the flip edge, and that edge-link can be disconnected until `e` is reinserted.
+
+Exact recommended patch shape:
+
+1. Do not prove a global `removeTet_edgeLinkConnected`.
+2. Add `removeTet_edgeLinkConnected_noFlip`, using IH exactly like `removeTet_isPseudomanifold` case 1.
+3. Add an orientation lemma for the survivor gap:
+   `eligible_pair_oriented_opp_avoidance`
+   returning either
+   `¬ (e \ (f₃ ∩ f₄)) ⊆ u`
+   or, after swapping,
+   `¬ (u \ (g₃ ∩ g₄)) ⊆ e`.
+   This uses `exists_two_faces hσ.toClosedSurface`, not a strengthened M25b.
+4. Prove `prime_edgeLinkConnected_case1` with `edgeLinkConnected_insert`.
+5. Hard-stop before full `taut_edgeLinkConnected` unless you also add a separate flip-present bridge lemma:
+   `prime_edgeLinkConnected_case2` or `edgeLinkConnected_insert_flipBridge`.
+
+Files to edit:
+
+- `lean/Taut/PrimeStep.lean`
+- likely `lean/Taut/Pseudomanifold.lean` only if adding reusable edge-link insertion/bridge helpers
+- avoid modifying `Theorem2Aleph.lean` for M25b unless the orientation lemma fails
+
+Local lemmas needed:
+
+- `eligible_sharedFaces_eq_complement_exposed_pair`
+- `eligible_oppEdge_eq_sharedFaces_inter`
+- `eligible_pair_oriented_opp_avoidance`
+- `edgeLinkCompat_nonOpp_of_exposed_face`
+- `removeTet_edgeLinkConnected_noFlip`
+- `prime_edgeLinkConnected_case1`
+- later: `prime_edgeLinkConnected_case2`
+
+The 5 non-opposite-edge argument is sound: for any edge `e' ⊆ e` other than `O`, choose an exposed face containing `e'`; `exposed_triangle_unique_remaining_tet` gives a remaining tet, and the third vertex of that face lies in `(e \ e') ∩ edgeLinkVerts`.
+
+Blocker: full assembly is blocked by the false global `removeTet_edgeLinkConnected`. Next bounded target: prove `eligible_pair_oriented_opp_avoidance` plus `prime_edgeLinkConnected_case1`. Hard-stop if the orientation lemma cannot be proved from `hσ.closed`, `hU/hMX`, eligibility, and `Disjoint sharedFaces`.

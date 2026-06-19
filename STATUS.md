@@ -43,10 +43,30 @@ the repo broken; abandoning the clean route.
 (`IsPseudomanifold` bounds triangle counts but does not give edge-link connectivity); Codex is
 selecting the smallest sufficient statement + proof route.
 
-## Remaining chain to `theorem3_clean` / `theorem2_clean`
-1. `taut_edgeLinkConnected` (NEW, unauthorized) ⟹ discharges `hELM` ⟹ `hOppEmpty` case-1 closes via `oppEdge_empty_of_full_edgeLinkConnected` + `cleanGlueStep_eligible`.
-2. `prime_step_clean` case-2: clean RelShelling bridge (a `CleanShellFrom`-based analogue of `FreelyShellable.relShelling_over_insert_boundary_face`, Ball.lean:281) — DEFERRED.
-3. `theorem3_clean` = `theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean`; `theorem2_clean` downstream.
+## Refined plan for `taut_edgeLinkConnected` (Codex consult `prime-elc-architect`, 2026-06-19)
+CHECKED so far: `oppEdge_empty_of_full_edgeLinkConnected` (`0c79b53`), `oppEdge_empty_of_disjoint_eligible_remainder` (`2b087ba`, the edge LEMMA C, modulo `hOu : ¬O⊆u` + `hELMu`).
+Codex corrections: a GLOBAL `removeTet_edgeLinkConnected` is FALSE (flip-present remainder = two
+fillings pinched on the flip edge, disconnected until `e` reinserted); the survivor `hOu` is supplied
+NOT by strengthening pair-selection but by an ORIENTATION lemma; the 5-non-opposite-edge argument is
+CONFIRMED sound.
+
+Lemma stack (place in `Theorem3Clean.lean` — import-driven: it reuses `oppEdge_empty_of_disjoint_eligible_remainder` which already lives there; `PrimeStep` machinery is imported):
+1. geometry: `eligible_sharedFaces_eq_complement_exposed_pair`, `eligible_oppEdge_eq_sharedFaces_inter`
+   (`sharedFaces e` = the two faces `e.erase p` (`p ∈ f₃∩f₄`), each ⊇ `O_e = e\(f₃∩f₄)`; `O_e ∈ edgesOf σ`).
+2. **`eligible_pair_oriented_opp_avoidance`** (CRUX, provable — proof verified by hand): for a disjoint
+   eligible pair `e,u`, `¬ O_e ⊆ u ∨ ¬ O_u ⊆ e`. Proof: if both, then `O_e`'s only σ-faces are `e`'s
+   shared faces (disjoint from `u`'s) ⟹ `u`'s faces on `O_e` are exposed ⟹ `O_e = g₃∩g₄`; symmetrically
+   `O_u = f₃∩f₄`; so `e = O_e ⊔ (f₃∩f₄) = (g₃∩g₄) ⊔ O_u = u`, contra `e≠u`. Uses `exists_two_faces`.
+3. `edgeLinkCompat_nonOpp_of_exposed_face`: the 5 non-opposite edges' hcompat (RIGHT disjunct) via the
+   exposed face's surviving neighbor tet (`exposed_triangle_unique_remaining_tet`).
+4. `removeTet_edgeLinkConnected_noFlip`: IH → `EdgeLinkConnected (removeTet M e)` in the ¬FlipEdgePresent case.
+5. `prime_edgeLinkConnected_case1`: assemble via `edgeLinkConnected_insert` (opp edge = LEFT disjunct via
+   `oppEdge_empty_of_disjoint_eligible_remainder` + orientation lemma; 5 others via (3)).
+6. **HARD STOP** before full `taut_edgeLinkConnected`: the flip-present case needs a SEPARATE bridge
+   `prime_edgeLinkConnected_case2` / `edgeLinkConnected_insert_flipBridge` (not yet routed).
+Then: `taut_edgeLinkConnected` ⟹ `hELM` ⟹ `hOppEmpty` case-1 ⟹ `cleanGlueStep_eligible` ⟹ `prime_step_clean`
+case-1. Still open: `prime_step_clean` case-2 (clean RelShelling bridge, Ball.lean:281) — DEFERRED;
+`theorem3_clean` = `theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean`; `theorem2_clean`.
 
 ## AlephProver record
 `oppEdge_empty_of_full_edgeLinkConnected`: FAILED-ALEPHPROVER on 2 attempts (IDs `3d0c22ca`,
