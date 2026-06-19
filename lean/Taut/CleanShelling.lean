@@ -282,4 +282,62 @@ lemma FreelyCleanShellable.insert_of_cleanGlueStep {τ B B' : Finset (Finset V)}
     exact FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old hfree hg
       hg.newTet hsτ
 
+/-! ## Clean boundary-piece transport — the clean analogues of the weak
+`GlueStep.erase_union_disjoint` / `ShellFrom_erase_union_disjoint` (`Ball`).
+
+The `CleanGlueStep` fields `newTet`/`hpmc`/`helc`/`hvlc` depend only on the
+accumulated set `τ`, never on the boundary, so a boundary-only transport leaves
+them untouched.  Only `weak` (a `BoundaryGlueStep`, i.e. a `GlueStep`) and
+`clean` (which reads `tetFaces t ∩ B`) move, and both follow from the same
+tet-avoidance disjointness used in the weak lemmas. -/
+
+/-- One **clean** glue step, transported by erasing the interface face `γ` and
+adjoining the disjoint piece `K`, when the tet avoids both.  Mirrors
+`GlueStep.erase_union_disjoint` (`Ball`) at the clean level: the `τ`-only fields
+are unchanged, and the `clean` field rides on the same intersection rewrite. -/
+lemma CleanGlueStep.erase_union_disjoint {t γ : Finset V} {τ B B' K : Finset (Finset V)}
+    (hg : CleanGlueStep t τ B B') (hdisj : Disjoint (tetFaces t) (insert γ K)) :
+    CleanGlueStep t τ (B.erase γ ∪ K) (B'.erase γ ∪ K) where
+  weak := hg.weak.erase_union_disjoint hdisj
+  newTet := hg.newTet
+  hpmc := hg.hpmc
+  helc := hg.helc
+  hvlc := hg.hvlc
+  clean := by
+    have heq : tetFaces t ∩ (B.erase γ ∪ K) = tetFaces t ∩ B := by
+      ext s
+      simp only [Finset.mem_inter, Finset.mem_union, Finset.mem_erase]
+      constructor
+      · rintro ⟨hsT, (⟨_, hsB⟩ | hsK)⟩
+        · exact ⟨hsT, hsB⟩
+        · exact absurd hsK (fun h => (Finset.disjoint_left.mp hdisj) hsT (Finset.mem_insert_of_mem h))
+      · rintro ⟨hsT, hsB⟩
+        refine ⟨hsT, Or.inl ⟨?_, hsB⟩⟩
+        intro hsγ
+        exact (Finset.disjoint_left.mp hdisj) hsT (hsγ ▸ Finset.mem_insert_self γ K)
+    rw [heq]; exact hg.clean
+
+/-- **Clean boundary-piece transport.** If none of the tets in a clean relative
+shelling touches `γ` or the ambient piece `K`, the clean shelling is unchanged
+after replacing the carried boundary face `γ` by `K`.  Mirrors
+`ShellFrom_erase_union_disjoint` (`Ball`); because `CleanShellFrom` threads the
+accumulated tet-set, the induction generalizes `τ₀` (along with the boundaries
+`B₀`/`B`) so the `cons` step's IH applies to `insert t τ₀`. -/
+lemma CleanShellFrom_erase_union_disjoint {γ : Finset V}
+    {K : Finset (Finset V)} {l : List (Finset V)} :
+    ∀ {τ₀ B₀ B : Finset (Finset V)}, CleanShellFrom τ₀ B₀ l B →
+      (∀ t ∈ l, Disjoint (tetFaces t) (insert γ K)) →
+      CleanShellFrom τ₀ (B₀.erase γ ∪ K) l (B.erase γ ∪ K) := by
+  induction l with
+  | nil =>
+      intro τ₀ B₀ B h _
+      simp only [CleanShellFrom] at h ⊢
+      rw [h]
+  | cons t l ih =>
+      intro τ₀ B₀ B h hd
+      simp only [CleanShellFrom] at h ⊢
+      obtain ⟨B₁, hstep, hrest⟩ := h
+      exact ⟨B₁.erase γ ∪ K, hstep.erase_union_disjoint (hd t (List.mem_cons.mpr (Or.inl rfl))),
+        ih hrest (fun u hu => hd u (List.mem_cons.mpr (Or.inr hu)))⟩
+
 end Taut
