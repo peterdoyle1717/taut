@@ -1832,6 +1832,139 @@ private lemma edgeLinkCompat_nonOpp_of_exposed_face {σ : Finset (Finset V)}
   rw [mem_edgeLinkVerts_iff]
   exact ⟨⟨N, hNmem, he'f.trans hfN, hfN hwf⟩, hwe'⟩
 
+/-- **Edge-link connectedness of the remainder, no-flip case.** When the flip edge
+`f₃ ∩ f₄` is absent from `σ`, `removeTet M e` is itself a strictly smaller single-sphere
+taut filling, so the strong IH gives `EdgeLinkConnected (removeTet M e).support` directly.
+(Mirror of `removeTet_isPseudomanifold` case 1.) -/
+private lemma removeTet_edgeLinkConnected_noFlip {σ : Finset (Finset V)} {X M : Chain V}
+    {e f₃ f₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄)
+    (IHelc : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      EdgeLinkConnected M'.support) :
+    EdgeLinkConnected (removeTet M e).support := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hNoFlip
+  have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+  have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
+  have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
+  have hlt : nrm (removeTet M e) < nrm M := by
+    have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
+  exact IHelc _ (bdry (removeTet M e)) (removeTet M e) hlt hσe hUe (bdry_bdry _) rfl hTe hSe
+
+/-- **Edge-link connectedness of `M` from the disjoint-eligible remainder (prime case 1).**
+Re-glues the eligible tet `e` onto its edge-link-connected remainder `removeTet M e`.
+The only edge of `e` whose link could fail to extend is the flip-opposite edge
+`e \ (f₃ ∩ f₄)`, ruled empty by `oppEdge_empty_of_disjoint_eligible_remainder` (the
+second eligible tet `u` carries the IH-level connectivity); every other card-2 face of
+`e` lies in an exposed triangle, whose unique remaining tet supplies the apex via
+`edgeLinkCompat_nonOpp_of_exposed_face`. -/
+private lemma prime_edgeLinkConnected_case1 {σ : Finset (Finset V)} {X M : Chain V}
+    {e u f₃ f₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (he : EligibleTet M e) (hu : EligibleTet M u)
+    (hPMe : IsPseudomanifold (removeTet M e).support)
+    (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+    (hOu : ¬ (e \ (f₃ ∩ f₄)) ⊆ u)
+    (hELMe : EdgeLinkConnected (removeTet M e).support)
+    (hConnOu : ConnOn (edgeLinkGraph (removeTet M u).support (e \ (f₃ ∩ f₄)))
+      (edgeLinkVerts (removeTet M u).support (e \ (f₃ ∩ f₄)))) :
+    EdgeLinkConnected M.support := by
+  classical
+  -- `M = insert e (removeTet M e)`, then glue the new tet onto the connected remainder.
+  rw [← support_insert_removeTet_of_mem he.2.1]
+  apply edgeLinkConnected_insert he.1 hELMe
+  intro e' he'e he'2
+  by_cases he'O : e' = e \ (f₃ ∩ f₄)
+  · -- the flip-opposite edge: its link in the remainder is empty (LEFT disjunct).
+    rw [he'O]
+    exact Or.inl (oppEdge_empty_of_disjoint_eligible_remainder hσ hU hXc hMX hT hS hPure
+      he hu hexp hf₃₄ hOu hConnOu)
+  · -- any other card-2 face of `e` lies in `f₃` or `f₄`; use the exposed-triangle apex.
+    refine Or.inr ?_
+    -- exposed-pair geometry: `f₃ = e.erase z₃`, `f₄ = e.erase z₄`, `e \ (f₃ ∩ f₄) = {z₃, z₄}`.
+    have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ _
+    have hf₄exp : f₄ ∈ exposedFaces M e := by
+      rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
+    have hf₃tet : f₃ ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf₃exp
+    have hf₄tet : f₄ ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf₄exp
+    have hf₃e : f₃ ⊆ e := (Finset.mem_powersetCard.mp hf₃tet).1
+    have hf₄e : f₄ ⊆ e := (Finset.mem_powersetCard.mp hf₄tet).1
+    have hf₃3 : f₃.card = 3 := (Finset.mem_powersetCard.mp hf₃tet).2
+    have hf₄3 : f₄.card = 3 := (Finset.mem_powersetCard.mp hf₄tet).2
+    have he4 : e.card = 4 := he.1
+    have hcard3 : (e \ f₃).card = 1 := by rw [Finset.card_sdiff_of_subset hf₃e, he4, hf₃3]
+    have hcard4 : (e \ f₄).card = 1 := by rw [Finset.card_sdiff_of_subset hf₄e, he4, hf₄3]
+    obtain ⟨z₃, hz₃⟩ := Finset.card_eq_one.mp hcard3
+    obtain ⟨z₄, hz₄⟩ := Finset.card_eq_one.mp hcard4
+    have hz₃mem : z₃ ∈ e \ f₃ := hz₃ ▸ Finset.mem_singleton_self z₃
+    have hz₄mem : z₄ ∈ e \ f₄ := hz₄ ▸ Finset.mem_singleton_self z₄
+    rw [Finset.mem_sdiff] at hz₃mem hz₄mem
+    have heq3 : f₃ = e.erase z₃ := by
+      apply Finset.eq_of_subset_of_card_le
+      · intro a ha; exact Finset.mem_erase.mpr ⟨fun h => hz₃mem.2 (h ▸ ha), hf₃e ha⟩
+      · rw [Finset.card_erase_of_mem hz₃mem.1, he4, hf₃3]
+    have heq4 : f₄ = e.erase z₄ := by
+      apply Finset.eq_of_subset_of_card_le
+      · intro a ha; exact Finset.mem_erase.mpr ⟨fun h => hz₄mem.2 (h ▸ ha), hf₄e ha⟩
+      · rw [Finset.card_erase_of_mem hz₄mem.1, he4, hf₄3]
+    have hz₃₄ : z₃ ≠ z₄ := by
+      rintro rfl; exact hf₃₄ (heq3.trans heq4.symm)
+    have hinter_eq : f₃ ∩ f₄ = e \ ({z₃, z₄} : Finset V) := by
+      ext a
+      simp only [Finset.mem_inter, heq3, heq4, Finset.mem_erase, Finset.mem_sdiff,
+        Finset.mem_insert, Finset.mem_singleton]
+      tauto
+    have hopp_eq : e \ (f₃ ∩ f₄) = ({z₃, z₄} : Finset V) := by
+      rw [hinter_eq]
+      ext a
+      simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+      constructor
+      · rintro ⟨hae, hac⟩; by_contra hane; exact hac ⟨hae, hane⟩
+      · rintro (rfl | rfl)
+        · exact ⟨hz₃mem.1, fun h => h.2 (Or.inl rfl)⟩
+        · exact ⟨hz₄mem.1, fun h => h.2 (Or.inr rfl)⟩
+    have hz₃notf₃ : z₃ ∉ f₃ := by rw [heq3]; exact Finset.notMem_erase z₃ e
+    have hz₄notf₄ : z₄ ∉ f₄ := by rw [heq4]; exact Finset.notMem_erase z₄ e
+    -- `e' ≠ {z₃,z₄}` forces `e' ⊆ f₃` or `e' ⊆ f₄`.
+    have he'sub : e' ⊆ f₃ ∨ e' ⊆ f₄ := by
+      by_contra hcon
+      push_neg at hcon
+      obtain ⟨hnf₃, hnf₄⟩ := hcon
+      rw [Finset.not_subset] at hnf₃ hnf₄
+      obtain ⟨x, hxe', hxf₃⟩ := hnf₃
+      obtain ⟨y, hye', hyf₄⟩ := hnf₄
+      have hxe : x ∈ e := he'e hxe'
+      have hye : y ∈ e := he'e hye'
+      have hxz₃ : x = z₃ := by
+        rw [heq3] at hxf₃
+        by_contra hne
+        exact hxf₃ (Finset.mem_erase.mpr ⟨hne, hxe⟩)
+      have hyz₄ : y = z₄ := by
+        rw [heq4] at hyf₄
+        by_contra hne
+        exact hyf₄ (Finset.mem_erase.mpr ⟨hne, hye⟩)
+      have hz₃e' : z₃ ∈ e' := hxz₃ ▸ hxe'
+      have hz₄e' : z₄ ∈ e' := hyz₄ ▸ hye'
+      have hsub : ({z₃, z₄} : Finset V) ⊆ e' := by
+        intro a ha
+        rcases Finset.mem_insert.mp ha with rfl | ha
+        · exact hz₃e'
+        · rw [Finset.mem_singleton] at ha; exact ha ▸ hz₄e'
+      have heqe' : e' = ({z₃, z₄} : Finset V) :=
+        (Finset.eq_of_subset_of_card_le hsub (by rw [he'2, Finset.card_pair hz₃₄])).symm
+      exact he'O (heqe'.trans hopp_eq.symm)
+    -- in either case the exposed-triangle apex lives in the remainder link.
+    rcases he'sub with hi | hi
+    · exact edgeLinkCompat_nonOpp_of_exposed_face hσ hU hMX hT hS hPure hPMe he hf₃exp hi he'2
+    · exact edgeLinkCompat_nonOpp_of_exposed_face hσ hU hMX hT hS hPure hPMe he hf₄exp hi he'2
+
 /-- **One clean glue step for re-gluing the eligible tet `e`** onto its remainder
 `removeTet M e` (boundary the flip-boundary, ending at `σ`).  All fields are
 discharged from the eligible geometry except the edge-link emptiness on the single
