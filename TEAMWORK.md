@@ -599,17 +599,23 @@ sphere/ball definitions.
     `mem_edgeLinkVerts_iff`/`mem_vertexLinkVerts_iff`): **CHECKED** that all 6 CleanGlueStep fields
     for the deg-3 star onto the FIXED remainder discharge in Lean — incl. helc/hvlc via the
     third-γ-vertex apex + t₀ (the earlier flagged risk is RESOLVED for the fixed-τ / old-target case).
-- NAMED REMAINING OBLIGATIONS for theorem3_clean: (1) `deg3_step_clean` — old-target half assembles
-  from `cleanGlueStep_star_of_remainder` + `exists_shelling_insert_of_cleanGlueStep_old`; star-target
-  half needs a CLEAN STAR-START (`CleanShellFrom {starTet} (tetFaces starTet) l σ`) whose accumulated
-  τ GROWS — and there the **helc τ-extension subtlety** is still open (ASSERTED, not yet Lean-attempted):
-  adding starTet to τ makes `edgeLinkVerts (insert starTet τ) e` nonempty for a γ-edge `e`, and an MR
-  tet `≠ t₀` containing `e` but not the third γ-vertex `w` may fail the Nonempty disjunct — needs a
-  shelling-order argument or a deeper γ-edge fact. (2) `prime_step_clean` — case-1 clean snoc (like
-  deg3 old-target) + case-2 clean bridge (mirror H2's `relShelling_over_insert_boundary_face` at the
-  clean level — the hardest). (3) `theorem3_clean`/`theorem2_clean` = assemble once (1)+(2) done.
-  Both deg3/prime clean steps also need the deg-3/eligible PREAMBLE re-derived (or the weak preamble
-  exposed). Other open targets: Corollary 1 (ℚ-fillings), |A∩B|≤1 Th1 cases, Th4 (S³⊄B³).
+- τ-EXTENSION RESOLVED — CHECKED (2026-06-19, `3fe0682`): the helc/hvlc subtlety is NOT an
+  obstruction. `helc_insert_star`/`hvlc_insert_star` (Theorem3Clean.lean) PROVE that adding `starTet`
+  to the accumulated τ preserves helc/hvlc for an MR tet (v∉t), GIVEN `t₀ ∈ τ` (γ ⊆ t₀). Key: at a
+  γ-edge `e`, `γ = e∪{w} ⊆ t₀ ∈ τ` forces `edgeLinkVerts τ e ≠ ∅`, so the original disjunct is its
+  nonempty branch (preserved under apex-set monotonicity `edgeLinkVerts_mono`); at a non-γ-edge,
+  `v∉e ⇒ e⊄starTet` so the apex set is unchanged. RESOLUTION = root the MR clean shelling at `t₀`
+  (free clean shellability) ⇒ `t₀ ∈ τ` at every later glue. Also `deg3_clean_old_target` (old-target
+  half) committed.
+- NAMED REMAINING OBLIGATIONS for theorem3_clean (τ-extension now resolved): (1) `deg3_step_clean` —
+  the CLEAN STAR-START `degree3_star_start_cleanShellFrom` (assemble: first glue t₀ onto {starTet}
+  [helc via w∈t₀], then transport the rest via the clean K-transport `CleanShellFrom_erase_union_disjoint`
+  for the boundary + `helc_insert_star`/`hvlc_insert_star` for τ-extension, rooted at t₀), then both
+  target cases (old via `deg3_clean_old_target`, star via the star-start + `insert_of_cleanGlueStep`);
+  plus the deg-3 PREAMBLE re-derived. (2) `prime_step_clean` — case-1 clean snoc + case-2 clean bridge
+  (mirror H2's `relShelling_over_insert_boundary_face` at the clean level — hardest). (3)
+  `theorem3_clean`/`theorem2_clean` = assemble once (1)+(2) done. Other open: Corollary 1 (ℚ-fillings),
+  |A∩B|≤1 Th1 cases, Th4 (S³⊄B³).
 
 ## Design decisions of record (G1-audited)
 
