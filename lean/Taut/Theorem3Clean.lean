@@ -2397,4 +2397,264 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
     · rw [mem_vertexLinkVerts_iff]
       exact ⟨⟨t, htmem, hft hxf, hft hwf⟩, hwx⟩
 
+/-! ## Case-2 flip-edge bridge: reconnecting two side-fillings across a seam edge
+
+When the flip edge `cd = f₃ ∩ f₄` of the eligible tet is on the boundary,
+`removeTet M e` splits into two sphere-fillings `s₁, s₂` pinched along `cd`.  The
+union `s₁ ∪ s₂` is *not* edge-link connected (its `cd`-link has two components, one
+per side), but re-inserting the eligible tet `e` bridges them: `e` carries an edge
+`a₃ ~ a₄` joining a side-1 apex to a side-2 apex.  The lemmas below are stated
+purely combinatorially over two tet-sets `s₁ s₂`, an inserted tet `e`, and the
+seam edge `cd`, so that the prime-step call site supplies the geometry. -/
+
+/-- **Seam dichotomy.**  With `A ∩ B = cd` (`cd.card = 2`), an edge `ε` (`ε.card = 2`)
+that lies in a side-`A` tet `t₁` *and* a side-`B` tet `t₂` must be the seam `cd`
+itself: `ε ⊆ A` and `ε ⊆ B` force `ε ⊆ A ∩ B = cd`, and equal cardinalities close
+the gap.  This is the hard-stop that confines a non-seam edge to a single side. -/
+private lemma flipBridge_edge_eq_seam {A B cd ε t₁ t₂ : Finset V}
+    (hAB : A ∩ B = cd) (hcd2 : cd.card = 2) (hε2 : ε.card = 2)
+    (ht₁A : t₁ ⊆ A) (ht₂B : t₂ ⊆ B) (hεt₁ : ε ⊆ t₁) (hεt₂ : ε ⊆ t₂) :
+    ε = cd := by
+  have hεcd : ε ⊆ cd := by
+    rw [← hAB]
+    exact Finset.subset_inter (hεt₁.trans ht₁A) (hεt₂.trans ht₂B)
+  exact Finset.eq_of_subset_of_card_le hεcd (by rw [hcd2, hε2])
+
+/-- **Side face apex is a seam apex.**  A tet `t` of the union containing a seam-face
+`f` (with `cd ⊆ f`, `f.card = 3`, `cd.card = 2`) contributes the apex `a := f \ cd`
+to the seam edge `cd` of the union: `cd ⊆ t`, `a ∈ t`, `a ∉ cd`.  This is how the
+side-witness tets `t₃ ∈ s₁` (for `f₃`) and `t₄ ∈ s₂` (for `f₄`) make the bridge
+apexes `a₃, a₄` real `cd`-apexes of `s₁ ∪ s₂`. -/
+private lemma flipBridge_apex_mem_edgeLinkVerts {s₁ s₂ : Finset (Finset V)}
+    {cd f t : Finset V} {a : V}
+    (htmem : t ∈ s₁) (hft : f ⊆ t) (hcdf : cd ⊆ f) (hamem : a ∈ f) (hanotcd : a ∉ cd) :
+    a ∈ edgeLinkVerts (s₁ ∪ s₂) cd := by
+  rw [mem_edgeLinkVerts_iff]
+  exact ⟨⟨t, Finset.mem_union_left _ htmem, hcdf.trans hft, hft hamem⟩, hanotcd⟩
+
+/-- **Clean-glue compatibility of the eligible tet against one side.**  For the
+side `s₁` (with witness tet `t₃ ∈ s₁` carrying the seam-face `f₃`), every edge `ε`
+of `e` is either new to `s₁` (left disjunct) or already shares an apex with `s₁`'s
+link there (right disjunct).  The three cases of the proof:
+* `ε ⊆ f₃` — the third vertex of `f₃` is a common apex (it sits in `t₃ ⊇ f₃`);
+* `ε ⊆ f₄` (but `ε ⊄ f₃`) — an `s₁`-witness would, with the `s₂`-witness `t₄ ⊇ f₄`,
+  straddle the seam, forcing `ε = cd ⊆ f₃` (contra) by `flipBridge_edge_eq_seam`;
+  so `ε` is new to `s₁`;
+* otherwise `ε = e \ cd` is the flip-opposite edge, empty in the union (`hOppEmpty`),
+  hence empty in `s₁` by monotonicity. -/
+private lemma flipBridge_compat_side {s₁ s₂ : Finset (Finset V)}
+    {A B cd e f₃ f₄ t₃ t₄ : Finset V}
+    (hAB : A ∩ B = cd) (hcd2 : cd.card = 2) (he4 : e.card = 4)
+    (hs₁A : ∀ t ∈ s₁, t ⊆ A) (hs₂B : ∀ t ∈ s₂, t ⊆ B)
+    (hcdf₃ : cd ⊆ f₃) (hcdf₄ : cd ⊆ f₄) (hf₃e : f₃ ⊆ e) (hf₃3 : f₃.card = 3) (hf₄e : f₄ ⊆ e)
+    (he : e = f₃ ∪ f₄)
+    (ht₃ : t₃ ∈ s₁) (hf₃t₃ : f₃ ⊆ t₃) (ht₄ : t₄ ∈ s₂) (hf₄t₄ : f₄ ⊆ t₄)
+    (hOppEmpty : edgeLinkVerts (s₁ ∪ s₂) (e \ cd) = ∅)
+    {ε : Finset V} (hεe : ε ⊆ e) (hε2 : ε.card = 2) :
+    edgeLinkVerts s₁ ε = ∅ ∨ ((e \ ε) ∩ edgeLinkVerts s₁ ε).Nonempty := by
+  by_cases hεf₃ : ε ⊆ f₃
+  · -- `ε ⊆ f₃`: the third vertex `w := f₃ \ ε` is a common apex via `t₃`.
+    right
+    have hdiff : (f₃ \ ε).card = 1 := by rw [Finset.card_sdiff_of_subset hεf₃, hf₃3, hε2]
+    obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hdiff
+    have hwmem : w ∈ f₃ \ ε := hw ▸ Finset.mem_singleton_self w
+    rw [Finset.mem_sdiff] at hwmem
+    obtain ⟨hwf₃, hwε⟩ := hwmem
+    refine ⟨w, Finset.mem_inter.mpr ⟨Finset.mem_sdiff.mpr ⟨hf₃e hwf₃, hwε⟩, ?_⟩⟩
+    rw [mem_edgeLinkVerts_iff]
+    exact ⟨⟨t₃, ht₃, hεf₃.trans hf₃t₃, hf₃t₃ hwf₃⟩, hwε⟩
+  · -- `ε ⊄ f₃`: show the apex set is empty.
+    left
+    by_cases hεf₄ : ε ⊆ f₄
+    · -- `ε ⊆ f₄`: an `s₁`-witness would straddle the seam, forcing `ε = cd ⊆ f₃`.
+      apply edgeLinkVerts_eq_empty
+      intro t ht hεt
+      have hcontra : ε = cd :=
+        flipBridge_edge_eq_seam hAB hcd2 hε2 (hs₁A t ht) (hs₂B t₄ ht₄) hεt (hεf₄.trans hf₄t₄)
+      exact hεf₃ (hcontra ▸ hcdf₃)
+    · -- otherwise `ε = e \ cd`: empty in the union, hence empty in `s₁`.
+      have hεopp : ε = e \ cd := by
+        apply Finset.eq_of_subset_of_card_le
+        · -- `ε ⊆ e \ cd`: no endpoint of `ε` is in `cd`.
+          intro x hxε
+          rw [Finset.mem_sdiff]
+          refine ⟨hεe hxε, fun hxcd => ?_⟩
+          -- the other endpoint `y` of `ε` lies in neither `f₃` (`ε ⊄ f₃`, `x ∈ f₃`) nor `f₄`,
+          -- yet `y ∈ e = f₃ ∪ f₄` — contradiction.
+          have hxf₃ : x ∈ f₃ := hcdf₃ hxcd
+          have hxf₄ : x ∈ f₄ := hcdf₄ hxcd
+          obtain ⟨y, hyε, hyx⟩ : ∃ y ∈ ε, y ≠ x := by
+            have h2 : 1 < ε.card := by rw [hε2]; norm_num
+            obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp h2
+            rcases eq_or_ne a x with rfl | h
+            · exact ⟨b, hb, fun h => hab h.symm⟩
+            · exact ⟨a, ha, h⟩
+          have hεsub : ε ⊆ insert x {y} := by
+            intro z hz
+            rcases eq_or_ne z x with rfl | hzx
+            · exact Finset.mem_insert_self _ _
+            · have hzcard : (ε.erase x).card = 1 := by
+                rw [Finset.card_erase_of_mem hxε, hε2]
+              obtain ⟨u, hu⟩ := Finset.card_eq_one.mp hzcard
+              have h1 : z ∈ ({u} : Finset V) := hu ▸ Finset.mem_erase.mpr ⟨hzx, hz⟩
+              have h2 : y ∈ ({u} : Finset V) := hu ▸ Finset.mem_erase.mpr ⟨hyx, hyε⟩
+              rw [Finset.mem_singleton] at h1 h2
+              rw [h1, ← h2]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self _)
+          have hyf₃ : y ∉ f₃ := fun hy => hεf₃ (hεsub.trans (by
+            intro z hz; rcases Finset.mem_insert.mp hz with rfl | hz
+            · exact hxf₃
+            · rw [Finset.mem_singleton] at hz; exact hz ▸ hy))
+          have hyf₄ : y ∉ f₄ := fun hy => hεf₄ (hεsub.trans (by
+            intro z hz; rcases Finset.mem_insert.mp hz with rfl | hz
+            · exact hxf₄
+            · rw [Finset.mem_singleton] at hz; exact hz ▸ hy))
+          have hye : y ∈ e := hεe hyε
+          rw [he, Finset.mem_union] at hye
+          exact hye.elim hyf₃ hyf₄
+        · -- cardinalities: `(e \ cd).card = 2 = ε.card`.
+          rw [hε2, Finset.card_sdiff_of_subset (hcdf₃.trans hf₃e), he4, hcd2]
+      rw [hεopp]
+      exact Finset.subset_empty.mp (hOppEmpty ▸ edgeLinkVerts_mono Finset.subset_union_left _)
+
+/-- **Case-2 flip-edge bridge.**  Re-inserting the eligible tet `e` onto the union of
+two side-fillings `s₁, s₂` pinched along the seam edge `cd` restores edge-link
+connectedness, *even though the union `s₁ ∪ s₂` alone is not edge-link connected*
+(its `cd`-link splits into one component per side).  The reconnection is the single
+edge `a₃ ~ a₄` of `e` joining a side-1 apex `a₃ := f₃ \ cd` to a side-2 apex
+`a₄ := f₄ \ cd`.
+
+Each side, augmented by `e`, *is* edge-link connected (`edgeLinkConnected_insert`
+via `flipBridge_compat_side`): `flipBridge_compat_side` discharges the clean-glue
+compatibility against each side.  At a non-seam edge `ε` the seam dichotomy
+(`flipBridge_edge_eq_seam`) confines `ε`'s tets to a single side, so connectivity
+transfers up by `connOn_oppEdge_of_subset_local`; at the seam `cd` itself every apex
+reaches `a₃` (side-1 apexes directly, side-2 apexes via `a₄` and the bridge edge).
+
+This avoids `edgeLinkConnected_insert` *on the union* (whose `EdgeLinkConnected
+(s₁ ∪ s₂)` hypothesis is false at the seam), using it only on each side separately. -/
+private lemma edgeLinkConnected_insert_flipBridge {s₁ s₂ : Finset (Finset V)}
+    {A B cd e f₃ f₄ t₃ t₄ : Finset V}
+    (hAB : A ∩ B = cd) (hcd2 : cd.card = 2) (he4 : e.card = 4)
+    (hs₁A : ∀ t ∈ s₁, t ⊆ A) (hs₂B : ∀ t ∈ s₂, t ⊆ B)
+    (hcdf₃ : cd ⊆ f₃) (hcdf₄ : cd ⊆ f₄)
+    (hf₃e : f₃ ⊆ e) (hf₄e : f₄ ⊆ e) (hf₃3 : f₃.card = 3) (hf₄3 : f₄.card = 3)
+    (hf₃₄ : f₃ ≠ f₄) (he : e = f₃ ∪ f₄)
+    (hELC₁ : EdgeLinkConnected s₁) (hELC₂ : EdgeLinkConnected s₂)
+    (ht₃ : t₃ ∈ s₁) (hf₃t₃ : f₃ ⊆ t₃) (ht₄ : t₄ ∈ s₂) (hf₄t₄ : f₄ ⊆ t₄)
+    (hOppEmpty : edgeLinkVerts (s₁ ∪ s₂) (e \ cd) = ∅) :
+    EdgeLinkConnected (insert e (s₁ ∪ s₂)) := by
+  classical
+  -- ### Geometry of the seam: `a₃ := f₃ \ cd`, `a₄ := f₄ \ cd`, `e \ cd = {a₃, a₄}`.
+  have hcde : cd ⊆ e := hcdf₃.trans hf₃e
+  have hcard3 : (f₃ \ cd).card = 1 := by rw [Finset.card_sdiff_of_subset hcdf₃, hf₃3, hcd2]
+  have hcard4 : (f₄ \ cd).card = 1 := by rw [Finset.card_sdiff_of_subset hcdf₄, hf₄3, hcd2]
+  obtain ⟨a₃, ha₃⟩ := Finset.card_eq_one.mp hcard3
+  obtain ⟨a₄, ha₄⟩ := Finset.card_eq_one.mp hcard4
+  have ha₃mem : a₃ ∈ f₃ \ cd := ha₃ ▸ Finset.mem_singleton_self a₃
+  have ha₄mem : a₄ ∈ f₄ \ cd := ha₄ ▸ Finset.mem_singleton_self a₄
+  rw [Finset.mem_sdiff] at ha₃mem ha₄mem
+  obtain ⟨ha₃f₃, ha₃cd⟩ := ha₃mem
+  obtain ⟨ha₄f₄, ha₄cd⟩ := ha₄mem
+  -- `e \ cd = {a₃, a₄}`.
+  have hopp_eq : e \ cd = ({a₃, a₄} : Finset V) := by
+    have hdistrib : e \ cd = (f₃ \ cd) ∪ (f₄ \ cd) := by rw [he, Finset.union_sdiff_distrib]
+    rw [hdistrib, ha₃, ha₄]; rfl
+  -- `a₃ ≠ a₄` (else `e \ cd` is a singleton, but it has card `4 - 2 = 2`).
+  have hopp_card : (e \ cd).card = 2 := by rw [Finset.card_sdiff_of_subset hcde, he4, hcd2]
+  have ha₃₄ : a₃ ≠ a₄ := by
+    intro h
+    rw [hopp_eq, h] at hopp_card
+    simp at hopp_card
+  -- `insert a₃ (insert a₄ cd) = e`: it is `{a₃, a₄} ∪ cd = (e \ cd) ∪ cd = e`.
+  have hbridge_tet : insert a₃ (insert a₄ cd) = e := by
+    have h1 : insert a₃ (insert a₄ cd) = ({a₃, a₄} : Finset V) ∪ cd := by
+      simp only [Finset.insert_union, Finset.singleton_union]
+    rw [h1, ← hopp_eq, Finset.sdiff_union_of_subset hcde]
+  -- ### Each side, augmented by `e`, is edge-link connected.
+  have hsub₁ : s₁ ⊆ insert e (s₁ ∪ s₂) :=
+    Finset.subset_union_left.trans (Finset.subset_insert e _)
+  have hsub₂ : s₂ ⊆ insert e (s₁ ∪ s₂) :=
+    Finset.subset_union_right.trans (Finset.subset_insert e _)
+  have hEL₁ : EdgeLinkConnected (insert e s₁) :=
+    edgeLinkConnected_insert he4 hELC₁ (fun ε hεe hε2 =>
+      flipBridge_compat_side hAB hcd2 he4 hs₁A hs₂B hcdf₃ hcdf₄ hf₃e hf₃3 hf₄e he
+        ht₃ hf₃t₃ ht₄ hf₄t₄ hOppEmpty hεe hε2)
+  have hEL₂ : EdgeLinkConnected (insert e s₂) :=
+    edgeLinkConnected_insert he4 hELC₂ (fun ε hεe hε2 =>
+      flipBridge_compat_side (A := B) (B := A) (s₁ := s₂) (s₂ := s₁)
+        (cd := cd) (f₃ := f₄) (f₄ := f₃) (t₃ := t₄) (t₄ := t₃)
+        (by rw [Finset.inter_comm]; exact hAB) hcd2 he4 hs₂B hs₁A hcdf₄ hcdf₃ hf₄e hf₄3 hf₃e
+        (he.trans (Finset.union_comm f₃ f₄)) ht₄ hf₄t₄ ht₃ hf₃t₃
+        (by rw [Finset.union_comm s₂ s₁]; exact hOppEmpty) hεe hε2)
+  -- ### Connectivity at every edge of the union.
+  intro ε hε2 x hx y hy
+  by_cases hεcd : ε = cd
+  · -- **Seam regime `ε = cd`:** everything reaches the fixed apex `a₃`.
+    rw [hεcd] at hx hy ⊢
+    -- `a₃` is a `cd`-apex (via `t₃`); `a₄` is too (via `t₄`); both lie in `insert e (s₁∪s₂)`.
+    have ha₃link : a₃ ∈ edgeLinkVerts (insert e (s₁ ∪ s₂)) cd :=
+      edgeLinkVerts_mono (Finset.subset_insert e _) cd
+        (flipBridge_apex_mem_edgeLinkVerts ht₃ hf₃t₃ hcdf₃ ha₃f₃ ha₃cd)
+    -- the bridge adjacency `a₃ ~ a₄` via `e`.
+    have hadj : (edgeLinkGraph (insert e (s₁ ∪ s₂)) cd).Adj a₃ a₄ :=
+      ⟨ha₃₄, by rw [hbridge_tet]; exact Finset.mem_insert_self e _⟩
+    -- every `cd`-apex `z` reaches `a₃`.
+    have key : ∀ z ∈ edgeLinkVerts (insert e (s₁ ∪ s₂)) cd,
+        (edgeLinkGraph (insert e (s₁ ∪ s₂)) cd).Reachable z a₃ := by
+      intro z hz
+      rw [mem_edgeLinkVerts_iff] at hz
+      obtain ⟨⟨t, htmem, hcdt, hzt⟩, hzcd⟩ := hz
+      rcases Finset.mem_insert.mp htmem with rfl | htU
+      · -- `t = e`: `z ∈ e \ cd = {a₃, a₄}`.
+        have hzopp : z ∈ ({a₃, a₄} : Finset V) := by
+          rw [← hopp_eq, Finset.mem_sdiff]; exact ⟨hzt, hzcd⟩
+        rcases Finset.mem_insert.mp hzopp with rfl | hz4
+        · exact SimpleGraph.Reachable.refl _
+        · rw [Finset.mem_singleton] at hz4; subst hz4; exact hadj.symm.reachable
+      · rcases Finset.mem_union.mp htU with hts₁ | hts₂
+        · -- `z` is a side-1 `cd`-apex: reaches `a₃` inside `s₁`'s link, lifted.
+          have hzs₁ : z ∈ edgeLinkVerts s₁ cd := by
+            rw [mem_edgeLinkVerts_iff]; exact ⟨⟨t, hts₁, hcdt, hzt⟩, hzcd⟩
+          have ha₃s₁ : a₃ ∈ edgeLinkVerts s₁ cd := by
+            rw [mem_edgeLinkVerts_iff]; exact ⟨⟨t₃, ht₃, hcdf₃.trans hf₃t₃, hf₃t₃ ha₃f₃⟩, ha₃cd⟩
+          exact (hELC₁ cd hcd2 z hzs₁ a₃ ha₃s₁).mono (edgeLinkGraph_mono hsub₁ cd)
+        · -- `z` is a side-2 `cd`-apex: reaches `a₄` inside `s₂`'s link, then `a₄ ~ a₃`.
+          have hzs₂ : z ∈ edgeLinkVerts s₂ cd := by
+            rw [mem_edgeLinkVerts_iff]; exact ⟨⟨t, hts₂, hcdt, hzt⟩, hzcd⟩
+          have ha₄s₂ : a₄ ∈ edgeLinkVerts s₂ cd := by
+            rw [mem_edgeLinkVerts_iff]; exact ⟨⟨t₄, ht₄, hcdf₄.trans hf₄t₄, hf₄t₄ ha₄f₄⟩, ha₄cd⟩
+          have hza₄ : (edgeLinkGraph (insert e (s₁ ∪ s₂)) cd).Reachable z a₄ :=
+            (hELC₂ cd hcd2 z hzs₂ a₄ ha₄s₂).mono (edgeLinkGraph_mono hsub₂ cd)
+          exact hza₄.trans hadj.symm.reachable
+    exact (key x hx).trans (key y hy).symm
+  · -- **Non-seam regime `ε ≠ cd`:** `ε`'s tets sit on one side; transfer up.
+    have hεcd' : ¬ ε ⊆ cd := by
+      intro h
+      exact hεcd (Finset.eq_of_subset_of_card_le h (by rw [hcd2, hε2]))
+    by_cases hQ : ∃ t ∈ s₂, ε ⊆ t
+    · -- a side-2 witness ⟹ no side-1 witness ⟹ all `ε`-tets in `insert e s₂`.
+      obtain ⟨w₂, hw₂, hεw₂⟩ := hQ
+      have hloc : ∀ t ∈ insert e (s₁ ∪ s₂), ε ⊆ t → t ∈ insert e s₂ := by
+        intro t htmem hεt
+        rcases Finset.mem_insert.mp htmem with rfl | htU
+        · exact Finset.mem_insert_self _ s₂
+        · rcases Finset.mem_union.mp htU with hts₁ | hts₂
+          · exact absurd (flipBridge_edge_eq_seam hAB hcd2 hε2 (hs₁A t hts₁) (hs₂B w₂ hw₂)
+              hεt hεw₂) (fun h => hεcd' (h ▸ Finset.Subset.refl cd))
+          · exact Finset.mem_insert_of_mem hts₂
+      refine connOn_oppEdge_of_subset_local
+        (Finset.insert_subset_insert e Finset.subset_union_right) hloc ?_ x hx y hy
+      exact hEL₂ ε hε2
+    · -- no side-2 witness ⟹ all `ε`-tets in `insert e s₁`.
+      have hloc : ∀ t ∈ insert e (s₁ ∪ s₂), ε ⊆ t → t ∈ insert e s₁ := by
+        intro t htmem hεt
+        rcases Finset.mem_insert.mp htmem with rfl | htU
+        · exact Finset.mem_insert_self _ s₁
+        · rcases Finset.mem_union.mp htU with hts₁ | hts₂
+          · exact Finset.mem_insert_of_mem hts₁
+          · exact absurd ⟨t, hts₂, hεt⟩ hQ
+      refine connOn_oppEdge_of_subset_local
+        (Finset.insert_subset_insert e Finset.subset_union_left) hloc ?_ x hx y hy
+      exact hEL₁ ε hε2
+
 end Taut
