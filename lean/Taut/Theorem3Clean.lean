@@ -2657,4 +2657,98 @@ private lemma edgeLinkConnected_insert_flipBridge {s₁ s₂ : Finset (Finset V)
         (Finset.insert_subset_insert e Finset.subset_union_left) hloc ?_ x hx y hy
       exact hEL₁ ε hε2
 
+/-- **Edge-link connectedness of `M` from the side-split remainder (prime case 2).**
+The flip-present companion of `prime_edgeLinkConnected_case1`.  When `e`'s exposed
+pair `f₃, f₄` already spans a flip edge of `σ`, `removeTet M e` splits along the seam
+`f₃ ∩ f₄` into two smaller single-sphere taut fillings `M₁, M₂` (`flipEdgePresent_side_sets`
++ `flipEdgePresent_side_algebra`); the IH gives each side's edge-link connectedness.
+Re-gluing `e` reconnects the two sides along the bridge edge `e \ (f₃ ∩ f₄)` whose link
+in the union is empty (`oppEdge_empty_of_flipEdgePresent`); the seam apexes on each side
+are the exposed-triangle apexes (`exposed_triangle_unique_remaining_tet`), and
+`edgeLinkConnected_insert_flipBridge` assembles the result. -/
+private lemma prime_edgeLinkConnected_case2 {σ : Finset (Finset V)} {X M : Chain V}
+    {e f₃ f₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hPMe : IsPseudomanifold (removeTet M e).support)
+    (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+    (hFlip : FlipEdgePresent σ f₃ f₄)
+    (IHelc : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      EdgeLinkConnected M'.support) :
+    EdgeLinkConnected M.support := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  -- ### Side split: two smaller single-sphere taut fillings `M₁, M₂` along the seam.
+  obtain ⟨A, B, hAB, hcd2, hsphA, hsphB, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, _⟩ :=
+    flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+  obtain ⟨hUA, hUB, hbA, hbB, hTA, hTB, hSA, hSB, hnA, hnB, heA, heB, _, hsupp⟩ :=
+    flipEdgePresent_side_algebra hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd2 hcover hsep
+  set M₁ := (removeTet M e).filter (fun t => t ⊆ A) with hM₁
+  set M₂ := (removeTet M e).filter (fun t => t ⊆ B) with hM₂
+  -- ### Each side, by the IH, is edge-link connected.
+  have hELC₁ : EdgeLinkConnected M₁.support :=
+    IHelc ((flipBoundary σ M e).filter (fun f => f ⊆ A)) (bdry M₁) M₁ hnA hsphA hUA hbA rfl hTA hSA
+  have hELC₂ : EdgeLinkConnected M₂.support :=
+    IHelc ((flipBoundary σ M e).filter (fun f => f ⊆ B)) (bdry M₂) M₂ hnB hsphB hUB hbB rfl hTB hSB
+  -- ### Seam geometry from the eligible exposed pair.
+  have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ _
+  have hf₄exp : f₄ ∈ exposedFaces M e := by
+    rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
+  have hf₃tet : f₃ ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf₃exp
+  have hf₄tet : f₄ ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf₄exp
+  have hf₃e : f₃ ⊆ e := (Finset.mem_powersetCard.mp hf₃tet).1
+  have hf₄e : f₄ ⊆ e := (Finset.mem_powersetCard.mp hf₄tet).1
+  have hf₃3 : f₃.card = 3 := (Finset.mem_powersetCard.mp hf₃tet).2
+  have hf₄3 : f₄.card = 3 := (Finset.mem_powersetCard.mp hf₄tet).2
+  have he4 : e.card = 4 := he.1
+  -- `cd ⊆ f₃`, `cd ⊆ f₄`, `cd.card = 2` (`cd := f₃ ∩ f₄`).
+  have hcdf₃ : f₃ ∩ f₄ ⊆ f₃ := Finset.inter_subset_left
+  have hcdf₄ : f₃ ∩ f₄ ⊆ f₄ := Finset.inter_subset_right
+  -- `e = f₃ ∪ f₄`: `f₃ ∪ f₄ ⊆ e` with `|f₃ ∪ f₄| = 3 + 3 - 2 = 4 = |e|`.
+  have hunioncard : (f₃ ∪ f₄).card + (f₃ ∩ f₄).card = f₃.card + f₄.card :=
+    Finset.card_union_add_card_inter f₃ f₄
+  have he_eq : e = f₃ ∪ f₄ := by
+    refine (Finset.eq_of_subset_of_card_le (Finset.union_subset hf₃e hf₄e) ?_).symm
+    rw [he4]; rw [hf₃3, hf₄3, hcd2] at hunioncard; omega
+  -- ### Side-locality of `M₁, M₂` (filters by `⊆ A` / `⊆ B`).
+  have hs₁A : ∀ t ∈ M₁.support, t ⊆ A := by
+    intro t ht; rw [hM₁, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+  have hs₂B : ∀ t ∈ M₂.support, t ⊆ B := by
+    intro t ht; rw [hM₂, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+  -- ### `(removeTet M e).support = M₁.support ∪ M₂.support` (from `hsupp`, `e ∉` each).
+  have hsuppU : (removeTet M e).support = M₁.support ∪ M₂.support := by
+    rw [support_removeTet_of_mem he.2.1, hsupp, Finset.erase_insert]
+    rw [Finset.mem_union]; rintro (h | h)
+    · exact heA h
+    · exact heB h
+  -- ### Seam-face witnesses: `f₃` lies in some `M₁`-tet, `f₄` in some `M₂`-tet.
+  obtain ⟨t₃, ht₃R, hf₃t₃⟩ :=
+    exposed_triangle_unique_remaining_tet hσ hU hMX hT hS hPure hPMe he hf₃exp
+  obtain ⟨t₄, ht₄R, hf₄t₄⟩ :=
+    exposed_triangle_unique_remaining_tet hσ hU hMX hT hS hPure hPMe he hf₄exp
+  -- `t₃ ⊆ A` (else `t₃ ⊆ B` ⟹ `f₃ ⊆ B`, contradiction).
+  have ht₃ : t₃ ∈ M₁.support := by
+    rw [hM₁, Finsupp.support_filter, Finset.mem_filter]
+    refine ⟨ht₃R, ?_⟩
+    rcases hcover t₃ ht₃R with htA | htB
+    · exact htA
+    · exact absurd (hf₃t₃.trans htB) hf₃notB
+  have ht₄ : t₄ ∈ M₂.support := by
+    rw [hM₂, Finsupp.support_filter, Finset.mem_filter]
+    refine ⟨ht₄R, ?_⟩
+    rcases hcover t₄ ht₄R with htA | htB
+    · exact absurd (hf₄t₄.trans htA) hf₄notA
+    · exact htB
+  -- ### Empty link of the bridge edge in the union.
+  have hOppEmpty : edgeLinkVerts (M₁.support ∪ M₂.support) (e \ (f₃ ∩ f₄)) = ∅ := by
+    rw [← hsuppU]
+    exact oppEdge_empty_of_flipEdgePresent hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+  -- ### Assemble: `M.support = insert e (M₁.support ∪ M₂.support)`, then the bridge.
+  rw [hsupp]
+  exact edgeLinkConnected_insert_flipBridge hAB hcd2 he4 hs₁A hs₂B hcdf₃ hcdf₄ hf₃e hf₄e
+    hf₃3 hf₄3 hf₃₄ he_eq hELC₁ hELC₂ ht₃ hf₃t₃ ht₄ hf₄t₄ hOppEmpty
+
 end Taut
