@@ -1,0 +1,134 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1901-g1-theorem4-sub345-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1901-g1-theorem4-sub345-summary.txt
+
+=== raw size ===
+    3266  252859 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1901-g1-theorem4-sub345-raw.txt
+
+=== extracted markers ===
+95:BLOCKERS (exact — confirmed by grep; these do NOT yet exist)
+3071:PLAN
+3073:Verdict: WARN. Sub-target 3 is independently buildable now. Sub-targets 4-5 need new combinatorial lemmas; the full wrapper should not be attempted until the family/counting lemmas are green.
+3170:PLAN
+3172:Verdict: WARN. Sub-target 3 is independently buildable now. Sub-targets 4-5 need new combinatorial lemmas; the full wrapper should not be attempted until the family/counting lemmas are green.
+
+=== final tail ===
+```
+
+Add corollaries `aleph_four_disjoint_eligible_family` and `aleph_five_disjoint_eligible_family`; the five version takes `¬ IsOctahedronSphere σ`. Add `no_emptyK4_of_taut_octahedron` for the excluded special case.
+
+Counting blocker lemma:
+
+```lean
+lemma disjoint_eligible_family_hit_two_faces_card_le_two
+    {M : Chain V} {E : Finset (Finset V)} {p q : Finset V}
+    (hpair : PairwiseDisjoint (fun e => sharedFaces M e) E) (hpq : p ≠ q) :
+    (E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)).card ≤ 2
+```
+
+Then compose:
+`exists_good_flip_emptyK3` uses 4 eligible tets versus 3 forbidden witness edges.
+`exists_good_flip_emptyK4` uses `¬HasEmptyK3`, octahedron split, 5 eligible tets, and the `≤2` face-hit lemma.
+
+Induction shape:
+`no_emptyK3K4_of_taut` should introduce `H : ∀ N σ X M, nrm M = N → ... → ¬HasEmptyK3 M.support ∧ ¬HasEmptyK4 M.support`, by strong induction on `N`. Branches: small/base; degree-3 peel via `degree3_cut_setup`, `degree3_cut_star_side_glue`, `IsTaut.splits`; no-degree-3 prime branch via `exists_good_flip_emptyK3/K4`, then case split on `FlipEdgePresent`. Case absent consumes sub-target 3 and IH on `removeTet`; case present consumes sub-target 4 plus `flipEdgePresent_side_*` and IH on the selected side.
+
+Files to edit: only [lean/Taut/Theorem4.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean) for now.
+tokens used
+69,732
+PLAN
+
+Verdict: WARN. Sub-target 3 is independently buildable now. Sub-targets 4-5 need new combinatorial lemmas; the full wrapper should not be attempted until the family/counting lemmas are green.
+
+Exact recommended patch shape: extend [lean/Taut/Theorem4.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean) after the current removeTet persistence block.
+
+First bounded target for Claude: implement only sub-target 3.
+
+```lean
+lemma edge_witness_ne_removed_of_not_flipEdge
+    {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ x : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hMX : bdry M = X)
+    (hS : SimplicialChain M) (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+    (hx2 : x.card = 2) (hx : SimplexOf M.support x)
+    (hxne : x ≠ f₃ ∩ f₄) :
+    ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t
+```
+
+```lean
+lemma hasEmptyK3_removeTet_of_avoids_flipEdge
+    {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ s : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hMX : bdry M = X)
+    (hS : SimplicialChain M) (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+    (hs3 : s.card = 3)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s)
+    (havoid : ∀ x, x ⊆ s → x.card = 2 → x ≠ f₃ ∩ f₄) :
+    HasEmptyK3 (removeTet M e).support
+```
+
+```lean
+lemma hasEmptyK4_removeTet_of_avoids_flipEdge
+    {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ s : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hMX : bdry M = X)
+    (hS : SimplicialChain M) (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+    (hs4 : s.card = 4)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s)
+    (havoid : ∀ x, x ⊆ s → x.card = 2 → x ≠ f₃ ∩ f₄) :
+    HasEmptyK4 (removeTet M e).support
+```
+
+Sub-target 4 statements:
+
+```lean
+lemma hasEmptyK3_side_of_edge_split
+    {τ : Finset (Finset V)} {A B : Finset V}
+    (hcover : ∀ t ∈ τ, t ⊆ A ∨ t ⊆ B)
+    (hsep : ∀ t ∈ τ, (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A))
+    (hAB2 : (A ∩ B).card = 2)
+    (hbridgeA : ∃ t ∈ τ, t ⊆ A ∧ A ∩ B ⊆ t)
+    (hbridgeB : ∃ t ∈ τ, t ⊆ B ∧ A ∩ B ⊆ t) :
+    HasEmptyK3 τ →
+      HasEmptyK3 (τ.filter (fun t => t ⊆ A)) ∨
+      HasEmptyK3 (τ.filter (fun t => t ⊆ B))
+```
+
+Same statement for `HasEmptyK4`.
+
+Sub-target 5 local lemmas:
+
+```lean
+def IsOctahedronSphere (σ : Finset (Finset V)) : Prop :=
+  IsSphere2 σ ∧ (vertsOf σ).card = 6 ∧ NoDegree3Vertex σ ∧
+    ∀ v ∈ vertsOf σ, (linkVerts σ v).card = 4
+```
+
+```lean
+lemma aleph_disjoint_eligible_family ...
+    {k : ℕ} {v : V} (hv : v ∈ vertsOf σ) (hk : k ≤ deg v (bdry M)) :
+    ∃ E : Finset (Finset V), E.card = k ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      PairwiseDisjoint (fun e => sharedFaces M e) E
+```
+
+Add corollaries `aleph_four_disjoint_eligible_family` and `aleph_five_disjoint_eligible_family`; the five version takes `¬ IsOctahedronSphere σ`. Add `no_emptyK4_of_taut_octahedron` for the excluded special case.
+
+Counting blocker lemma:
+
+```lean
+lemma disjoint_eligible_family_hit_two_faces_card_le_two
+    {M : Chain V} {E : Finset (Finset V)} {p q : Finset V}
+    (hpair : PairwiseDisjoint (fun e => sharedFaces M e) E) (hpq : p ≠ q) :
+    (E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)).card ≤ 2
+```
+
+Then compose:
+`exists_good_flip_emptyK3` uses 4 eligible tets versus 3 forbidden witness edges.
+`exists_good_flip_emptyK4` uses `¬HasEmptyK3`, octahedron split, 5 eligible tets, and the `≤2` face-hit lemma.
+
+Induction shape:
+`no_emptyK3K4_of_taut` should introduce `H : ∀ N σ X M, nrm M = N → ... → ¬HasEmptyK3 M.support ∧ ¬HasEmptyK4 M.support`, by strong induction on `N`. Branches: small/base; degree-3 peel via `degree3_cut_setup`, `degree3_cut_star_side_glue`, `IsTaut.splits`; no-degree-3 prime branch via `exists_good_flip_emptyK3/K4`, then case split on `FlipEdgePresent`. Case absent consumes sub-target 3 and IH on `removeTet`; case present consumes sub-target 4 plus `flipEdgePresent_side_*` and IH on the selected side.
+
+Files to edit: only [lean/Taut/Theorem4.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean) for now.

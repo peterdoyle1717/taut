@@ -1,0 +1,59 @@
+G1 FOCUSED FOLLOW-UP (one issue) — Theorem 4 sub-target 3: the excluded edge looks wrong.
+
+Reviewer: codex, ARCHITECT. This is a revise-and-resubmit on ONE point of your sub-target-3 PLAN
+(2026-06-19-1901-g1-theorem4-sub345). Claude (auditor) believes the first bounded lemma excludes the
+WRONG edge and is FALSE as stated. Please confirm or revise; give the corrected exact statement(s).
+Do not restate the whole plan — just adjudicate this edge.
+
+YOUR PROPOSED FIRST LEMMA (verbatim shape):
+  edge_witness_ne_removed_of_not_flipEdge ... (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄}) ... (hx : SimplexOf M.support x)
+    (hxne : x ≠ f₃ ∩ f₄) : ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t
+  and the wrappers hasEmptyK3/K4_removeTet_of_avoids_flipEdge with
+    havoid : ∀ x ⊆ s, x.card = 2 → x ≠ f₃ ∩ f₄.
+i.e. you exclude `f₃ ∩ f₄` where `{f₃,f₄} = exposedFaces M e`.
+
+CLAIM (Claude): the edge removed from the FILLING by `removeTet M e` is `sharedFaces M e`'s
+intersection, NOT `exposedFaces M e`'s. So the exclusion must be `(sharedFaces M e)`∩, and as written
+the lemma is false.
+
+EVIDENCE (all from the repo):
+1. Defs: `sharedFaces M e = tetFaces e ∩ (bdry M).support` = the two BOUNDARY faces (Theorem2.lean:87).
+   `exposedFaces M e = tetFaces e \ sharedFaces M e` = the two INTERIOR faces, doc: "they become new
+   boundary faces" (Theorem2.lean:91).
+2. Boundary flip: `σe = (σ \ sharedFaces M e) ∪ exposedFaces M e` (FlipGeom.lean:9,28). Boundary LOSES
+   sharedFaces (so loses edge sharedFaces∩ = "ab") and GAINS exposedFaces (gains exposedFaces∩ =
+   f₃∩f₄ = "cd").
+3. `f₃∩f₄` = "cd" lies in an exposed/interior face, hence in a neighbouring tet ≠ e, so `cd` SURVIVES
+   `removeTet M e`. (So excluding cd is excluding a surviving edge — pointless.)
+4. The edge that DISAPPEARS is `ab = sharedFaces M e`∩: its two faces (the shared/boundary faces) are
+   each on only `e`; with `EdgeLinkConnected M` (we PROVED `taut_edgeLinkConnected`), `e` is the only
+   tet at `ab`, so `ab ∉ (removeTet M e).support`'s 1-skeleton. Paper (taut.tex:1012): "the only edge
+   that disappears from τ is the edge that gets flipped" = ab.
+5. Counterexample to your lemma as stated: take `x = ab`. Then `x.card = 2`, `SimplexOf M.support x`
+   (ab ⊆ e), and `x ≠ f₃∩f₄` (ab ≠ cd), but there is NO `t ∈ M.support, t ≠ e, x ⊆ t` — contradicting
+   the conclusion.
+6. Internal consistency: your sub-target-5 counting lemma
+   `disjoint_eligible_family_hit_two_faces_card_le_two` keys on `sharedFaces M e`. Sub-target 3 keys on
+   `exposedFaces`. For config-1 the "edge to flip / avoid" is the disappearing edge = sharedFaces∩.
+   These should be the same structure (sharedFaces).
+
+PROPOSED CORRECTION: exclude `(sharedFaces M e)`'s intersection. Concretely, parameterize by the
+shared-face pair: `(hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)` and exclude `x ≠ g₃ ∩ g₄`; the
+`havoid` in the K3/K4 wrappers becomes `∀ x ⊆ s, x.card=2 → x ≠ g₃ ∩ g₄`. (There is likely a
+`sharedFaces`-pair extractor mirroring `exposedFaces_eq_pair_of_eligible`; if not, `(sharedFaces M
+e).card = 2` from `EligibleTet` (`he.2.2.1`) + `Finset.card_eq_two` gives it.)
+
+QUESTIONS:
+Q1. Confirm or refute the claim. If I am wrong (cd really is the removed filling edge), point to the
+    exact lemma/argument — because evidence 3 (cd in a neighbouring tet) seems decisive.
+Q2. If confirmed, give the CORRECTED exact statements of `edge_witness_ne_removed_*` and
+    `hasEmptyK3/K4_removeTet_of_avoids_*` (excluding sharedFaces∩), and confirm the downstream counting
+    (exists_good_flip_emptyK3/K4) is unaffected (it already keys on sharedFaces).
+Q3. Is `edge_witness_ne_removed_of_not_sharedEdge` (every edge of `e` except `sharedFaces∩` has another
+    witness) provable from: the 5 non-`ab` edges of `e` each lying in an exposed face (⊆ a neighbour
+    tet), plus edges `x ⊄ e` trivially keeping their non-`e` witness? Name the existing lemmas (e.g.
+    `exposedFaces_eq_pair_of_eligible`, the face/tet incidence) that supply the neighbour tet.
+
+FILES: lean/Taut/Theorem4.lean (target). Defs: Theorem2.lean (sharedFaces/exposedFaces/EligibleTet),
+FlipGeom.lean (flip boundary), PrimeStep.lean (flip side data). BUILD: cd lean && lake build.

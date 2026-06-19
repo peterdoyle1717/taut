@@ -28,4 +28,29 @@ submission form was not located). MOOT for now: the clean migration closed manua
 try-first accelerator, not needed. Full record: `notes/aleph-requests.md`.
 
 ## Open (other theorems, not the clean migration)
-- Corollary 1 (ℚ-fillings), |A∩B| ≤ 1 Theorem-1 cases, Theorem 4 (S³ ⊄ B³) — per TEAMWORK.md.
+- Corollary 1 (ℚ-fillings), |A∩B| ≤ 1 Theorem-1 cases, Theorem 4 (flag complex) — per TEAMWORK.md.
+
+## OBJECTION → RESOLVED (2026-06-19): Theorem-4 sub-target 3 excluded the wrong edge
+Codex's sub-target-3 PLAN (`notes/codex-consults/2026-06-19-1901-g1-theorem4-sub345-*`) gives
+`edge_witness_ne_removed_of_not_flipEdge` + `hasEmptyK3/K4_removeTet_of_avoids_flipEdge` whose
+exclusion / `havoid` is **`x ≠ f₃ ∩ f₄`** with `{f₃,f₄} = exposedFaces M e`. **Claim: this excludes
+the wrong edge and the lemma is false as stated.** Evidence (all from code):
+- `sharedFaces M e = tetFaces e ∩ (bdry M).support` (boundary faces); `exposedFaces M e = tetFaces e \
+  sharedFaces` = INTERIOR faces ("become new boundary faces", `Theorem2.lean:87-91`).
+- Boundary flip `σe = (σ \ sharedFaces M e) ∪ exposedFaces M e` (`FlipGeom.lean:9,28`): the boundary
+  LOSES the sharedFaces (loses edge `sharedFaces`∩ = "ab") and GAINS the exposedFaces (gains
+  `exposedFaces`∩ = `f₃∩f₄` = "cd").
+- `cd = f₃∩f₄ ⊆` an exposed (interior) face `⊆` a neighbouring tet `≠ e` ⇒ **cd SURVIVES** `removeTet`.
+- `ab = sharedFaces`∩ is private to `e` (its two faces are boundary ⇒ only on `e`; `EdgeLinkConnected`
+  — which we have for taut `M` via `taut_edgeLinkConnected` — forces `e` to be the only tet at `ab`)
+  ⇒ **ab DISAPPEARS**. Paper: "the only edge that disappears from τ is the edge that gets flipped" = ab.
+- Internal inconsistency: Codex's OWN counting lemma `disjoint_eligible_family_hit_two_faces_card_le_two`
+  keys on `sharedFaces`; sub-target 3 keys on `exposedFaces`. They must be the same structure.
+- Counterexample to the lemma as stated: `x = ab` satisfies `x ≠ f₃∩f₄` (= cd) but has **no** witness
+  tet `≠ e`, contradicting the conclusion `∃ t ∈ M.support, t ≠ e ∧ x ⊆ t`.
+**Proposed correction:** exclude `(sharedFaces M e)`'s intersection ("ab"), not `exposedFaces`'s.
+Restate via the shared-face pair `{g₃,g₄} = sharedFaces M e` and exclude `g₃ ∩ g₄`.
+**RESOLVED:** the focused follow-up (`…-1910-g1-theorem4-sub3-objection-*`) — Codex verdict WARN,
+"Claude is right." Corrected to `edge_witness_ne_removed_of_not_sharedEdge` + `hasEmptyK3/K4_removeTet_of_avoids_sharedEdge`
+(exclude `g₃ ∩ g₄`, `{g₃,g₄} = sharedFaces M e`); downstream counting unaffected (already keys on
+`sharedFaces`). Implementing the corrected sub-target 3.

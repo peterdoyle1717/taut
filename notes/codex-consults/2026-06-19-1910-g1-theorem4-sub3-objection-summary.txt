@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1910-g1-theorem4-sub3-objection-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1910-g1-theorem4-sub3-objection-summary.txt
+
+=== raw size ===
+    4324  348236 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1910-g1-theorem4-sub3-objection-raw.txt
+
+=== extracted markers ===
+4219:WARN
+4221:Verdict: Claude is right. The proposed `exposedFaces` exclusion is wrong and should be revised. The disappearing filling edge is the shared-face intersection, equivalently the old diagonal `e \ (f₃ ∩ f₄)` when `{f₃,f₄} = exposedFaces M e`.
+4270:Blockers: none conceptual. Do not rely on private `Theorem3Clean` lemmas from `Theorem4`; either keep the proof local or promote/restate only the small needed geometry.
+4273:WARN
+4275:Verdict: Claude is right. The proposed `exposedFaces` exclusion is wrong and should be revised. The disappearing filling edge is the shared-face intersection, equivalently the old diagonal `e \ (f₃ ∩ f₄)` when `{f₃,f₄} = exposedFaces M e`.
+4324:Blockers: none conceptual. Do not rely on private `Theorem3Clean` lemmas from `Theorem4`; either keep the proof local or promote/restate only the small needed geometry.
+
+=== final tail ===
+      · exact Or.inl h
+    rcases hMt with h1 | h1 <;> rcases hgen with h2 | h2 <;> rw [h1, h2] <;> decide
+  have hge : 1 ≤ faceCount M.support f := by
+    rw [Nat.one_le_iff_ne_zero]
+    intro h0
+    unfold faceCount at h0
+    rw [Finset.card_eq_zero] at h0
+    rw [h0, Finset.sum_empty] at hsum
+    rcases hb with h | h <;> rw [h] at hsum <;> omega
+  have hne2 : faceCount M.support f ≠ 2 := by
+    intro h2
+    unfold faceCount at h2
+
+codex
+WARN
+
+Verdict: Claude is right. The proposed `exposedFaces` exclusion is wrong and should be revised. The disappearing filling edge is the shared-face intersection, equivalently the old diagonal `e \ (f₃ ∩ f₄)` when `{f₃,f₄} = exposedFaces M e`.
+
+Recommended patch shape: replace the first bounded lemma and wrappers with `sharedFaces`-based versions. Do not exclude `f₃ ∩ f₄`.
+
+Corrected statement shape:
+
+```lean
+lemma edge_witness_ne_removed_of_not_sharedEdge
+    (he : EligibleTet M e)
+    (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
+    (hx : SimplexOf M.support x) (hx2 : x.card = 2)
+    (hxne : x ≠ g₃ ∩ g₄) :
+    ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t
+```
+
+Wrappers:
+
+```lean
+lemma hasEmptyK3_removeTet_of_avoids_sharedEdge
+    (he : EligibleTet M e)
+    (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
+    (hs3 : s.card = 3)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (havoid : ∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄)
+    (hno : ¬ SimplexOf M.support s) :
+    HasEmptyK3 (removeTet M e).support
+```
+
+```lean
+lemma hasEmptyK4_removeTet_of_avoids_sharedEdge
+    (he : EligibleTet M e)
+    (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
+    (hs4 : s.card = 4)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (havoid : ∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄)
+    (hno : ¬ SimplexOf M.support s) :
+    HasEmptyK4 (removeTet M e).support
+```
+
+Files to edit: [lean/Taut/Theorem4.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:376).
+
+Local lemmas needed:
+- shared pair extractor from `he.2.2.1 : (sharedFaces M e).card = 2` via `Finset.card_eq_two`.
+- exposed face has surviving tet witness: use `support_flipBoundary_of_eligible`, `support_removeTet_of_mem`, `bdry_apply_eq_sum`, `exists_facet_of_bdryGen_ne_zero`.
+- edge-in-eligible-tet except shared intersection lies in an exposed face: finite tet-face combinatorics using `sharedFaces_subset_tetFaces`, `exposedFaces_subset_tetFaces`, `exposedFaces_card_of_eligible`, `tetFaces_pair_inter_card_eq_two`.
+- trivial outside-`e` case: if `x ⊄ e`, any `SimplexOf` witness cannot be `e`.
+
+Downstream counting: unaffected. The good-flip counting already keys on `sharedFaces`, so it should feed the corrected `havoid` directly.
+
+Blockers: none conceptual. Do not rely on private `Theorem3Clean` lemmas from `Theorem4`; either keep the proof local or promote/restate only the small needed geometry.
+tokens used
+79,427
+WARN
+
+Verdict: Claude is right. The proposed `exposedFaces` exclusion is wrong and should be revised. The disappearing filling edge is the shared-face intersection, equivalently the old diagonal `e \ (f₃ ∩ f₄)` when `{f₃,f₄} = exposedFaces M e`.
+
+Recommended patch shape: replace the first bounded lemma and wrappers with `sharedFaces`-based versions. Do not exclude `f₃ ∩ f₄`.
+
+Corrected statement shape:
+
+```lean
+lemma edge_witness_ne_removed_of_not_sharedEdge
+    (he : EligibleTet M e)
+    (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
+    (hx : SimplexOf M.support x) (hx2 : x.card = 2)
+    (hxne : x ≠ g₃ ∩ g₄) :
+    ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t
+```
+
+Wrappers:
+
+```lean
+lemma hasEmptyK3_removeTet_of_avoids_sharedEdge
+    (he : EligibleTet M e)
+    (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
+    (hs3 : s.card = 3)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (havoid : ∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄)
+    (hno : ¬ SimplexOf M.support s) :
+    HasEmptyK3 (removeTet M e).support
+```
+
+```lean
+lemma hasEmptyK4_removeTet_of_avoids_sharedEdge
+    (he : EligibleTet M e)
+    (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
+    (hs4 : s.card = 4)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (havoid : ∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄)
+    (hno : ¬ SimplexOf M.support s) :
+    HasEmptyK4 (removeTet M e).support
+```
+
+Files to edit: [lean/Taut/Theorem4.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:376).
+
+Local lemmas needed:
+- shared pair extractor from `he.2.2.1 : (sharedFaces M e).card = 2` via `Finset.card_eq_two`.
+- exposed face has surviving tet witness: use `support_flipBoundary_of_eligible`, `support_removeTet_of_mem`, `bdry_apply_eq_sum`, `exists_facet_of_bdryGen_ne_zero`.
+- edge-in-eligible-tet except shared intersection lies in an exposed face: finite tet-face combinatorics using `sharedFaces_subset_tetFaces`, `exposedFaces_subset_tetFaces`, `exposedFaces_card_of_eligible`, `tetFaces_pair_inter_card_eq_two`.
+- trivial outside-`e` case: if `x ⊄ e`, any `SimplexOf` witness cannot be `e`.
+
+Downstream counting: unaffected. The good-flip counting already keys on `sharedFaces`, so it should feed the corrected `havoid` directly.
+
+Blockers: none conceptual. Do not rely on private `Theorem3Clean` lemmas from `Theorem4`; either keep the proof local or promote/restate only the small needed geometry.

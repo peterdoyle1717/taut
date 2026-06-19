@@ -1,0 +1,95 @@
+G1 ARCHITECT PACKET — Theorem 4 sub-targets 3-5: architect the wrapper for no_emptyK3K4_of_taut.
+
+Reviewer: codex, ARCHITECT. You approved the Theorem-4 route + wrapper PLAN
+(2026-06-19-g1-theorem4-{spec,wrapper-spec} + outputs). Sub-targets 1-2 are now DONE + CHECKED.
+This packet asks you to architect sub-targets 3-5: give EXACT LEMMA STATEMENTS and an
+IMPLEMENTATION ORDER. Claude will implement ONLY the first bounded target you specify, then stop and
+re-report. The project is COMBINATORIAL (no topology).
+
+NOTE ON STRATEGY (not new): the minimal-counterexample / edge-flip / deg-3-peel strategy is the
+STANDING proof strategy already used across the project (it is the engine behind taut_isPseudomanifold
+and the clean migration). What is new / unimplemented is ONLY the Theorem-4-specific Lean wrapper
+(no_emptyK3K4_of_taut) and the counting / localization machinery needed to execute that standing
+strategy for the flag-complex taboo configurations.
+
+=====================================================================
+STATE
+=====================================================================
+- Current CHECKED endpoint: `theorem4_flag_from_no_emptyK3K4`
+    (sphere-filling hyps) -> ¬HasEmptyK3 M.support -> ¬HasEmptyK4 M.support -> IsFlagComplex M.support.
+- REMAINING theorem (the entire gap): `no_emptyK3K4_of_taut`
+    (hσ hU hXc hMX hT hS) : ¬HasEmptyK3 M.support ∧ ¬HasEmptyK4 M.support.    [your PLAN: one strong
+    induction on nrm M, mirroring taut_isPseudomanifold's `H : ∀ N σ X M, nrm M = N -> ...`.]
+- Completed sub-targets:
+    1 (interface lock) = theorem4_flag_from_no_emptyK3K4.
+    2 (removeTet taboo-config persistence) = SimplexOf.mono, hasEmptyK3/K4_erase_of_witness,
+      hasEmptyK3/K4_removeTet_of_witness  (config survives erasing tet e if each witness edge keeps a
+      witness ≠ e; ¬SimplexOf half is free by monotonicity).
+- Next planned sub-targets (per your wrapper PLAN, need exact statements + order from you now):
+    3 = no-flip persistence (eligible flip drops only the flip edge => config survives the flip),
+    4 = case-(b) side localization (a K3/K4 in the almost-disjoint union lies on one side),
+    5 = the flip-avoidance COUNTING lemmas + the nrm-induction branches assembling no_emptyK3K4_of_taut.
+
+=====================================================================
+VERIFIED SUBSTRATE (exact existing Lean names + shapes; file:line)
+=====================================================================
+Predicates / defs:
+- EligibleTet M t := t.card=4 ∧ t ∈ M.support ∧ (sharedFaces M t).card=2 ∧
+    ∀ s ∈ sharedFaces M t, bdry M s = tetContribution M t s            [Theorem2.lean:99]
+- FlipEdgePresent σ f₃ f₄ := f₃ ∩ f₄ ∈ edgesOf σ                        [Theorem2.lean:104]
+- NoDegree3Vertex σ                                                     [Eligible.lean:160]
+- deg x M := nrm (nbhd x M)                                             [Chains.lean:486]
+- removeTet M t ; support_removeTet_of_mem (he : e ∈ M.support) : (removeTet M e).support =
+    M.support.erase e                                                   [Theorem2.lean:83,148]
+Flip geometry (exact names you asked Claude to surface):
+- exposedFaces_eq_pair_of_eligible (he : EligibleTet M e) :
+    ∃ f₃ f₄, f₃ ≠ f₄ ∧ exposedFaces M e = {f₃, f₄}                       [PrimeStep.lean:31]
+- flipEdgePresent_side_sets (hσ hU hXc hMX hT hS) (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃,f₄}) (hf₃₄ : f₃≠f₄) (hFlip : FlipEdgePresent σ f₃ f₄) :
+    ∃ A B, A ∩ B = f₃ ∩ f₄ ∧ (f₃∩f₄).card = 2 ∧
+      IsSphere2 ((flipBoundary σ M e).filter (·⊆A)) ∧ IsSphere2 (...filter (·⊆B)) ∧
+      (∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B) ∧
+      (∀ t ∈ (removeTet M e).support, (t⊆A ∧ ¬t⊆B) ∨ (t⊆B ∧ ¬t⊆A)) ∧
+      f₃⊆A ∧ ¬f₃⊆B ∧ f₄⊆B ∧ ¬f₄⊆A ∧ ...                                 [PrimeStep.lean:1164]
+    (i.e. the case-(b) sides A,B already exist, sharing exactly the flip edge; this is the
+    localization substrate.)
+- flipEdgePresent_side_algebra [PrimeStep.lean:1401]; flipEdgePresent_side_supports [PrimeStep.lean:1231].
+- isSphere2_flipBoundary_of_eligible [FlipGeom.lean:1546]; unitOn_flipBoundary_of_eligible [Theorem2.lean:292].
+Eligible family / deg-3 (engine reuse):
+- aleph_disjoint_eligible_pair (hσ hU hS hT hPure hNo3) :
+    ∃ t₁ t₂, t₁≠t₂ ∧ EligibleTet M t₁ ∧ EligibleTet M t₂ ∧
+      Disjoint (sharedFaces M t₁) (sharedFaces M t₂)                    [Theorem2Aleph.lean:1380]
+    (ONLY a disjoint PAIR — this is the gap for the counting below.)
+- degree3_cut_setup [Theorem2Aleph.lean:426]; starTet_card_of_degree3 [:458];
+  degree3_cut_star_side_glue [:465]; IsTaut.splits [Splitting.lean:435].
+- removeTet metadata: isTaut_removeTet, simplicialChain_removeTet, nrm_removeTet_add_one_of_simplicial,
+  support_removeTet_of_mem (used in persistence already).
+
+=====================================================================
+BLOCKERS (exact — confirmed by grep; these do NOT yet exist)
+=====================================================================
+- No ≥4 / ≥5 disjoint eligible FAMILY lemma. We only have aleph_disjoint_eligible_pair (a PAIR).
+- No octahedron special-case lemma.
+- No "at most two disjoint eligible tets hit a forbidden face ABC/BCD" lemma.
+
+=====================================================================
+ASK (give a PLAN: exact lemma statements + implementation order)
+=====================================================================
+For sub-targets 3, 4, 5, please give:
+  (i)   the EXACT Lean lemma statement(s) (names + signatures, in terms of the substrate above),
+        including for sub-target 5 the exact statement of the ≥4/≥5 disjoint-eligible-family lemma
+        (how to generalize aleph_disjoint_eligible_pair — what count, under what hypotheses), the
+        octahedron special-case statement, and the "≤2 hit forbidden faces" statement, plus how they
+        compose into exists_good_flip_emptyK3 / exists_good_flip_emptyK4;
+  (ii)  the EXACT inductive statement + branch structure of no_emptyK3K4_of_taut (base case, deg-3
+        branch via degree3_cut_* / IsTaut.splits, prime branch via the eligible flip), and where each
+        persistence/localization/counting lemma is consumed;
+  (iii) the IMPLEMENTATION ORDER — which single bounded target Claude implements FIRST (independently
+        buildable, no forward dependence), and the order of the rest.
+
+Do not assume Claude will deviate; Claude implements only the first target you specify, builds, greps
+sorry/admit/axiom/native_decide/unsafe, reports theorem names + #print axioms, commits only if green,
+and re-consults at the next fork.
+
+FILES: lean/Taut/Theorem4.lean (extend); reuse PrimeStep / FlipGeom / Theorem2 / Theorem2Aleph /
+Splitting / Eligible. PAPER: taut/taut.tex:987-1037. BUILD: cd lean && lake build.

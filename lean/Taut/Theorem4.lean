@@ -426,4 +426,133 @@ lemma hasEmptyK4_removeTet_of_witness {M : Chain V} {e s : Finset V} (he : e ∈
   rw [support_removeTet_of_mem he]
   exact hasEmptyK4_erase_of_witness hs4 hedges hno
 
+/-! ### No-flip persistence (sub-target 3)
+
+In the eligible-flip step of the induction we remove an eligible tet `e` whose two
+*shared* (boundary) faces `g₃, g₄` get their common edge `g₃ ∩ g₄ = "ab"` deleted from the
+boundary.  A witness edge `x` of a taboo configuration survives the removal provided `x` is
+not exactly that deleted edge: every other edge of `e` lies in an *exposed* (interior) face,
+and an exposed face is carried by a neighbouring tet `≠ e`.  These three lemmas package that
+into `removeTet`-persistence of the taboo configurations, with the side condition stated as
+`x ≠ g₃ ∩ g₄` (`havoid`). -/
+
+/-- **An edge `x ⊆ e` that is not the shared diagonal lies in an exposed face.** The two
+facets of `e` containing `x` (there are exactly two — `tetFaces_edge_filter_card_eq_two`)
+cannot both be shared: if they were, they would exhaust `sharedFaces M e = {g₃, g₄}`, forcing
+`x = g₃ ∩ g₄` (`inter_eq_edge_of_two_faces`), contrary to `hxne`.  So one of them is
+exposed. -/
+private lemma edge_in_exposed_of_ne_sharedInter {M : Chain V} {e g₃ g₄ x : Finset V}
+    (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
+    (hx2 : x.card = 2) (hxe : x ⊆ e) (hxne : x ≠ g₃ ∩ g₄) :
+    ∃ f ∈ exposedFaces M e, x ⊆ f := by
+  classical
+  by_contra hcon
+  push_neg at hcon
+  -- no exposed face contains `x`, so the (card-2) filter of tetFaces lands inside sharedFaces
+  have hsubsh : (tetFaces e).filter (fun F => x ⊆ F) ⊆ sharedFaces M e := by
+    intro F hF
+    rw [Finset.mem_filter] at hF
+    by_contra hns
+    exact hcon F (Finset.mem_sdiff.mpr ⟨hF.1, hns⟩) hF.2
+  have hfiltcard : ((tetFaces e).filter (fun F => x ⊆ F)).card = 2 :=
+    tetFaces_edge_filter_card_eq_two he.1 hxe hx2
+  have hsheq : (tetFaces e).filter (fun F => x ⊆ F) = sharedFaces M e :=
+    Finset.eq_of_subset_of_card_le hsubsh (by rw [he.2.2.1, hfiltcard])
+  -- so both g₃, g₄ contain `x`
+  have hg3mem : g₃ ∈ (tetFaces e).filter (fun F => x ⊆ F) := by
+    rw [hsheq, hsh]; exact Finset.mem_insert_self g₃ {g₄}
+  have hg4mem : g₄ ∈ (tetFaces e).filter (fun F => x ⊆ F) := by
+    rw [hsheq, hsh]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self g₄)
+  have hxg3 : x ⊆ g₃ := (Finset.mem_filter.mp hg3mem).2
+  have hxg4 : x ⊆ g₄ := (Finset.mem_filter.mp hg4mem).2
+  have hg3card : g₃.card = 3 :=
+    (Finset.mem_powersetCard.mp (Finset.mem_filter.mp hg3mem).1).2
+  have hg4card : g₄.card = 3 :=
+    (Finset.mem_powersetCard.mp (Finset.mem_filter.mp hg4mem).1).2
+  exact hxne (inter_eq_edge_of_two_faces hg3card hg4card hg hx2 hxg3 hxg4).symm
+
+/-- **A surviving witness for an edge `x` of an eligible tet's removal.** If the simplex edge
+`x` is not the deleted diagonal `g₃ ∩ g₄`, then some tet `≠ e` of `M.support` carries `x`.
+Edges `¬ ⊆ e` keep their original witness (which is automatically `≠ e`); edges `⊆ e` lie in
+an exposed face `f`, whose `bdry M f = 0` forces a second tet `≠ e` of `f` (the `e`-term of
+`bdry M f` is nonzero, so the sum cannot vanish without another nonzero term). -/
+lemma edge_witness_ne_removed_of_not_sharedEdge {M : Chain V} {e g₃ g₄ x : Finset V}
+    (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
+    (hx : SimplexOf M.support x) (hx2 : x.card = 2) (hxne : x ≠ g₃ ∩ g₄) :
+    ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t := by
+  classical
+  -- `x` is nonempty (card 2), so it has an honest witness tet `t₀`
+  have hxne0 : x ≠ ∅ := by
+    intro h; rw [h, Finset.card_empty] at hx2; exact absurd hx2 (by decide)
+  obtain ⟨t₀, ht₀, hxt₀⟩ := hx.resolve_left hxne0
+  by_cases hxe : x ⊆ e
+  · -- `x ⊆ e`: route through an exposed face
+    obtain ⟨f, hf, hxf⟩ := edge_in_exposed_of_ne_sharedInter he hsh hg hx2 hxe hxne
+    -- `f` is a tet-face of `e` off the boundary: `bdry M f = 0`
+    have hftet : f ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf
+    have hf3 : f.card = 3 := (Finset.mem_powersetCard.mp hftet).2
+    have hfnsh : f ∉ sharedFaces M e := (Finset.mem_sdiff.mp hf).2
+    have hfnb : f ∉ (bdry M).support := fun hb =>
+      hfnsh (by rw [sharedFaces]; exact Finset.mem_inter.mpr ⟨hftet, hb⟩)
+    have hbf0 : bdry M f = 0 := Finsupp.notMem_support_iff.mp hfnb
+    -- the `e`-term of `bdry M f = ∑_{t ⊇ f} M t · bdryGen t f` is nonzero
+    have hfsube : f ⊆ e := (Finset.mem_powersetCard.mp hftet).1
+    have heF : e ∈ M.support.filter (fun t => f ⊆ t) :=
+      Finset.mem_filter.mpr ⟨he.2.1, hfsube⟩
+    have hMe : M e ≠ 0 := Finsupp.mem_support_iff.mp he.2.1
+    have hgene : bdryGen e f ≠ 0 := bdryGen_ne_zero_of_subset he.1 hf3 hfsube
+    have htermE : M e * bdryGen e f ≠ 0 := mul_ne_zero hMe hgene
+    -- the sum is zero, so some other facet-tet contributes a nonzero term
+    have hsum0 : (∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f) = 0 := by
+      rw [← bdry_eq_sum_facets]; exact hbf0
+    have hexists : ∃ t ∈ M.support.filter (fun t => f ⊆ t),
+        t ≠ e ∧ M t * bdryGen t f ≠ 0 := by
+      by_contra hcon
+      push_neg at hcon
+      -- every facet-tet other than `e` contributes zero, so the sum equals the `e`-term ≠ 0
+      have hzero : (∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f) =
+          M e * bdryGen e f :=
+        Finset.sum_eq_single_of_mem e heF (fun t ht htne => hcon t ht htne)
+      rw [hzero] at hsum0; exact htermE hsum0
+    obtain ⟨t, htF, htne, htterm⟩ := hexists
+    have htM : t ∈ M.support := (Finset.mem_filter.mp htF).1
+    have hgent : bdryGen t f ≠ 0 := fun h0 => htterm (by rw [h0, mul_zero])
+    obtain ⟨w, _, hfew⟩ := exists_facet_of_bdryGen_ne_zero hgent
+    have hft : f ⊆ t := hfew ▸ Finset.erase_subset w t
+    exact ⟨t, htM, htne, hxf.trans hft⟩
+  · -- `¬ x ⊆ e`: the honest witness `t₀` cannot be `e`
+    refine ⟨t₀, ht₀, ?_, hxt₀⟩
+    intro hte
+    exact hxe (hte ▸ hxt₀)
+
+/-- Empty-K3 persists past an eligible flip whose deleted diagonal `g₃ ∩ g₄` is avoided by all
+edges of the witness triangle. -/
+lemma hasEmptyK3_removeTet_of_avoids_sharedEdge {M : Chain V} {e g₃ g₄ s : Finset V}
+    (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
+    (hs3 : s.card = 3)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (havoid : ∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄)
+    (hno : ¬ SimplexOf M.support s) :
+    HasEmptyK3 (removeTet M e).support :=
+  hasEmptyK3_removeTet_of_witness he.2.1 hs3
+    (fun x hxs hx2 =>
+      edge_witness_ne_removed_of_not_sharedEdge he hsh hg (hedges x hxs hx2) hx2
+        (havoid x hxs hx2))
+    hno
+
+/-- Empty-K4 persists past an eligible flip whose deleted diagonal `g₃ ∩ g₄` is avoided by all
+edges of the witness `K4`. -/
+lemma hasEmptyK4_removeTet_of_avoids_sharedEdge {M : Chain V} {e g₃ g₄ s : Finset V}
+    (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
+    (hs4 : s.card = 4)
+    (hedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (havoid : ∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄)
+    (hno : ¬ SimplexOf M.support s) :
+    HasEmptyK4 (removeTet M e).support :=
+  hasEmptyK4_removeTet_of_witness he.2.1 hs4
+    (fun x hxs hx2 =>
+      edge_witness_ne_removed_of_not_sharedEdge he hsh hg (hedges x hxs hx2) hx2
+        (havoid x hxs hx2))
+    hno
+
 end Taut

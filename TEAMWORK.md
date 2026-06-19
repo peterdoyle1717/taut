@@ -90,12 +90,23 @@ sphere/ball definitions.
   `SimplexOf` bookkeeping: a taboo config SURVIVES removing a tet `e` provided each witness edge keeps
   a witness `≠ e` (`¬SimplexOf` of the witness set is automatic by monotonicity). Build green 8273,
   grep ZERO, std-3 axioms (`SimplexOf.mono` even axiom-light: `[propext, Quot.sound]`). Committed +
-  pushed. **REMAINING (Codex order, harder geometric/combinatorial core):** sub-target 3 = no-flip
-  persistence wrapper (removing an eligible tet drops only the flip edge — needs the flip geometry
-  `exposedFaces_eq_pair_of_eligible`/`flipEdgePresent_side_*`); sub-target 4 = case-(b) side
-  localization; sub-target 5 = the flip-avoidance COUNTING lemmas (Codex's honest BLOCKERS — no
-  `≥4`/`≥5`-disjoint-eligible-family, no octahedron, no "≤2 hit forbidden faces" lemma exists yet) +
-  the `nrm M` induction branches assembling `no_emptyK3K4_of_taut`. AlephProver still unusable.
+  pushed.
+- **✅ MILESTONE (2026-06-19): Theorem 4 — sub-target 3 (no-flip persistence) CHECKED, after a
+  team-of-rivals CORRECTION.** Codex's sub345 PLAN named the disappearing edge as `f₃∩f₄ =
+  exposedFaces∩` ("cd"); Claude's skeptical review caught that this is the SURVIVING interior edge —
+  the edge `removeTet M e` actually deletes is `sharedFaces∩` ("ab", private to `e` via
+  `EdgeLinkConnected`). Filed OBJECTION (STATUS.md) + one focused follow-up; **Codex agreed ("Claude is
+  right", WARN)**. Implemented the corrected lemmas in `Theorem4.lean`: `edge_witness_ne_removed_of_not_sharedEdge`
+  (every edge of `e` except `sharedFaces∩` keeps a witness `≠ e`, via "exposed face ⇒ neighbour tet"
+  from `bdry M f = 0` + `e`'s nonzero term) and `hasEmptyK3/K4_removeTet_of_avoids_sharedEdge` (compose
+  with sub-target 2). Build green 8273, grep ZERO, all three std-3 axioms. **LESSON: exposedFaces =
+  INTERIOR faces (survive removal); sharedFaces = BOUNDARY faces, their ∩ is the removed edge.**
+  **REMAINING (Codex order):** sub-target 4 = case-(b) side localization (`hasEmptyK3/K4_side_of_edge_split`
+  over the `flipEdgePresent_side_sets` A/B split); sub-target 5 = the flip-avoidance COUNTING lemmas
+  (Codex's honest BLOCKERS — no `≥4`/`≥5`-disjoint-eligible-family `aleph_disjoint_eligible_family`, no
+  `IsOctahedronSphere`/octahedron special case, no `disjoint_eligible_family_hit_two_faces_card_le_two`
+  yet) → `exists_good_flip_emptyK3/K4` + the `nrm M` induction assembling `no_emptyK3K4_of_taut`. The
+  counting all keys on `sharedFaces` (consistent with the correction). AlephProver still unusable.
 - Lean project: `lean/` (Mathlib v4.29.1, packages cached at
   `~/.cache/taut-lean/packages`, APFS-cloned from glove). Builds:
   `cd lean && lake build`.
