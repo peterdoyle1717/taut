@@ -214,4 +214,146 @@ lemma cleanGlueStep_star_of_remainder {σ : Finset (Finset V)} {v : V} {γ : Fin
         rw [mem_vertexLinkVerts_iff]
         exact ⟨⟨t₀, ht₀τ, hγt₀ hxγ, hγt₀ hwγ⟩, hwx⟩
 
+/-! ## τ-extension of the link-compat fields (degree-3 star-start glue)
+
+The clean STAR-START reduction (gluing the link tets onto `insert (starTet σ v) τ`
+in turn) needs the `helc`/`hvlc` link-compat fields preserved as `starTet σ v` is
+adjoined to the accumulated set.  Both follow from two structural facts about the
+apex sets: they are monotone in `τ`, and the extra tet `starTet σ v` supplies an
+apex for `e` only when `e ⊆ γ` (resp. for `x` only when `x ∈ γ`). -/
+
+/-- The edge-link apex set is monotone in the tet-set: more tets give more apexes. -/
+private lemma edgeLinkVerts_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (e : Finset V) :
+    edgeLinkVerts τ e ⊆ edgeLinkVerts τ' e := by
+  intro w hw
+  rw [mem_edgeLinkVerts_iff] at hw ⊢
+  obtain ⟨⟨t, ht, het, hwt⟩, hwe⟩ := hw
+  exact ⟨⟨t, h ht, het, hwt⟩, hwe⟩
+
+/-- The vertex-link apex set is monotone in the tet-set. -/
+private lemma vertexLinkVerts_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (x : V) :
+    vertexLinkVerts τ x ⊆ vertexLinkVerts τ' x := by
+  intro w hw
+  rw [mem_vertexLinkVerts_iff] at hw ⊢
+  obtain ⟨⟨t, ht, hxt, hwt⟩, hwx⟩ := hw
+  exact ⟨⟨t, h ht, hxt, hwt⟩, hwx⟩
+
+/-- **Edge-link compat survives adjoining the star tet.**  The link tets of the
+degree-3 reduction glue onto `insert (starTet σ v) τ`; this transports the
+`helc` field for a tet `t` with `v ∉ t` from `τ` to `insert (starTet σ v) τ`.
+For a γ-edge the third γ-vertex sits in the apex tet `t₀ ∈ τ`, so the apex set is
+already nonempty and the given hypothesis's nonempty branch is forced and survives
+by monotonicity; for a non-γ-edge the star tet contributes no apex, so the apex
+set is unchanged and the hypothesis is used verbatim. -/
+lemma helc_insert_star {σ : Finset (Finset V)} {v : V} {γ : Finset V} {t₀ t : Finset V}
+    {τ : Finset (Finset V)}
+    (hγ : γ = linkVerts σ v) (hγ3 : γ.card = 3)
+    (hvt : v ∉ t)
+    (ht₀τ : t₀ ∈ τ) (hγt₀ : γ ⊆ t₀) :
+    (∀ e, e ⊆ t → e.card = 2 →
+        edgeLinkVerts τ e = ∅ ∨ ((t \ e) ∩ edgeLinkVerts τ e).Nonempty) →
+    (∀ e, e ⊆ t → e.card = 2 →
+        edgeLinkVerts (insert (starTet σ v) τ) e = ∅ ∨
+        ((t \ e) ∩ edgeLinkVerts (insert (starTet σ v) τ) e).Nonempty) := by
+  intro H e he he2
+  have hstar : starTet σ v = insert v γ := by rw [starTet, hγ]
+  have hmono : edgeLinkVerts τ e ⊆ edgeLinkVerts (insert (starTet σ v) τ) e :=
+    edgeLinkVerts_mono (Finset.subset_insert _ _) e
+  have hve : v ∉ e := fun hv => hvt (he hv)
+  by_cases heγ : e ⊆ γ
+  · -- γ-edge: the third γ-vertex `w` is an apex of `e` via `t₀`, so `edgeLinkVerts τ e ≠ ∅`,
+    -- forcing the nonempty branch of `H`, which survives by monotonicity.
+    right
+    have hcard : (γ \ e).card = 1 := by
+      rw [Finset.card_sdiff_of_subset heγ, hγ3, he2]
+    obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hcard
+    have hwγe : w ∈ γ \ e := hw ▸ Finset.mem_singleton_self w
+    rw [Finset.mem_sdiff] at hwγe
+    obtain ⟨hwγ, hwe⟩ := hwγe
+    have hwapex : w ∈ edgeLinkVerts τ e := by
+      rw [mem_edgeLinkVerts_iff]
+      exact ⟨⟨t₀, ht₀τ, heγ.trans hγt₀, hγt₀ hwγ⟩, hwe⟩
+    have hne : edgeLinkVerts τ e ≠ ∅ := Finset.ne_empty_of_mem hwapex
+    rcases H e he he2 with hH | hH
+    · exact absurd hH hne
+    · obtain ⟨z, hz⟩ := hH
+      rw [Finset.mem_inter] at hz
+      exact ⟨z, Finset.mem_inter.mpr ⟨hz.1, hmono hz.2⟩⟩
+  · -- non-γ-edge: `e ⊄ starTet σ v` (else `v ∉ e` forces `e ⊆ γ`), so the star tet
+    -- supplies no apex and the apex set is unchanged; reuse `H` verbatim.
+    have hnotstar : ¬ e ⊆ starTet σ v := by
+      intro hsub
+      apply heγ
+      intro x hxe
+      have : x ∈ insert v γ := hstar ▸ hsub hxe
+      rcases Finset.mem_insert.mp this with rfl | hxγ
+      · exact absurd hxe hve
+      · exact hxγ
+    rw [edgeLinkVerts_insert_of_not_subset hnotstar]
+    exact H e he he2
+
+/-- **Vertex-link compat survives adjoining the star tet.**  Vertex analogue of
+`helc_insert_star`: for a vertex `x ∈ t` (so `x ≠ v` by `hvt`), if `x ∈ γ` another
+γ-vertex is an apex via `t₀` (nonempty branch forced, survives by monotonicity);
+if `x ∉ γ` then `x ∉ starTet σ v`, the star tet contributes no apex, and the apex
+set is unchanged. -/
+lemma hvlc_insert_star {σ : Finset (Finset V)} {v : V} {γ : Finset V} {t₀ t : Finset V}
+    {τ : Finset (Finset V)}
+    (hγ : γ = linkVerts σ v) (hγ3 : γ.card = 3) (hvt : v ∉ t)
+    (ht₀τ : t₀ ∈ τ) (hγt₀ : γ ⊆ t₀) :
+    (∀ x ∈ t, vertexLinkVerts τ x = ∅ ∨ ((t \ {x}) ∩ vertexLinkVerts τ x).Nonempty) →
+    (∀ x ∈ t, vertexLinkVerts (insert (starTet σ v) τ) x = ∅ ∨
+      ((t \ {x}) ∩ vertexLinkVerts (insert (starTet σ v) τ) x).Nonempty) := by
+  intro H x hx
+  have hstar : starTet σ v = insert v γ := by rw [starTet, hγ]
+  have hmono : vertexLinkVerts τ x ⊆ vertexLinkVerts (insert (starTet σ v) τ) x :=
+    vertexLinkVerts_mono (Finset.subset_insert _ _) x
+  have hxv : x ≠ v := fun h => hvt (h ▸ hx)
+  by_cases hxγ : x ∈ γ
+  · -- `x ∈ γ`: another γ-vertex `w ≠ x` is an apex of `x` via `t₀`, forcing nonempty.
+    right
+    have hcard : (γ \ {x}).card = 2 := by
+      rw [Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.mpr hxγ), hγ3,
+        Finset.card_singleton]
+    have hnonempty : (γ \ {x}).Nonempty := by rw [← Finset.card_pos, hcard]; omega
+    obtain ⟨w, hw⟩ := hnonempty
+    rw [Finset.mem_sdiff, Finset.mem_singleton] at hw
+    obtain ⟨hwγ, hwx⟩ := hw
+    have hwapex : w ∈ vertexLinkVerts τ x := by
+      rw [mem_vertexLinkVerts_iff]
+      exact ⟨⟨t₀, ht₀τ, hγt₀ hxγ, hγt₀ hwγ⟩, hwx⟩
+    have hne : vertexLinkVerts τ x ≠ ∅ := Finset.ne_empty_of_mem hwapex
+    rcases H x hx with hH | hH
+    · exact absurd hH hne
+    · obtain ⟨z, hz⟩ := hH
+      rw [Finset.mem_inter] at hz
+      exact ⟨z, Finset.mem_inter.mpr ⟨hz.1, hmono hz.2⟩⟩
+  · -- `x ∉ γ`: with `x ≠ v`, `x ∉ starTet σ v`, so the star tet supplies no apex.
+    have hnotstar : x ∉ starTet σ v := by
+      rw [hstar, Finset.mem_insert]
+      rintro (rfl | hxγ')
+      · exact hxv rfl
+      · exact hxγ hxγ'
+    rw [vertexLinkVerts_insert_of_not_mem hnotstar]
+    exact H x hx
+
+/-! ## Degree-3 old-target half: the old-target clean shelling composes -/
+
+/-- **Degree-3 old-target clean shelling.**  Given the clean IH result for the
+remainder (`hfreeMR : FreelyCleanShellable MRsupp σR`) and the star `CleanGlueStep`
+gluing `starTet σ v` onto that remainder up to the final boundary `σtarget`, an old
+target `s ∈ MRsupp` yields a clean shelling of `insert (starTet σ v) MRsupp`
+starting at `s`.  This is the old-target half of the degree-3 reduction; it composes
+directly from the banked old-target clean snoc lemma (the freshness input is the
+glue's own `newTet` field). -/
+lemma deg3_clean_old_target {σ : Finset (Finset V)} {v : V}
+    {MRsupp σR σtarget : Finset (Finset V)} {s : Finset V}
+    (hfreeMR : FreelyCleanShellable MRsupp σR)
+    (hglue : CleanGlueStep (starTet σ v) MRsupp σR σtarget)
+    (hsMR : s ∈ MRsupp) :
+    ∃ l, l.head? = some s ∧ l.toFinset = insert (starTet σ v) MRsupp ∧ l.Nodup ∧
+      IsCleanShelling l σtarget :=
+  FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old hfreeMR hglue
+    hglue.newTet hsMR
+
 end Taut
