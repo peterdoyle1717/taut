@@ -1801,6 +1801,36 @@ private lemma eligible_pair_oriented_opp_avoidance {σ : Finset (Finset V)} {X M
   have hu_eq : u = (g₃ ∩ g₄) ∪ (f₃ ∩ f₄) := by rw [← hOu_eq, htunu]
   exact hne (by rw [he_eq, hu_eq, Finset.union_comm])
 
+/-- **The non-opposite edges of an eligible tet have nonempty shared link.** Any
+edge `e'` of `e` that lies in an exposed face `f` keeps a common apex on removal:
+`f` survives in a unique neighbour tet of `removeTet M e`, whose third vertex
+`f \ e'` is in `e \ e'` and is an apex of `e'`.  This discharges the RIGHT disjunct
+of `edgeLinkConnected_insert`'s `hcompat` for every edge of `e` except the
+flip-opposite edge `e \ (f₃ ∩ f₄)` (the only edge in no exposed face). -/
+private lemma edgeLinkCompat_nonOpp_of_exposed_face {σ : Finset (Finset V)}
+    {X M : Chain V} {e f e' : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hPMe : IsPseudomanifold (removeTet M e).support)
+    (he : EligibleTet M e) (hf : f ∈ exposedFaces M e)
+    (he'f : e' ⊆ f) (he'2 : e'.card = 2) :
+    ((e \ e') ∩ edgeLinkVerts (removeTet M e).support e').Nonempty := by
+  classical
+  obtain ⟨N, hNmem, hfN⟩ :=
+    exposed_triangle_unique_remaining_tet hσ hU hMX hT hS hPure hPMe he hf
+  have hftet : f ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf
+  have hfe : f ⊆ e := (Finset.mem_powersetCard.mp hftet).1
+  have hf3 : f.card = 3 := (Finset.mem_powersetCard.mp hftet).2
+  have hdiff : (f \ e').card = 1 := by rw [Finset.card_sdiff_of_subset he'f, hf3, he'2]
+  obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hdiff
+  have hwmem : w ∈ f \ e' := hw ▸ Finset.mem_singleton_self w
+  rw [Finset.mem_sdiff] at hwmem
+  obtain ⟨hwf, hwe'⟩ := hwmem
+  refine ⟨w, Finset.mem_inter.mpr ⟨Finset.mem_sdiff.mpr ⟨hfe hwf, hwe'⟩, ?_⟩⟩
+  rw [mem_edgeLinkVerts_iff]
+  exact ⟨⟨N, hNmem, he'f.trans hfN, hfN hwf⟩, hwe'⟩
+
 /-- **One clean glue step for re-gluing the eligible tet `e`** onto its remainder
 `removeTet M e` (boundary the flip-boundary, ending at `σ`).  All fields are
 discharged from the eligible geometry except the edge-link emptiness on the single
