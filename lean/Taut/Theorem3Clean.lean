@@ -2063,6 +2063,35 @@ private lemma flipPresent_removeTet_connOn_at_nonflip_edge {σ : Finset (Finset 
     refine connOn_oppEdge_of_subset_local ?_ hloc (helcB O hO2)
     rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
 
+/-- **Dispatcher: `ConnOn` at `e`'s opposite edge inside `removeTet M u`.** Cases on
+whether `u`'s flip edge is present: no-flip ⟹ full `EdgeLinkConnected (removeTet M u)` from
+the IH (`removeTet_edgeLinkConnected_noFlip`), specialized at the edge; flip-present ⟹ the
+side-local `flipPresent_removeTet_connOn_at_nonflip_edge`.  This supplies the `hConnOu`
+input to `oppEdge_empty_of_disjoint_eligible_remainder` / `prime_edgeLinkConnected_case1`. -/
+private lemma removeTet_connOn_oppEdge_of_disjoint_eligible {σ : Finset (Finset V)}
+    {X M : Chain V} {e u f₃ f₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M)
+    (he : EligibleTet M e) (hu : EligibleTet M u)
+    (hexpe : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+    (hOu : ¬ (e \ (f₃ ∩ f₄)) ⊆ u)
+    (IHelc : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      EdgeLinkConnected M'.support) :
+    ConnOn (edgeLinkGraph (removeTet M u).support (e \ (f₃ ∩ f₄)))
+      (edgeLinkVerts (removeTet M u).support (e \ (f₃ ∩ f₄))) := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  obtain ⟨hO2, _, _, hOe, _, _, _⟩ := eligible_oppEdge_geom hσ hUb he hexpe hf₃₄
+  have heu : e ≠ u := fun h => hOu (h ▸ hOe)
+  have heU : e ∈ (removeTet M u).support := by
+    rw [support_removeTet_of_mem hu.2.1]; exact Finset.mem_erase.mpr ⟨heu, he.2.1⟩
+  obtain ⟨g₃, g₄, hg₃₄, hexpu⟩ := exposedFaces_eq_pair_of_eligible hu
+  by_cases hFlipu : FlipEdgePresent σ g₃ g₄
+  · exact flipPresent_removeTet_connOn_at_nonflip_edge hσ hU hXc hMX hT hS hu heU hOe hOu hO2
+      hexpu hg₃₄ hFlipu IHelc
+  · exact (removeTet_edgeLinkConnected_noFlip hσ hU hXc hMX hT hS hu hexpu hg₃₄ hFlipu IHelc) _ hO2
+
 /-- **One clean glue step for re-gluing the eligible tet `e`** onto its remainder
 `removeTet M e` (boundary the flip-boundary, ending at `σ`).  All fields are
 discharged from the eligible geometry except the edge-link emptiness on the single
