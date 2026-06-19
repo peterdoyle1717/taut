@@ -3063,4 +3063,68 @@ theorem taut_edgeLinkConnected {σ : Finset (Finset V)} {X M : Chain V} (hσ : I
         intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
         exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
 
+/-- **Prime step, clean case 1 (no flip edge), per target.** The clean analogue of
+`exists_shelling_prime_case1`: when the flipped edge `cd = f₃ ∩ f₄` is absent
+(`¬ FlipEdgePresent σ f₃ f₄`), removing the eligible tet `e` (with a paired eligible
+`u` whose shared faces are disjoint from `e`'s) leaves a strictly smaller single-sphere
+taut filling whose free clean shelling (by `IH`) sticks back to `σ` along a
+`CleanGlueStep` (`cleanGlueStep_eligible`, now unconditional via
+`oppEdge_empty_of_full_edgeLinkConnected` + `taut_edgeLinkConnected`).  For an old target
+`s ≠ e` the clean shelling is `(removeTet M e)'s clean shelling from s ++ [e]`
+(`FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old`). -/
+theorem exists_clean_shelling_prime_case1 {σ : Finset (Finset V)} {X M : Chain V}
+    {s e u f₃ f₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M)
+    (IH : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      FreelyCleanShellable M'.support σ')
+    (he : EligibleTet M e) (hu : EligibleTet M u)
+    (hdisj : Disjoint (sharedFaces M e) (sharedFaces M u))
+    (hne_es : e ≠ s) (hs : s ∈ M.support)
+    (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+    (hFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+    ∃ l : List (Finset V), l.head? = some s ∧ l.toFinset = M.support ∧ l.Nodup ∧
+      IsCleanShelling l σ := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+    fun t ht => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
+  have IHpm : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      IsPseudomanifold M'.support :=
+    fun σ' X' M' _ h1 h2 h3 h4 h5 h6 => taut_isPseudomanifold h1 h2 h3 h4 h5 h6
+  have hPMu : IsPseudomanifold (removeTet M u).support :=
+    removeTet_isPseudomanifold hσ hU hXc hMX hT hS hu IHpm
+  have hPMe : IsPseudomanifold (removeTet M e).support :=
+    removeTet_isPseudomanifold hσ hU hXc hMX hT hS he IHpm
+  have hOppEmpty : edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅ :=
+    oppEdge_empty_of_full_edgeLinkConnected hσ hU hXc hMX hT hS hPure he hexp hf₃₄
+      (taut_edgeLinkConnected hσ hU hXc hMX hT hS)
+  have hglue : CleanGlueStep e (removeTet M e).support
+      ((σ \ sharedFaces M e) ∪ exposedFaces M e) σ :=
+    cleanGlueStep_eligible hσ hU hXc hMX hT hS hPure he hu hdisj hPMu hPMe hexp hf₃₄ hOppEmpty
+  -- `removeTet M e` is a strictly smaller single-sphere taut filling (case 1 has no flip).
+  have hσe : IsSphere2 ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
+    isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
+  have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
+    unitOn_flipBoundary_of_eligible hUb hS he
+  have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
+  have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
+  have hlt : nrm (removeTet M e) < nrm M := by
+    have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
+  have hfree_e : FreelyCleanShellable (removeTet M e).support
+      ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
+    IH _ (bdry (removeTet M e)) (removeTet M e) hlt hσe hUe (bdry_bdry _) rfl hTe hSe
+  have he_not_old : e ∉ (removeTet M e).support := by
+    rw [support_removeTet_of_mem he.2.1]; exact Finset.notMem_erase e M.support
+  have hs_old : s ∈ (removeTet M e).support := by
+    rw [support_removeTet_of_mem he.2.1]
+    exact Finset.mem_erase.mpr ⟨Ne.symm hne_es, hs⟩
+  obtain ⟨l, hhead, hfin, hnodup, hsh⟩ :=
+    FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old hfree_e hglue
+      he_not_old hs_old
+  refine ⟨l, hhead, ?_, hnodup, hsh⟩
+  rw [hfin, support_removeTet_of_mem he.2.1, Finset.insert_erase he.2.1]
+
 end Taut
