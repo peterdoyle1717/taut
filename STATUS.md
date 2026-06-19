@@ -66,15 +66,26 @@ Lemma stack (all in `Theorem3Clean.lean`; `PrimeStep` machinery imported). **CHE
 8.✓ `prime_edgeLinkConnected_case1` (`41b5066`): assembles `edgeLinkConnected_insert` over `removeTet M e`
    (hELMe from (5); opp edge via weakened (4) + dispatcher (7); 5 others via (3)). Takes hELMe + hConnOu.
 
-**REMAINING for `taut_edgeLinkConnected` (NEXT CONSULT):**
-A. prime assembly: pick disjoint eligible pair (`aleph_disjoint_eligible_pair`, needs NoDegree3Vertex);
-   orientation lemma (2) picks which tet's opp edge is avoided; reinsert THAT tet via (8) — but (8) needs
-   the reinserted tet ¬FlipEdgePresent (for hELMe). So the case structure couples orientation × Flip
-   status: if the avoided tet is ¬Flip → case1; both-flip → **case2 HARD STOP**.
-B. **case2 bridge** (flip-present reinserted tet): a SEPARATE `prime_edgeLinkConnected_case2` /
-   `edgeLinkConnected_insert_flipBridge` — NOT YET ROUTED (Codex hard-stop).
-C. `deg3_edgeLinkConnected` (degree-3 star step) + base (singleton = `edgeLinkConnected_singleton`).
-D. assemble `taut_edgeLinkConnected` (strong induction, mirror `taut_isPseudomanifold`).
+**REMAINING for `taut_edgeLinkConnected` (Codex `finish-elc-architect`, PASS — full plan):**
+Patch order: (B) `edgeLinkConnected_insert_flipBridge` + helpers → (case2) `prime_edgeLinkConnected_case2`
+→ (A) `prime_edgeLinkConnected` → `deg3_edgeLinkConnected` → `base_edgeLinkConnected` → `taut_edgeLinkConnected`.
+A. prime assembly: `aleph_disjoint_eligible_pair` → `(e₀,u₀)`; orientation lemma → ORIENT to `(r,w)` with
+   `¬O_r⊆w` (swap if it returns the `u`-form); split on `FlipEdgePresent r₃ r₄`: ¬Flip = (5)+(7)+(8);
+   Flip = case2.
+B. **case2 bridge** `edgeLinkConnected_insert_flipBridge`: NOT `edgeLinkConnected_insert` (the pinched
+   `removeTet M e` isn't edge-connected). Direct proof from side facts (`flipEdgePresent_side_sets/_algebra`):
+   seam edge `cd=f₃∩f₄` — side-IH connects A-apexes to the `f₃\cd` apex, B-apexes to `f₄\cd`, inserted `e`
+   joins those two; non-seam edges — link lives in one side (a link spans both sides only if edge ⊆ A∩B=cd).
+   Helpers: `edgeLinkVerts_union_side_local_or_seam` (both-sides ⟹ edge=cd; the HARD-STOP dichotomy),
+   `edgeLinkConnected_union_side_local`, `side_face_apex_mem_edgeLinkVerts` (seam apex from a side f₃/f₄ tet,
+   rederive via `taut_isPseudomanifold`+`faceCount_eq_one_of_boundary` as in `flipEdgePresent_side_data`).
+   NO new topological theorem needed.
+C. `deg3_edgeLinkConnected`: mirror `deg3_isPM` — ONE star tet `starTet σ v`, non-star side IH, `M.support =
+   insert (starTet σ v) R.support`, `edgeLinkConnected_insert` using star helc from `cleanGlueStep_star_of_remainder`.
+   base = `edgeLinkConnected_singleton` (mirror `base_free_clean`: `M.support = {vertsOf σ}`).
+D. `taut_edgeLinkConnected` = `Nat.strong_induction_on (nrm M)` clone of `taut_isPseudomanifold`.
+NEXT BOUNDED TARGET: `edgeLinkConnected_insert_flipBridge` + helpers. Hard-stop if the side-local/seam
+dichotomy (`edge with tets/apexes on both sides ⇒ edge = f₃∩f₄`) cannot be proved.
 Then: `taut_edgeLinkConnected` ⟹ `hELM` ⟹ `hOppEmpty` case-1 ⟹ `cleanGlueStep_eligible` ⟹ `prime_step_clean`
 case-1. Still open: `prime_step_clean` case-2 (clean RelShelling bridge, Ball.lean:281) — DEFERRED;
 `theorem3_clean` = `theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean`; `theorem2_clean`.

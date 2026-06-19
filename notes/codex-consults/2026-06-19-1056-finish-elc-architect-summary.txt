@@ -1,0 +1,131 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1056-finish-elc-architect-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1056-finish-elc-architect-summary.txt
+
+=== raw size ===
+    6324 1228242 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-1056-finish-elc-architect-raw.txt
+
+=== extracted markers ===
+6177:PASS
+6252:PASS
+
+=== final tail ===
+  ... :
+  EdgeLinkConnected (insert e (M₁.support ∪ M₂.support))
+```
+
+Inputs should be the side facts from `flipEdgePresent_side_sets` / `flipEdgePresent_side_algebra`:
+- `A ∩ B = f₃ ∩ f₄`
+- `(f₃ ∩ f₄).card = 2`
+- `M₁ = (removeTet M e).filter (fun t => t ⊆ A)`
+- `M₂ = (removeTet M e).filter (fun t => t ⊆ B)`
+- `M.support = insert e (M₁.support ∪ M₂.support)`
+- `f₃ ⊆ A`, `¬ f₃ ⊆ B`, `f₄ ⊆ B`, `¬ f₄ ⊆ A`
+- `EdgeLinkConnected M₁.support`, `EdgeLinkConnected M₂.support`
+- existence of side tets containing `f₃` and `f₄`
+
+For the seam edge `cd = f₃ ∩ f₄`: side IH connects all A-side apexes to the `f₃ \ cd` apex; side IH connects all B-side apexes to the `f₄ \ cd` apex; inserted `e` gives the edge between those two apexes.
+
+For any edge not equal to `cd`: use side separation. A link cannot genuinely use both sides unless the edge lies in `A ∩ B`, hence is `cd`. If it is a non-seam edge of `e`, the inserted tet either connects the two new apexes alone or connects through the relevant side face.
+
+**Local Lemmas Needed**
+- `edgeLinkVerts_union_side_local_or_seam`: an edge with link vertices in both side supports must be the seam `f₃ ∩ f₄`.
+- `edgeLinkConnected_union_side_local`: if all tets containing an edge are local to one side, lift that side’s `ConnOn` to `M₁.support ∪ M₂.support`.
+- `side_face_apex_mem_edgeLinkVerts`: from a side tet containing `f₃`/`f₄`, produce the seam apex in that side’s edge link.
+- `edgeLinkConnected_insert_flipBridge`: the main combinatorial bridge.
+- `prime_edgeLinkConnected_case2`: obtains `A B`, side algebra, side IH ELC, side-face witnesses, then rewrites by `support_decomp`.
+
+You can rederive the side-face witnesses as in `flipEdgePresent_side_data` using `taut_isPseudomanifold` + `faceCount_eq_one_of_boundary`; no new topological theorem is needed.
+
+**Deg3/Base/Final**
+Base:
+`base_edgeLinkConnected` should mirror `base_free_clean`: prove `M.support = {vertsOf σ}`, then use `edgeLinkConnected_singleton`.
+
+Deg3:
+Do not reinsert three tets. The existing degree-3 machinery identifies one star tet `starTet σ v`. Mirror `deg3_isPM`: get the non-star side `MR` or `ML`, apply IH for `EdgeLinkConnected`, prove `M.support = insert (starTet σ v) R.support`, then apply `edgeLinkConnected_insert` using the already-proved star compatibility pattern from `cleanGlueStep_star_of_remainder` or factor its `helc` proof.
+
+Final:
+`taut_edgeLinkConnected` should be a `Nat.strong_induction_on (nrm M)` clone of `taut_isPseudomanifold`, dispatching:
+- `base_edgeLinkConnected`
+- `deg3_edgeLinkConnected`
+- `prime_edgeLinkConnected`
+
+**Next Bounded Target**
+Implement only `edgeLinkConnected_insert_flipBridge` plus its local helper lemmas in `Theorem3Clean.lean`.
+
+Hard-stop if you cannot prove the side-local/seam dichotomy:
+`edge with tets/apexes on both filtered sides ⇒ edge = f₃ ∩ f₄`.
+tokens used
+130,838
+PASS
+
+**Verdict:** Q1 structure is right, with one refinement: do not split on the original `e`; first orient the disjoint pair.
+
+If `eligible_pair_oriented_opp_avoidance` returns:
+- `¬ (e \ (f₃∩f₄)) ⊆ u`: use `(r,w) = (e,u)`.
+- `¬ (u \ (g₃∩g₄)) ⊆ e`: swap, use `(r,w) = (u,e)`.
+
+Then split on `FlipEdgePresent σ r₃ r₄`. The no-flip branch is exactly:
+`removeTet_edgeLinkConnected_noFlip` + `removeTet_connOn_oppEdge_of_disjoint_eligible` + `prime_edgeLinkConnected_case1`.
+
+**Recommended Patch Shape**
+Add a case2 bridge, then assemble:
+1. `prime_edgeLinkConnected_case2`
+2. `prime_edgeLinkConnected`
+3. `deg3_edgeLinkConnected`
+4. `base_edgeLinkConnected`
+5. `taut_edgeLinkConnected`
+
+**Files To Edit**
+- Primary: `lean/Taut/Theorem3Clean.lean`
+- Only touch `lean/Taut/PrimeStep.lean` if you decide to expose extra flip-side fields from `PrimeFlipEdgeSplitFreePackage`; not necessary for the clean route.
+
+**Case2 Route**
+Do not use `edgeLinkConnected_insert`. Prove a direct bridge:
+
+```lean
+private lemma edgeLinkConnected_insert_flipBridge
+  ... :
+  EdgeLinkConnected (insert e (M₁.support ∪ M₂.support))
+```
+
+Inputs should be the side facts from `flipEdgePresent_side_sets` / `flipEdgePresent_side_algebra`:
+- `A ∩ B = f₃ ∩ f₄`
+- `(f₃ ∩ f₄).card = 2`
+- `M₁ = (removeTet M e).filter (fun t => t ⊆ A)`
+- `M₂ = (removeTet M e).filter (fun t => t ⊆ B)`
+- `M.support = insert e (M₁.support ∪ M₂.support)`
+- `f₃ ⊆ A`, `¬ f₃ ⊆ B`, `f₄ ⊆ B`, `¬ f₄ ⊆ A`
+- `EdgeLinkConnected M₁.support`, `EdgeLinkConnected M₂.support`
+- existence of side tets containing `f₃` and `f₄`
+
+For the seam edge `cd = f₃ ∩ f₄`: side IH connects all A-side apexes to the `f₃ \ cd` apex; side IH connects all B-side apexes to the `f₄ \ cd` apex; inserted `e` gives the edge between those two apexes.
+
+For any edge not equal to `cd`: use side separation. A link cannot genuinely use both sides unless the edge lies in `A ∩ B`, hence is `cd`. If it is a non-seam edge of `e`, the inserted tet either connects the two new apexes alone or connects through the relevant side face.
+
+**Local Lemmas Needed**
+- `edgeLinkVerts_union_side_local_or_seam`: an edge with link vertices in both side supports must be the seam `f₃ ∩ f₄`.
+- `edgeLinkConnected_union_side_local`: if all tets containing an edge are local to one side, lift that side’s `ConnOn` to `M₁.support ∪ M₂.support`.
+- `side_face_apex_mem_edgeLinkVerts`: from a side tet containing `f₃`/`f₄`, produce the seam apex in that side’s edge link.
+- `edgeLinkConnected_insert_flipBridge`: the main combinatorial bridge.
+- `prime_edgeLinkConnected_case2`: obtains `A B`, side algebra, side IH ELC, side-face witnesses, then rewrites by `support_decomp`.
+
+You can rederive the side-face witnesses as in `flipEdgePresent_side_data` using `taut_isPseudomanifold` + `faceCount_eq_one_of_boundary`; no new topological theorem is needed.
+
+**Deg3/Base/Final**
+Base:
+`base_edgeLinkConnected` should mirror `base_free_clean`: prove `M.support = {vertsOf σ}`, then use `edgeLinkConnected_singleton`.
+
+Deg3:
+Do not reinsert three tets. The existing degree-3 machinery identifies one star tet `starTet σ v`. Mirror `deg3_isPM`: get the non-star side `MR` or `ML`, apply IH for `EdgeLinkConnected`, prove `M.support = insert (starTet σ v) R.support`, then apply `edgeLinkConnected_insert` using the already-proved star compatibility pattern from `cleanGlueStep_star_of_remainder` or factor its `helc` proof.
+
+Final:
+`taut_edgeLinkConnected` should be a `Nat.strong_induction_on (nrm M)` clone of `taut_isPseudomanifold`, dispatching:
+- `base_edgeLinkConnected`
+- `deg3_edgeLinkConnected`
+- `prime_edgeLinkConnected`
+
+**Next Bounded Target**
+Implement only `edgeLinkConnected_insert_flipBridge` plus its local helper lemmas in `Theorem3Clean.lean`.
+
+Hard-stop if you cannot prove the side-local/seam dichotomy:
+`edge with tets/apexes on both filtered sides ⇒ edge = f₃ ∩ f₄`.
