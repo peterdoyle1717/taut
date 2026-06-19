@@ -58,18 +58,23 @@ Lemma stack (all in `Theorem3Clean.lean`; `PrimeStep` machinery imported). **CHE
    hypothesis is now `ConnOn (edgeLinkGraph (removeTet M u) O_e) (edgeLinkVerts (removeTet M u) O_e)`
    (not full `EdgeLinkConnected (removeTet M u)`), so a flip-present `u` is fine (its pinch is only at
    `u`'s flip edge, and `O_e ≠` that since `¬O_e⊆u`).
-**REMAINING (Codex consult `case1-elc-architect`):**
-5. `removeTet_edgeLinkConnected_noFlip`: IH → `EdgeLinkConnected (removeTet M e)` (¬FlipEdgePresent e).
-6. `flipPresent_removeTet_connOn_at_nonflip_edge`: `ConnOn` at `O_e` in `removeTet M u` when `u` is
-   flip-present — via `flipEdgePresent_side_sets`/`_algebra`; `O_e` lies wholly in one side (else
-   `O_e ⊆ A∩B = g₃∩g₄ ⊆ u`, contra `¬O_e⊆u`), so reduce to that side's IH `EdgeLinkConnected`. NOT
-   `isPseudomanifold_union_of_sideSep` (PM-only).
-7. `removeTet_connOn_oppEdge_of_disjoint_eligible` (dispatcher): `ConnOn` at `O_e` in `removeTet M u`;
-   case on `FlipEdgePresent u` → (5) or (6).
-8. `prime_edgeLinkConnected_case1`: `edgeLinkConnected_insert` over `removeTet M e` (hELMe from (5)); opp
-   edge via weakened (4) + dispatcher (7); 5 others via (3).
-9. **HARD STOP**: `taut_edgeLinkConnected` prime case splits on `FlipEdgePresent e`; flip-present `e`
-   needs a SEPARATE bridge `prime_edgeLinkConnected_case2` (not yet routed). base=singleton, deg3=existing.
+**CASE-1 SOURCING — ALL CHECKED** (Codex `case1-elc-architect`):
+5.✓ `removeTet_edgeLinkConnected_noFlip` (`41b5066`): IH → `EdgeLinkConnected (removeTet M e)` (¬Flip e).
+6.✓ `flipPresent_removeTet_connOn_at_nonflip_edge` + helper `connOn_oppEdge_of_subset_local` (`80e6d95`):
+   `ConnOn` at `O_e` in `removeTet M u` when `u` flip-present (side-local; `O_e` in one side).
+7.✓ `removeTet_connOn_oppEdge_of_disjoint_eligible` (`bc7c554`): dispatcher, case on `FlipEdgePresent u`.
+8.✓ `prime_edgeLinkConnected_case1` (`41b5066`): assembles `edgeLinkConnected_insert` over `removeTet M e`
+   (hELMe from (5); opp edge via weakened (4) + dispatcher (7); 5 others via (3)). Takes hELMe + hConnOu.
+
+**REMAINING for `taut_edgeLinkConnected` (NEXT CONSULT):**
+A. prime assembly: pick disjoint eligible pair (`aleph_disjoint_eligible_pair`, needs NoDegree3Vertex);
+   orientation lemma (2) picks which tet's opp edge is avoided; reinsert THAT tet via (8) — but (8) needs
+   the reinserted tet ¬FlipEdgePresent (for hELMe). So the case structure couples orientation × Flip
+   status: if the avoided tet is ¬Flip → case1; both-flip → **case2 HARD STOP**.
+B. **case2 bridge** (flip-present reinserted tet): a SEPARATE `prime_edgeLinkConnected_case2` /
+   `edgeLinkConnected_insert_flipBridge` — NOT YET ROUTED (Codex hard-stop).
+C. `deg3_edgeLinkConnected` (degree-3 star step) + base (singleton = `edgeLinkConnected_singleton`).
+D. assemble `taut_edgeLinkConnected` (strong induction, mirror `taut_isPseudomanifold`).
 Then: `taut_edgeLinkConnected` ⟹ `hELM` ⟹ `hOppEmpty` case-1 ⟹ `cleanGlueStep_eligible` ⟹ `prime_step_clean`
 case-1. Still open: `prime_step_clean` case-2 (clean RelShelling bridge, Ball.lean:281) — DEFERRED;
 `theorem3_clean` = `theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean`; `theorem2_clean`.
