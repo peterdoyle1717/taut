@@ -567,10 +567,28 @@ sphere/ball definitions.
   `σR≠star` via `hStarNotMR`). `degree3_hanchor` axioms = [propext, Classical.choice, Quot.sound]
   (sorryAx-FREE). **Theorem3.lean is now sorry-free.** No AlephProver needed. Implemented by
   general-purpose subagents (PM-carry + H1).
-- NEXT (H2 — the SINGLE remaining hole): `flipEdgePresent_side_bridge` (`PrimeStep.lean:1698`) —
-  the case-2 RelShelling bridge (the M22b "hidden topology" wall; Aleph stalled here). It now has
-  PM available via the carry (and `removeTet_isPseudomanifold`/LEMMA C). Peter: do NOT start H2 yet
-  except to inspect deps. theorem2/theorem3 still carry sorryAx via H2 only.
+- **H2 CLOSED — Theorem 2/3 SORRY-FREE** (2026-06-18, `4e52d07` "Close flipEdgePresent_side_bridge
+  (H2)"): the case-2 RelShelling bridge (the M22b "hidden topology" wall where Aleph stalled 4.5h) is
+  proved. **The whole `lean/Taut/` tree is now sorry/admit/axiom/native_decide-FREE**, and
+  `theorem2` (IsBall), `theorem3` (FreelyShellable), `theorem2_core`, `theorem3_core`,
+  `flipEdgePresent_side_bridge`, `taut_isPseudomanifold` all `#print axioms` =
+  `[propext, Classical.choice, Quot.sound]` (sorryAx GONE). Construction (Codex consult 019edd33,
+  "option 1"): new Ball helper `FreelyShellable.relShelling_over_insert_boundary_face` (first glue
+  shares the interface face f₄; tail via banked `ShellFrom_erase_union_disjoint`); H2 gained 4
+  dischargeable hyps (`huniq₂/₁` unique bridge-head, `hrecon₂/₁` reconstruction σ = σ₂.erase f₄ ∪ K₂,
+  K₂ = σ.filter(¬·⊆B)), discharged at `flipEdgePresent_side_data` via `taut_isPseudomanifold` +
+  `faceCount_eq_one_of_boundary`. New helpers `sharedFaces_straddle`, `glueStep_bridge_left/right`,
+  `flipEdgePresent_side_reconstruct[_left]`. One `set_option maxHeartbeats 800000` on
+  `exists_shelling_prime_case2` (finite isDefEq budget, not an axiom). Build green 8271. AlephProver
+  not needed. Implemented by subagents. **The combinatorial Theorem 2/3 is COMPLETE (weak route).**
+- CODEX-OUTPUT SAFETY (2026-06-18, `dcd9927`): `scripts/codex-consult-safe.sh` + the "Codex consult
+  safety" rule above (never `cat` raw codex output; wrapper archives raw + prints bounded summary).
+- NEXT (the weak→clean migration + other open targets): theorem2/theorem3 conclude the OLD WEAK
+  `IsBall`/`FreelyShellable` (NOT the clean predicates) — the clean-predicate migration
+  (`IsCleanBall`/`FreelyCleanShellable`/`Clean3Complex`, the M-CS1 stack) is the main remaining
+  structural work (clean reassembly analogues discharging a `CleanGlueStep` at each graft; the PM
+  carry already supplies TriangleBounded3). Other open targets: Corollary 1 (ℚ-fillings), |A∩B|≤1
+  cases of Th1, Th4 (S³⊄B³).
 
 ## Design decisions of record (G1-audited)
 
