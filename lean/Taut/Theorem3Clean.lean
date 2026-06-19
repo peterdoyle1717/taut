@@ -1528,6 +1528,279 @@ private lemma oppEdge_empty_of_disjoint_eligible_remainder {σ : Finset (Finset 
     exact (not_edgeLinkConnected_of_subset (subset_refl (removeTet M u).support)
       hOcard hp₁_link hw_link hnr) hELMu
 
+/-- **Opposite-edge geometry of an eligible tet.** For an eligible tet `t` of `M`
+with `exposedFaces M t = {a, b}` (`a ≠ b`), the flip-opposite edge `t \ (a ∩ b)`
+is a genuine edge (card 2), `a ∩ b` is the flip edge (card 2), and they partition
+`t`.  Moreover the opposite edge is an edge of `σ`, and — crucially — the *only*
+`σ`-triangles containing it are the two shared faces of `t`.  The two shared faces
+are the two `t.erase pᵢ` for `{p₁,p₂} = a ∩ b`, each containing `t \ (a ∩ b)`;
+they are the two `σ`-faces over that edge by `exists_two_faces`. -/
+private lemma eligible_oppEdge_geom {σ : Finset (Finset V)} {M : Chain V}
+    {t a b : Finset V}
+    (hσ : IsSphere2 σ) (hUb : UnitOn (bdry M) σ)
+    (ht : EligibleTet M t) (hexp : exposedFaces M t = {a, b}) (hab : a ≠ b) :
+    (t \ (a ∩ b)).card = 2 ∧ (a ∩ b).card = 2 ∧ (a ∩ b) ⊆ t ∧
+      (t \ (a ∩ b)) ⊆ t ∧ (a ∩ b) ∪ (t \ (a ∩ b)) = t ∧
+      (t \ (a ∩ b)) ∈ edgesOf σ ∧
+      (∀ T ∈ σ, (t \ (a ∩ b)) ⊆ T → T ∈ sharedFaces M t) := by
+  classical
+  -- exposed-pair geometry: `a = t.erase z₃`, `b = t.erase z₄`, `t \ (a ∩ b) = {z₃, z₄}`.
+  have haexp : a ∈ exposedFaces M t := by rw [hexp]; exact Finset.mem_insert_self a _
+  have hbexp : b ∈ exposedFaces M t := by
+    rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self b)
+  have hatet : a ∈ tetFaces t := exposedFaces_subset_tetFaces M t haexp
+  have hbtet : b ∈ tetFaces t := exposedFaces_subset_tetFaces M t hbexp
+  have hae : a ⊆ t := (Finset.mem_powersetCard.mp hatet).1
+  have hbe : b ⊆ t := (Finset.mem_powersetCard.mp hbtet).1
+  have ha3 : a.card = 3 := (Finset.mem_powersetCard.mp hatet).2
+  have hb3 : b.card = 3 := (Finset.mem_powersetCard.mp hbtet).2
+  have ht4 : t.card = 4 := ht.1
+  have hcarda : (t \ a).card = 1 := by rw [Finset.card_sdiff_of_subset hae, ht4, ha3]
+  have hcardb : (t \ b).card = 1 := by rw [Finset.card_sdiff_of_subset hbe, ht4, hb3]
+  obtain ⟨z₃, hz₃⟩ := Finset.card_eq_one.mp hcarda
+  obtain ⟨z₄, hz₄⟩ := Finset.card_eq_one.mp hcardb
+  have hz₃mem : z₃ ∈ t \ a := hz₃ ▸ Finset.mem_singleton_self z₃
+  have hz₄mem : z₄ ∈ t \ b := hz₄ ▸ Finset.mem_singleton_self z₄
+  rw [Finset.mem_sdiff] at hz₃mem hz₄mem
+  have heq3 : a = t.erase z₃ := by
+    apply Finset.eq_of_subset_of_card_le
+    · intro x hx; exact Finset.mem_erase.mpr ⟨fun h => hz₃mem.2 (h ▸ hx), hae hx⟩
+    · rw [Finset.card_erase_of_mem hz₃mem.1, ht4, ha3]
+  have heq4 : b = t.erase z₄ := by
+    apply Finset.eq_of_subset_of_card_le
+    · intro x hx; exact Finset.mem_erase.mpr ⟨fun h => hz₄mem.2 (h ▸ hx), hbe hx⟩
+    · rw [Finset.card_erase_of_mem hz₄mem.1, ht4, hb3]
+  have hz₃₄ : z₃ ≠ z₄ := by
+    rintro rfl; exact hab (heq3.trans heq4.symm)
+  have hinter_eq : a ∩ b = t \ ({z₃, z₄} : Finset V) := by
+    ext x
+    simp only [Finset.mem_inter, heq3, heq4, Finset.mem_erase, Finset.mem_sdiff,
+      Finset.mem_insert, Finset.mem_singleton]
+    tauto
+  have hopp_eq : t \ (a ∩ b) = ({z₃, z₄} : Finset V) := by
+    rw [hinter_eq]
+    ext x
+    simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+    constructor
+    · rintro ⟨hxe, hxc⟩; by_contra hxne; exact hxc ⟨hxe, hxne⟩
+    · rintro (rfl | rfl)
+      · exact ⟨hz₃mem.1, fun h => h.2 (Or.inl rfl)⟩
+      · exact ⟨hz₄mem.1, fun h => h.2 (Or.inr rfl)⟩
+  have hz₃e : z₃ ∈ t := hz₃mem.1
+  have hz₄e : z₄ ∈ t := hz₄mem.1
+  have hOcard : (t \ (a ∩ b)).card = 2 := by rw [hopp_eq]; exact Finset.card_pair hz₃₄
+  have hOsub : ({z₃, z₄} : Finset V) ⊆ t := by
+    intro x hx
+    rcases Finset.mem_insert.mp hx with rfl | hx
+    · exact hz₃e
+    · rw [Finset.mem_singleton] at hx; exact hx ▸ hz₄e
+  have hOsubt : (t \ (a ∩ b)) ⊆ t := Finset.sdiff_subset
+  -- the flip edge `a ∩ b = {p₁,p₂}` and `t = (a ∩ b) ∪ (t \ (a ∩ b))`.
+  have hICsubt : (a ∩ b) ⊆ t := hinter_eq ▸ Finset.sdiff_subset
+  have hICcard : (a ∩ b).card = 2 := by
+    rw [hinter_eq, Finset.card_sdiff_of_subset hOsub, ht4, Finset.card_pair hz₃₄]
+  obtain ⟨p₁, p₂, hp₁₂, hPeq⟩ := Finset.card_eq_two.mp hICcard
+  have htunion : (a ∩ b) ∪ (t \ (a ∩ b)) = t := Finset.union_sdiff_of_subset hICsubt
+  -- the two shared faces are `t.erase p₁`, `t.erase p₂`, each ⊇ {z₃,z₄}.
+  have hp₁mem : p₁ ∈ a ∩ b := hPeq ▸ Finset.mem_insert_self p₁ _
+  have hp₂mem : p₂ ∈ a ∩ b := hPeq ▸ Finset.mem_insert_of_mem (Finset.mem_singleton_self p₂)
+  have hp₁t : p₁ ∈ t := hICsubt hp₁mem
+  have hp₂t : p₂ ∈ t := hICsubt hp₂mem
+  have hp₁notO : p₁ ∉ ({z₃, z₄} : Finset V) := by
+    intro hpO
+    exact (Finset.mem_sdiff.mp (hinter_eq ▸ hp₁mem)).2 hpO
+  have hp₂notO : p₂ ∉ ({z₃, z₄} : Finset V) := by
+    intro hpO
+    exact (Finset.mem_sdiff.mp (hinter_eq ▸ hp₂mem)).2 hpO
+  -- `sharedFaces = tetFaces \ exposedFaces`.
+  have hsh_eq2 : tetFaces t \ exposedFaces M t = sharedFaces M t := by
+    rw [exposedFaces, Finset.sdiff_sdiff_self_left,
+      Finset.inter_eq_right.mpr (sharedFaces_subset_tetFaces M t)]
+  -- `t.erase p` is a shared face whenever `p ∈ {p₁,p₂}` (it is ≠ a, b since p ∉ O).
+  have herase_shared : ∀ p ∈ ({p₁, p₂} : Finset V), t.erase p ∈ sharedFaces M t ∧
+      ({z₃, z₄} : Finset V) ⊆ t.erase p := by
+    intro p hp
+    have hpO : p ∉ ({z₃, z₄} : Finset V) := by
+      rcases Finset.mem_insert.mp hp with rfl | hp
+      · exact hp₁notO
+      · rw [Finset.mem_singleton] at hp; exact hp ▸ hp₂notO
+    have hpt : p ∈ t := by
+      rcases Finset.mem_insert.mp hp with rfl | hp
+      · exact hp₁t
+      · rw [Finset.mem_singleton] at hp; exact hp ▸ hp₂t
+    have hOsub_erase : ({z₃, z₄} : Finset V) ⊆ t.erase p := by
+      intro x hx
+      refine Finset.mem_erase.mpr ⟨?_, hOsub hx⟩
+      rintro rfl; exact hpO hx
+    have herasetet : t.erase p ∈ tetFaces t := erase_mem_tetFaces ht4 hpt
+    have hz₃erase : z₃ ∈ t.erase p := hOsub_erase (Finset.mem_insert_self z₃ _)
+    have hz₄erase : z₄ ∈ t.erase p :=
+      hOsub_erase (Finset.mem_insert_of_mem (Finset.mem_singleton_self z₄))
+    have hne_a : t.erase p ≠ a := fun h => hz₃mem.2 (h ▸ hz₃erase)
+    have hne_b : t.erase p ≠ b := fun h => hz₄mem.2 (h ▸ hz₄erase)
+    refine ⟨?_, hOsub_erase⟩
+    rw [← hsh_eq2, hexp]
+    refine Finset.mem_sdiff.mpr ⟨herasetet, ?_⟩
+    simp only [Finset.mem_insert, Finset.mem_singleton]
+    push_neg; exact ⟨hne_a, hne_b⟩
+  obtain ⟨hS₁sh, hS₁O⟩ := herase_shared p₁ (Finset.mem_insert_self p₁ _)
+  obtain ⟨hS₂sh, hS₂O⟩ := herase_shared p₂ (Finset.mem_insert_of_mem (Finset.mem_singleton_self p₂))
+  -- both shared faces sit in `σ` (they are boundary triangles).
+  have hsh_subσ : ∀ s ∈ sharedFaces M t, s ∈ σ := by
+    intro s hs
+    rw [← hUb.1, sharedFaces] at *
+    exact (Finset.mem_inter.mp hs).2
+  have hS₁σ : t.erase p₁ ∈ σ := hsh_subσ _ hS₁sh
+  have hS₂σ : t.erase p₂ ∈ σ := hsh_subσ _ hS₂sh
+  have hS₁ne₂ : t.erase p₁ ≠ t.erase p₂ := by
+    intro h
+    have hp₂in : p₂ ∈ t.erase p₁ := Finset.mem_erase.mpr ⟨fun hc => hp₁₂ hc.symm, hp₂t⟩
+    exact (Finset.notMem_erase p₂ t) (h ▸ hp₂in)
+  -- the opposite edge is a σ-edge (it lies in the card-3 boundary triangle `t.erase p₁`).
+  have hS₁card : (t.erase p₁).card = 3 := by rw [Finset.card_erase_of_mem hp₁t, ht4]
+  have hOedge : (t \ (a ∩ b)) ∈ edgesOf σ := by
+    rw [hopp_eq]
+    exact mem_edgesOf.mpr ⟨t.erase p₁, hS₁σ, hS₁O, Finset.card_pair hz₃₄⟩
+  -- by `exists_two_faces`, the two σ-faces over the opposite edge are exactly the
+  -- two shared faces; any σ-face over it is one of them, hence shared.
+  obtain ⟨g₁, hg₁σ, g₂, hg₂σ, hg₁₂, _, _, huniq⟩ :=
+    exists_two_faces hσ.toClosedSurface hOedge
+  rw [hopp_eq] at huniq
+  have hany : ∀ T ∈ σ, (t \ (a ∩ b)) ⊆ T → T ∈ sharedFaces M t := by
+    intro T hTσ hTsub
+    rw [hopp_eq] at hTsub
+    -- `t.erase p₁`, `t.erase p₂`, and `T` are σ-faces ⊇ O, so each is `g₁` or `g₂`.
+    have hd₁ := huniq _ hS₁σ hS₁O
+    have hd₂ := huniq _ hS₂σ hS₂O
+    have hdT := huniq _ hTσ hTsub
+    -- `{g₁,g₂} = {erase p₁, erase p₂}`, so `T ∈ {erase p₁, erase p₂} ⊆ sharedFaces`.
+    have hTcase : T = t.erase p₁ ∨ T = t.erase p₂ := by
+      rcases hdT with hT1 | hT2
+      · -- `T = g₁`; whichever of `erase p₁`, `erase p₂` equals `g₁` gives the answer.
+        rcases hd₁ with h11 | h12
+        · exact Or.inl (hT1.trans h11.symm)
+        · rcases hd₂ with h21 | h22
+          · exact Or.inr (hT1.trans h21.symm)
+          · exact absurd (h12.trans h22.symm) hS₁ne₂
+      · -- `T = g₂`.
+        rcases hd₁ with h11 | h12
+        · rcases hd₂ with h21 | h22
+          · exact absurd (h11.trans h21.symm) hS₁ne₂
+          · exact Or.inr (hT2.trans h22.symm)
+        · exact Or.inl (hT2.trans h12.symm)
+    rcases hTcase with rfl | rfl
+    · exact hS₁sh
+    · exact hS₂sh
+  exact ⟨hOcard, hICcard, hICsubt, hOsubt, htunion, hOedge, hany⟩
+
+/-- **An edge inside a tet whose two faces over it are both exposed is the flip
+edge.** If `t` is eligible with `exposedFaces M t = {a, b}` (`a ≠ b`, with
+`(a ∩ b).card = 2`), `O ⊆ t` is an edge (card 2), and *every* triangular face of
+`t` containing `O` is exposed (not shared), then `O = a ∩ b`.  Proof: the two
+faces `t.erase q` (`q ∈ t \ O`) over `O` are then both exposed, hence `{a, b}`;
+each contains `O`, so `O ⊆ a ∩ b`, and the cards (both 2) force equality. -/
+private lemma oppEdge_eq_flip {M : Chain V} {t a b O : Finset V}
+    (ht : EligibleTet M t) (hexp : exposedFaces M t = {a, b}) (hab : a ≠ b)
+    (hICcard : (a ∩ b).card = 2) (hOt : O ⊆ t) (hOcard : O.card = 2)
+    (hnsh : ∀ s ∈ tetFaces t, O ⊆ s → s ∉ sharedFaces M t) :
+    O = a ∩ b := by
+  classical
+  have ht4 : t.card = 4 := ht.1
+  -- `t \ O = {q₁,q₂}` (card 2); each `t.erase qᵢ` is a face of `t` over `O`.
+  have hQcard : (t \ O).card = 2 := by rw [Finset.card_sdiff_of_subset hOt, ht4, hOcard]
+  obtain ⟨q₁, q₂, hq₁₂, hQeq⟩ := Finset.card_eq_two.mp hQcard
+  have hq₁mem : q₁ ∈ t \ O := hQeq ▸ Finset.mem_insert_self q₁ _
+  have hq₂mem : q₂ ∈ t \ O := hQeq ▸ Finset.mem_insert_of_mem (Finset.mem_singleton_self q₂)
+  -- `t.erase q ∈ exposedFaces M t` and `O ⊆ t.erase q` for `q ∈ {q₁,q₂}`.
+  have herase_exp : ∀ q ∈ ({q₁, q₂} : Finset V), t.erase q ∈ exposedFaces M t ∧
+      O ⊆ t.erase q := by
+    intro q hq
+    have hqQ : q ∈ t \ O := by
+      rcases Finset.mem_insert.mp hq with rfl | hq
+      · exact hq₁mem
+      · rw [Finset.mem_singleton] at hq; exact hq ▸ hq₂mem
+    obtain ⟨hqt, hqO⟩ := Finset.mem_sdiff.mp hqQ
+    have hOsub_erase : O ⊆ t.erase q := by
+      intro x hx; exact Finset.mem_erase.mpr ⟨fun h => hqO (h ▸ hx), hOt hx⟩
+    have herasetet : t.erase q ∈ tetFaces t := erase_mem_tetFaces ht4 hqt
+    have hnotsh : t.erase q ∉ sharedFaces M t := hnsh _ herasetet hOsub_erase
+    exact ⟨by rw [exposedFaces]; exact Finset.mem_sdiff.mpr ⟨herasetet, hnotsh⟩, hOsub_erase⟩
+  obtain ⟨he₁exp, he₁O⟩ := herase_exp q₁ (Finset.mem_insert_self q₁ _)
+  obtain ⟨he₂exp, he₂O⟩ := herase_exp q₂ (Finset.mem_insert_of_mem (Finset.mem_singleton_self q₂))
+  rw [hexp, Finset.mem_insert, Finset.mem_singleton] at he₁exp he₂exp
+  -- both `t.erase qᵢ ∈ {a,b}`; they are distinct, so `{a,b} = {erase q₁, erase q₂}`.
+  have hq₂t : q₂ ∈ t := (Finset.mem_sdiff.mp hq₂mem).1
+  have hS₁ne₂ : t.erase q₁ ≠ t.erase q₂ := by
+    intro h
+    have hq₂in : q₂ ∈ t.erase q₁ := Finset.mem_erase.mpr ⟨fun hc => hq₁₂ hc.symm, hq₂t⟩
+    exact (Finset.notMem_erase q₂ t) (h ▸ hq₂in)
+  -- `a` (and `b`) is one of `t.erase q₁`, `t.erase q₂`, both ⊇ `O`.
+  have hAcase : a = t.erase q₁ ∨ a = t.erase q₂ := by
+    rcases he₁exp with h1a | h1b
+    · exact Or.inl h1a.symm
+    · rcases he₂exp with h2a | h2b
+      · exact Or.inr h2a.symm
+      · exact absurd (h1b.trans h2b.symm) hS₁ne₂
+  have hBcase : b = t.erase q₁ ∨ b = t.erase q₂ := by
+    rcases he₁exp with h1a | h1b
+    · rcases he₂exp with h2a | h2b
+      · exact absurd (h1a.trans h2a.symm) hS₁ne₂
+      · exact Or.inr h2b.symm
+    · exact Or.inl h1b.symm
+  have hOa : O ⊆ a := by rcases hAcase with rfl | rfl; exacts [he₁O, he₂O]
+  have hOb : O ⊆ b := by rcases hBcase with rfl | rfl; exacts [he₁O, he₂O]
+  have hOIC : O ⊆ a ∩ b := Finset.subset_inter hOa hOb
+  exact Finset.eq_of_subset_of_card_le hOIC (by rw [hICcard, hOcard])
+
+/-- **CRUX orientation lemma.** Two distinct eligible tets `e`, `u` with disjoint
+shared faces cannot each have its flip-opposite edge contained in the other.
+If both `e \ (f₃ ∩ f₄) ⊆ u` and `u \ (g₃ ∩ g₄) ⊆ e` held, then (by
+`eligible_oppEdge_geom` + `oppEdge_eq_flip`, using disjointness so that no face of
+`u` over `e`'s opposite edge can be shared) the opposite edge of `e` would equal
+`u`'s flip edge `g₃ ∩ g₄` and vice versa, whence `e = (f₃∩f₄) ∪ (g₃∩g₄) = u`,
+contradicting `e ≠ u`. -/
+private lemma eligible_pair_oriented_opp_avoidance {σ : Finset (Finset V)} {X M : Chain V}
+    {e u f₃ f₄ g₃ g₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hMX : bdry M = X)
+    (he : EligibleTet M e) (hu : EligibleTet M u) (hne : e ≠ u)
+    (hdisj : Disjoint (sharedFaces M e) (sharedFaces M u))
+    (hexpe : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄)
+    (hexpu : exposedFaces M u = {g₃, g₄}) (hg₃₄ : g₃ ≠ g₄) :
+    ¬ (e \ (f₃ ∩ f₄)) ⊆ u ∨ ¬ (u \ (g₃ ∩ g₄)) ⊆ e := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  by_contra hcon
+  push_neg at hcon
+  obtain ⟨hOe_u, hOu_e⟩ := hcon
+  -- opposite-edge geometry for both tets.
+  obtain ⟨hOe_card, hICe_card, hICe_sub, _, htune, _, hany_e⟩ :=
+    eligible_oppEdge_geom hσ hUb he hexpe hf₃₄
+  obtain ⟨hOu_card, hICu_card, hICu_sub, _, htunu, _, hany_u⟩ :=
+    eligible_oppEdge_geom hσ hUb hu hexpu hg₃₄
+  -- no face of `u` over `e`'s opposite edge is shared (else it is shared by both,
+  -- via `hany_e`, contradicting `hdisj`); symmetrically for `e` over `u`'s edge.
+  have hnsh_u : ∀ s ∈ tetFaces u, (e \ (f₃ ∩ f₄)) ⊆ s → s ∉ sharedFaces M u := by
+    intro s _ hsub hsu
+    have hsσ : s ∈ σ := by
+      have := (Finset.mem_inter.mp (by rw [sharedFaces] at hsu; exact hsu)).2
+      rw [← hUb.1]; exact this
+    exact Finset.disjoint_left.mp hdisj (hany_e s hsσ hsub) hsu
+  have hnsh_e : ∀ s ∈ tetFaces e, (u \ (g₃ ∩ g₄)) ⊆ s → s ∉ sharedFaces M e := by
+    intro s _ hsub hse
+    have hsσ : s ∈ σ := by
+      have := (Finset.mem_inter.mp (by rw [sharedFaces] at hse; exact hse)).2
+      rw [← hUb.1]; exact this
+    exact Finset.disjoint_right.mp hdisj (hany_u s hsσ hsub) hse
+  -- `e`'s opposite edge is `u`'s flip edge, and vice versa.
+  have hOe_eq : (e \ (f₃ ∩ f₄)) = g₃ ∩ g₄ :=
+    oppEdge_eq_flip hu hexpu hg₃₄ hICu_card hOe_u hOe_card hnsh_u
+  have hOu_eq : (u \ (g₃ ∩ g₄)) = f₃ ∩ f₄ :=
+    oppEdge_eq_flip he hexpe hf₃₄ hICe_card hOu_e hOu_card hnsh_e
+  -- assemble `e = (f₃∩f₄) ∪ (g₃∩g₄) = u`.
+  have he_eq : e = (f₃ ∩ f₄) ∪ (g₃ ∩ g₄) := by rw [← hOe_eq, htune]
+  have hu_eq : u = (g₃ ∩ g₄) ∪ (f₃ ∩ f₄) := by rw [← hOu_eq, htunu]
+  exact hne (by rw [he_eq, hu_eq, Finset.union_comm])
+
 /-- **One clean glue step for re-gluing the eligible tet `e`** onto its remainder
 `removeTet M e` (boundary the flip-boundary, ending at `σ`).  All fields are
 discharged from the eligible geometry except the edge-link emptiness on the single
