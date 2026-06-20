@@ -1048,4 +1048,15 @@ theorem exists_good_flip_emptyK3
   rw [← hxeq]
   exact Finset.mem_powersetCard.mpr ⟨hxs, hxcard⟩
 
+/-- With no empty `K₃`, every triangular face of an empty `K₄` witness `s` is itself a simplex.
+(Each of `s`'s `card`-3 subsets has all its edges among `s`'s edges, hence simplices; were it not a
+simplex it would be an empty `K₃`.) -/
+lemma emptyK4_face_simplex_of_no_emptyK3 {τ : Finset (Finset V)} {s f : Finset V}
+    (hNoK3 : ¬ HasEmptyK3 τ) (_hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf τ x)
+    (hf : f ⊆ s) (hf3 : f.card = 3) :
+    SimplexOf τ f := by
+  by_contra hns
+  exact hNoK3 ⟨f, hf3, fun x hxf hx2 => hsedges x (hxf.trans hf) hx2, hns⟩
+
 end Taut
