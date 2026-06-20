@@ -1389,6 +1389,43 @@ theorem aleph_two_double_fibers (α β : Type*) [DecidableEq α] [DecidableEq β
   · simpa [g] using hb₂eq
 
 
+/-- **`k`-fold double-fiber pigeonhole.** Generalizes `aleph_two_double_fibers`: with fibers `≤ 2`
+and a degree-`k` gap `t.card + k ≤ s.card`, there is a `k`-element `D ⊆ t` each of whose fibers has
+card exactly `2`.  (The number of card-2 fibers is `≥ s.card - t.card`, since the others contribute
+`≤ 1` each.) -/
+theorem aleph_k_double_fibers (α β : Type*) [DecidableEq α] [DecidableEq β]
+    (s : Finset α) (t : Finset β) (f : α → β)
+    (hmap : ∀ a ∈ s, f a ∈ t) (k : ℕ) (hcard : t.card + k ≤ s.card)
+    (hfiber_le2 : ∀ b ∈ t, (s.filter (fun a => f a = b)).card ≤ 2) :
+    ∃ D ⊆ t, D.card = k ∧ ∀ b ∈ D, (s.filter (fun a => f a = b)).card = 2 := by
+  classical
+  let g : β → ℕ := fun b => (s.filter (fun a => f a = b)).card
+  let Dall : Finset β := t.filter (fun b => g b = 2)
+  have hsum : s.card = ∑ b ∈ t, g b := by
+    dsimp [g]
+    exact Finset.card_eq_sum_card_fiberwise (fun a ha => hmap a ha)
+  have hterm_le : ∀ b ∈ t, g b ≤ 1 + if g b = 2 then 1 else 0 := by
+    intro b hb
+    have hle2 : g b ≤ 2 := by dsimp [g]; exact hfiber_le2 b hb
+    by_cases h2 : g b = 2
+    · simpa [h2]
+    · have hle1 : g b ≤ 1 := by omega
+      simpa [h2] using hle1
+  have hsum_rhs : (∑ b ∈ t, (1 + if g b = 2 then 1 else 0)) = t.card + Dall.card := by
+    dsimp [Dall]
+    rw [Finset.sum_add_distrib, Finset.card_eq_sum_ones t, Finset.card_filter]
+  have hsum_le : s.card ≤ t.card + Dall.card := by
+    calc s.card = ∑ b ∈ t, g b := hsum
+      _ ≤ ∑ b ∈ t, (1 + if g b = 2 then 1 else 0) := Finset.sum_le_sum hterm_le
+      _ = t.card + Dall.card := hsum_rhs
+  have hk : k ≤ Dall.card := by omega
+  obtain ⟨D, hDsub, hDcard⟩ := Finset.exists_subset_card_eq hk
+  refine ⟨D, hDsub.trans (Finset.filter_subset _ _), hDcard, ?_⟩
+  intro b hbD
+  have hb : b ∈ Dall := hDsub hbD
+  rw [Finset.mem_filter] at hb
+  simpa [g] using hb.2
+
 /-- M25b: a no-degree-3 taut filling has two distinct eligible tets whose shared
 boundary-face pairs are disjoint (needed by case-1's multiplicity-2 argument). -/
 theorem aleph_disjoint_eligible_pair {M : Chain V} {σ : Finset (Finset V)}
