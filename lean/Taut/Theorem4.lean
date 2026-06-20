@@ -901,4 +901,151 @@ theorem aleph_five_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V
   obtain ⟨v, hv, hdeg⟩ := exists_boundary_vertex_deg_ge_five_of_not_octahedron hσ hU hNo3 hNotOct
   exact aleph_disjoint_eligible_family hσ hU hS hT hPure hNo3 hv hdeg
 
+/-! ### Theorem 4 config-1 (K₃) good-flip pair -/
+
+open Classical in
+/-- For a family `E` of eligible tets with **pairwise disjoint** shared-face sets, at
+most one of them can have its flip-edge `g₃ ∩ g₄` equal to a fixed edge `ab`.  Each such
+tet contributes the *two* distinct faces `g₃, g₄ ⊇ ab` to `σ`, and the disjointness of
+shared-face sets makes all those faces distinct across tets; if two tets shared the same
+`ab`, the edge `ab` would lie in ≥ 4 faces of `σ`, contradicting `edgeDeg σ ab = 2`. -/
+lemma disjoint_eligible_family_flipEdge_card_le_one
+    {M : Chain V} {σ E : Finset (Finset V)} {ab : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (helig : ∀ e ∈ E, EligibleTet M e)
+    (hpair : (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)) :
+    (E.filter (fun e =>
+      ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ ab = g₃ ∩ g₄)).card ≤ 1 := by
+  rw [Finset.card_le_one]
+  intro e₁ he₁ e₂ he₂
+  by_contra hne
+  -- Unpack the two filter memberships.
+  rw [Finset.mem_filter] at he₁ he₂
+  obtain ⟨he₁E, g₃, g₄, hsh₁, hne₁, hab₁⟩ := he₁
+  obtain ⟨he₂E, h₃, h₄, hsh₂, hne₂, hab₂⟩ := he₂
+  -- Each face is a shared face of its tet.
+  have hg₃sh : g₃ ∈ sharedFaces M e₁ := by rw [hsh₁]; exact Finset.mem_insert_self _ _
+  have hg₄sh : g₄ ∈ sharedFaces M e₁ := by
+    rw [hsh₁]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self _)
+  have hh₃sh : h₃ ∈ sharedFaces M e₂ := by rw [hsh₂]; exact Finset.mem_insert_self _ _
+  have hh₄sh : h₄ ∈ sharedFaces M e₂ := by
+    rw [hsh₂]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self _)
+  -- Each shared face is a tet face of its tet.
+  have hg₃tet : g₃ ∈ tetFaces e₁ := sharedFaces_subset_tetFaces M e₁ hg₃sh
+  have hg₄tet : g₄ ∈ tetFaces e₁ := sharedFaces_subset_tetFaces M e₁ hg₄sh
+  -- `ab.card = 2` from the tet-pair intersection formula.
+  have he₁card : e₁.card = 4 := (helig e₁ he₁E).1
+  have habcard : ab.card = 2 := by
+    rw [hab₁]; exact tetFaces_pair_inter_card_eq_two he₁card hg₃tet hg₄tet hne₁
+  -- `ab` sits inside all four faces.
+  have hab_g₃ : ab ⊆ g₃ := hab₁ ▸ Finset.inter_subset_left
+  have hab_g₄ : ab ⊆ g₄ := hab₁ ▸ Finset.inter_subset_right
+  have hab_h₃ : ab ⊆ h₃ := hab₂ ▸ Finset.inter_subset_left
+  have hab_h₄ : ab ⊆ h₄ := hab₂ ▸ Finset.inter_subset_right
+  -- Each shared face is in σ (via `bdry M`'s support = σ).
+  have hmemσ : ∀ {g : Finset V}, g ∈ sharedFaces M e₁ ∨ g ∈ sharedFaces M e₂ → g ∈ σ := by
+    intro g hg
+    rcases hg with hg | hg
+    · have := (Finset.mem_inter.mp hg).2; rwa [hU.1] at this
+    · have := (Finset.mem_inter.mp hg).2; rwa [hU.1] at this
+  have hg₃σ : g₃ ∈ σ := hmemσ (Or.inl hg₃sh)
+  have hg₄σ : g₄ ∈ σ := hmemσ (Or.inl hg₄sh)
+  have hh₃σ : h₃ ∈ σ := hmemσ (Or.inr hh₃sh)
+  have hh₄σ : h₄ ∈ σ := hmemσ (Or.inr hh₄sh)
+  -- The shared-face sets of `e₁, e₂` are disjoint.
+  have hdisj : Disjoint (sharedFaces M e₁) (sharedFaces M e₂) :=
+    hpair (Finset.mem_coe.mpr he₁E) (Finset.mem_coe.mpr he₂E) hne
+  rw [Finset.disjoint_left] at hdisj
+  -- Cross-distinctness between the two pairs.
+  have hg₃h₃ : g₃ ≠ h₃ := fun h => hdisj hg₃sh (h ▸ hh₃sh)
+  have hg₃h₄ : g₃ ≠ h₄ := fun h => hdisj hg₃sh (h ▸ hh₄sh)
+  have hg₄h₃ : g₄ ≠ h₃ := fun h => hdisj hg₄sh (h ▸ hh₃sh)
+  have hg₄h₄ : g₄ ≠ h₄ := fun h => hdisj hg₄sh (h ▸ hh₄sh)
+  -- `ab ∈ edgesOf σ`, hence `edgeDeg σ ab = 2`.
+  have habedge : ab ∈ edgesOf σ := mem_edgesOf.mpr ⟨g₃, hg₃σ, hab_g₃, habcard⟩
+  have habdeg : (σ.filter (fun f => ab ⊆ f)).card = 2 := hσ.closed ab habedge
+  -- The four faces form a 4-element subset of the filter; contradiction with card 2.
+  have hsub : ({g₃, g₄, h₃, h₄} : Finset (Finset V)) ⊆ σ.filter (fun f => ab ⊆ f) := by
+    intro f hf
+    rw [Finset.mem_filter]
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hf
+    rcases hf with rfl | rfl | rfl | rfl
+    · exact ⟨hg₃σ, hab_g₃⟩
+    · exact ⟨hg₄σ, hab_g₄⟩
+    · exact ⟨hh₃σ, hab_h₃⟩
+    · exact ⟨hh₄σ, hab_h₄⟩
+  have hfour : ({g₃, g₄, h₃, h₄} : Finset (Finset V)).card = 4 := by
+    rw [Finset.card_insert_of_notMem (by simp [hne₁, hg₃h₃, hg₃h₄]),
+        Finset.card_insert_of_notMem (by simp [hg₄h₃, hg₄h₄]),
+        Finset.card_insert_of_notMem (by simp [hne₂]), Finset.card_singleton]
+  have : (4 : ℕ) ≤ 2 := by
+    calc (4 : ℕ) = ({g₃, g₄, h₃, h₄} : Finset (Finset V)).card := hfour.symm
+      _ ≤ (σ.filter (fun f => ab ⊆ f)).card := Finset.card_le_card hsub
+      _ = 2 := habdeg
+  omega
+
+open Classical in
+/-- **Config-1 (empty `K₃`) good flip.**  Given an empty triangle `s` (all three edges are
+simplices of `M.support`) in a no-degree-3 taut filling, there is an eligible tet whose
+flip edge `g₃ ∩ g₄` avoids every edge of `s`.  The aleph budget gives `4` disjoint eligible
+tets; the previous lemma caps the number whose flip edge hits any one of `s`'s three edges
+at one apiece, so at most `3` are bad and at least one survives. -/
+theorem exists_good_flip_emptyK3
+    {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ)
+    {s : Finset V} (hs3 : s.card = 3)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x) :
+    ∃ e g₃ g₄, EligibleTet M e ∧ sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧
+      (∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄) := by
+  obtain ⟨E, hEcard, hElig, hEpair⟩ :=
+    aleph_four_disjoint_eligible_family hσ hU hS hT hPure hNo3
+  -- The bad tets: those whose flip edge is a 2-subset of `s`.
+  set badE := E.filter (fun e =>
+    ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ g₃ ∩ g₄ ∈ s.powersetCard 2)
+    with hbadE
+  -- `badE ⊆ ⋃_{ab ∈ powersetCard 2 s} (E.filter "flip edge = ab")`.
+  have hbadsub : badE ⊆ (s.powersetCard 2).biUnion (fun ab =>
+      E.filter (fun e => ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ ab = g₃ ∩ g₄)) := by
+    intro e he
+    rw [hbadE, Finset.mem_filter] at he
+    obtain ⟨heE, g₃, g₄, hsh, hne, hmem⟩ := he
+    rw [Finset.mem_biUnion]
+    exact ⟨g₃ ∩ g₄, hmem, Finset.mem_filter.mpr ⟨heE, g₃, g₄, hsh, hne, rfl⟩⟩
+  -- Hence `badE.card ≤ 3`.
+  have hbadcard : badE.card ≤ 3 := by
+    calc badE.card
+        ≤ ((s.powersetCard 2).biUnion (fun ab =>
+            E.filter (fun e => ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ ab = g₃ ∩ g₄))).card :=
+          Finset.card_le_card hbadsub
+      _ ≤ ∑ ab ∈ s.powersetCard 2,
+            (E.filter (fun e => ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ ab = g₃ ∩ g₄)).card :=
+          Finset.card_biUnion_le
+      _ ≤ ∑ _ab ∈ s.powersetCard 2, 1 :=
+          Finset.sum_le_sum (fun ab _ =>
+            disjoint_eligible_family_flipEdge_card_le_one hσ hU hElig hEpair)
+      _ = (s.powersetCard 2).card := by rw [Finset.sum_const, smul_eq_mul, mul_one]
+      _ = 3 := by rw [Finset.card_powersetCard, hs3]; decide
+  -- Some eligible tet escapes `badE`.
+  have hbadsubE : badE ⊆ E := by rw [hbadE]; exact Finset.filter_subset _ _
+  have hne : (E \ badE).Nonempty := by
+    rw [← Finset.card_pos, Finset.card_sdiff_of_subset hbadsubE, hEcard]
+    omega
+  obtain ⟨e, he⟩ := hne
+  rw [Finset.mem_sdiff] at he
+  obtain ⟨heE, hebad⟩ := he
+  -- `e` is eligible with exactly two shared faces.
+  have helig : EligibleTet M e := hElig e heE
+  have hshcard : (sharedFaces M e).card = 2 := helig.2.2.1
+  obtain ⟨g₃, g₄, hg, hsh⟩ := Finset.card_eq_two.mp hshcard
+  -- The flip edge avoids every edge of `s`.
+  refine ⟨e, g₃, g₄, helig, hsh, hg, ?_⟩
+  intro x hxs hxcard hxeq
+  apply hebad
+  rw [hbadE, Finset.mem_filter]
+  refine ⟨heE, g₃, g₄, hsh, hg, ?_⟩
+  rw [← hxeq]
+  exact Finset.mem_powersetCard.mpr ⟨hxs, hxcard⟩
+
 end Taut

@@ -1,0 +1,71 @@
+G1 FOCUSED PACKET — Theorem 4: exact statements for exists_good_flip_emptyK3 / exists_good_flip_emptyK4.
+
+Reviewer: codex, ARCHITECT. Wrapper stage is DONE + CHECKED (aleph_four/five_disjoint_eligible_family,
+maxdeg lemmas, octahedron Euler bridge). Next is exists_good_flip_emptyK3/K4. Your sub345 PLAN listed
+these as "compose" steps but gave NO exact Lean signatures, and the counting ingredient differs between
+K3 and K4. Please give the EXACT statements + the missing counting lemma. I implement exactly what you
+return. Do not restate the plan; resolve the signatures.
+
+=====================================================================
+CHECKED substrate (all in Theorem4.lean / Theorem2Aleph.lean, std-3 axioms)
+=====================================================================
+- aleph_four_disjoint_eligible_family (hσ hU hS hT hPure hNo3) :
+    ∃ E, E.card = 4 ∧ (∀ e∈E, EligibleTet M e) ∧ (↑E).PairwiseDisjoint (fun e => sharedFaces M e).
+- aleph_five_disjoint_eligible_family (… hNotOct : ¬ IsOctahedronSphere σ) : … E.card = 5 ….
+- disjoint_eligible_family_hit_two_faces_card_le_two
+    (hpair : (↑E).PairwiseDisjoint (fun e => sharedFaces M e)) (hpq : p ≠ q) :
+    (E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)).card ≤ 2.
+- sub-3 persistence (FlipEdge-ABSENT case): hasEmptyK3_removeTet_of_avoids_sharedEdge
+    (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃,g₄}) (hg : g₃≠g₄) (hs3) (hedges)
+    (havoid : ∀ x ⊆ s, x.card=2 → x ≠ g₃ ∩ g₄) (hno) : HasEmptyK3 (removeTet M e).support.
+    (and the K4 analogue). So the per-tet "avoid" condition is exactly: the DISAPPEARING filling edge
+    g₃ ∩ g₄ (= sharedFaces∩, "ab") is not an edge of the witness s.
+- sub-4 localization (FlipEdge-PRESENT case): hasEmptyK3/K4_side_of_edge_split.
+- EligibleTet M e := e.card=4 ∧ e∈M.support ∧ (sharedFaces M e).card=2 ∧ … . sharedFaces M e :=
+  tetFaces e ∩ (bdry M).support (the two BOUNDARY faces). exposedFaces M e := tetFaces e \ sharedFaces
+  (the two interior faces). Via UnitOn, sharedFaces ⊆ (bdry M).support = σ.
+
+=====================================================================
+THE KEY FINDING (a counting mismatch between K3 and the cited ingredient)
+=====================================================================
+Paper config-1 (K3, taut.tex:1010-1014): removing an eligible tet flips ONE edge = the disappearing
+filling edge = sharedFaces∩ ("ab"). "≥4 choices of the edge to flip, 3 edges [of the K3] to avoid."
+So the K3 count is over FLIP EDGES (sharedFaces∩), and needs them DISTINCT across the disjoint family:
+  CLAIM: distinct eligible tets with disjoint sharedFaces have DISTINCT flip edges. Proof: if e₁≠e₂ had
+  the same flip edge ab, then ab ⊆ each of the 4 shared faces {g₃¹,g₄¹,g₃²,g₄²}; these are 4 DISTINCT
+  boundary faces (disjoint sharedFaces) each containing ab; but ab ∈ edgesOf σ (a card-2 subset of a
+  boundary triangle) has edgeDeg σ ab = 2 (hσ.closed) ⇒ only 2 boundary faces contain ab. Contradiction.
+So K3 needs a NEW lemma (NOT the ≤2-FACE lemma you cited — that is about p,q ∈ sharedFaces, which fits
+K4's interior-FACE count, not K3's edge count). Proposed:
+  lemma disjoint_eligible_family_flipEdge_card_le_one  -- "≤1 eligible per flip edge"
+      (hpair : (↑E).PairwiseDisjoint (fun e => sharedFaces M e)) (hσ hU …) {ab : Finset V} :
+      (E.filter (fun e => ab = the-flip-edge-of e)).card ≤ 1
+  (the-flip-edge-of e needs naming: ∃ g₃ g₄, sharedFaces M e = {g₃,g₄} ∧ flipEdge = g₃ ∩ g₄. Maybe add
+  a noncomputable accessor `flipEdgeOf M e`, or phrase via sharedFaces.)
+Then: 4 tets, 3 forbidden edges, ≤1 tet per edge ⇒ ≥1 tet whose flip edge ∉ {3 edges of s}.
+
+=====================================================================
+ASK
+=====================================================================
+Q1. EXACT signature of exists_good_flip_emptyK3. My proposal (correct/replace):
+    theorem exists_good_flip_emptyK3 (hσ hU hS hT hPure hNo3) {s : Finset V} (hs3 : s.card = 3)
+      (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x) :
+      ∃ e g₃ g₄, EligibleTet M e ∧ sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧
+        (∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄)
+    (i.e. an eligible tet whose flip edge avoids every edge of s — exactly sub-3's `havoid` interface).
+    Is this the right OUTPUT for the induction to then case-split on FlipEdgePresent σ (exposedFaces pair)?
+Q2. The missing K3 counting lemma: confirm `disjoint_eligible_family_flipEdge_card_le_one` (or your
+    preferred form) and give its exact statement + how to name the flip edge (accessor vs ∃-form).
+Q3. EXACT signature of exists_good_flip_emptyK4, and how it uses the ≤2-FACE lemma + 5 tets + octahedron.
+    The paper's config-2 (taut.tex:1016-1037) is intricate: 6 edges of the K4, ≤2 boundary faces among
+    the 4 faces ABC/ABD/ACD/BCD (no deg-3), octahedron handled separately to get maxdeg≥5, interior edge
+    AD with faces ABC,BCD, "≤2 eligible tets contain one of ABC,BCD ⇒ ≥maxdeg−2 good flips." Give the
+    exact K4 statement + which forbidden set (edges vs the 2 faces) the ≤2-FACE lemma bounds, and how
+    the 5-family yields a good flip.
+Q4. Confirm the OUTPUT shape both should have so the nrm-induction (item c, your next design) consumes
+    them uniformly (presumably: ∃ eligible e + the avoid-edges property, then induction case-splits on
+    FlipEdgePresent using sub-3 / sub-4).
+
+FILES: Theorem4.lean (target), Theorem2.lean (sharedFaces/exposedFaces/EligibleTet/FlipEdgePresent),
+Complex2.lean (edgeDeg/edgesOf, hσ.closed), FlipGeom.lean (tetFaces_pair_inter_card_eq_two,
+exposedFaces_eq_pair_of_eligible). PAPER: taut.tex:1010-1037. BUILD: cd lean && lake build.

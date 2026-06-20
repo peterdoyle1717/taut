@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1116-g1-theorem4-goodflip-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1116-g1-theorem4-goodflip-summary.txt
+
+=== raw size ===
+    2007  147485 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1116-g1-theorem4-goodflip-raw.txt
+
+=== extracted markers ===
+1848:WARN
+1850:Verdict: K3 proposal is right in output shape. K4 needs one extra hypothesis: `¬ HasEmptyK3 M.support`. Without it, the paper’s “all four K4 faces exist” step is unavailable.
+1926:Blockers: K4 is not provable from the listed K4 witness alone; add `hNoK3`. The uniform induction consumer should use exactly the final existential `e g₃ g₄ + havoid`, then split on `FlipEdgePresent` via exposed faces.
+1929:WARN
+1931:Verdict: K3 proposal is right in output shape. K4 needs one extra hypothesis: `¬ HasEmptyK3 M.support`. Without it, the paper’s “all four K4 faces exist” step is unavailable.
+2007:Blockers: K4 is not provable from the listed K4 witness alone; add `hNoK3`. The uniform induction consumer should use exactly the final existential `e g₃ g₄ + havoid`, then split on `FlipEdgePresent` via exposed faces.
+
+=== final tail ===
+    (hNoK3 : ¬ HasEmptyK3 τ) (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf τ x)
+    (hf : f ⊆ s) (hf3 : f.card = 3) :
+    SimplexOf τ f
+```
+
+```lean
+lemma exists_two_k4_faces_hit_all_bad_flips
+    {M : Chain V} {σ : Finset (Finset V)} {s : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (hNo3 : NoDegree3Vertex σ) (hNoK3 : ¬ HasEmptyK3 M.support)
+    (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s) :
+    ∃ p q, p ≠ q ∧ p ∈ s.powersetCard 3 ∧ q ∈ s.powersetCard 3 ∧
+      ∀ e g₃ g₄, EligibleTet M e → sharedFaces M e = {g₃, g₄} → g₃ ≠ g₄ →
+        g₃ ∩ g₄ ∈ s.powersetCard 2 →
+          p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e
+```
+
+K4 theorem:
+
+```lean
+theorem exists_good_flip_emptyK4
+    {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) (hNotOct : ¬ IsOctahedronSphere σ)
+    (hNoK3 : ¬ HasEmptyK3 M.support)
+    {s : Finset V} (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s) :
+    ∃ e g₃ g₄, EligibleTet M e ∧ sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧
+      (∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄)
+```
+
+K4 count: use `aleph_five_disjoint_eligible_family`; get `p q` from `exists_two_k4_faces_hit_all_bad_flips`; apply `disjoint_eligible_family_hit_two_faces_card_le_two` to show at most two bad tets, so at least one of five avoids all six K4 edges.
+
+Blockers: K4 is not provable from the listed K4 witness alone; add `hNoK3`. The uniform induction consumer should use exactly the final existential `e g₃ g₄ + havoid`, then split on `FlipEdgePresent` via exposed faces.
+tokens used
+57,802
+WARN
+
+Verdict: K3 proposal is right in output shape. K4 needs one extra hypothesis: `¬ HasEmptyK3 M.support`. Without it, the paper’s “all four K4 faces exist” step is unavailable.
+
+Exact recommended patch shape: avoid a `flipEdgeOf` accessor. Use existential pair form matching `sharedFaces`.
+
+Files to edit:
+`lean/Taut/Theorem4.lean` only.
+
+Local lemmas needed:
+
+```lean
+lemma disjoint_eligible_family_flipEdge_card_le_one
+    {M : Chain V} {σ E : Finset (Finset V)} {ab : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (helig : ∀ e ∈ E, EligibleTet M e)
+    (hpair : (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)) :
+    (E.filter (fun e =>
+      ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ ab = g₃ ∩ g₄)).card ≤ 1
+```
+
+K3 theorem:
+
+```lean
+theorem exists_good_flip_emptyK3
+    {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ)
+    {s : Finset V} (hs3 : s.card = 3)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x) :
+    ∃ e g₃ g₄, EligibleTet M e ∧ sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧
+      (∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄)
+```
+
+K4 support lemmas:
+
+```lean
+lemma emptyK4_face_simplex_of_no_emptyK3
+    {τ : Finset (Finset V)} {s f : Finset V}
+    (hNoK3 : ¬ HasEmptyK3 τ) (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf τ x)
+    (hf : f ⊆ s) (hf3 : f.card = 3) :
+    SimplexOf τ f
+```
+
+```lean
+lemma exists_two_k4_faces_hit_all_bad_flips
+    {M : Chain V} {σ : Finset (Finset V)} {s : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (hNo3 : NoDegree3Vertex σ) (hNoK3 : ¬ HasEmptyK3 M.support)
+    (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s) :
+    ∃ p q, p ≠ q ∧ p ∈ s.powersetCard 3 ∧ q ∈ s.powersetCard 3 ∧
+      ∀ e g₃ g₄, EligibleTet M e → sharedFaces M e = {g₃, g₄} → g₃ ≠ g₄ →
+        g₃ ∩ g₄ ∈ s.powersetCard 2 →
+          p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e
+```
+
+K4 theorem:
+
+```lean
+theorem exists_good_flip_emptyK4
+    {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) (hNotOct : ¬ IsOctahedronSphere σ)
+    (hNoK3 : ¬ HasEmptyK3 M.support)
+    {s : Finset V} (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s) :
+    ∃ e g₃ g₄, EligibleTet M e ∧ sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧
+      (∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄)
+```
+
+K4 count: use `aleph_five_disjoint_eligible_family`; get `p q` from `exists_two_k4_faces_hit_all_bad_flips`; apply `disjoint_eligible_family_hit_two_faces_card_le_two` to show at most two bad tets, so at least one of five avoids all six K4 edges.
+
+Blockers: K4 is not provable from the listed K4 witness alone; add `hNoK3`. The uniform induction consumer should use exactly the final existential `e g₃ g₄ + havoid`, then split on `FlipEdgePresent` via exposed faces.
