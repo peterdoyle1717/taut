@@ -22,3 +22,4 @@ import Taut.PrimeStep
 import Taut.CleanShelling
 import Taut.Theorem3Clean
 import Taut.Theorem4
+import Taut.Corollary1

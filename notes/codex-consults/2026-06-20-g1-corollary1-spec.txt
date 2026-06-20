@@ -1,0 +1,105 @@
+G1 ARCHITECT PACKET — Corollary 1 (ℚ-fillings): route, definitions, clearing-denominators lemmas.
+
+Reviewer: codex, ARCHITECT. All four paper theorems are now formalized + CHECKED. The last open item is
+Corollary 1 (the ℚ-analogue of Theorem 1). Please give: (1) the exact Lean statement; (2) the minimal
+rational-chain definitions needed (the repo currently has ONLY integer chains); (3) the clearing-
+denominators lemma statements; (4) the implementation order; (5) the first bounded target. I implement
+what you specify, target-by-target. Do not re-derive; give the Lean decls.
+
+=====================================================================
+CHECKED endpoints (all std-3 axioms, lake build green 8273)
+=====================================================================
+- Theorem 1 (additivity): `Zvol_add_of_almost_disjoint_full [Infinite V] (hn : 1 ≤ n)
+  (hC : (A∩B).card ≤ n+1) (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n+1) (hY : … ⊆ B …) (hXc : bdry X = 0)
+  (hYc : bdry Y = 0) : Zvol (X + Y) = Zvol X + Zvol Y`  [Theorem1.lean:434].
+- Theorem 1 (splitting): `IsTaut.splits_full [Infinite V] (hn : 2 ≤ n) (hC : (A∩B).card ≤ n+1) (hX hY hXc hYc)
+  … : <5-way split conjunction: M = M_A + M_B with bdry M_A = X, bdry M_B = Y, IsTaut M_A, IsTaut M_B, …>`
+  [Splitting.lean:534]. (Please read its exact conclusion when designing the ℚ wrapper.)
+- theorem2_clean / theorem3_clean (Theorem3Clean.lean:3600/3592); theorem4_flag (Theorem4.lean:1634). [not
+  used by Cor 1, listed for completeness.]
+
+=====================================================================
+EXISTING coefficient machinery (INTEGER ONLY — the key constraint)
+=====================================================================
+- `abbrev Chain (V) := Finset V →₀ ℤ`  [Chains.lean:37].  ← integer-valued; NO rational chain exists.
+- `bdry : Chain V →ₗ[ℤ] Chain V`  [Chains.lean:127]; `nrm (M) := ∑ s ∈ M.support, (M s).natAbs : ℕ`
+  [Chains.lean:430].
+- `Zvol (X) := sInf {n | ∃ M, bdry M = X ∧ nrm M = n} : ℕ`  [Zvol.lean:76];
+  `IsTaut (M) : Prop := nrm M = Zvol (bdry M)`  [Zvol.lean:80].
+- `UnitOn (X) (σ) := X.support = σ ∧ ∀ s ∈ σ, X s = 1 ∨ X s = -1`  [Theorem2.lean:32].
+- `SimplicialChain (M) := ∀ t, M t = -1 ∨ M t = 0 ∨ M t = 1`  [Theorem2.lean:38].
+
+=====================================================================
+SEARCH RESULTS (over lean/Taut)
+=====================================================================
+- `Rat`, `ℚ`, `rational`, `denominator`, `clearDenom`, `qsmul`, `Qvol`, `ℚvol`: NONE (no rational anything).
+- `zsmul`: none as a def. `norm_num`: only as a tactic in unrelated proofs.
+- `corollary` / `Corollary 1` / `cor1`: only prose in docstrings; NO Lean endpoint.
+- `support`, `IsTaut`, `nrm`, `bdry`, `Zvol`: as above (all integer).
+CONCLUSION: Corollary 1 requires NEW rational-chain definitions; it is NOT a short wrapper over existing decls.
+
+=====================================================================
+PAPER statement + proof (taut.tex)
+=====================================================================
+Corollary 1 (`\label{cor1}`, taut.tex:681-686): "Qvol adds under almost disjoint union, and for n ≥ 2
+taut ℚ-fillings split."
+- Qvol = the ℚ-analogue of Zvol (least L¹-norm of a ℚ-chain filling X). Paper: Qvol = Rvol (LP duality);
+  the relevant fact here is just the ℚ least-L¹ filling volume.
+- The clearing-denominators proof (taut.tex:240-244, the route the paper endorses for reuse):
+  "Multiplying a taut ℚ-filling M of X by a common denominator q yields a taut ℤ-filling qM of qX:
+  Split the ℤ-filling qM and divide by q to get a splitting of the ℚ-filling M."
+  (Alternative route, taut.tex:675: redo the whole Theorem-1 proof over ℚ with "fractional multisets" —
+  much more work; the clearing route REUSES the CHECKED integer Theorem 1.)
+
+=====================================================================
+PROPOSED Lean endpoint (PROPOSED, not checked; final shape is YOUR call)
+=====================================================================
+-- with QChain V := Finset V →₀ ℚ, Qbdry, Qnrm : QChain V → ℚ (or ℚ≥0), Qvol, IsQTaut:
+PROPOSED  Qvol_add_of_almost_disjoint (hn hC hX hY hXc hYc over QChain) : Qvol (X+Y) = Qvol X + Qvol Y
+PROPOSED  IsQTaut.splits (hn : 2 ≤ n) (hC) … : ∃ M_A M_B, M = M_A + M_B ∧ Qbdry M_A = X ∧ … ∧ IsQTaut M_A ∧ IsQTaut M_B
+
+=====================================================================
+LIKELY route (clearing denominators — REUSES integer Theorem 1)
+=====================================================================
+1. ℚ-filling M of X (a QChain). q := a common denominator of M's coefficients (q : ℕ, q > 0), so qM is an
+   INTEGER chain (a `Chain V`). bdry(qM) = q·bdry(M) = q·X (also integral).
+2. qM is a taut ℤ-filling of qX (tautness transfers: Qvol-optimality of M ⇒ Zvol-optimality of qM —
+   THIS is the delicate step, see pitfalls).
+3. Apply IsTaut.splits_full / Zvol_add_of_almost_disjoint_full to qM (qX, qY are integral, support sized
+   n+1, A∩B card ≤ n+1 unchanged by scaling).
+4. Divide the ℤ-splitting by q to get the ℚ-splitting of M; additivity follows similarly.
+
+=====================================================================
+PITFALLS (flag which the route must handle)
+=====================================================================
+- Support changes under clearing only if zero coeffs mishandled (q > 0 ⇒ supports of M and qM coincide).
+- Tautness/minimality over ℚ may NOT transfer to ℤ automatically: need Qvol(qX) = q·Qvol(X) and
+  Zvol(qX) = Qvol(qX) (the integral cycle qX has equal ℤ- and ℚ-filling volume? — Qvol ≤ Zvol always; the
+  reverse on an integral class is the LP-integrality / the crux). What is the minimal lemma chain here?
+- Boundary scaling must be tracked exactly: bdry is ℤ-linear; need a ℚ-linear Qbdry and Qbdry(qM as QChain)
+  vs bdry(qM as Chain) compatibility (a coe ℤ→ℚ commuting square).
+- Primitive/integral normalization: does the route need M's coeffs to have a common denominator (clear
+  via lcm of denominators)? Mathlib has `Rat.den`, `Finset.lcm`; is `qM` integral provable cleanly?
+- New rational-chain layer: QChain, Qbdry (ℚ-linear), Qnrm (ℚ or ℚ≥0 L¹), Qvol (sInf over ℚ — note ℚ is
+  not well-ordered, so Qvol needs `Real`/`csInf` or a different formulation; HOW to define Qvol so it has
+  the needed `Qvol_le` / optimality API? This is a real design question.)
+
+=====================================================================
+ASK
+=====================================================================
+Q1. The EXACT Lean statement(s) of Corollary 1 (additivity + splitting), and the rational-chain types.
+Q2. The minimal NEW definitions (QChain, Qbdry, Qnrm, Qvol, IsQTaut) — exact signatures. In particular how
+    to define Qvol given ℚ is not well-ordered (csInf over ℝ? rationals-with-bounded-denominator? a
+    "∃ optimal filling" formulation?), so it supports a `Qvol_le` and an "optimal filling exists" API
+    analogous to Zvol_le / exists_optimal_fill.
+Q3. The clearing-denominators lemma statements: (a) common-denominator/integral-scaling (∃ q>0, q•M
+    integral); (b) tautness transfer (IsQTaut M ⇒ IsTaut (q•M as Chain) at scaled boundary); (c) the
+    coe/scale compatibility for bdry/nrm/Qvol. Which is the crux, and is it provable from the existing
+    integer API or does it need an LP/integrality fact we don't have?
+Q4. Route choice: clearing-denominators (reuse integer Th1) vs redo-over-ℚ. Confirm clearing is feasible
+    given the repo, or if the Qvol-to-Zvol transfer (pitfall 2) is the blocker, say so and pick the route.
+Q5. Implementation ORDER + the FIRST bounded target (e.g. QChain + Qbdry + the integral-scaling lemma).
+
+FILES: new lean/Taut/Corollary1.lean (proposed). Reuse Theorem1.lean (Zvol_add_of_almost_disjoint_full),
+Splitting.lean (IsTaut.splits_full), Zvol.lean (Zvol/IsTaut/Zvol_le/exists_optimal_fill), Chains.lean
+(Chain/bdry/nrm). PAPER: taut.tex:681 (cor1), 240-244 (clearing), 525 (th1). BUILD: cd lean && lake build.

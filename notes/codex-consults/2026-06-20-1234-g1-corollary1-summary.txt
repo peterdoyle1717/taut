@@ -1,0 +1,131 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1234-g1-corollary1-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1234-g1-corollary1-summary.txt
+
+=== raw size ===
+     952   41672 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1234-g1-corollary1-raw.txt
+
+=== extracted markers ===
+695:WARN
+825:WARN
+
+=== final tail ===
+Use `ℝ`-valued `Qnrm/Qvol`; use order-optimal `IsQTaut`.
+
+```lean
+abbrev QChain (V : Type*) := Finset V →₀ ℚ
+
+noncomputable def QbdryGen (s : Finset V) : QChain V
+noncomputable def Qbdry : QChain V →ₗ[ℚ] QChain V
+
+noncomputable def QconeGen (x : V) (s : Finset V) : QChain V
+noncomputable def Qcone (x : V) : QChain V →ₗ[ℚ] QChain V
+
+noncomputable def Qnrm (M : QChain V) : ℝ :=
+  ∑ s ∈ M.support, |(M s : ℝ)|
+
+noncomputable def QvolSet (X : QChain V) : Set ℝ :=
+  {r | ∃ M : QChain V, Qbdry M = X ∧ Qnrm M = r}
+
+noncomputable def Qvol (X : QChain V) : ℝ :=
+  sInf (QvolSet X)
+
+def IsQTaut (M : QChain V) : Prop :=
+  ∀ N : QChain V, Qbdry N = Qbdry M → Qnrm M ≤ Qnrm N
+```
+
+**Corollary Statements**
+```lean
+theorem Qvol_add_of_almost_disjoint_full {V : Type*}
+    [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 1 ≤ n)
+    (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : QChain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : Qbdry X = 0) (hYc : Qbdry Y = 0) :
+    Qvol (X + Y) = Qvol X + Qvol Y
+```
+
+```lean
+theorem IsQTaut.splits_full {V : Type*}
+    [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 2 ≤ n)
+    (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : QChain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : Qbdry X = 0) (hYc : Qbdry Y = 0)
+    {M : QChain V} (hMt : IsQTaut M)
+    (hM1 : Qbdry M = X + Y) :
+    Qbdry (M.filter fun t => t ⊆ A) = X ∧
+    Qbdry (M.filter fun t => ¬ t ⊆ A) = Y ∧
+    IsQTaut (M.filter fun t => t ⊆ A) ∧
+    IsQTaut (M.filter fun t => ¬ t ⊆ A) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M
+```
+
+**Local Lemmas Needed**
+```lean
+def QChain.IsIntegral (M : QChain V) : Prop := ∀ s, ∃ z : ℤ, M s = z
+noncomputable def intToQChain : Chain V →+ QChain V
+noncomputable def QChain.toInt (M : QChain V) (hM : M.IsIntegral) : Chain V
+```
+
+Core compatibility:
+```lean
+lemma Qbdry_intToQChain (M : Chain V) :
+  Qbdry (intToQChain M) = intToQChain (bdry M)
+
+lemma Qnrm_intToQChain (M : Chain V) :
+  Qnrm (intToQChain M) = (nrm M : ℝ)
+
+lemma exists_nat_smul_integral (M : QChain V) :
+  ∃ q : ℕ, 0 < q ∧ QChain.IsIntegral ((q : ℚ) • M)
+
+lemma support_nat_smul_of_pos {q : ℕ} (hq : 0 < q) (M : QChain V) :
+  (((q : ℚ) • M).support = M.support)
+```
+
+Qvol API:
+```lean
+lemma Qvol_le {X M : QChain V} (h : Qbdry M = X) :
+  Qvol X ≤ Qnrm M
+
+lemma le_Qvol_of_closed {X : QChain V} (hXc : Qbdry X = 0)
+    {r : ℝ} (h : ∀ M, Qbdry M = X → r ≤ Qnrm M) :
+  r ≤ Qvol X
+
+lemma Qvol_nat_smul {q : ℕ} (hq : 0 < q) (X : QChain V) :
+  Qvol ((q : ℚ) • X) = (q : ℝ) * Qvol X
+```
+
+Taut transfer:
+```lean
+lemma IsTaut.of_forall_nrm_le {M : Chain V}
+    (h : ∀ N : Chain V, bdry N = bdry M → nrm M ≤ nrm N) :
+    IsTaut M
+
+lemma IsQTaut.toInt_nat_smul {M : QChain V} (hMt : IsQTaut M)
+    {q : ℕ} (hq : 0 < q)
+    (hM : QChain.IsIntegral ((q : ℚ) • M)) :
+    IsTaut (QChain.toInt ((q : ℚ) • M) hM)
+```
+
+**Implementation Order**
+1. Add `QChain`, `Qbdry`, `Qcone`, `Qnrm`, `Qvol`, `IsQTaut`.
+2. Prove `Qbdry_bdry`, `Qbdry_Qcone_of_closed`, `Qvol_le`, `le_Qvol_of_closed`.
+3. Add `intToQChain`, `IsIntegral`, `toInt`, support/boundary/norm compatibility.
+4. Prove denominator clearing for one chain, then common-clearing for `M, X, Y`.
+5. Prove `IsQTaut.toInt_nat_smul`.
+6. Prove rational splitting by clearing, applying `IsTaut.splits_full`, dividing back.
+7. Prove rational additivity using cleared arbitrary fillings plus integer `Zvol_add_of_almost_disjoint_full`.
+
+**First Bounded Target**
+Implement only definitions plus:
+```lean
+lemma exists_nat_smul_integral (M : QChain V) :
+  ∃ q : ℕ, 0 < q ∧ QChain.IsIntegral ((q : ℚ) • M)
+```
+
+**Blockers**
+No LP/integrality theorem is needed. The real blocker would be defining `IsQTaut` via `Qvol` equality and then needing existence of rational minimizers; avoid that.
