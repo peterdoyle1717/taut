@@ -741,4 +741,109 @@ lemma disjoint_eligible_family_hit_two_faces_card_le_two
           + (E.filter (fun e => q ∈ sharedFaces M e)).card := Finset.card_union_le _ _
     _ ≤ 2 := by have h1 := key p; have h2 := key q; omega
 
+/-! ## Octahedron Euler bridge -/
+
+/-- **The faces at `v` biject with the link vertices.**  For a `2`-sphere `σ`, the number
+of faces containing a vertex `v` equals the number of vertices of its link.  (For a closed
+surface each link is a cycle, so faces-at-`v` = link-vertices = link-edges; this is the
+counting form.)  Proved by double-counting the incidence between faces at `v` and link
+vertices: each face at `v` meets the link in exactly `2` vertices (its two non-`v`
+corners), and each link vertex `x` lies on exactly `2` faces at `v` (the edge `{v,x}` is
+in exactly two faces, by closedness). -/
+lemma incident_faces_card_eq_linkVerts_card {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    {v : V} (_hv : v ∈ vertsOf σ) :
+    (σ.filter (fun f => v ∈ f)).card = (linkVerts σ v).card := by
+  classical
+  set A := σ.filter (fun f => v ∈ f) with hA
+  set B := linkVerts σ v with hB
+  -- Claim1: each face at `v` meets the link in exactly two vertices.
+  have claim1 : ∀ f ∈ A, (B.filter (fun x => x ∈ f)).card = 2 := by
+    intro f hf
+    have hfσ : f ∈ σ := (Finset.mem_filter.mp hf).1
+    have hvf : v ∈ f := (Finset.mem_filter.mp hf).2
+    have hset : B.filter (fun x => x ∈ f) = f.erase v := by
+      ext x
+      simp only [Finset.mem_filter, Finset.mem_erase]
+      constructor
+      · rintro ⟨hxB, hxf⟩
+        exact ⟨(mem_linkVerts.mp hxB).1, hxf⟩
+      · rintro ⟨hxv, hxf⟩
+        exact ⟨mem_linkVerts.mpr ⟨hxv, f, hfσ, hvf, hxf⟩, hxf⟩
+    rw [hset, Finset.card_erase_of_mem hvf, hσ.pure f hfσ]
+  -- Claim2: each link vertex lies on exactly two faces at `v`.
+  have claim2 : ∀ x ∈ B, (A.filter (fun f => x ∈ f)).card = 2 := by
+    intro x hx
+    have hxv : x ≠ v := (mem_linkVerts.mp hx).1
+    have hedge : {v, x} ∈ edgesOf σ := (mem_linkVerts_iff_edge hσ hxv).mp hx
+    have hset : A.filter (fun f => x ∈ f) = σ.filter (fun f => {v, x} ⊆ f) := by
+      rw [hA, Finset.filter_filter]
+      apply Finset.filter_congr
+      intro f _
+      constructor
+      · rintro ⟨hvf, hxf⟩
+        rw [Finset.insert_subset_iff, Finset.singleton_subset_iff]
+        exact ⟨hvf, hxf⟩
+      · intro hsub
+        rw [Finset.insert_subset_iff, Finset.singleton_subset_iff] at hsub
+        exact hsub
+    have hdeg := hσ.closed {v, x} hedge
+    rw [edgeDeg] at hdeg
+    rw [hset, hdeg]
+  -- Double count: swap the order of summation.
+  have hswap : ∑ f ∈ A, (B.filter (fun x => x ∈ f)).card
+      = ∑ x ∈ B, (A.filter (fun f => x ∈ f)).card := by
+    calc ∑ f ∈ A, (B.filter (fun x => x ∈ f)).card
+        = ∑ f ∈ A, ∑ x ∈ B, (if x ∈ f then 1 else 0) := by simp_rw [Finset.card_filter]
+      _ = ∑ x ∈ B, ∑ f ∈ A, (if x ∈ f then 1 else 0) := Finset.sum_comm
+      _ = ∑ x ∈ B, (A.filter (fun f => x ∈ f)).card := by simp_rw [Finset.card_filter]
+  have hleft : ∑ f ∈ A, (B.filter (fun x => x ∈ f)).card = 2 * A.card := by
+    rw [Finset.sum_congr rfl claim1, Finset.sum_const, smul_eq_mul, mul_comm]
+  have hright : ∑ x ∈ B, (A.filter (fun f => x ∈ f)).card = 2 * B.card := by
+    rw [Finset.sum_congr rfl claim2, Finset.sum_const, smul_eq_mul, mul_comm]
+  have h2 : 2 * A.card = 2 * B.card := by rw [← hleft, hswap, hright]
+  omega
+
+/-- **Vertex–face incidence double count: `∑_v (#faces at v) = 3f`.**  Summing the number
+of faces containing each vertex equals `3` times the face count, since every face is a
+triangle (`hσ.pure`) and so is counted once for each of its three vertices. -/
+lemma sum_incident_faces_eq_three_mul_card {σ : Finset (Finset V)} (hσ : IsSphere2 σ) :
+    ∑ v ∈ vertsOf σ, (σ.filter (fun f => v ∈ f)).card = 3 * σ.card := by
+  classical
+  have hcongr : ∀ f ∈ σ, ((vertsOf σ).filter (fun v => v ∈ f)).card = 3 := by
+    intro f hf
+    have hset : (vertsOf σ).filter (fun v => v ∈ f) = f := by
+      ext v
+      simp only [Finset.mem_filter]
+      constructor
+      · exact fun h => h.2
+      · intro hvf
+        exact ⟨mem_vertsOf.mpr ⟨f, hf, hvf⟩, hvf⟩
+    rw [hset, hσ.pure f hf]
+  calc ∑ v ∈ vertsOf σ, (σ.filter (fun f => v ∈ f)).card
+      = ∑ v ∈ vertsOf σ, ∑ f ∈ σ, (if v ∈ f then 1 else 0) := by simp_rw [Finset.card_filter]
+    _ = ∑ f ∈ σ, ∑ v ∈ vertsOf σ, (if v ∈ f then 1 else 0) := Finset.sum_comm
+    _ = ∑ f ∈ σ, ((vertsOf σ).filter (fun v => v ∈ f)).card := by simp_rw [Finset.card_filter]
+    _ = ∑ f ∈ σ, 3 := Finset.sum_congr rfl hcongr
+    _ = 3 * σ.card := by rw [Finset.sum_const, smul_eq_mul, mul_comm]
+
+/-- **Euler bridge: a `2`-sphere whose every link has `4` vertices has exactly `6` vertices.**
+This pins the octahedron: if every vertex link is a `4`-cycle then `4v = 3f` (Lemma B with
+each summand `4`), together with `3f = 2e` and Euler `v + f = e + 2` forces `v = 6`. -/
+lemma card_verts_eq_six_of_all_links_four {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+    (h4 : ∀ v ∈ vertsOf σ, (linkVerts σ v).card = 4) :
+    (vertsOf σ).card = 6 := by
+  classical
+  have h3F2E : 3 * σ.card = 2 * (edgesOf σ).card := three_mul_card_faces hσ
+  have heuler : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2 := hσ.euler
+  have h4V3F : 4 * (vertsOf σ).card = 3 * σ.card := by
+    have hlink : ∑ v ∈ vertsOf σ, (linkVerts σ v).card
+        = ∑ v ∈ vertsOf σ, (σ.filter (fun f => v ∈ f)).card :=
+      Finset.sum_congr rfl
+        (fun v hv => (incident_faces_card_eq_linkVerts_card hσ hv).symm)
+    have hfour : ∑ v ∈ vertsOf σ, (linkVerts σ v).card = 4 * (vertsOf σ).card := by
+      rw [Finset.sum_congr rfl h4, Finset.sum_const, smul_eq_mul, mul_comm]
+    rw [hlink, sum_incident_faces_eq_three_mul_card hσ] at hfour
+    omega
+  omega
+
 end Taut
