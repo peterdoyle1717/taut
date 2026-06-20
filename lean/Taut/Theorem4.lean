@@ -846,4 +846,59 @@ lemma card_verts_eq_six_of_all_links_four {σ : Finset (Finset V)} (hσ : IsSphe
     omega
   omega
 
+/-- **Max-degree ≥ 4.** In a no-degree-3 sphere, some boundary vertex has `deg ≥ 4` (indeed every
+vertex does: link size `≥ 3` and `≠ 3`).  `deg v (bdry M) = (σ.filter (v∈·)).card =
+(linkVerts σ v).card`. -/
+theorem exists_boundary_vertex_deg_ge_four_of_noDegree3 {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hNo3 : NoDegree3Vertex σ) :
+    ∃ v ∈ vertsOf σ, 4 ≤ deg v (bdry M) := by
+  obtain ⟨v, hv⟩ := hσ.vertsOf_nonempty
+  refine ⟨v, hv, ?_⟩
+  have hdeg : deg v (bdry M) = (linkVerts σ v).card := by
+    rw [aleph_deg_eq_card_filter_of_unitOn hU v, incident_faces_card_eq_linkVerts_card hσ hv]
+  have h3 : 3 ≤ (linkVerts σ v).card := three_le_card_linkVerts hσ hv
+  have hne3 : (linkVerts σ v).card ≠ 3 := hNo3 v hv
+  omega
+
+/-- **Max-degree ≥ 5 unless octahedron.** In a no-degree-3 sphere that is not the octahedron, some
+boundary vertex has `deg ≥ 5`.  Contrapositive: if every vertex had `deg ≤ 4` then (with `deg ≥ 4`
+from no-degree-3) every link size is exactly `4`, so `|verts| = 6` and `σ` is the octahedron. -/
+theorem exists_boundary_vertex_deg_ge_five_of_not_octahedron {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hNo3 : NoDegree3Vertex σ)
+    (hNotOct : ¬ IsOctahedronSphere σ) :
+    ∃ v ∈ vertsOf σ, 5 ≤ deg v (bdry M) := by
+  by_contra hcon
+  push_neg at hcon
+  -- every link size is exactly 4
+  have hall4 : ∀ v ∈ vertsOf σ, (linkVerts σ v).card = 4 := by
+    intro v hv
+    have hdeg : deg v (bdry M) = (linkVerts σ v).card := by
+      rw [aleph_deg_eq_card_filter_of_unitOn hU v, incident_faces_card_eq_linkVerts_card hσ hv]
+    have hlt5 : deg v (bdry M) < 5 := hcon v hv
+    have h3 : 3 ≤ (linkVerts σ v).card := three_le_card_linkVerts hσ hv
+    have hne3 : (linkVerts σ v).card ≠ 3 := hNo3 v hv
+    omega
+  exact hNotOct ⟨hσ, card_verts_eq_six_of_all_links_four hσ hall4, hNo3, hall4⟩
+
+/-- **Four disjoint eligible tets** in a no-degree-3 taut filling (config-1 flip budget). -/
+theorem aleph_four_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+    ∃ E : Finset (Finset V), E.card = 4 ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e) := by
+  obtain ⟨v, hv, hdeg⟩ := exists_boundary_vertex_deg_ge_four_of_noDegree3 hσ hU hNo3
+  exact aleph_disjoint_eligible_family hσ hU hS hT hPure hNo3 hv hdeg
+
+/-- **Five disjoint eligible tets** in a no-degree-3, non-octahedron taut filling (config-2 budget). -/
+theorem aleph_five_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ)
+    (hNotOct : ¬ IsOctahedronSphere σ) :
+    ∃ E : Finset (Finset V), E.card = 5 ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e) := by
+  obtain ⟨v, hv, hdeg⟩ := exists_boundary_vertex_deg_ge_five_of_not_octahedron hσ hU hNo3 hNotOct
+  exact aleph_disjoint_eligible_family hσ hU hS hT hPure hNo3 hv hdeg
+
 end Taut
