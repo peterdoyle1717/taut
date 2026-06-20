@@ -1,0 +1,75 @@
+G1 FOCUSED SPEC — Corollary 1 step 6: the rational SPLITTING (IsQTaut.splits_full). Exact decomposition.
+
+Reviewer: codex, ARCHITECT. Cor-1 foundations (step 1-3) + the forward tautness transfer (step 5) are
+DONE + CHECKED. The last big piece is the splitting `IsQTaut.splits_full` (step 6). Your summary only
+sketched it ("clear, apply IsTaut.splits_full, divide back"); the REVERSE transfer (IsTaut→IsQTaut, for
+the output sides) and the COMMON clearing of M,X,Y are not yet specified. Please give the exact lemma
+decomposition + order. I implement what you specify. Give Lean signatures.
+
+=====================================================================
+TARGET
+=====================================================================
+theorem IsQTaut.splits_full [Infinite V] {A B : Finset V} {n : ℕ} (hn : 2 ≤ n)
+    (hC : (A ∩ B).card ≤ n + 1) {X Y : QChain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1) (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : Qbdry X = 0) (hYc : Qbdry Y = 0) {M : QChain V} (hMt : IsQTaut M) (hM1 : Qbdry M = X + Y) :
+    Qbdry (M.filter fun t => t ⊆ A) = X ∧ Qbdry (M.filter fun t => ¬ t ⊆ A) = Y ∧
+    IsQTaut (M.filter fun t => t ⊆ A) ∧ IsQTaut (M.filter fun t => ¬ t ⊆ A) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M
+
+=====================================================================
+CHECKED so far (Corollary1.lean, std-3)
+=====================================================================
+- QChain/Qbdry(ℚ-linear)/Qnrm(ℝ)/Qvol/IsQTaut(order-optimal)/QChain.IsIntegral.
+- exists_nat_smul_integral (M) : ∃ q:ℕ, 0<q ∧ IsIntegral ((q:ℚ)•M).
+- intToQChain / QChain.toInt / intToQChain_toInt / Qbdry_intToQChain (Qbdry∘intToQChain = intToQChain∘bdry)
+  / Qnrm_intToQChain (= (nrm:ℝ)) / support_nat_smul_of_pos / Qnrm_smul (= |c|·Qnrm) / Qnrm_nat_smul.
+- IsTaut.of_forall_nrm_le (order-optimal ℤ ⟹ IsTaut).
+- IsQTaut.toInt_nat_smul (FORWARD transfer: IsQTaut M, q>0, IsIntegral (q•M) ⟹ IsTaut (toInt (q•M))).
+INTEGER endpoint to reuse:
+- IsTaut.splits_full [Infinite V] (hn : 2 ≤ n) (hC) {X Y : Chain V} (hX : ∀ s ∈ X.support, s⊆A ∧ s.card=n+1)
+  (hY) (hXc : bdry X = 0) (hYc : bdry Y = 0) {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X+Y) :
+  bdry (M.filter (·⊆A)) = X ∧ bdry (M.filter ¬·⊆A) = Y ∧ IsTaut (M.filter ·⊆A) ∧ IsTaut (M.filter ¬·⊆A) ∧
+  M.filter (·⊆A) + M.filter ¬(·⊆A) = M   [Splitting.lean:534 — read exact conclusion].
+
+=====================================================================
+MY ANALYSIS (confirm/correct; the gaps)
+=====================================================================
+Last conjunct (filter+filter-neg = M): pure Finsupp, easy.
+Clearing: need ONE q clearing M, X, Y together (exists_nat_smul_integral gives q per chain). q•X, q•Y
+must be integral (q clears M's denominators, NOT X's, unless q is common). So need a COMMON-clearing lemma.
+Then K := toInt(q•M), with bdry K casting to q•(X+Y); qX_int := toInt(q•X), qY_int := toInt(q•Y); by
+intToQChain-injectivity, bdry K = qX_int + qY_int, bdry qX_int = 0, qX_int.support = X.support (q>0) so the
+support-size hyps transfer. Apply IsTaut.splits_full to K with qX_int, qY_int. Then DIVIDE BACK:
+M.filter(·⊆A) = (q:ℚ)⁻¹ • intToQChain (K.filter(·⊆A)) (filter commutes with intToQChain/scale). Qbdry of it
+= X (via Qbdry_intToQChain + scale-cancel). IsQTaut of it = the REVERSE transfer.
+
+THE GAPS (not yet built):
+(G1) COMMON clearing: `∃ q:ℕ, 0<q ∧ IsIntegral (q•M) ∧ IsIntegral (q•X) ∧ IsIntegral (q•Y)` (or a 2-chain /
+     n-chain common-clear). How to state/prove (product or lcm of the per-chain q's)?
+(G2) FILTER/SCALE/CAST COMMUTATION: `(c • M).filter p = c • (M.filter p)`; `(intToQChain K).filter p =
+     intToQChain (K.filter p)`; and `M.filter p = (q:ℚ)⁻¹ • intToQChain ((toInt (q•M) _).filter p)` (the
+     "recover the ℚ side" identity). Exact statements?
+(G3) REVERSE transfer: IsTaut (K_int) ⟹ IsQTaut ((q:ℚ)⁻¹ • intToQChain K_int) (the output side is
+     order-optimal over ℚ). Unlike the forward transfer, the COMPETITOR here is a RATIONAL chain, so it
+     must be cleared. Decompose as: (a) `isQTaut_intToQChain_of_isTaut (hK : IsTaut K_int) : IsQTaut
+     (intToQChain K_int)` (clears the rational competitor by its own denominator q', compares nrm via
+     IsTaut K_int — symmetric to the forward proof but competitor-side clearing); (b) `IsQTaut.smul {c:ℚ}
+     (hc : c ≠ 0) (hP : IsQTaut P) : IsQTaut (c • P)` (scaling is an order-preserving bijection on the
+     filling space — Qbdry scales by c, Qnrm by |c|). Confirm this decomposition + exact statements.
+
+=====================================================================
+ASK
+=====================================================================
+Q1. The exact statements + proofs of (G1) common-clearing, (G2) the filter/scale/cast commutation lemmas,
+    (G3) the reverse transfer (both sub-lemmas isQTaut_intToQChain_of_isTaut + IsQTaut.smul).
+Q2. The assembly of IsQTaut.splits_full from those + IsTaut.splits_full. In particular: getting qX_int,
+    qY_int as integer chains with bdry K = qX_int+qY_int and the support-size hyps; and dividing the four
+    output conjuncts back. Any subtlety in the support-size transfer (q•X support = X support, card n+1)?
+Q3. Implementation ORDER + the FIRST bounded sub-target of step 6 (e.g. IsQTaut.smul, then the
+    reverse transfer, then common-clearing, then the assembly).
+Q4. Is the additivity half (Qvol_add_of_almost_disjoint_full, step 7) needed for the SPLITTING endpoint,
+    or independent? (I plan splitting first; additivity needs the Qvol API / step 2 still unbuilt.)
+
+FILES: Corollary1.lean. Reuse Splitting.lean (IsTaut.splits_full). PAPER: taut.tex:240-244 (clearing),
+681 (cor1). BUILD: cd lean && lake build.

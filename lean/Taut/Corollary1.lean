@@ -274,4 +274,106 @@ lemma IsQTaut.toInt_nat_smul {M : QChain V} (hMt : IsQTaut M) {q : ℕ} (hq : 0 
   rw [hKn]
   exact key
 
+/-! ## Cast / filter / support / injectivity and `Qnrm` algebra for splitting
+
+The first bounded sub-target of Corollary 1, step 6: the elementary cast,
+filter, support, and injectivity facts for `intToQChain`, together with the
+L¹-norm triangle inequality and the filter-partition additivity of `Qnrm`. -/
+
+omit [LinearOrder V] in
+@[simp] lemma intToQChain_zero : intToQChain (0 : Chain V) = 0 := by
+  ext s; simp [intToQChain_apply]
+
+omit [LinearOrder V] in
+@[simp] lemma support_intToQChain (K : Chain V) :
+    (intToQChain K).support = K.support := by
+  rw [intToQChain]
+  exact Finsupp.support_mapRange_of_injective (by simp) K Int.cast_injective
+
+omit [LinearOrder V] in
+lemma intToQChain_injective :
+    Function.Injective (intToQChain : Chain V → QChain V) := by
+  intro M N h
+  ext s
+  have hs : intToQChain M s = intToQChain N s := by rw [h]
+  rw [intToQChain_apply, intToQChain_apply] at hs
+  exact_mod_cast hs
+
+omit [LinearOrder V] in
+@[simp] lemma intToQChain_filter (K : Chain V) (p : Finset V → Prop)
+    [DecidablePred p] :
+    intToQChain (K.filter p) = (intToQChain K).filter p := by
+  ext s
+  rw [intToQChain_apply, Finsupp.filter_apply, Finsupp.filter_apply,
+    intToQChain_apply]
+  by_cases hp : p s
+  · rw [if_pos hp, if_pos hp]
+  · rw [if_neg hp, if_neg hp, Int.cast_zero]
+
+omit [LinearOrder V] in
+@[simp] lemma QChain.filter_smul (c : ℚ) (M : QChain V) (p : Finset V → Prop)
+    [DecidablePred p] :
+    (c • M).filter p = c • (M.filter p) := by
+  ext s
+  rw [Finsupp.filter_apply, Finsupp.smul_apply, Finsupp.smul_apply,
+    Finsupp.filter_apply, smul_eq_mul, smul_eq_mul]
+  by_cases hp : p s
+  · rw [if_pos hp, if_pos hp]
+  · rw [if_neg hp, if_neg hp, mul_zero]
+
+omit [LinearOrder V] in
+/-- L¹ triangle inequality for `Qnrm`. -/
+lemma Qnrm_add_le (M N : QChain V) : Qnrm (M + N) ≤ Qnrm M + Qnrm N := by
+  classical
+  -- The common index set `M.support ∪ N.support` contains `(M + N).support`.
+  set s : Finset (Finset V) := M.support ∪ N.support with hs
+  have hsubMN : (M + N).support ⊆ s := Finsupp.support_add
+  have hsubM : M.support ⊆ s := Finset.subset_union_left
+  have hsubN : N.support ⊆ s := Finset.subset_union_right
+  -- Step 1: enlarge the index set of `Qnrm (M + N)` to `s`.
+  have h1 : Qnrm (M + N) ≤ ∑ t ∈ s, |((M + N) t : ℝ)| := by
+    rw [Qnrm]
+    exact Finset.sum_le_sum_of_subset_of_nonneg hsubMN
+      (fun t _ _ => abs_nonneg _)
+  -- Step 2: termwise triangle inequality and distribute the sum.
+  have h2 : ∑ t ∈ s, |((M + N) t : ℝ)| ≤
+      (∑ t ∈ s, |(M t : ℝ)|) + ∑ t ∈ s, |(N t : ℝ)| := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_le_sum fun t _ => ?_
+    rw [Finsupp.add_apply]
+    push_cast
+    exact abs_add_le _ _
+  -- Step 3: the enlarged single-chain sums recover `Qnrm M` and `Qnrm N`.
+  have hM : ∑ t ∈ s, |(M t : ℝ)| = Qnrm M := by
+    rw [Qnrm]
+    refine (Finset.sum_subset hsubM fun t _ ht => ?_).symm
+    rw [Finsupp.notMem_support_iff.mp ht, Rat.cast_zero, abs_zero]
+  have hN : ∑ t ∈ s, |(N t : ℝ)| = Qnrm N := by
+    rw [Qnrm]
+    refine (Finset.sum_subset hsubN fun t _ ht => ?_).symm
+    rw [Finsupp.notMem_support_iff.mp ht, Rat.cast_zero, abs_zero]
+  calc Qnrm (M + N) ≤ ∑ t ∈ s, |((M + N) t : ℝ)| := h1
+    _ ≤ (∑ t ∈ s, |(M t : ℝ)|) + ∑ t ∈ s, |(N t : ℝ)| := h2
+    _ = Qnrm M + Qnrm N := by rw [hM, hN]
+
+omit [LinearOrder V] in
+/-- Splitting a chain by a predicate splits its `Qnrm` additively. -/
+lemma Qnrm_filter_add_Qnrm_filter_neg (p : Finset V → Prop) [DecidablePred p]
+    (M : QChain V) :
+    Qnrm (M.filter p) + Qnrm (M.filter fun s => ¬ p s) = Qnrm M := by
+  classical
+  -- On the `p`-part, the coefficient is `M s` exactly where `p s` holds.
+  have hp : Qnrm (M.filter p) = ∑ s ∈ M.support.filter p, |(M s : ℝ)| := by
+    rw [Qnrm, Finsupp.support_filter]
+    refine Finset.sum_congr rfl fun s hs => ?_
+    rw [Finsupp.filter_apply, if_pos (Finset.mem_filter.mp hs).2]
+  -- Likewise on the `¬p`-part.
+  have hnp : Qnrm (M.filter fun s => ¬ p s)
+      = ∑ s ∈ M.support.filter (fun s => ¬ p s), |(M s : ℝ)| := by
+    rw [Qnrm, Finsupp.support_filter]
+    refine Finset.sum_congr rfl fun s hs => ?_
+    rw [Finsupp.filter_apply, if_pos (Finset.mem_filter.mp hs).2]
+  rw [hp, hnp, Qnrm,
+    Finset.sum_filter_add_sum_filter_not M.support p (fun s => |(M s : ℝ)|)]
+
 end Taut

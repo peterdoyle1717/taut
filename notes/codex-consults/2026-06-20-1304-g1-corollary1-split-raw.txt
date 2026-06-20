@@ -1,0 +1,1973 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019ee5fd-cb00-7bf3-a301-7222ec126b3c
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+G1 FOCUSED SPEC — Corollary 1 step 6: the rational SPLITTING (IsQTaut.splits_full). Exact decomposition.
+
+Reviewer: codex, ARCHITECT. Cor-1 foundations (step 1-3) + the forward tautness transfer (step 5) are
+DONE + CHECKED. The last big piece is the splitting `IsQTaut.splits_full` (step 6). Your summary only
+sketched it ("clear, apply IsTaut.splits_full, divide back"); the REVERSE transfer (IsTaut→IsQTaut, for
+the output sides) and the COMMON clearing of M,X,Y are not yet specified. Please give the exact lemma
+decomposition + order. I implement what you specify. Give Lean signatures.
+
+=====================================================================
+TARGET
+=====================================================================
+theorem IsQTaut.splits_full [Infinite V] {A B : Finset V} {n : ℕ} (hn : 2 ≤ n)
+    (hC : (A ∩ B).card ≤ n + 1) {X Y : QChain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1) (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : Qbdry X = 0) (hYc : Qbdry Y = 0) {M : QChain V} (hMt : IsQTaut M) (hM1 : Qbdry M = X + Y) :
+    Qbdry (M.filter fun t => t ⊆ A) = X ∧ Qbdry (M.filter fun t => ¬ t ⊆ A) = Y ∧
+    IsQTaut (M.filter fun t => t ⊆ A) ∧ IsQTaut (M.filter fun t => ¬ t ⊆ A) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M
+
+=====================================================================
+CHECKED so far (Corollary1.lean, std-3)
+=====================================================================
+- QChain/Qbdry(ℚ-linear)/Qnrm(ℝ)/Qvol/IsQTaut(order-optimal)/QChain.IsIntegral.
+- exists_nat_smul_integral (M) : ∃ q:ℕ, 0<q ∧ IsIntegral ((q:ℚ)•M).
+- intToQChain / QChain.toInt / intToQChain_toInt / Qbdry_intToQChain (Qbdry∘intToQChain = intToQChain∘bdry)
+  / Qnrm_intToQChain (= (nrm:ℝ)) / support_nat_smul_of_pos / Qnrm_smul (= |c|·Qnrm) / Qnrm_nat_smul.
+- IsTaut.of_forall_nrm_le (order-optimal ℤ ⟹ IsTaut).
+- IsQTaut.toInt_nat_smul (FORWARD transfer: IsQTaut M, q>0, IsIntegral (q•M) ⟹ IsTaut (toInt (q•M))).
+INTEGER endpoint to reuse:
+- IsTaut.splits_full [Infinite V] (hn : 2 ≤ n) (hC) {X Y : Chain V} (hX : ∀ s ∈ X.support, s⊆A ∧ s.card=n+1)
+  (hY) (hXc : bdry X = 0) (hYc : bdry Y = 0) {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X+Y) :
+  bdry (M.filter (·⊆A)) = X ∧ bdry (M.filter ¬·⊆A) = Y ∧ IsTaut (M.filter ·⊆A) ∧ IsTaut (M.filter ¬·⊆A) ∧
+  M.filter (·⊆A) + M.filter ¬(·⊆A) = M   [Splitting.lean:534 — read exact conclusion].
+
+=====================================================================
+MY ANALYSIS (confirm/correct; the gaps)
+=====================================================================
+Last conjunct (filter+filter-neg = M): pure Finsupp, easy.
+Clearing: need ONE q clearing M, X, Y together (exists_nat_smul_integral gives q per chain). q•X, q•Y
+must be integral (q clears M's denominators, NOT X's, unless q is common). So need a COMMON-clearing lemma.
+Then K := toInt(q•M), with bdry K casting to q•(X+Y); qX_int := toInt(q•X), qY_int := toInt(q•Y); by
+intToQChain-injectivity, bdry K = qX_int + qY_int, bdry qX_int = 0, qX_int.support = X.support (q>0) so the
+support-size hyps transfer. Apply IsTaut.splits_full to K with qX_int, qY_int. Then DIVIDE BACK:
+M.filter(·⊆A) = (q:ℚ)⁻¹ • intToQChain (K.filter(·⊆A)) (filter commutes with intToQChain/scale). Qbdry of it
+= X (via Qbdry_intToQChain + scale-cancel). IsQTaut of it = the REVERSE transfer.
+
+THE GAPS (not yet built):
+(G1) COMMON clearing: `∃ q:ℕ, 0<q ∧ IsIntegral (q•M) ∧ IsIntegral (q•X) ∧ IsIntegral (q•Y)` (or a 2-chain /
+     n-chain common-clear). How to state/prove (product or lcm of the per-chain q's)?
+(G2) FILTER/SCALE/CAST COMMUTATION: `(c • M).filter p = c • (M.filter p)`; `(intToQChain K).filter p =
+     intToQChain (K.filter p)`; and `M.filter p = (q:ℚ)⁻¹ • intToQChain ((toInt (q•M) _).filter p)` (the
+     "recover the ℚ side" identity). Exact statements?
+(G3) REVERSE transfer: IsTaut (K_int) ⟹ IsQTaut ((q:ℚ)⁻¹ • intToQChain K_int) (the output side is
+     order-optimal over ℚ). Unlike the forward transfer, the COMPETITOR here is a RATIONAL chain, so it
+     must be cleared. Decompose as: (a) `isQTaut_intToQChain_of_isTaut (hK : IsTaut K_int) : IsQTaut
+     (intToQChain K_int)` (clears the rational competitor by its own denominator q', compares nrm via
+     IsTaut K_int — symmetric to the forward proof but competitor-side clearing); (b) `IsQTaut.smul {c:ℚ}
+     (hc : c ≠ 0) (hP : IsQTaut P) : IsQTaut (c • P)` (scaling is an order-preserving bijection on the
+     filling space — Qbdry scales by c, Qnrm by |c|). Confirm this decomposition + exact statements.
+
+=====================================================================
+ASK
+=====================================================================
+Q1. The exact statements + proofs of (G1) common-clearing, (G2) the filter/scale/cast commutation lemmas,
+    (G3) the reverse transfer (both sub-lemmas isQTaut_intToQChain_of_isTaut + IsQTaut.smul).
+Q2. The assembly of IsQTaut.splits_full from those + IsTaut.splits_full. In particular: getting qX_int,
+    qY_int as integer chains with bdry K = qX_int+qY_int and the support-size hyps; and dividing the four
+    output conjuncts back. Any subtlety in the support-size transfer (q•X support = X support, card n+1)?
+Q3. Implementation ORDER + the FIRST bounded sub-target of step 6 (e.g. IsQTaut.smul, then the
+    reverse transfer, then common-clearing, then the assembly).
+Q4. Is the additivity half (Qvol_add_of_almost_disjoint_full, step 7) needed for the SPLITTING endpoint,
+    or independent? (I plan splitting first; additivity needs the Qvol API / step 2 still unbuilt.)
+
+FILES: Corollary1.lean. Reuse Splitting.lean (IsTaut.splits_full). PAPER: taut.tex:240-244 (clearing),
+681 (cor1). BUILD: cd lean && lake build.
+codex
+I’ll inspect the Lean files around the existing rational chain API and the integer splitting endpoint so the proposed signatures match what is actually present.
+exec
+/bin/zsh -lc "sed -n '500,570p' lean/Taut/Splitting.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    exact ⟨(hdich t ht.1).resolve_left ht.2, hpure t ht.1⟩
+  -- identify the boundaries by projecting
+  have hbsum : bdry Mx + bdry My = X + Y := by rw [← map_add, hsum, hM1]
+  have hbx : bdry Mx = X := by
+    have happly := congrArg (Kmap A p) hbsum
+    rw [map_add, map_add,
+      Kmap_eq_self (fun s hs => (bdry_supp_of_supp hMxsupp s hs).1),
+      Kmap_eq_zero_of_closed hn1 hp hC (bdry_supp_of_supp hMysupp)
+        (bdry_bdry My),
+      Kmap_eq_self (fun s hs => (hX s hs).1),
+      Kmap_eq_zero_of_closed hn1 hp hC hY hYc, add_zero, add_zero] at happly
+    exact happly
+  have hby : bdry My = Y := by
+    have h := hbsum
+    rw [hbx] at h
+    exact add_left_cancel h
+  -- tautness of the parts
+  have hnrm : nrm Mx + nrm My = nrm M := nrm_filter_add_nrm_filter_neg _ M
+  have hadd := Zvol_add_of_almost_disjoint hn1 hp hq hpq hC hX hY hXc hYc
+  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+  have h4 : Zvol X ≤ nrm Mx := Zvol_le hbx
+  have h5 : Zvol Y ≤ nrm My := Zvol_le hby
+  have hMxt : IsTaut Mx := by rw [IsTaut, hbx]; omega
+  have hMyt : IsTaut My := by rw [IsTaut, hby]; omega
+  exact ⟨hbx, hby, hMxt, hMyt, hsum⟩
+
+/-- **Theorem 1, splitting (full paper statement)**: for `n ≥ 2`, the
+hypothesis `(A ∩ B).card ≤ n + 1` alone suffices — no witnessing pair
+`p ≠ q` is needed.  When `|A ∩ B| ≥ 2` we extract a pair and invoke
+`IsTaut.splits`; when `|A ∩ B| ≤ 1` we enlarge both sides by the same
+fresh vertices `F` to reach `|A' ∩ B'| = 2 ≤ n + 1`, run the split along
+`· ⊆ A'`, then transfer it back to `· ⊆ A`.  The transfer is valid because
+every generator of the filling `M` lies in `A ∪ B`, hence is disjoint from
+the fresh set `F`, so `t ⊆ A' ↔ t ⊆ A` on `M.support`. -/
+theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 2 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+  classical
+  by_cases h2 : 2 ≤ (A ∩ B).card
+  · obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.mp h2
+    exact IsTaut.splits hn hp hq hpq hC hX hY hXc hYc hMt hM1
+  · push_neg at h2
+    have hn1 : 1 ≤ n := by omega
+    -- enlarge both sides by a fresh set `F` capping the intersection at two
+    have hle : (A ∪ B).card ≤ (A ∪ B).card + (2 - (A ∩ B).card) := Nat.le_add_right _ _
+    obtain ⟨W, hWsub, hWcard⟩ :=
+      Infinite.exists_superset_card_eq (A ∪ B) _ hle
+    set F := W \ (A ∪ B) with hF
+    have hFdisj : Disjoint F (A ∪ B) := Finset.sdiff_disjoint
+    have hFcard : F.card = 2 - (A ∩ B).card := by
+      have hkey : F.card + (A ∪ B).card = (A ∪ B).card + (2 - (A ∩ B).card) := by
+        rw [hF, Finset.card_sdiff_add_card_eq_card hWsub, hWcard]
+      omega
+    set A' := A ∪ F with hA'
+    set B' := B ∪ F with hB'
+    have hinter : A' ∩ B' = (A ∩ B) ∪ F := by
+      ext x
+      simp only [hA', hB', Finset.mem_inter, Finset.mem_union]
+      constructor
+      · rintro ⟨hxA | hxF, hxB | hxF⟩
+        · exact Or.inl ⟨hxA, hxB⟩
+        · exact Or.inr hxF
+
+exec
+/bin/zsh -lc 'rg -n "filter" lean/Taut lean/Corollary1.lean -S' in /Users/doyle/Dropbox/taut
+ exited 2 in 0ms:
+rg: lean/Corollary1.lean: No such file or directory (os error 2)
+lean/Taut/Complex2.lean:42:  (σ.filter (fun f => e ⊆ f)).card
+lean/Taut/Complex2.lean:84:  (vertsOf (σ.filter (fun f => v ∈ f))).erase v
+lean/Taut/Complex2.lean:123:  have hfilter : ∀ f ∈ σ, (edgesOf σ).filter (fun e => e ⊆ f)
+lean/Taut/Complex2.lean:127:    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+lean/Taut/Complex2.lean:133:  have key : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+lean/Taut/Complex2.lean:134:      = ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card := by
+lean/Taut/Complex2.lean:135:    simp_rw [Finset.card_filter]
+lean/Taut/Complex2.lean:137:  have hcongr : ∀ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card = 3 := by
+lean/Taut/Complex2.lean:139:    rw [hfilter f hf, Finset.card_powersetCard, h.pure f hf]
+lean/Taut/Complex2.lean:141:  have hcl : ∀ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card = 2 :=
+lean/Taut/Complex2.lean:143:  have hleft : ∑ f ∈ σ, ((edgesOf σ).filter (fun e => e ⊆ f)).card
+lean/Taut/Complex2.lean:146:  have hright : ∑ e ∈ edgesOf σ, (σ.filter (fun f => e ⊆ f)).card
+lean/Taut/Complex2.lean:198:  have hf₁ : f₁ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+lean/Taut/Complex2.lean:199:  have hf₂ : f₂ ∈ σ.filter (fun f => e ⊆ f) := by rw [hpair]; simp
+lean/Taut/Complex2.lean:200:  obtain ⟨hf₁σ, hef₁⟩ := Finset.mem_filter.mp hf₁
+lean/Taut/Complex2.lean:201:  obtain ⟨hf₂σ, hef₂⟩ := Finset.mem_filter.mp hf₂
+lean/Taut/Complex2.lean:203:  have hmem : f ∈ σ.filter (fun f => e ⊆ f) := Finset.mem_filter.mpr ⟨hf, hef⟩
+lean/Taut/Complex2.lean:229:    exact ⟨hxv, f, Finset.mem_of_mem_filter f hf,
+lean/Taut/Complex2.lean:230:      (Finset.mem_filter.mp hf).2, hxf⟩
+lean/Taut/Complex2.lean:232:    exact ⟨hxv, f, Finset.mem_filter.mpr ⟨hf, hvf⟩, hxf⟩
+lean/Taut/Complex2.lean:257:    ((linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y)).card = 2 := by
+lean/Taut/Complex2.lean:261:  have himg : ((linkVerts σ v).filter
+lean/Taut/Complex2.lean:263:      = σ.filter (fun f => {v, x} ⊆ f) := by
+lean/Taut/Complex2.lean:265:    rw [Finset.mem_image, Finset.mem_filter]
+lean/Taut/Complex2.lean:268:      obtain ⟨hyL, hxy, hface⟩ := Finset.mem_filter.mp hy
+lean/Taut/Complex2.lean:286:      refine ⟨z, Finset.mem_filter.mpr ⟨?_, ?_⟩, hfz'.symm⟩
+lean/Taut/Complex2.lean:290:  have hinj : ∀ y₁ ∈ (linkVerts σ v).filter
+lean/Taut/Complex2.lean:292:      ∀ y₂ ∈ (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y),
+lean/Taut/Complex2.lean:296:    have hy₁v : y₁ ≠ v := (Finset.mem_erase.mp (Finset.mem_filter.mp h₁).1).1
+lean/Taut/Complex2.lean:297:    have hy₁x : y₁ ≠ x := Ne.symm (Finset.mem_filter.mp h₁).2.1
+lean/Taut/Complex2.lean:514:  have hfilter : (tetraBdry a b c d).filter (fun f => e ⊆ f)
+lean/Taut/Complex2.lean:517:    rw [Finset.mem_filter, Finset.mem_image]
+lean/Taut/Complex2.lean:538:  rw [edgeDeg, hfilter, Finset.card_image_of_injOn, Finset.card_sdiff_of_subset hsub,
+lean/Taut/Complex2.lean:567:      have hfσ := Finset.mem_of_mem_filter f hf
+lean/Taut/Eligible.lean:270:        ⊆ (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w) := by
+lean/Taut/Eligible.lean:272:      exact Finset.mem_filter.mpr ⟨hL_sub_link (Finset.mem_of_mem_erase hz),
+lean/Taut/Eligible.lean:274:    have hNeq : (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w)
+lean/Taut/Eligible.lean:278:    have : v ∈ (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w) :=
+lean/Taut/Eligible.lean:279:      Finset.mem_filter.mpr ⟨hadj_mem hadjuv, hadjuv⟩
+lean/Taut/Chains.lean:43:def cnt (x : V) (s : Finset V) : ℕ := (s.filter (· < x)).card
+lean/Taut/Chains.lean:63:  rw [Finset.filter_insert]
+lean/Taut/Chains.lean:65:  · rw [Finset.card_insert_of_notMem (fun h => hz (Finset.mem_of_mem_filter z h))]
+lean/Taut/Chains.lean:164:  M.filter (fun s => x ∈ s)
+lean/Taut/Chains.lean:168:  simp [nbhd, Finsupp.filter_apply]
+lean/Taut/Chains.lean:176:  Finsupp.filter_single_of_pos (p := fun u => x ∈ u) h
+lean/Taut/Chains.lean:180:  Finsupp.filter_single_of_neg (p := fun u => x ∈ u) h
+lean/Taut/Chains.lean:183:  rw [nbhd, Finsupp.filter_zero]
+lean/Taut/Chains.lean:343:  | zero => rw [map_zero, map_zero, nbhd, Finsupp.filter_zero]
+lean/Taut/Chains.lean:471:lemma nrm_filter_add_nrm_filter_neg (p : Finset V → Prop) [DecidablePred p]
+lean/Taut/Chains.lean:473:    nrm (M.filter p) + nrm (M.filter fun s => ¬ p s) = nrm M := by
+lean/Taut/Chains.lean:474:  have h1 : (M.filter p).support ⊆ M.support := by
+lean/Taut/Chains.lean:475:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:476:  have h2 : (M.filter fun s => ¬ p s).support ⊆ M.support := by
+lean/Taut/Chains.lean:477:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Chains.lean:480:  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Chains.lean:496:  set F := M.filter (fun s => ¬ x ∈ s) with hF
+lean/Taut/Chains.lean:505:    conv_lhs => rw [← Finsupp.filter_pos_add_filter_neg M (fun s => x ∈ s)]
+lean/Taut/Chains.lean:509:    rw [hF, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Chains.lean:529:  have hsplit := nrm_filter_add_nrm_filter_neg (fun s => x ∈ s) M
+lean/Taut/Zvol.lean:62:lemma subChain_filter (p : Finset V → Prop) [DecidablePred p] (M : Chain V) :
+lean/Taut/Zvol.lean:63:    SubChain (M.filter p) M := by
+lean/Taut/Zvol.lean:65:  rw [Finsupp.filter_apply]
+lean/Taut/Zvol.lean:71:  subChain_filter _ M
+lean/Taut/Homology2.lean:70:    ((edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)).card = if x ∈ f then 2 else 0 := by
+lean/Taut/Homology2.lean:72:  -- the filter over edgesOf is the filter of card-2 subsets of `f` through `x`
+lean/Taut/Homology2.lean:73:  have hrw : (edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)
+lean/Taut/Homology2.lean:74:      = (f.powersetCard 2).filter (fun e => x ∈ e) := by
+lean/Taut/Homology2.lean:76:    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+lean/Taut/Homology2.lean:86:    have himg : (f.powersetCard 2).filter (fun e => x ∈ e)
+lean/Taut/Homology2.lean:89:      simp only [Finset.mem_filter, Finset.mem_powersetCard, Finset.mem_image,
+lean/Taut/Homology2.lean:117:    rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+lean/Taut/Homology2.lean:167:  have : (σ.filter (fun f => (e : Finset V) ⊆ f)).card = 2 := hclosed e e.2
+lean/Taut/Homology2.lean:182:  rw [← Finset.sum_filter]
+lean/Taut/Homology2.lean:183:  have hfilter : (Finset.univ.filter (fun f : σ => (e : Finset V) ⊆ (f : Finset V)))
+lean/Taut/Homology2.lean:186:    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
+lean/Taut/Homology2.lean:196:  rw [hfilter, Finset.sum_pair (by simp only [ne_eq, Subtype.mk.injEq]; exact hne)]
+lean/Taut/Homology2.lean:520:      show (vertsOf σ).filter (fun x => x ∈ (e : Finset V)) = (e : Finset V) from by
+lean/Taut/Homology2.lean:522:        simp only [Finset.mem_filter]
+lean/Taut/Projection.lean:361:    nrm (Kmap A p M) + nrm (M.filter (Kkills A p)) ≤ nrm M := by
+lean/Taut/Projection.lean:364:      ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:369:      _ = (∑ s ∈ M.support.filter (fun s => Kkills A p s),
+lean/Taut/Projection.lean:371:          + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s),
+lean/Taut/Projection.lean:373:          rw [Finset.sum_filter_add_sum_filter_not]
+lean/Taut/Projection.lean:374:      _ = ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s),
+lean/Taut/Projection.lean:377:          rw [KGen_of_kills (Finset.mem_filter.mp hs).2, nrm_zero, mul_zero]
+lean/Taut/Projection.lean:378:      _ ≤ ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:384:  have h2 : nrm (M.filter (Kkills A p)) =
+lean/Taut/Projection.lean:385:      ∑ s ∈ M.support.filter (fun s => Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:386:    rw [nrm, Finsupp.support_filter]
+lean/Taut/Projection.lean:388:      rw [Finsupp.filter_apply, if_pos (Finset.mem_filter.mp hs).2]
+lean/Taut/Projection.lean:389:  have h3 : nrm M = (∑ s ∈ M.support.filter (fun s => Kkills A p s),
+lean/Taut/Projection.lean:391:      + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:392:    rw [nrm, Finset.sum_filter_add_sum_filter_not]
+lean/Taut/Degree3.lean:42:  have hsub : (linkVerts σ v).filter (fun w => (linkGraph σ v).Adj x w)
+lean/Taut/Degree3.lean:44:    rw [Finset.mem_filter] at hw; exact Finset.mem_erase.mpr ⟨hw.2.ne', hw.1⟩
+lean/Taut/Degree3.lean:47:  have hymem : y ∈ (linkVerts σ v).filter (fun w => (linkGraph σ v).Adj x w) := by
+lean/Taut/Degree3.lean:49:  exact (Finset.mem_filter.mp hymem).2
+lean/Taut/Degree3.lean:125:    have hfilter2 : (σ.filter (fun h => e ⊆ h)).card = 2 := hσ.closed e he
+lean/Taut/Degree3.lean:127:        ⊆ σ.filter (fun h => e ⊆ h) := by
+lean/Taut/Degree3.lean:130:      · exact Finset.mem_filter.mpr ⟨hf1σ, Finset.subset_insert _ _⟩
+lean/Taut/Degree3.lean:131:      · exact Finset.mem_filter.mpr ⟨hf2σ, Finset.subset_insert _ _⟩
+lean/Taut/Degree3.lean:132:    have hfeq : σ.filter (fun h => e ⊆ h) = {insert w₁ e, insert w₂ e} :=
+lean/Taut/Degree3.lean:134:        (le_of_eq (hfilter2.trans (Finset.card_pair hins_ne).symm))).symm
+lean/Taut/Degree3.lean:135:    have hmemg : (z : Finset V) ∈ σ.filter (fun h => e ⊆ h) :=
+lean/Taut/Degree3.lean:136:      Finset.mem_filter.mpr ⟨z.2, hez⟩
+lean/Taut/OrientedBridge.lean:8:edge-join (M23), the side-filter `X.filter (· ∈ σ₁)` is NOT closed — its boundary
+lean/Taut/OrientedBridge.lean:11:    X₁ = X.filter (· ∈ σ₁) − c • [γ],   X₂ = X.filter (· ∈ σ₂) + c • [γ]
+lean/Taut/OrientedBridge.lean:66:/-- **The capping algebra of the triangle cut.** Once the side-filter boundary is
+lean/Taut/Separation.lean:62:  (Finset.univ.filter (fun f : σ => W f = 1)).image Subtype.val
+lean/Taut/Separation.lean:66:  simp only [cutSet, Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and]
+lean/Taut/Separation.lean:103:      = (if e ⊆ γ then 1 else 0) + ((cutSet σ W).filter (fun f => e ⊆ f)).card := by
+lean/Taut/Separation.lean:104:  rw [edgeDeg, Finset.filter_insert]
+lean/Taut/Separation.lean:107:      (fun hγf => hγσ (cutSet_subset (Finset.mem_of_mem_filter _ hγf))), if_pos heγ, add_comm]
+lean/Taut/Separation.lean:121:  have hfilter : (cutSet σ W).filter (fun f => e ⊆ f)
+lean/Taut/Separation.lean:122:      = ({f₁, f₂} : Finset (Finset V)).filter (fun f => f ∈ cutSet σ W) := by
+lean/Taut/Separation.lean:124:    simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/Separation.lean:133:  rw [edgeDeg_cut hγσ, hfilter, Finset.card_filter, Finset.sum_pair hne]
+lean/Taut/Splitting.lean:21:4. so generators are pure and the filter along `· ⊆ A` splits `M`.
+lean/Taut/Splitting.lean:133:      nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) := by
+lean/Taut/Splitting.lean:135:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:136:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:137:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Splitting.lean:138:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Splitting.lean:146:  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Splitting.lean:320:  set U := M.filter (fun t => y₀ ∈ t ∧ 2 ≤ (t \ B).card) with hU
+lean/Taut/Splitting.lean:321:  have hUsub : SubChain U M := subChain_filter _ M
+lean/Taut/Splitting.lean:328:      rw [hU, Finsupp.filter_apply, if_neg (fun h => hyt h.1)]
+lean/Taut/Splitting.lean:333:    rw [hU, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:356:    rw [hU, Finsupp.filter_apply, if_pos ⟨hy₀t, by omega⟩]
+lean/Taut/Splitting.lean:376:              rw [Finsupp.sub_apply, hU, Finsupp.filter_apply,
+lean/Taut/Splitting.lean:433:filling `M` of an almost disjoint union `X + Y` splits: filtering `M`
+lean/Taut/Splitting.lean:443:    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+lean/Taut/Splitting.lean:444:    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+lean/Taut/Splitting.lean:445:    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+lean/Taut/Splitting.lean:446:    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+lean/Taut/Splitting.lean:447:    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+lean/Taut/Splitting.lean:490:  set Mx := M.filter (fun t => t ⊆ A) with hMx
+lean/Taut/Splitting.lean:491:  set My := M.filter (fun t => ¬ t ⊆ A) with hMy
+lean/Taut/Splitting.lean:492:  have hsum : Mx + My = M := Finsupp.filter_pos_add_filter_neg M _
+lean/Taut/Splitting.lean:495:    rw [hMx, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:499:    rw [hMy, Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Splitting.lean:517:  have hnrm : nrm Mx + nrm My = nrm M := nrm_filter_add_nrm_filter_neg _ M
+lean/Taut/Splitting.lean:541:    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+lean/Taut/Splitting.lean:542:    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+lean/Taut/Splitting.lean:543:    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+lean/Taut/Splitting.lean:544:    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+lean/Taut/Splitting.lean:545:    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+lean/Taut/Splitting.lean:622:    -- transfer the two filters from `A'` to `A`
+lean/Taut/Splitting.lean:623:    have hfilt_pos : M.filter (fun t => t ⊆ A') = M.filter (fun t => t ⊆ A) := by
+lean/Taut/Splitting.lean:625:      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Splitting.lean:629:    have hfilt_neg : M.filter (fun t => ¬ t ⊆ A') = M.filter (fun t => ¬ t ⊆ A) := by
+lean/Taut/Splitting.lean:631:      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/FlipGeom.lean:68:    (hNbr : S.filter (fun y => G.Adj x y) = {p, q})
+lean/Taut/FlipGeom.lean:104:                    have huMem : u ∈ S.filter (fun y => G.Adj x y) := Finset.mem_filter.mpr ⟨huS, h.symm⟩
+lean/Taut/FlipGeom.lean:109:                    have hzMem : z ∈ S.filter (fun y => G.Adj x y) := Finset.mem_filter.mpr ⟨hzS, h2⟩
+lean/Taut/FlipGeom.lean:463:theorem tetFaces_edge_filter_card_eq_two {e a : Finset V} (he : e.card = 4) (hae : a ⊆ e) (hacard : a.card = 2) :
+lean/Taut/FlipGeom.lean:464:    ((tetFaces e).filter (fun F => a ⊆ F)).card = 2 := by
+lean/Taut/FlipGeom.lean:466:  have hfilter : (tetFaces e).filter (fun F => a ⊆ F)
+lean/Taut/FlipGeom.lean:469:    rw [Finset.mem_filter, Finset.mem_image]
+lean/Taut/FlipGeom.lean:492:  rw [hfilter, Finset.card_image_of_injOn, Finset.card_sdiff_of_subset hae, he, hacard]
+lean/Taut/FlipGeom.lean:509:  have hTcard : ((tetFaces e).filter P).card = 2 :=
+lean/Taut/FlipGeom.lean:510:    tetFaces_edge_filter_card_eq_two he.1 hae hacard
+lean/Taut/FlipGeom.lean:515:  have hT_eq : (tetFaces e).filter P = (sharedFaces M e).filter P ∪ (exposedFaces M e).filter P := by
+lean/Taut/FlipGeom.lean:517:    simp only [Finset.mem_filter, Finset.mem_union]
+lean/Taut/FlipGeom.lean:526:  have hdisj : Disjoint ((sharedFaces M e).filter P) ((exposedFaces M e).filter P) := by
+lean/Taut/FlipGeom.lean:529:    exact (Finset.mem_sdiff.mp (Finset.mem_filter.mp hFe).1).2 (Finset.mem_filter.mp hFs).1
+lean/Taut/FlipGeom.lean:530:  have hsum : ((sharedFaces M e).filter P).card + ((exposedFaces M e).filter P).card = 2 := by
+lean/Taut/FlipGeom.lean:532:  have hshared_sub_sigma_filter : (sharedFaces M e).filter P ⊆ σ.filter P := by
+lean/Taut/FlipGeom.lean:534:    exact Finset.mem_filter.mpr ⟨(hsh_mem F).mp (Finset.mem_filter.mp hF).1 |>.2, (Finset.mem_filter.mp hF).2⟩
+lean/Taut/FlipGeom.lean:535:  have hOldCard : (σ.filter P \ sharedFaces M e).card = (σ.filter P).card - ((sharedFaces M e).filter P).card := by
+lean/Taut/FlipGeom.lean:536:    have hsdiff_eq : σ.filter P \ sharedFaces M e = σ.filter P \ (sharedFaces M e).filter P := by
+lean/Taut/FlipGeom.lean:538:      simp only [Finset.mem_sdiff, Finset.mem_filter]
+lean/Taut/FlipGeom.lean:541:    exact Finset.card_sdiff_of_subset hshared_sub_sigma_filter
+lean/Taut/FlipGeom.lean:543:      (σ.filter P \ sharedFaces M e).card + ((exposedFaces M e).filter P).card := by
+lean/Taut/FlipGeom.lean:545:    have hfilter : (((σ \ sharedFaces M e) ∪ exposedFaces M e).filter P) =
+lean/Taut/FlipGeom.lean:546:        (σ.filter P \ sharedFaces M e) ∪ ((exposedFaces M e).filter P) := by
+lean/Taut/FlipGeom.lean:548:      simp only [Finset.mem_filter, Finset.mem_union, Finset.mem_sdiff]
+lean/Taut/FlipGeom.lean:550:    rw [hfilter]
+lean/Taut/FlipGeom.lean:554:    have hFσ : F ∈ σ := (Finset.mem_filter.mp (Finset.mem_sdiff.mp hOld).1).1
+lean/Taut/FlipGeom.lean:555:    have hnσ : F ∉ σ := ((mem_exposedFaces_iff_tetFace_not_sigma hU F).mp (Finset.mem_filter.mp hExp).1).2
+lean/Taut/FlipGeom.lean:565:  have edge_of_shared_pos : 0 < ((sharedFaces M e).filter P).card → a ∈ edgesOf σ := by
+lean/Taut/FlipGeom.lean:568:    exact mem_edgesOf.mpr ⟨F, (hsh_mem F).mp (Finset.mem_filter.mp hF).1 |>.2,
+lean/Taut/FlipGeom.lean:569:      (Finset.mem_filter.mp hF).2, hacard⟩
+lean/Taut/FlipGeom.lean:572:    · have hEcard : ((exposedFaces M e).filter P).card = 2 := by
+lean/Taut/FlipGeom.lean:574:        have heq : ({f₃, f₄} : Finset (Finset V)).filter P = {f₃, f₄} := by
+lean/Taut/FlipGeom.lean:576:          simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/FlipGeom.lean:584:      have hShcard : ((sharedFaces M e).filter P).card = 0 := by omega
+lean/Taut/FlipGeom.lean:594:      have hσempty : σ.filter P = ∅ := by
+lean/Taut/FlipGeom.lean:598:          exact False.elim (hnotσ (mem_edgesOf.mpr ⟨F, (Finset.mem_filter.mp hF).1, (Finset.mem_filter.mp hF).2, hacard⟩))
+lean/Taut/FlipGeom.lean:601:      have hσcard : (σ.filter P).card = 0 := by
+lean/Taut/FlipGeom.lean:604:    · have hEcard : ((exposedFaces M e).filter P).card = 1 := by
+lean/Taut/FlipGeom.lean:606:        have heq : ({f₃, f₄} : Finset (Finset V)).filter P = {f₃} := by
+lean/Taut/FlipGeom.lean:608:          simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/FlipGeom.lean:618:      have hShcard : ((sharedFaces M e).filter P).card = 1 := by omega
+lean/Taut/FlipGeom.lean:620:      have hσcard : (σ.filter P).card = 2 := by
+lean/Taut/FlipGeom.lean:624:    · have hEcard : ((exposedFaces M e).filter P).card = 1 := by
+lean/Taut/FlipGeom.lean:626:        have heq : ({f₃, f₄} : Finset (Finset V)).filter P = {f₄} := by
+lean/Taut/FlipGeom.lean:628:          simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/FlipGeom.lean:638:      have hShcard : ((sharedFaces M e).filter P).card = 1 := by omega
+lean/Taut/FlipGeom.lean:640:      have hσcard : (σ.filter P).card = 2 := by
+lean/Taut/FlipGeom.lean:643:    · have hEcard : ((exposedFaces M e).filter P).card = 0 := by
+lean/Taut/FlipGeom.lean:645:        have heq : ({f₃, f₄} : Finset (Finset V)).filter P = ∅ := by
+lean/Taut/FlipGeom.lean:647:          simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/FlipGeom.lean:656:      have hShcard : ((sharedFaces M e).filter P).card = 2 := by omega
+lean/Taut/FlipGeom.lean:658:      have hσcard : (σ.filter P).card = 2 := by
+lean/Taut/FlipGeom.lean:665:        exact Finset.card_pos.mpr ⟨F, Finset.mem_filter.mpr ⟨hFτ, hFa⟩⟩
+lean/Taut/FlipGeom.lean:683:    have hfilter : τ.filter (fun f => a ⊆ f) = σ.filter (fun f => a ⊆ f) := by
+lean/Taut/FlipGeom.lean:685:      simp only [Finset.mem_filter]
+lean/Taut/FlipGeom.lean:706:    rw [edgeDeg, hfilter]
+lean/Taut/FlipGeom.lean:1010:      (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj w y) = {p, q} ∧
+lean/Taut/FlipGeom.lean:1035:        (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj w y) = {p, q} ∧
+lean/Taut/FlipGeom.lean:1227:    have hfilter_vw_card : (σ.filter (fun F => ({v, w} : Finset V) ⊆ F)).card = 2 := by
+lean/Taut/FlipGeom.lean:1229:    have holdPair_sub_filter : ({({v, w, p} : Finset V), ({v, w, q} : Finset V)} : Finset (Finset V)) ⊆ σ.filter (fun F => ({v, w} : Finset V) ⊆ F) := by
+lean/Taut/FlipGeom.lean:1233:      · exact Finset.mem_filter.mpr ⟨hvwp_sigma, hvw_sub_vwp⟩
+lean/Taut/FlipGeom.lean:1234:      · exact Finset.mem_filter.mpr ⟨hvwq_sigma, hvw_sub_vwq⟩
+lean/Taut/FlipGeom.lean:1235:    have hfilter_vw_eq : σ.filter (fun F => ({v, w} : Finset V) ⊆ F) = ({({v, w, p} : Finset V), ({v, w, q} : Finset V)} : Finset (Finset V)) := by
+lean/Taut/FlipGeom.lean:1236:      exact (Finset.eq_of_subset_of_card_le holdPair_sub_filter (by rw [hfilter_vw_card, Finset.card_pair hvwp_ne_hvwq])).symm
+lean/Taut/FlipGeom.lean:1245:      have hFfilter : F ∈ σ.filter (fun F => ({v, w} : Finset V) ⊆ F) := Finset.mem_filter.mpr ⟨hFσ, hsub⟩
+lean/Taut/FlipGeom.lean:1247:        rw [← hfilter_vw_eq]
+lean/Taut/FlipGeom.lean:1248:        exact hFfilter
+lean/Taut/FlipGeom.lean:1255:    have hneighbors : (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj w y) = ({p, q} : Finset V) := by
+lean/Taut/FlipGeom.lean:1257:      have hsub : ({p, q} : Finset V) ⊆ (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj w y) := by
+lean/Taut/FlipGeom.lean:1261:        · exact Finset.mem_filter.mpr ⟨hpL, ⟨hwp, hvwp_sigma⟩⟩
+lean/Taut/FlipGeom.lean:1262:        · exact Finset.mem_filter.mpr ⟨hqL, ⟨hwq, hvwq_sigma⟩⟩
+lean/Taut/FlipGeom.lean:1478:  have hfilter : ∀ f ∈ τ, (edgesOf τ).filter (fun e => e ⊆ f)
+lean/Taut/FlipGeom.lean:1482:    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+lean/Taut/FlipGeom.lean:1488:  have key : ∑ f ∈ τ, ((edgesOf τ).filter (fun e => e ⊆ f)).card
+lean/Taut/FlipGeom.lean:1489:      = ∑ e ∈ edgesOf τ, (τ.filter (fun f => e ⊆ f)).card := by
+lean/Taut/FlipGeom.lean:1490:    simp_rw [Finset.card_filter]
+lean/Taut/FlipGeom.lean:1492:  have hcongr : ∀ f ∈ τ, ((edgesOf τ).filter (fun e => e ⊆ f)).card = 3 := by
+lean/Taut/FlipGeom.lean:1494:    rw [hfilter f hf, Finset.card_powersetCard, hpure f hf]
+lean/Taut/FlipGeom.lean:1496:  have hcl : ∀ e ∈ edgesOf τ, (τ.filter (fun f => e ⊆ f)).card = 2 := by
+lean/Taut/FlipGeom.lean:1499:  have hleft : ∑ f ∈ τ, ((edgesOf τ).filter (fun e => e ⊆ f)).card
+lean/Taut/FlipGeom.lean:1502:  have hright : ∑ e ∈ edgesOf τ, (τ.filter (fun f => e ⊆ f)).card
+lean/Taut/Stickerball.lean:43:    bdry M f = ∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f := by
+lean/Taut/Stickerball.lean:45:  refine (Finset.sum_subset (Finset.filter_subset _ _) (fun t ht htnf => ?_)).symm
+lean/Taut/Stickerball.lean:46:  rw [Finset.mem_filter, not_and] at htnf
+lean/Taut/Stickerball.lean:65:  have hterm : ∀ t ∈ M.support.filter (fun t => f ⊆ t),
+lean/Taut/Stickerball.lean:68:    rw [Finset.mem_filter] at ht
+lean/Taut/Stickerball.lean:109:  have hterm : ∀ t ∈ M.support.filter (fun t => f ⊆ t),
+lean/Taut/Stickerball.lean:112:    rw [Finset.mem_filter] at ht
+lean/Taut/Theorem1.lean:61:  M.filter (fun s => s.card = k)
+lean/Taut/Theorem1.lean:65:  simp [dimPart, Finsupp.filter_apply]
+lean/Taut/Theorem1.lean:74:  rw [dimPart, Finsupp.filter_zero]
+lean/Taut/Theorem1.lean:78:  Finsupp.filter_single_of_pos (p := fun u : Finset V => u.card = k) h
+lean/Taut/Theorem1.lean:82:  Finsupp.filter_single_of_neg (p := fun u : Finset V => u.card = k) h
+lean/Taut/Theorem1.lean:103:      -- all facets have size k, so the filter keeps everything
+lean/Taut/Theorem1.lean:145:  have hPM : SubChain P M := subChain_filter _ M
+lean/Taut/Theorem1.lean:155:  rw [dimPart, Finsupp.support_filter, Finset.mem_filter] at hs
+lean/Taut/Theorem1.lean:343:    nrm M ≤ nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) := by
+lean/Taut/Theorem1.lean:345:  have hsubA : (M.filter (Kkills A p)).support ⊆ M.support := by
+lean/Taut/Theorem1.lean:346:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:347:  have hsubB : (M.filter (Kkills B q)).support ⊆ M.support := by
+lean/Taut/Theorem1.lean:348:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem1.lean:352:  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem1.lean:421:    have h3 : nrm M ≤ nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) :=
+lean/Taut/Theorem2.lean:314:For the *edge-join* case-2 of the induction, the side-filter of a closed unit
+lean/Taut/Theorem2.lean:319:/-- Filtering a chain by `P` does not change a boundary coefficient `u` for which
+lean/Taut/Theorem2.lean:321:lemma bdry_filter_apply_eq_bdry_of_no_cross {X : Chain V} {P : Finset V → Prop}
+lean/Taut/Theorem2.lean:324:    bdry (X.filter P) u = bdry X u := by
+lean/Taut/Theorem2.lean:325:  have hz : bdry (X.filter (fun s => ¬ P s)) u = 0 := by
+lean/Taut/Theorem2.lean:328:    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Theorem2.lean:330:  have hsum : bdry (X.filter P) u + bdry (X.filter (fun s => ¬ P s)) u = bdry X u := by
+lean/Taut/Theorem2.lean:331:    rw [← Finsupp.add_apply, ← map_add, Finsupp.filter_pos_add_filter_neg]
+lean/Taut/Theorem2.lean:334:/-- **The edge-join closed-filter lemma.** If `X` is a closed chain whose faces
+lean/Taut/Theorem2.lean:336:edge, then the `A`-side filter of `X` is again closed — its boundary is a closed
+lean/Taut/Theorem2.lean:339:filter open; the edge-join is exactly what makes case 2 work. -/
+lean/Taut/Theorem2.lean:340:lemma bdry_filter_subset_eq_zero_of_inter_card_two {X : Chain V} {A B : Finset V}
+lean/Taut/Theorem2.lean:343:    bdry (X.filter (fun s => s ⊆ A)) = 0 := by
+lean/Taut/Theorem2.lean:348:  have hfaces : ∀ s ∈ (X.filter (fun s => s ⊆ A)).support, s ⊆ A ∧ s.card = 2 + 1 := by
+lean/Taut/Theorem2.lean:350:    rw [Finsupp.support_filter, Finset.mem_filter] at hs
+lean/Taut/Theorem2.lean:355:    have hcross : bdry (X.filter (fun s => s ⊆ A)) u = bdry X u := by
+lean/Taut/Theorem2.lean:356:      refine bdry_filter_apply_eq_bdry_of_no_cross fun s hsX hsA => ?_
+lean/Taut/StickerballRuleouts.lean:49:    (h₁ : IsPseudomanifold (τ.filter (fun t => t ⊆ A)))
+lean/Taut/StickerballRuleouts.lean:50:    (h₂ : IsPseudomanifold (τ.filter (fun t => t ⊆ B))) :
+lean/Taut/StickerballRuleouts.lean:54:  · -- every tet of τ containing f is ⊆ A, so faceCount τ f = faceCount (filter ⊆A) f
+lean/Taut/StickerballRuleouts.lean:55:    have hset : τ.filter (fun t => f ⊆ t) = (τ.filter (fun t => t ⊆ A)).filter (fun t => f ⊆ t) := by
+lean/Taut/StickerballRuleouts.lean:56:      rw [Finset.filter_filter]
+lean/Taut/StickerballRuleouts.lean:57:      apply Finset.filter_congr
+lean/Taut/StickerballRuleouts.lean:67:    have hset : τ.filter (fun t => f ⊆ t) = (τ.filter (fun t => t ⊆ B)).filter (fun t => f ⊆ t) := by
+lean/Taut/StickerballRuleouts.lean:68:      rw [Finset.filter_filter]
+lean/Taut/StickerballRuleouts.lean:69:      apply Finset.filter_congr
+lean/Taut/Pseudomanifold.lean:23:  (τ.filter (fun t => f ⊆ t)).card
+lean/Taut/Pseudomanifold.lean:42:  rw [Finset.filter_false_of_mem h]; rfl
+lean/Taut/Pseudomanifold.lean:49:  rw [Finset.filter_insert]
+lean/Taut/Pseudomanifold.lean:51:  · have hnm : t ∉ τ.filter (fun s => f ⊆ s) :=
+lean/Taut/Pseudomanifold.lean:52:      fun hmem => ht (Finset.mem_of_mem_filter t hmem)
+lean/Taut/Pseudomanifold.lean:62:    have hle := Finset.card_filter_le ({t} : Finset (Finset V)) (fun s => f ⊆ s)
+lean/Taut/Pseudomanifold.lean:101:  vertsOf (τ.filter (fun t => e ⊆ t)) \ e
+lean/Taut/Pseudomanifold.lean:113:  rw [Finset.filter_false_of_mem h]; simp
+lean/Taut/Pseudomanifold.lean:132:  simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+lean/Taut/Pseudomanifold.lean:178:  rw [Finset.filter_insert, if_pos h, Finset.biUnion_insert, id_eq,
+lean/Taut/Pseudomanifold.lean:186:  rw [Finset.filter_insert, if_neg h]
+lean/Taut/Pseudomanifold.lean:193:    Finset.mem_filter]
+lean/Taut/Pseudomanifold.lean:282:  exact Finset.card_le_card (Finset.filter_subset_filter _ h)
+lean/Taut/Pseudomanifold.lean:285:sum of the side counts when the tet-sets are disjoint (`Finset.filter_union` plus
+lean/Taut/Pseudomanifold.lean:290:  rw [Finset.filter_union, Finset.card_union_of_disjoint
+lean/Taut/Pseudomanifold.lean:291:    (Finset.disjoint_filter_filter hd)]
+lean/Taut/Pseudomanifold.lean:329:  vertsOf (τ.filter (fun t => v ∈ t)) \ {v}
+lean/Taut/Pseudomanifold.lean:340:  rw [Finset.filter_false_of_mem h]; simp
+lean/Taut/Pseudomanifold.lean:347:    Finset.mem_filter, Finset.mem_singleton]
+lean/Taut/Pseudomanifold.lean:373:  simp only [vertexLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+lean/Taut/Pseudomanifold.lean:395:  rw [Finset.filter_insert, if_pos h, Finset.biUnion_insert, id_eq,
+lean/Taut/Pseudomanifold.lean:403:  rw [Finset.filter_insert, if_neg h]
+lean/Taut/Theorem3.lean:234:      MR = M.filter (fun t => if useInside then t ⊆ sideVerts else ¬ t ⊆ sideVerts))
+lean/Taut/Theorem3.lean:260:  have hfilt : (MR.support.filter (fun t => γ ⊆ t)).card = 1 := hfc1
+lean/Taut/Theorem3.lean:263:    have : t₀ ∈ MR.support.filter (fun t => γ ⊆ t) := by
+lean/Taut/Theorem3.lean:265:    exact (Finset.mem_filter.mp this).1
+lean/Taut/Theorem3.lean:267:    have : t₀ ∈ MR.support.filter (fun t => γ ⊆ t) := by
+lean/Taut/Theorem3.lean:269:    exact (Finset.mem_filter.mp this).2
+lean/Taut/Theorem3.lean:272:    have : t ∈ MR.support.filter (fun t => γ ⊆ t) :=
+lean/Taut/Theorem3.lean:273:      Finset.mem_filter.mpr ⟨htmem, hγt⟩
+lean/Taut/Theorem3.lean:469:filters, the star-side dichotomy, `hsupport`/`hTnot`/`hvNotR`), but instead of the
+lean/Taut/Theorem3.lean:485:  let ML : Chain V := M.filter (fun t => t ⊆ A)
+lean/Taut/Theorem3.lean:486:  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
+lean/Taut/Theorem3.lean:510:      star_filter_support_singleton ML (cappedCutLeft σ W X γ c)
+lean/Taut/Theorem3.lean:514:      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
+lean/Taut/Theorem3.lean:515:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem3.lean:520:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem3.lean:562:        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem3.lean:578:      star_filter_support_singleton MR (cappedCutRight σ W X γ c)
+lean/Taut/Theorem3.lean:581:    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+lean/Taut/Theorem3.lean:584:      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem3.lean:589:      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
+lean/Taut/Theorem3.lean:590:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/Theorem3.lean:595:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem3.lean:636:            (M.filter (fun t => ¬ (¬ t ⊆ A))).support :=
+lean/Taut/Theorem3.lean:637:        support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/Theorem3.lean:662:  let ML : Chain V := M.filter (fun t => t ⊆ A)
+lean/Taut/Theorem3.lean:663:  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
+lean/Taut/Theorem3.lean:685:      exact star_filter_support_singleton ML (cappedCutLeft sigma W X γ c)
+lean/Taut/Theorem3.lean:689:      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
+lean/Taut/Theorem3.lean:690:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem3.lean:695:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem3.lean:742:        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem3.lean:788:      exact star_filter_support_singleton MR (cappedCutRight sigma W X γ c)
+lean/Taut/Theorem3.lean:791:    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+lean/Taut/Theorem3.lean:794:      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem3.lean:803:      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
+lean/Taut/Theorem3.lean:804:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/Theorem3.lean:809:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem3.lean:854:            (M.filter (fun t => ¬ (¬ t ⊆ A))).support := by
+lean/Taut/Theorem3.lean:855:        exact support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/CleanShelling.lean:450:    simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter]
+lean/Taut/CleanShelling.lean:461:    simp only [vertexLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+lean/Taut/CleanShelling.lean:576:        simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter]
+lean/Taut/CleanShelling.lean:594:      · simp only [vertexLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+lean/Taut/Theorem2Aleph.lean:165:  X.filter (fun f => f ∈ cutSet σ W)
+lean/Taut/Theorem2Aleph.lean:210:    rw [Finsupp.add_apply, Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem2Aleph.lean:232:    have htCut : t ∈ cutSet σ W := by rw [cutChain, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+lean/Taut/Theorem2Aleph.lean:252:      have heq := bdry_filter_apply_eq_bdry_of_no_cross (X := X) (P := fun f => f ∈ cutSet σ W) (u := e) hvanish
+lean/Taut/Theorem2Aleph.lean:284:          have hf₁supp : f₁ ∈ (cutChain σ W X).support := by rw [cutChain, Finsupp.support_filter, Finset.mem_filter]; exact ⟨hf₁X, hf₁cut⟩
+lean/Taut/Theorem2Aleph.lean:286:          · unfold cutChain; rw [Finsupp.filter_apply, if_pos hf₁cut]
+lean/Taut/Theorem2Aleph.lean:288:            have htcut : t ∈ cutSet σ W := by rw [cutChain, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+lean/Taut/Theorem2Aleph.lean:312:          have hf₂supp : f₂ ∈ (cutChain σ W X).support := by rw [cutChain, Finsupp.support_filter, Finset.mem_filter]; exact ⟨hf₂X, hf₂cut⟩
+lean/Taut/Theorem2Aleph.lean:314:          · unfold cutChain; rw [Finsupp.filter_apply, if_pos hf₂cut]
+lean/Taut/Theorem2Aleph.lean:316:            have htcut : t ∈ cutSet σ W := by rw [cutChain, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+lean/Taut/Theorem2Aleph.lean:349:            rw [Finsupp.sub_apply, Finsupp.filter_apply, Finsupp.single_apply, if_neg hγs, sub_zero] at hsupp
+lean/Taut/Theorem2Aleph.lean:350:            have hsuppX : s ∈ (X.filter fun f => f ∈ cutSet σ W).support := Finsupp.mem_support_iff.mpr hsupp
+lean/Taut/Theorem2Aleph.lean:351:            rw [Finsupp.support_filter, Finset.mem_filter] at hsuppX
+lean/Taut/Theorem2Aleph.lean:360:          rw [Finsupp.sub_apply, Finsupp.filter_apply, if_neg hγnotcut, Finsupp.single_eq_same, zero_sub]
+lean/Taut/Theorem2Aleph.lean:366:          rw [Finsupp.sub_apply, Finsupp.filter_apply, if_pos hsCut, Finsupp.single_apply, if_neg hγs, sub_zero]
+lean/Taut/Theorem2Aleph.lean:373:        rw [Finsupp.sub_apply, Finsupp.filter_apply, if_neg hγnotcut, Finsupp.single_eq_same, zero_sub]
+lean/Taut/Theorem2Aleph.lean:377:        rw [Finsupp.sub_apply, Finsupp.filter_apply, if_pos hsCut, Finsupp.single_apply, if_neg hγs, sub_zero]
+lean/Taut/Theorem2Aleph.lean:391:            rw [Finsupp.add_apply, Finsupp.filter_apply, Finsupp.single_apply, if_neg hγs, add_zero] at hsupp
+lean/Taut/Theorem2Aleph.lean:392:            have hsuppX : s ∈ (X.filter fun f => f ∈ cutSet σ (W + fun _ => 1)).support := Finsupp.mem_support_iff.mpr hsupp
+lean/Taut/Theorem2Aleph.lean:393:            rw [Finsupp.support_filter, Finset.mem_filter] at hsuppX
+lean/Taut/Theorem2Aleph.lean:402:          rw [Finsupp.add_apply, Finsupp.filter_apply, if_neg hγnotcut, Finsupp.single_eq_same, zero_add]
+lean/Taut/Theorem2Aleph.lean:408:          rw [Finsupp.add_apply, Finsupp.filter_apply, if_pos hsCut, Finsupp.single_apply, if_neg hγs, add_zero]
+lean/Taut/Theorem2Aleph.lean:415:        rw [Finsupp.add_apply, Finsupp.filter_apply, if_neg hγnotcut, Finsupp.single_eq_same, zero_add]
+lean/Taut/Theorem2Aleph.lean:419:        rw [Finsupp.add_apply, Finsupp.filter_apply, if_pos hsCut, Finsupp.single_apply, if_neg hγs, add_zero]
+lean/Taut/Theorem2Aleph.lean:441:theorem norm_lt_filter_neg_of_filter_support_singleton (M : Chain V) (P : Finset V → Prop) [DecidablePred P] {T : Finset V}
+lean/Taut/Theorem2Aleph.lean:442:    (hP : (M.filter P).support = {T}) :
+lean/Taut/Theorem2Aleph.lean:443:    nrm (M.filter (fun t => ¬ P t)) < nrm M := by
+lean/Taut/Theorem2Aleph.lean:444:  have hpos_nonzero : M.filter P ≠ 0 := by
+lean/Taut/Theorem2Aleph.lean:448:  have hpos : 0 < nrm (M.filter P) := by
+lean/Taut/Theorem2Aleph.lean:449:    have hnz : nrm (M.filter P) ≠ 0 := by
+lean/Taut/Theorem2Aleph.lean:453:  have hsum := nrm_filter_add_nrm_filter_neg P M
+lean/Taut/Theorem2Aleph.lean:551:        have hfilter2 : (τ.filter (fun h => e ⊆ h)).card = 2 := hτ.closed e he
+lean/Taut/Theorem2Aleph.lean:553:            ⊆ τ.filter (fun h => e ⊆ h) := by
+lean/Taut/Theorem2Aleph.lean:556:          · exact Finset.mem_filter.mpr ⟨hf1τ, Finset.subset_insert _ _⟩
+lean/Taut/Theorem2Aleph.lean:557:          · exact Finset.mem_filter.mpr ⟨hf2τ, Finset.subset_insert _ _⟩
+lean/Taut/Theorem2Aleph.lean:558:        have hfeq : τ.filter (fun h => e ⊆ h) = {insert w₁ e, insert w₂ e} :=
+lean/Taut/Theorem2Aleph.lean:560:            (le_of_eq (hfilter2.trans (Finset.card_pair hins_ne).symm))).symm
+lean/Taut/Theorem2Aleph.lean:561:        have hmemg : (z : Finset V) ∈ τ.filter (fun h => e ⊆ h) :=
+lean/Taut/Theorem2Aleph.lean:562:          Finset.mem_filter.mpr ⟨z.2, hez⟩
+lean/Taut/Theorem2Aleph.lean:672:theorem star_filter_support_singleton (Mstar Y : Chain V) (T : Finset V) (hT4 : T.card = 4)
+lean/Taut/Theorem2Aleph.lean:722:theorem support_eq_insert_of_filter_support_singleton (M : Chain V) (P : Finset V → Prop) [DecidablePred P] {T : Finset V}
+lean/Taut/Theorem2Aleph.lean:723:    (hP : (M.filter P).support = {T}) :
+lean/Taut/Theorem2Aleph.lean:724:    M.support = insert T (M.filter (fun t => ¬ P t)).support := by
+lean/Taut/Theorem2Aleph.lean:729:    · have hsfil : s ∈ (M.filter P).support := by
+lean/Taut/Theorem2Aleph.lean:735:    · have hsfil : s ∈ (M.filter (fun t => ¬ P t)).support := by
+lean/Taut/Theorem2Aleph.lean:741:    · have hTin : T ∈ (M.filter P).support := by
+lean/Taut/Theorem2Aleph.lean:751:theorem ball_reassemble_of_filter_support_singleton (M : Chain V) (P : Finset V → Prop) [DecidablePred P] {T : Finset V}
+lean/Taut/Theorem2Aleph.lean:752:    {B σ : Finset (Finset V)} (hP : (M.filter P).support = {T})
+lean/Taut/Theorem2Aleph.lean:754:    IsBall (M.filter (fun t => ¬ P t)).support B → IsBall M.support σ := by
+lean/Taut/Theorem2Aleph.lean:756:  have hTmem : T ∈ (M.filter P).support := by
+lean/Taut/Theorem2Aleph.lean:759:  have hTne : (M.filter P) T ≠ 0 := by
+lean/Taut/Theorem2Aleph.lean:763:    have hzero : (M.filter P) T = 0 := by
+lean/Taut/Theorem2Aleph.lean:764:      simp [Finsupp.filter, hnot]
+lean/Taut/Theorem2Aleph.lean:766:  have hTnot : T ∉ (M.filter (fun t => ¬ P t)).support := by
+lean/Taut/Theorem2Aleph.lean:768:    have hne : (M.filter (fun t => ¬ P t)) T ≠ 0 := Finsupp.mem_support_iff.mp h
+lean/Taut/Theorem2Aleph.lean:769:    have hzero : (M.filter (fun t => ¬ P t)) T = 0 := by
+lean/Taut/Theorem2Aleph.lean:770:      simp [Finsupp.filter, hPT]
+lean/Taut/Theorem2Aleph.lean:772:  rw [support_eq_insert_of_filter_support_singleton M P hP]
+lean/Taut/Theorem2Aleph.lean:787:    bdry (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))) = cappedCutLeft σ W X γ c ∧
+lean/Taut/Theorem2Aleph.lean:788:    bdry (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))) = cappedCutRight σ W X γ c ∧
+lean/Taut/Theorem2Aleph.lean:789:    IsTaut (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+lean/Taut/Theorem2Aleph.lean:790:    IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+lean/Taut/Theorem2Aleph.lean:791:    (∀ t ∈ (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))).support,
+lean/Taut/Theorem2Aleph.lean:793:    (∀ t ∈ (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))).support,
+lean/Taut/Theorem2Aleph.lean:795:    M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W))) +
+lean/Taut/Theorem2Aleph.lean:796:      M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W))) = M := by
+lean/Taut/Theorem2Aleph.lean:880:    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Theorem2Aleph.lean:883:    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Theorem2Aleph.lean:919:    (hML : bdry (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))) =
+lean/Taut/Theorem2Aleph.lean:921:    (hMR : bdry (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))) =
+lean/Taut/Theorem2Aleph.lean:923:    (hTL : IsTaut (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
+lean/Taut/Theorem2Aleph.lean:924:    (hTR : IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
+lean/Taut/Theorem2Aleph.lean:925:    (hSuppL : ∀ t ∈ (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))).support,
+lean/Taut/Theorem2Aleph.lean:927:    (hSuppR : ∀ t ∈ (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))).support,
+lean/Taut/Theorem2Aleph.lean:929:    (hMsum : M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))) +
+lean/Taut/Theorem2Aleph.lean:930:      M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))) = M)
+lean/Taut/Theorem2Aleph.lean:939:  let ML : Chain V := M.filter (fun t => t ⊆ A)
+lean/Taut/Theorem2Aleph.lean:940:  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
+lean/Taut/Theorem2Aleph.lean:957:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem2Aleph.lean:975:        exact star_filter_support_singleton ML (cappedCutLeft σ W X γ c) (starTet σ v) hT4 hULtet (by simpa only [ML, A, γ] using hML) (by simpa only [ML, A, γ] using hTL) hSuppLT
+lean/Taut/Theorem2Aleph.lean:976:      have hlt : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
+lean/Taut/Theorem2Aleph.lean:977:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem2Aleph.lean:992:        exact star_filter_support_singleton ML (cappedCutLeft σ W X γ c) (starTet σ v) hT4 hULtet (by simpa only [ML, A, γ] using hML) (by simpa only [ML, A, γ] using hTL) hSuppLT
+lean/Taut/Theorem2Aleph.lean:993:      have hreasm : IsBall (M.filter (fun t => ¬ t ⊆ A)).support (insert γ (cutSet σ (W + fun _ => 1))) → IsBall M.support σ :=
+lean/Taut/Theorem2Aleph.lean:994:        ball_reassemble_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp hglue
+lean/Taut/Theorem2Aleph.lean:1010:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem2Aleph.lean:1028:        exact star_filter_support_singleton MR (cappedCutRight σ W X γ c) (starTet σ v) hT4 hURtet (by simpa only [MR, A, γ] using hMR) (by simpa only [MR, A, γ] using hTR) hSuppRT
+lean/Taut/Theorem2Aleph.lean:1029:      have hlt : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
+lean/Taut/Theorem2Aleph.lean:1030:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/Theorem2Aleph.lean:1031:      have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+lean/Taut/Theorem2Aleph.lean:1034:        rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem2Aleph.lean:1057:        exact star_filter_support_singleton MR (cappedCutRight σ W X γ c) (starTet σ v) hT4 hURtet (by simpa only [MR, A, γ] using hMR) (by simpa only [MR, A, γ] using hTR) hSuppRT
+lean/Taut/Theorem2Aleph.lean:1058:      have hreasm : IsBall (M.filter (fun t => ¬ (¬ t ⊆ A))).support (insert γ (cutSet σ W)) → IsBall M.support σ :=
+lean/Taut/Theorem2Aleph.lean:1059:        ball_reassemble_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp hglue
+lean/Taut/Theorem2Aleph.lean:1061:      have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+lean/Taut/Theorem2Aleph.lean:1064:        rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem2Aleph.lean:1095:  (Finset.univ : Finset {α // α ∈ σ}).filter (fun α => f α = τ)
+lean/Taut/Theorem2Aleph.lean:1113:  rw [mem_filter] at hα
+lean/Taut/Theorem2Aleph.lean:1132:  simp only [Finset.mem_image, alephChosenFiber, Finset.mem_filter, Finset.mem_univ, true_and] at hs1 hs2
+lean/Taut/Theorem2Aleph.lean:1163:theorem aleph_deg_eq_card_filter_of_unitOn {X : Chain V} {σ : Finset (Finset V)} (hU : UnitOn X σ) (x : V) :
+lean/Taut/Theorem2Aleph.lean:1164:    deg x X = (σ.filter (fun s => x ∈ s)).card := by
+lean/Taut/Theorem2Aleph.lean:1168:  · rw [nbhd, Finsupp.support_filter, hU.1]
+lean/Taut/Theorem2Aleph.lean:1170:    rw [Finset.mem_filter] at hs
+lean/Taut/Theorem2Aleph.lean:1214:            exact (Finset.mem_filter.mp hαmem).2
+lean/Taut/Theorem2Aleph.lean:1222:    3 ≤ (σ.filter (fun f => v ∈ f)).card := by
+lean/Taut/Theorem2Aleph.lean:1285:  have hf_mem : f ∈ σ.filter (fun g => v ∈ g) :=
+lean/Taut/Theorem2Aleph.lean:1286:    Finset.mem_filter.mpr ⟨hf, hvf⟩
+lean/Taut/Theorem2Aleph.lean:1288:  have hfx_mem : fx ∈ σ.filter (fun g => v ∈ g) :=
+lean/Taut/Theorem2Aleph.lean:1289:    Finset.mem_filter.mpr ⟨hfx, hfx_v⟩
+lean/Taut/Theorem2Aleph.lean:1291:  have hfy_mem : fy ∈ σ.filter (fun g => v ∈ g) :=
+lean/Taut/Theorem2Aleph.lean:1292:    Finset.mem_filter.mpr ⟨hfy, hfy_v⟩
+lean/Taut/Theorem2Aleph.lean:1297:    _ ≤ (σ.filter (fun g => v ∈ g)).card := by
+lean/Taut/Theorem2Aleph.lean:1313:  have hdeg_card : deg v (bdry M) = (σ.filter (fun s => v ∈ s)).card :=
+lean/Taut/Theorem2Aleph.lean:1314:    aleph_deg_eq_card_filter_of_unitOn hU v
+lean/Taut/Theorem2Aleph.lean:1343:    (hfiber_le2 : ∀ b ∈ t, (s.filter (fun a => f a = b)).card ≤ 2) :
+lean/Taut/Theorem2Aleph.lean:1345:      (s.filter (fun a => f a = b₁)).card = 2 ∧
+lean/Taut/Theorem2Aleph.lean:1346:      (s.filter (fun a => f a = b₂)).card = 2 := by
+lean/Taut/Theorem2Aleph.lean:1348:  let g : β → ℕ := fun b => (s.filter (fun a => f a = b)).card
+lean/Taut/Theorem2Aleph.lean:1349:  let D : Finset β := t.filter (fun b => g b = 2)
+lean/Taut/Theorem2Aleph.lean:1368:    rw [Finset.card_filter]
+lean/Taut/Theorem2Aleph.lean:1399:    (hfiber_le2 : ∀ b ∈ t, (s.filter (fun a => f a = b)).card ≤ 2) :
+lean/Taut/Theorem2Aleph.lean:1400:    ∃ D ⊆ t, D.card = k ∧ ∀ b ∈ D, (s.filter (fun a => f a = b)).card = 2 := by
+lean/Taut/Theorem2Aleph.lean:1402:  let g : β → ℕ := fun b => (s.filter (fun a => f a = b)).card
+lean/Taut/Theorem2Aleph.lean:1403:  let Dall : Finset β := t.filter (fun b => g b = 2)
+lean/Taut/Theorem2Aleph.lean:1416:    rw [Finset.sum_add_distrib, Finset.card_eq_sum_ones t, Finset.card_filter]
+lean/Taut/Theorem2Aleph.lean:1423:  refine ⟨D, hDsub.trans (Finset.filter_subset _ _), hDcard, ?_⟩
+lean/Taut/Theorem2Aleph.lean:1426:  rw [Finset.mem_filter] at hb
+lean/Taut/Theorem2Aleph.lean:1454:      ((Finset.univ : Finset {α // α ∈ σ}).filter (fun a => f a = b)).card ≤ 2 := by
+lean/Taut/Theorem2Aleph.lean:1509:      ((Finset.univ : Finset {α // α ∈ σ}).filter (fun a => f a = b)).card ≤ 2 := by
+lean/Taut/Theorem4.lean:163:pseudomanifoldness caps the count at two, so the two-element filter is exactly
+lean/Taut/Theorem4.lean:177:  -- the two tets sit in the filter, which has card ≤ 2; so it *equals* the pair
+lean/Taut/Theorem4.lean:178:  set F := M.support.filter (fun t => f ⊆ t) with hF
+lean/Taut/Theorem4.lean:180:    rw [hF, Finset.mem_filter]; exact ⟨hmemA, Finset.subset_insert a f⟩
+lean/Taut/Theorem4.lean:182:    rw [hF, Finset.mem_filter]; exact ⟨hmemB, Finset.subset_insert b f⟩
+lean/Taut/Theorem4.lean:194:  have htF : t ∈ F := by rw [hF, Finset.mem_filter]; exact ⟨htM, hft⟩
+lean/Taut/Theorem4.lean:218:        M.support.filter (fun t => f ⊆ t) := by
+lean/Taut/Theorem4.lean:221:      · rw [h, Finset.mem_filter]; exact ⟨hmemA, Finset.subset_insert a f⟩
+lean/Taut/Theorem4.lean:222:      · rw [Finset.mem_singleton.mp h, Finset.mem_filter]
+lean/Taut/Theorem4.lean:247:private lemma bdry_filter_subset_eq_zero {V : Type*} [LinearOrder V]
+lean/Taut/Theorem4.lean:255:    bdry (M.filter (fun t => t ⊆ s)) = 0 := by
+lean/Taut/Theorem4.lean:257:  set U := M.filter (fun t => t ⊆ s) with hUdef
+lean/Taut/Theorem4.lean:260:    intro t; rw [hUdef, Finsupp.filter_apply]
+lean/Taut/Theorem4.lean:262:    rw [hUdef, Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem4.lean:270:    -- bdry U f and bdry M f are sums over the same facet filter, with equal coeffs
+lean/Taut/Theorem4.lean:271:    have hsumU : bdry U f = ∑ t ∈ U.support.filter (fun t => f ⊆ t), U t * bdryGen t f :=
+lean/Taut/Theorem4.lean:273:    have hsumM : bdry M f = ∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f :=
+lean/Taut/Theorem4.lean:275:    -- the two filters coincide
+lean/Taut/Theorem4.lean:276:    have hfilteq : U.support.filter (fun t => f ⊆ t) =
+lean/Taut/Theorem4.lean:277:        M.support.filter (fun t => f ⊆ t) := by
+lean/Taut/Theorem4.lean:279:      simp only [Finset.mem_filter]
+lean/Taut/Theorem4.lean:289:    -- on this filter, U = M
+lean/Taut/Theorem4.lean:290:    have hterms : ∀ t ∈ M.support.filter (fun t => f ⊆ t),
+lean/Taut/Theorem4.lean:293:      rw [Finset.mem_filter] at ht
+lean/Taut/Theorem4.lean:299:    rw [show bdry U f = ∑ t ∈ U.support.filter (fun t => f ⊆ t), U t * bdryGen t f from
+lean/Taut/Theorem4.lean:302:    rw [Finset.mem_filter] at ht
+lean/Taut/Theorem4.lean:324:(`bdry_filter_subset_eq_zero`); Proposition 1 (`IsTaut.subChain`) makes `U` taut, so
+lean/Taut/Theorem4.lean:335:  set U := M.filter (fun t => t ⊆ s) with hUdef
+lean/Taut/Theorem4.lean:337:    bdry_filter_subset_eq_zero hU hMX hS hPure hPM hK4 hedges hs5
+lean/Taut/Theorem4.lean:338:  have hsub : SubChain U M := subChain_filter _ M
+lean/Taut/Theorem4.lean:348:  have hUq : U q = M q := by rw [hUdef, Finsupp.filter_apply, if_pos hqs]
+lean/Taut/Theorem4.lean:440:facets of `e` containing `x` (there are exactly two — `tetFaces_edge_filter_card_eq_two`)
+lean/Taut/Theorem4.lean:451:  -- no exposed face contains `x`, so the (card-2) filter of tetFaces lands inside sharedFaces
+lean/Taut/Theorem4.lean:452:  have hsubsh : (tetFaces e).filter (fun F => x ⊆ F) ⊆ sharedFaces M e := by
+lean/Taut/Theorem4.lean:454:    rw [Finset.mem_filter] at hF
+lean/Taut/Theorem4.lean:457:  have hfiltcard : ((tetFaces e).filter (fun F => x ⊆ F)).card = 2 :=
+lean/Taut/Theorem4.lean:458:    tetFaces_edge_filter_card_eq_two he.1 hxe hx2
+lean/Taut/Theorem4.lean:459:  have hsheq : (tetFaces e).filter (fun F => x ⊆ F) = sharedFaces M e :=
+lean/Taut/Theorem4.lean:462:  have hg3mem : g₃ ∈ (tetFaces e).filter (fun F => x ⊆ F) := by
+lean/Taut/Theorem4.lean:464:  have hg4mem : g₄ ∈ (tetFaces e).filter (fun F => x ⊆ F) := by
+lean/Taut/Theorem4.lean:466:  have hxg3 : x ⊆ g₃ := (Finset.mem_filter.mp hg3mem).2
+lean/Taut/Theorem4.lean:467:  have hxg4 : x ⊆ g₄ := (Finset.mem_filter.mp hg4mem).2
+lean/Taut/Theorem4.lean:469:    (Finset.mem_powersetCard.mp (Finset.mem_filter.mp hg3mem).1).2
+lean/Taut/Theorem4.lean:471:    (Finset.mem_powersetCard.mp (Finset.mem_filter.mp hg4mem).1).2
+lean/Taut/Theorem4.lean:500:    have heF : e ∈ M.support.filter (fun t => f ⊆ t) :=
+lean/Taut/Theorem4.lean:501:      Finset.mem_filter.mpr ⟨he.2.1, hfsube⟩
+lean/Taut/Theorem4.lean:506:    have hsum0 : (∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f) = 0 := by
+lean/Taut/Theorem4.lean:508:    have hexists : ∃ t ∈ M.support.filter (fun t => f ⊆ t),
+lean/Taut/Theorem4.lean:513:      have hzero : (∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f) =
+lean/Taut/Theorem4.lean:518:    have htM : t ∈ M.support := (Finset.mem_filter.mp htF).1
+lean/Taut/Theorem4.lean:563:whole empty `K₃`/`K₄` witness to a single side's filter.  The geometric content is:
+lean/Taut/Theorem4.lean:566:* once on side `P`, each of its edges transfers to the side filter `τ ↾ {t | t ⊆ P}`, seam edges
+lean/Taut/Theorem4.lean:567:  via the bridging tet (`edge_simplexOf_filter_of_subset`); and
+lean/Taut/Theorem4.lean:568:* `¬ SimplexOf` of the witness is monotone, so it survives the (smaller) side filter. -/
+lean/Taut/Theorem4.lean:624:/-- **An edge of a one-sided witness transfers to the side filter.** With `s ⊆ P` and every
+lean/Taut/Theorem4.lean:629:private lemma edge_simplexOf_filter_of_subset {τ : Finset (Finset V)} {P Q s : Finset V}
+lean/Taut/Theorem4.lean:634:    SimplexOf (τ.filter (fun t => t ⊆ P)) x := by
+lean/Taut/Theorem4.lean:640:  · exact Or.inr ⟨t, Finset.mem_filter.mpr ⟨htτ, htP⟩, hxt⟩
+lean/Taut/Theorem4.lean:646:    exact Or.inr ⟨t', Finset.mem_filter.mpr ⟨ht'τ, ht'P⟩, hxeq ▸ ht'PQ⟩
+lean/Taut/Theorem4.lean:649:sides bridged, an empty `K₃` of `τ` is an empty `K₃` of one side filter `τ ↾ {t | t ⊆ A}` or
+lean/Taut/Theorem4.lean:658:    HasEmptyK3 (τ.filter (fun t => t ⊆ A)) ∨ HasEmptyK3 (τ.filter (fun t => t ⊆ B)) := by
+lean/Taut/Theorem4.lean:665:        edge_simplexOf_filter_of_subset (P := A) (Q := B) hcover hAB2 hbridgeA hsA hsedges hxs hx2
+lean/Taut/Theorem4.lean:666:    · exact fun hc => hsno (hc.mono (Finset.filter_subset _ _))
+lean/Taut/Theorem4.lean:672:        edge_simplexOf_filter_of_subset (P := B) (Q := A)
+lean/Taut/Theorem4.lean:674:    · exact fun hc => hsno (hc.mono (Finset.filter_subset _ _))
+lean/Taut/Theorem4.lean:685:    HasEmptyK4 (τ.filter (fun t => t ⊆ A)) ∨ HasEmptyK4 (τ.filter (fun t => t ⊆ B)) := by
+lean/Taut/Theorem4.lean:692:        edge_simplexOf_filter_of_subset (P := A) (Q := B) hcover hAB2 hbridgeA hsA hsedges hxs hx2
+lean/Taut/Theorem4.lean:693:    · exact fun hc => hsno (hc.mono (Finset.filter_subset _ _))
+lean/Taut/Theorem4.lean:699:        edge_simplexOf_filter_of_subset (P := B) (Q := A)
+lean/Taut/Theorem4.lean:701:    · exact fun hc => hsno (hc.mono (Finset.filter_subset _ _))
+lean/Taut/Theorem4.lean:720:    (E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)).card ≤ 2 := by
+lean/Taut/Theorem4.lean:722:  have key : ∀ r : Finset V, (E.filter (fun e => r ∈ sharedFaces M e)).card ≤ 1 := by
+lean/Taut/Theorem4.lean:726:    rw [Finset.mem_filter] at ha hb
+lean/Taut/Theorem4.lean:730:  have hsub : E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)
+lean/Taut/Theorem4.lean:731:      ⊆ E.filter (fun e => p ∈ sharedFaces M e) ∪ E.filter (fun e => q ∈ sharedFaces M e) := by
+lean/Taut/Theorem4.lean:733:    rw [Finset.mem_filter] at he
+lean/Taut/Theorem4.lean:735:    · exact Finset.mem_union_left _ (Finset.mem_filter.mpr ⟨he.1, h⟩)
+lean/Taut/Theorem4.lean:736:    · exact Finset.mem_union_right _ (Finset.mem_filter.mpr ⟨he.1, h⟩)
+lean/Taut/Theorem4.lean:737:  calc (E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)).card
+lean/Taut/Theorem4.lean:738:      ≤ (E.filter (fun e => p ∈ sharedFaces M e)
+lean/Taut/Theorem4.lean:739:          ∪ E.filter (fun e => q ∈ sharedFaces M e)).card := Finset.card_le_card hsub
+lean/Taut/Theorem4.lean:740:    _ ≤ (E.filter (fun e => p ∈ sharedFaces M e)).card
+lean/Taut/Theorem4.lean:741:          + (E.filter (fun e => q ∈ sharedFaces M e)).card := Finset.card_union_le _ _
+lean/Taut/Theorem4.lean:755:    (σ.filter (fun f => v ∈ f)).card = (linkVerts σ v).card := by
+lean/Taut/Theorem4.lean:757:  set A := σ.filter (fun f => v ∈ f) with hA
+lean/Taut/Theorem4.lean:760:  have claim1 : ∀ f ∈ A, (B.filter (fun x => x ∈ f)).card = 2 := by
+lean/Taut/Theorem4.lean:762:    have hfσ : f ∈ σ := (Finset.mem_filter.mp hf).1
+lean/Taut/Theorem4.lean:763:    have hvf : v ∈ f := (Finset.mem_filter.mp hf).2
+lean/Taut/Theorem4.lean:764:    have hset : B.filter (fun x => x ∈ f) = f.erase v := by
+lean/Taut/Theorem4.lean:766:      simp only [Finset.mem_filter, Finset.mem_erase]
+lean/Taut/Theorem4.lean:774:  have claim2 : ∀ x ∈ B, (A.filter (fun f => x ∈ f)).card = 2 := by
+lean/Taut/Theorem4.lean:778:    have hset : A.filter (fun f => x ∈ f) = σ.filter (fun f => {v, x} ⊆ f) := by
+lean/Taut/Theorem4.lean:779:      rw [hA, Finset.filter_filter]
+lean/Taut/Theorem4.lean:780:      apply Finset.filter_congr
+lean/Taut/Theorem4.lean:793:  have hswap : ∑ f ∈ A, (B.filter (fun x => x ∈ f)).card
+lean/Taut/Theorem4.lean:794:      = ∑ x ∈ B, (A.filter (fun f => x ∈ f)).card := by
+lean/Taut/Theorem4.lean:795:    calc ∑ f ∈ A, (B.filter (fun x => x ∈ f)).card
+lean/Taut/Theorem4.lean:796:        = ∑ f ∈ A, ∑ x ∈ B, (if x ∈ f then 1 else 0) := by simp_rw [Finset.card_filter]
+lean/Taut/Theorem4.lean:798:      _ = ∑ x ∈ B, (A.filter (fun f => x ∈ f)).card := by simp_rw [Finset.card_filter]
+lean/Taut/Theorem4.lean:799:  have hleft : ∑ f ∈ A, (B.filter (fun x => x ∈ f)).card = 2 * A.card := by
+lean/Taut/Theorem4.lean:801:  have hright : ∑ x ∈ B, (A.filter (fun f => x ∈ f)).card = 2 * B.card := by
+lean/Taut/Theorem4.lean:810:    ∑ v ∈ vertsOf σ, (σ.filter (fun f => v ∈ f)).card = 3 * σ.card := by
+lean/Taut/Theorem4.lean:812:  have hcongr : ∀ f ∈ σ, ((vertsOf σ).filter (fun v => v ∈ f)).card = 3 := by
+lean/Taut/Theorem4.lean:814:    have hset : (vertsOf σ).filter (fun v => v ∈ f) = f := by
+lean/Taut/Theorem4.lean:816:      simp only [Finset.mem_filter]
+lean/Taut/Theorem4.lean:822:  calc ∑ v ∈ vertsOf σ, (σ.filter (fun f => v ∈ f)).card
+lean/Taut/Theorem4.lean:823:      = ∑ v ∈ vertsOf σ, ∑ f ∈ σ, (if v ∈ f then 1 else 0) := by simp_rw [Finset.card_filter]
+lean/Taut/Theorem4.lean:825:    _ = ∑ f ∈ σ, ((vertsOf σ).filter (fun v => v ∈ f)).card := by simp_rw [Finset.card_filter]
+lean/Taut/Theorem4.lean:840:        = ∑ v ∈ vertsOf σ, (σ.filter (fun f => v ∈ f)).card :=
+lean/Taut/Theorem4.lean:850:vertex does: link size `≥ 3` and `≠ 3`).  `deg v (bdry M) = (σ.filter (v∈·)).card =
+lean/Taut/Theorem4.lean:858:    rw [aleph_deg_eq_card_filter_of_unitOn hU v, incident_faces_card_eq_linkVerts_card hσ hv]
+lean/Taut/Theorem4.lean:876:      rw [aleph_deg_eq_card_filter_of_unitOn hU v, incident_faces_card_eq_linkVerts_card hσ hv]
+lean/Taut/Theorem4.lean:917:    (E.filter (fun e =>
+lean/Taut/Theorem4.lean:922:  -- Unpack the two filter memberships.
+lean/Taut/Theorem4.lean:923:  rw [Finset.mem_filter] at he₁ he₂
+lean/Taut/Theorem4.lean:966:  have habdeg : (σ.filter (fun f => ab ⊆ f)).card = 2 := hσ.closed ab habedge
+lean/Taut/Theorem4.lean:967:  -- The four faces form a 4-element subset of the filter; contradiction with card 2.
+lean/Taut/Theorem4.lean:968:  have hsub : ({g₃, g₄, h₃, h₄} : Finset (Finset V)) ⊆ σ.filter (fun f => ab ⊆ f) := by
+lean/Taut/Theorem4.lean:970:    rw [Finset.mem_filter]
+lean/Taut/Theorem4.lean:983:      _ ≤ (σ.filter (fun f => ab ⊆ f)).card := Finset.card_le_card hsub
+lean/Taut/Theorem4.lean:1005:  set badE := E.filter (fun e =>
+lean/Taut/Theorem4.lean:1008:  -- `badE ⊆ ⋃_{ab ∈ powersetCard 2 s} (E.filter "flip edge = ab")`.
+lean/Taut/Theorem4.lean:1010:      E.filter (fun e => ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ ab = g₃ ∩ g₄)) := by
+lean/Taut/Theorem4.lean:1012:    rw [hbadE, Finset.mem_filter] at he
+lean/Taut/Theorem4.lean:1015:    exact ⟨g₃ ∩ g₄, hmem, Finset.mem_filter.mpr ⟨heE, g₃, g₄, hsh, hne, rfl⟩⟩
+lean/Taut/Theorem4.lean:1020:            E.filter (fun e => ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ ab = g₃ ∩ g₄))).card :=
+lean/Taut/Theorem4.lean:1023:            (E.filter (fun e => ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ ab = g₃ ∩ g₄)).card :=
+lean/Taut/Theorem4.lean:1031:  have hbadsubE : badE ⊆ E := by rw [hbadE]; exact Finset.filter_subset _ _
+lean/Taut/Theorem4.lean:1046:  rw [hbadE, Finset.mem_filter]
+lean/Taut/Theorem4.lean:1347:  let ML : Chain V := M.filter (fun t => t ⊆ A)
+lean/Taut/Theorem4.lean:1348:  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
+lean/Taut/Theorem4.lean:1372:      star_filter_support_singleton ML (cappedCutLeft σ W X γ c)
+lean/Taut/Theorem4.lean:1376:      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
+lean/Taut/Theorem4.lean:1377:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem4.lean:1382:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem4.lean:1412:        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem4.lean:1429:      star_filter_support_singleton MR (cappedCutRight σ W X γ c)
+lean/Taut/Theorem4.lean:1432:    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+lean/Taut/Theorem4.lean:1435:      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem4.lean:1440:      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
+lean/Taut/Theorem4.lean:1441:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/Theorem4.lean:1446:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem4.lean:1476:            (M.filter (fun t => ¬ (¬ t ⊆ A))).support :=
+lean/Taut/Theorem4.lean:1477:        support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/Theorem4.lean:1501:    (hUA : UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ A))) ((flipBoundary σ M e).filter (fun f => f ⊆ A)))
+lean/Taut/Theorem4.lean:1502:    (hUB : UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ B))) ((flipBoundary σ M e).filter (fun f => f ⊆ B))) :
+lean/Taut/Theorem4.lean:1510:    have hf₃σ₁ : f₃ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) :=
+lean/Taut/Theorem4.lean:1511:      Finset.mem_filter.mpr ⟨hf₃flip, hf₃A⟩
+lean/Taut/Theorem4.lean:1512:    have hbd : bdry ((removeTet M e).filter (fun t => t ⊆ A)) f₃ = 1 ∨
+lean/Taut/Theorem4.lean:1513:        bdry ((removeTet M e).filter (fun t => t ⊆ A)) f₃ = -1 := hUA.2 f₃ hf₃σ₁
+lean/Taut/Theorem4.lean:1515:    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Theorem4.lean:1523:    have hf₄σ₁ : f₄ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ B) :=
+lean/Taut/Theorem4.lean:1524:      Finset.mem_filter.mpr ⟨hf₄flip, hf₄B⟩
+lean/Taut/Theorem4.lean:1525:    have hbd : bdry ((removeTet M e).filter (fun t => t ⊆ B)) f₄ = 1 ∨
+lean/Taut/Theorem4.lean:1526:        bdry ((removeTet M e).filter (fun t => t ⊆ B)) f₄ = -1 := hUB.2 f₄ hf₄σ₁
+lean/Taut/Theorem4.lean:1528:    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/Theorem4.lean:1565:          (by rw [Finsupp.support_filter]; exact hA)
+lean/Taut/Theorem4.lean:1567:          (by rw [Finsupp.support_filter]; exact hB)
+lean/Taut/Theorem4.lean:1591:          (by rw [Finsupp.support_filter]; exact hA)
+lean/Taut/Theorem4.lean:1593:          (by rw [Finsupp.support_filter]; exact hB)
+lean/Taut/PrimeStep.lean:45:The two side chains are explicitly filters of `removeTet M e` by vertex-side
+lean/Taut/PrimeStep.lean:46:predicates, and the two side boundaries are the matching filters of
+lean/Taut/PrimeStep.lean:62:  σ₁_eq : σ₁ = (flipBoundary σ M e).filter (fun f => f ⊆ A)
+lean/Taut/PrimeStep.lean:63:  σ₂_eq : σ₂ = (flipBoundary σ M e).filter (fun f => f ⊆ B)
+lean/Taut/PrimeStep.lean:64:  M₁_eq : M₁ = (removeTet M e).filter (fun t => t ⊆ A)
+lean/Taut/PrimeStep.lean:65:  M₂_eq : M₂ = (removeTet M e).filter (fun t => t ⊆ B)
+lean/Taut/PrimeStep.lean:98:theorem cut_filter_by_vertsOf_eq {σ : Finset (Finset V)} {γ : Finset V} {W : C2 σ}
+lean/Taut/PrimeStep.lean:104:    σ.filter (fun f => f ⊆ vertsOf (insert γ (cutSet σ W))) = cutSet σ W := by
+lean/Taut/PrimeStep.lean:108:    rw [mem_filter] at hf
+lean/Taut/PrimeStep.lean:131:    rw [mem_filter]
+lean/Taut/PrimeStep.lean:216:      have hTcard : ((tetFaces e).filter (fun F => a ⊆ F)).card = 2 :=
+lean/Taut/PrimeStep.lean:217:        tetFaces_edge_filter_card_eq_two he.1 hae hacard
+lean/Taut/PrimeStep.lean:218:      have hT_eq : (tetFaces e).filter (fun F => a ⊆ F)
+lean/Taut/PrimeStep.lean:219:          = (sharedFaces M e).filter (fun F => a ⊆ F) ∪
+lean/Taut/PrimeStep.lean:220:            (exposedFaces M e).filter (fun F => a ⊆ F) := by
+lean/Taut/PrimeStep.lean:222:        simp only [Finset.mem_filter, Finset.mem_union]
+lean/Taut/PrimeStep.lean:231:      have hdisj : Disjoint ((sharedFaces M e).filter (fun F => a ⊆ F))
+lean/Taut/PrimeStep.lean:232:          ((exposedFaces M e).filter (fun F => a ⊆ F)) := by
+lean/Taut/PrimeStep.lean:235:        exact (Finset.mem_sdiff.mp (Finset.mem_filter.mp hFe).1).2 (Finset.mem_filter.mp hFs).1
+lean/Taut/PrimeStep.lean:236:      have hExpFilter_eq : (exposedFaces M e).filter (fun F => a ⊆ F) = {f} := by
+lean/Taut/PrimeStep.lean:238:        simp only [Finset.mem_filter, hexpfg, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/PrimeStep.lean:251:      have hExpCard : ((exposedFaces M e).filter (fun F => a ⊆ F)).card = 1 := by
+lean/Taut/PrimeStep.lean:252:        rw [hExpFilter_eq, Finset.card_singleton]
+lean/Taut/PrimeStep.lean:253:      have hsum : ((sharedFaces M e).filter (fun F => a ⊆ F)).card +
+lean/Taut/PrimeStep.lean:254:            ((exposedFaces M e).filter (fun F => a ⊆ F)).card = 2 := by
+lean/Taut/PrimeStep.lean:256:      have hShPos : 0 < ((sharedFaces M e).filter (fun F => a ⊆ F)).card := by
+lean/Taut/PrimeStep.lean:259:      obtain ⟨hFsh, haF⟩ := Finset.mem_filter.mp hF
+lean/Taut/PrimeStep.lean:320:  let X_A : Chain V := (bdry M').filter (fun f => f ⊆ A)
+lean/Taut/PrimeStep.lean:321:  let X_B : Chain V := (bdry M').filter (fun f => ¬ f ⊆ A)
+lean/Taut/PrimeStep.lean:324:    exact bdry_filter_subset_eq_zero_of_inter_card_two (X := bdry M') (A := A) (B := B)
+lean/Taut/PrimeStep.lean:328:    exact Finsupp.filter_pos_add_filter_neg (bdry M') (fun f => f ⊆ A)
+lean/Taut/PrimeStep.lean:337:      exact Finset.mem_filter.mp hs
+lean/Taut/PrimeStep.lean:343:      exact Finset.mem_filter.mp hs
+lean/Taut/PrimeStep.lean:435:      = (((sharedFaces M e).filter P).card : ZMod 2) := by
+lean/Taut/PrimeStep.lean:439:    rw [← Finset.sum_filter]
+lean/Taut/PrimeStep.lean:441:    have hfin : ({x ∈ σ.filter (fun F => (a : Finset V) ⊆ F) | x ∈ sharedFaces M e}) = (sharedFaces M e).filter (fun F => (a : Finset V) ⊆ F) := by
+lean/Taut/PrimeStep.lean:443:      simp only [Finset.mem_filter]
+lean/Taut/PrimeStep.lean:451:      = (((exposedFaces M e).filter P).card : ZMod 2) := by
+lean/Taut/PrimeStep.lean:456:      · have hfilter : ({f₃, f₄} : Finset (Finset V)).filter (fun F => (a : Finset V) ⊆ F) = {f₃, f₄} := by
+lean/Taut/PrimeStep.lean:458:          simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/PrimeStep.lean:466:        rw [if_pos h3, if_pos h4, hfilter, Finset.card_pair hf₃₄]
+lean/Taut/PrimeStep.lean:468:      · have hfilter : ({f₃, f₄} : Finset (Finset V)).filter (fun F => (a : Finset V) ⊆ F) = {f₃} := by
+lean/Taut/PrimeStep.lean:470:          simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/PrimeStep.lean:479:        rw [if_pos h3, if_neg h4, hfilter, Finset.card_singleton]
+lean/Taut/PrimeStep.lean:482:      · have hfilter : ({f₃, f₄} : Finset (Finset V)).filter (fun F => (a : Finset V) ⊆ F) = {f₄} := by
+lean/Taut/PrimeStep.lean:484:          simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
+lean/Taut/PrimeStep.lean:493:        rw [if_neg h3, if_pos h4, hfilter, Finset.card_singleton]
+lean/Taut/PrimeStep.lean:495:      · have hfilter : ({f₃, f₄} : Finset (Finset V)).filter (fun F => (a : Finset V) ⊆ F) = ∅ := by
+lean/Taut/PrimeStep.lean:497:          simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton, Finset.notMem_empty]
+lean/Taut/PrimeStep.lean:505:        rw [if_neg h3, if_neg h4, hfilter, Finset.card_empty]
+lean/Taut/PrimeStep.lean:508:  have hT_eq : (tetFaces e).filter P = ((sharedFaces M e).filter P) ∪ ((exposedFaces M e).filter P) := by
+lean/Taut/PrimeStep.lean:510:    simp only [Finset.mem_filter, Finset.mem_union]
+lean/Taut/PrimeStep.lean:519:  have hdisj : Disjoint ((sharedFaces M e).filter P) ((exposedFaces M e).filter P) := by
+lean/Taut/PrimeStep.lean:522:    exact (Finset.mem_sdiff.mp (Finset.mem_filter.mp hFe).1).2 (Finset.mem_filter.mp hFs).1
+lean/Taut/PrimeStep.lean:524:  · have hTcard : ((tetFaces e).filter P).card = 2 := by
+lean/Taut/PrimeStep.lean:525:      exact tetFaces_edge_filter_card_eq_two (e := e) (a := (a : Finset V)) he.1 hae (card_of_mem_edgesOf a.2)
+lean/Taut/PrimeStep.lean:526:    have hsum : ((sharedFaces M e).filter P).card + ((exposedFaces M e).filter P).card = 2 := by
+lean/Taut/PrimeStep.lean:528:    have hmod : (((sharedFaces M e).filter P).card : ZMod 2) + (((exposedFaces M e).filter P).card : ZMod 2) = 0 := by
+lean/Taut/PrimeStep.lean:532:  · have hSempty : ((sharedFaces M e).filter P).card = 0 := by
+lean/Taut/PrimeStep.lean:535:      simp only [Finset.mem_filter, Finset.notMem_empty]
+lean/Taut/PrimeStep.lean:543:    have hEempty : ((exposedFaces M e).filter P).card = 0 := by
+lean/Taut/PrimeStep.lean:546:      simp only [Finset.mem_filter, Finset.notMem_empty]
+lean/Taut/PrimeStep.lean:899:      (flipBoundary σ M e).filter (fun f => f ⊆ A) = insert f₃ (cutSet σ W₃) ∧
+lean/Taut/PrimeStep.lean:900:      (flipBoundary σ M e).filter (fun f => f ⊆ B) = insert f₄ (cutSet σ W₄) := by
+lean/Taut/PrimeStep.lean:930:  have hcut₃ : σ.filter (fun f => f ⊆ A) = cutSet σ W₃ := by
+lean/Taut/PrimeStep.lean:934:      obtain ⟨hfσ, hfA⟩ := Finset.mem_filter.mp hf
+lean/Taut/PrimeStep.lean:955:      exact Finset.mem_filter.mpr ⟨hfσ, by
+lean/Taut/PrimeStep.lean:958:  have hcut₄ : σ.filter (fun f => f ⊆ B) = cutSet σ W₄ := by
+lean/Taut/PrimeStep.lean:962:      obtain ⟨hfσ, hfB⟩ := Finset.mem_filter.mp hf
+lean/Taut/PrimeStep.lean:983:      exact Finset.mem_filter.mpr ⟨hfσ, by
+lean/Taut/PrimeStep.lean:1008:  have hfilter₃ : (flipBoundary σ M e).filter (fun f => f ⊆ A) = insert f₃ (cutSet σ W₃) := by
+lean/Taut/PrimeStep.lean:1012:      rw [Finset.mem_filter] at hf
+lean/Taut/PrimeStep.lean:1016:      · have hfσfilter : f ∈ σ.filter (fun f => f ⊆ A) := Finset.mem_filter.mpr ⟨hold.1, hf.2⟩
+lean/Taut/PrimeStep.lean:1019:          exact hfσfilter
+lean/Taut/PrimeStep.lean:1028:      rw [Finset.mem_filter]
+lean/Taut/PrimeStep.lean:1035:      · have hfσfilter : f ∈ σ.filter (fun f => f ⊆ A) := by
+lean/Taut/PrimeStep.lean:1038:        obtain ⟨hfσ, hfsub⟩ := Finset.mem_filter.mp hfσfilter
+lean/Taut/PrimeStep.lean:1046:  have hfilter₄ : (flipBoundary σ M e).filter (fun f => f ⊆ B) = insert f₄ (cutSet σ W₄) := by
+lean/Taut/PrimeStep.lean:1050:      rw [Finset.mem_filter] at hf
+lean/Taut/PrimeStep.lean:1054:      · have hfσfilter : f ∈ σ.filter (fun f => f ⊆ B) := Finset.mem_filter.mpr ⟨hold.1, hf.2⟩
+lean/Taut/PrimeStep.lean:1057:          exact hfσfilter
+lean/Taut/PrimeStep.lean:1066:      rw [Finset.mem_filter]
+lean/Taut/PrimeStep.lean:1073:      · have hfσfilter : f ∈ σ.filter (fun f => f ⊆ B) := by
+lean/Taut/PrimeStep.lean:1076:        obtain ⟨hfσ, hfsub⟩ := Finset.mem_filter.mp hfσfilter
+lean/Taut/PrimeStep.lean:1084:  exact ⟨A, B, W₃, W₄, hW₃, hW₄, hAB, hcover, hfilter₃, hfilter₄⟩
+lean/Taut/PrimeStep.lean:1100:      IsSphere2 ((flipBoundary σ M e).filter (fun f => f ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1101:      IsSphere2 ((flipBoundary σ M e).filter (fun f => f ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1133:  · -- f₃ ⊆ A : the A-side filter is `insert f₃ (cutSet σ W₃)`, so `f₃` is in it
+lean/Taut/PrimeStep.lean:1134:    have hmem : f₃ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) := by
+lean/Taut/PrimeStep.lean:1136:    exact (Finset.mem_filter.mp hmem).2
+lean/Taut/PrimeStep.lean:1139:    have hmem : f₃ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ B) :=
+lean/Taut/PrimeStep.lean:1140:      Finset.mem_filter.mpr ⟨hf₃flip, hf₃B⟩
+lean/Taut/PrimeStep.lean:1146:    have hmem : f₄ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ B) := by
+lean/Taut/PrimeStep.lean:1148:    exact (Finset.mem_filter.mp hmem).2
+lean/Taut/PrimeStep.lean:1151:    have hmem : f₄ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) :=
+lean/Taut/PrimeStep.lean:1152:      Finset.mem_filter.mpr ⟨hf₄flip, hf₄A⟩
+lean/Taut/PrimeStep.lean:1161:such that the two filters of `flipBoundary σ M e` are 2-spheres, and every
+lean/Taut/PrimeStep.lean:1178:      IsSphere2 ((flipBoundary σ M e).filter (fun f => f ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1179:      IsSphere2 ((flipBoundary σ M e).filter (fun f => f ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1190:theorem bdry_filter_eq_filter_bdry_of_side_sep {V : Type*} [LinearOrder V] {M : Chain V} {A B : Finset V}
+lean/Taut/PrimeStep.lean:1195:    bdry (M.filter (fun t => t ⊆ A)) = (bdry M).filter (fun f => f ⊆ A) := by
+lean/Taut/PrimeStep.lean:1198:  rw [Finsupp.filter_apply]
+lean/Taut/PrimeStep.lean:1201:    refine bdry_filter_apply_eq_bdry_of_no_cross (X := M) (P := fun t => t ⊆ A) (u := f) ?_
+lean/Taut/PrimeStep.lean:1221:    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+lean/Taut/PrimeStep.lean:1236:    Disjoint ((removeTet M e).filter (fun t => t ⊆ A)).support
+lean/Taut/PrimeStep.lean:1237:      ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+lean/Taut/PrimeStep.lean:1240:        (((removeTet M e).filter (fun t => t ⊆ A)).support ∪
+lean/Taut/PrimeStep.lean:1241:          ((removeTet M e).filter (fun t => t ⊆ B)).support) := by
+lean/Taut/PrimeStep.lean:1247:    simp only [Finsupp.support_filter, mem_filter] at htA htB
+lean/Taut/PrimeStep.lean:1253:  · have hR : R.support = (R.filter (fun t => t ⊆ A)).support ∪ (R.filter (fun t => t ⊆ B)).support := by
+lean/Taut/PrimeStep.lean:1260:          simp only [Finsupp.support_filter, mem_filter]
+lean/Taut/PrimeStep.lean:1263:          simp only [Finsupp.support_filter, mem_filter]
+lean/Taut/PrimeStep.lean:1268:        · simp only [Finsupp.support_filter, mem_filter] at htA
+lean/Taut/PrimeStep.lean:1270:        · simp only [Finsupp.support_filter, mem_filter] at htB
+lean/Taut/PrimeStep.lean:1279:    IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1280:      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1281:      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1282:      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1283:      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1284:      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1285:      e ∉ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧
+lean/Taut/PrimeStep.lean:1286:      e ∉ ((removeTet M e).filter (fun t => t ⊆ B)).support := by
+lean/Taut/PrimeStep.lean:1289:  have hTA : IsTaut (R.filter (fun t => t ⊆ A)) := hTR.subChain (subChain_filter _ R)
+lean/Taut/PrimeStep.lean:1290:  have hTB : IsTaut (R.filter (fun t => t ⊆ B)) := hTR.subChain (subChain_filter _ R)
+lean/Taut/PrimeStep.lean:1292:  have hSA : SimplicialChain (R.filter (fun t => t ⊆ A)) := by
+lean/Taut/PrimeStep.lean:1294:    rw [Finsupp.filter_apply]
+lean/Taut/PrimeStep.lean:1299:  have hSB : SimplicialChain (R.filter (fun t => t ⊆ B)) := by
+lean/Taut/PrimeStep.lean:1301:    rw [Finsupp.filter_apply]
+lean/Taut/PrimeStep.lean:1309:  have hleA : nrm (R.filter (fun t => t ⊆ A)) ≤ nrm R := by
+lean/Taut/PrimeStep.lean:1310:    have hsum := nrm_filter_add_nrm_filter_neg (fun t => t ⊆ A) R
+lean/Taut/PrimeStep.lean:1312:  have hleB : nrm (R.filter (fun t => t ⊆ B)) ≤ nrm R := by
+lean/Taut/PrimeStep.lean:1313:    have hsum := nrm_filter_add_nrm_filter_neg (fun t => t ⊆ B) R
+lean/Taut/PrimeStep.lean:1315:  have hdropA : nrm (R.filter (fun t => t ⊆ A)) < nrm M := lt_of_le_of_lt hleA hdropR
+lean/Taut/PrimeStep.lean:1316:  have hdropB : nrm (R.filter (fun t => t ⊆ B)) < nrm M := lt_of_le_of_lt hleB hdropR
+lean/Taut/PrimeStep.lean:1321:  have hnotA : e ∉ (R.filter (fun t => t ⊆ A)).support := by
+lean/Taut/PrimeStep.lean:1323:    rw [Finsupp.support_filter] at heA
+lean/Taut/PrimeStep.lean:1324:    exact hnotR ((Finset.mem_filter.mp heA).1)
+lean/Taut/PrimeStep.lean:1325:  have hnotB : e ∉ (R.filter (fun t => t ⊆ B)).support := by
+lean/Taut/PrimeStep.lean:1327:    rw [Finsupp.support_filter] at heB
+lean/Taut/PrimeStep.lean:1328:    exact hnotR ((Finset.mem_filter.mp heB).1)
+lean/Taut/PrimeStep.lean:1343:    UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ A)))
+lean/Taut/PrimeStep.lean:1344:        ((flipBoundary σ M e).filter (fun f => f ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1345:      UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ B)))
+lean/Taut/PrimeStep.lean:1346:        ((flipBoundary σ M e).filter (fun f => f ⊆ B)) := by
+lean/Taut/PrimeStep.lean:1362:  have hbdA : bdry ((removeTet M e).filter (fun t => t ⊆ A)) =
+lean/Taut/PrimeStep.lean:1363:      (bdry (removeTet M e)).filter (fun f => f ⊆ A) := by
+lean/Taut/PrimeStep.lean:1364:    exact bdry_filter_eq_filter_bdry_of_side_sep hpure hsep hAB2
+lean/Taut/PrimeStep.lean:1374:  have hbdB : bdry ((removeTet M e).filter (fun t => t ⊆ B)) =
+lean/Taut/PrimeStep.lean:1375:      (bdry (removeTet M e)).filter (fun f => f ⊆ B) := by
+lean/Taut/PrimeStep.lean:1376:    exact bdry_filter_eq_filter_bdry_of_side_sep (M := removeTet M e) (A := B) (B := A) hpure hsepBA hBA2
+lean/Taut/PrimeStep.lean:1380:    · rw [hbdA, Finsupp.support_filter, hUflip.1]
+lean/Taut/PrimeStep.lean:1382:      rw [Finset.mem_filter] at hs
+lean/Taut/PrimeStep.lean:1383:      rw [hbdA, Finsupp.filter_apply, if_pos hs.2]
+lean/Taut/PrimeStep.lean:1387:    · rw [hbdB, Finsupp.support_filter, hUflip.1]
+lean/Taut/PrimeStep.lean:1389:      rw [Finset.mem_filter] at hs
+lean/Taut/PrimeStep.lean:1390:      rw [hbdB, Finsupp.filter_apply, if_pos hs.2]
+lean/Taut/PrimeStep.lean:1395:coverage and exact-side separation, the filtered side chains are closed, taut,
+lean/Taut/PrimeStep.lean:1398:`unitOn_flipBoundary_of_eligible`, `bdry_filter_subset_eq_zero_of_inter_card_two`,
+lean/Taut/PrimeStep.lean:1399:`IsTaut.splits`, `nrm_filter_add_nrm_filter_neg`, `simplicialChain_removeTet`,
+lean/Taut/PrimeStep.lean:1417:    UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ A)))
+lean/Taut/PrimeStep.lean:1418:        ((flipBoundary σ M e).filter (fun f => f ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1419:      UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ B)))
+lean/Taut/PrimeStep.lean:1420:        ((flipBoundary σ M e).filter (fun f => f ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1421:      bdry (bdry ((removeTet M e).filter (fun t => t ⊆ A))) = 0 ∧
+lean/Taut/PrimeStep.lean:1422:      bdry (bdry ((removeTet M e).filter (fun t => t ⊆ B))) = 0 ∧
+lean/Taut/PrimeStep.lean:1423:      IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1424:      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1425:      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+lean/Taut/PrimeStep.lean:1426:      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+lean/Taut/PrimeStep.lean:1427:      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1428:      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1429:      e ∉ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧
+lean/Taut/PrimeStep.lean:1430:      e ∉ ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+lean/Taut/PrimeStep.lean:1431:      Disjoint ((removeTet M e).filter (fun t => t ⊆ A)).support
+lean/Taut/PrimeStep.lean:1432:        ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+lean/Taut/PrimeStep.lean:1435:          (((removeTet M e).filter (fun t => t ⊆ A)).support ∪
+lean/Taut/PrimeStep.lean:1436:            ((removeTet M e).filter (fun t => t ⊆ B)).support) := by
+lean/Taut/PrimeStep.lean:1476:    have hPM₁ : IsPseudomanifold ((removeTet M u).filter (fun t => t ⊆ A)).support :=
+lean/Taut/PrimeStep.lean:1477:      IHpm _ (bdry ((removeTet M u).filter (fun t => t ⊆ A)))
+lean/Taut/PrimeStep.lean:1478:        ((removeTet M u).filter (fun t => t ⊆ A)) hsm₁ hsph₁ hu₁ hc₁ rfl hT₁ hS₁
+lean/Taut/PrimeStep.lean:1479:    have hPM₂ : IsPseudomanifold ((removeTet M u).filter (fun t => t ⊆ B)).support :=
+lean/Taut/PrimeStep.lean:1480:      IHpm _ (bdry ((removeTet M u).filter (fun t => t ⊆ B)))
+lean/Taut/PrimeStep.lean:1481:        ((removeTet M u).filter (fun t => t ⊆ B)) hsm₂ hsph₂ hu₂ hc₂ rfl hT₂ hS₂
+lean/Taut/PrimeStep.lean:1482:    rw [Finsupp.support_filter] at hPM₁ hPM₂
+lean/Taut/PrimeStep.lean:1550:  have hpair : ({e, w} : Finset (Finset V)) ⊆ (removeTet M u).support.filter (fun t => r ⊆ t) := by
+lean/Taut/PrimeStep.lean:1554:    · exact Finset.mem_filter.mpr ⟨heU, hre⟩
+lean/Taut/PrimeStep.lean:1555:    · exact Finset.mem_filter.mpr ⟨hwU, hrw⟩
+lean/Taut/PrimeStep.lean:1789:they are not ⊆ B; hence they survive in `σ.filter (¬·⊆B)`, exactly compensating
+lean/Taut/PrimeStep.lean:1799:    σ = ((flipBoundary σ M e).filter (fun f => f ⊆ B)).erase f₄ ∪
+lean/Taut/PrimeStep.lean:1800:      σ.filter (fun f => ¬ f ⊆ B) := by
+lean/Taut/PrimeStep.lean:1813:  simp only [Finset.mem_union, Finset.mem_erase, Finset.mem_filter, flipBoundary,
+lean/Taut/PrimeStep.lean:1846:    σ = ((flipBoundary σ M e).filter (fun f => f ⊆ A)).erase f₃ ∪
+lean/Taut/PrimeStep.lean:1847:      σ.filter (fun f => ¬ f ⊆ A) := by
+lean/Taut/PrimeStep.lean:1860:  simp only [Finset.mem_union, Finset.mem_erase, Finset.mem_filter, flipBoundary,
+lean/Taut/PrimeStep.lean:1880:flip boundary `σ₁ = flipBoundary.filter(⊆A)` is a `GlueStep`: `e` shares exactly the
+lean/Taut/PrimeStep.lean:1882:`insert f₄ (σ.filter(¬·⊆B))` — the B-exposed face together with the σ-faces that are
+lean/Taut/PrimeStep.lean:1884:`σ.filter(¬·⊆B)` but are absent from `σ₁`). -/
+lean/Taut/PrimeStep.lean:1893:    GlueStep e ((flipBoundary σ M e).filter (fun f => f ⊆ A))
+lean/Taut/PrimeStep.lean:1894:      (insert f₄ (σ.filter (fun f => ¬ f ⊆ B))) := by
+lean/Taut/PrimeStep.lean:1921:    have heq : tetFaces e ∩ (flipBoundary σ M e).filter (fun f => f ⊆ A) = {f₃} := by
+lean/Taut/PrimeStep.lean:1923:      simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_singleton]
+lean/Taut/PrimeStep.lean:1942:    have hmemσ₁ : ∀ g, g ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) ↔
+lean/Taut/PrimeStep.lean:1944:      intro g; rw [Finset.mem_filter, hmemflip]
+lean/Taut/PrimeStep.lean:1945:    have hf₃σ₁ : f₃ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) :=
+lean/Taut/PrimeStep.lean:1948:    rw [Finset.mem_insert, Finset.mem_filter, Finset.mem_union, Finset.mem_sdiff,
+lean/Taut/PrimeStep.lean:2003:    GlueStep e ((flipBoundary σ M e).filter (fun f => f ⊆ B))
+lean/Taut/PrimeStep.lean:2004:      (insert f₃ (σ.filter (fun f => ¬ f ⊆ A))) := by
+lean/Taut/PrimeStep.lean:2031:    (hsphere₁ : IsSphere2 ((flipBoundary σ M e).filter (fun f => f ⊆ A)))
+lean/Taut/PrimeStep.lean:2032:    (hsphere₂ : IsSphere2 ((flipBoundary σ M e).filter (fun f => f ⊆ B)))
+lean/Taut/PrimeStep.lean:2034:      FreelyShellable ((removeTet M e).filter (fun t => t ⊆ A)).support
+lean/Taut/PrimeStep.lean:2035:        ((flipBoundary σ M e).filter (fun f => f ⊆ A)))
+lean/Taut/PrimeStep.lean:2037:      FreelyShellable ((removeTet M e).filter (fun t => t ⊆ B)).support
+lean/Taut/PrimeStep.lean:2038:        ((flipBoundary σ M e).filter (fun f => f ⊆ B)))
+lean/Taut/PrimeStep.lean:2046:    (huniq₂ : ∃! t, t ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support ∧ f₄ ⊆ t)
+lean/Taut/PrimeStep.lean:2047:    (huniq₁ : ∃! t, t ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧ f₃ ⊆ t)
+lean/Taut/PrimeStep.lean:2048:    (hrecon₂ : σ = ((flipBoundary σ M e).filter (fun f => f ⊆ B)).erase f₄ ∪
+lean/Taut/PrimeStep.lean:2049:      σ.filter (fun f => ¬ f ⊆ B))
+lean/Taut/PrimeStep.lean:2050:    (hrecon₁ : σ = ((flipBoundary σ M e).filter (fun f => f ⊆ A)).erase f₃ ∪
+lean/Taut/PrimeStep.lean:2051:      σ.filter (fun f => ¬ f ⊆ A))
+lean/Taut/PrimeStep.lean:2054:      GlueStep e ((flipBoundary σ M e).filter (fun f => f ⊆ A)) Bmid₁₂ ∧
+lean/Taut/PrimeStep.lean:2055:      GlueStep e ((flipBoundary σ M e).filter (fun f => f ⊆ B)) Bmid₂₁ ∧
+lean/Taut/PrimeStep.lean:2056:      RelShelling ((removeTet M e).filter (fun t => t ⊆ B)).support Bmid₁₂ σ ∧
+lean/Taut/PrimeStep.lean:2057:      RelShelling ((removeTet M e).filter (fun t => t ⊆ A)).support Bmid₂₁ σ := by
+lean/Taut/PrimeStep.lean:2060:  set σ₁ := (flipBoundary σ M e).filter (fun f => f ⊆ A) with hσ₁def
+lean/Taut/PrimeStep.lean:2061:  set σ₂ := (flipBoundary σ M e).filter (fun f => f ⊆ B) with hσ₂def
+lean/Taut/PrimeStep.lean:2062:  set K₂ := σ.filter (fun f => ¬ f ⊆ B) with hK₂def
+lean/Taut/PrimeStep.lean:2063:  set K₁ := σ.filter (fun f => ¬ f ⊆ A) with hK₁def
+lean/Taut/PrimeStep.lean:2086:        rw [Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+lean/Taut/PrimeStep.lean:2090:        rw [hK₂def, Finset.mem_filter] at hgK; exact hgK.2
+lean/Taut/PrimeStep.lean:2104:        rw [Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+lean/Taut/PrimeStep.lean:2108:        rw [hK₁def, Finset.mem_filter] at hgK; exact hgK.2
+lean/Taut/PrimeStep.lean:2115:vertex sets `A,B`, the filtered smaller taut fillings, the two spherical side
+lean/Taut/PrimeStep.lean:2159:      FreelyShellable ((removeTet M e).filter (fun t => t ⊆ A)).support
+lean/Taut/PrimeStep.lean:2160:        ((flipBoundary σ M e).filter (fun f => f ⊆ A)) :=
+lean/Taut/PrimeStep.lean:2161:    IH _ (bdry ((removeTet M e).filter (fun t => t ⊆ A)))
+lean/Taut/PrimeStep.lean:2162:      ((removeTet M e).filter (fun t => t ⊆ A))
+lean/Taut/PrimeStep.lean:2165:      FreelyShellable ((removeTet M e).filter (fun t => t ⊆ B)).support
+lean/Taut/PrimeStep.lean:2166:        ((flipBoundary σ M e).filter (fun f => f ⊆ B)) :=
+lean/Taut/PrimeStep.lean:2167:    IH _ (bdry ((removeTet M e).filter (fun t => t ⊆ B)))
+lean/Taut/PrimeStep.lean:2168:      ((removeTet M e).filter (fun t => t ⊆ B))
+lean/Taut/PrimeStep.lean:2186:  have huniq₂ : ∃! t, t ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support ∧ f₄ ⊆ t := by
+lean/Taut/PrimeStep.lean:2187:    have hPM₂ : IsPseudomanifold ((removeTet M e).filter (fun t => t ⊆ B)).support :=
+lean/Taut/PrimeStep.lean:2189:    have hpure₂ : ∀ t ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support, t.card = 4 :=
+lean/Taut/PrimeStep.lean:2191:    have hf₄σ₂ : f₄ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ B) :=
+lean/Taut/PrimeStep.lean:2192:      Finset.mem_filter.mpr ⟨hf₄flip, hf₄B⟩
+lean/Taut/PrimeStep.lean:2193:    have hbd₂ : bdry ((removeTet M e).filter (fun t => t ⊆ B)) f₄ = 1 ∨
+lean/Taut/PrimeStep.lean:2194:        bdry ((removeTet M e).filter (fun t => t ⊆ B)) f₄ = -1 := hunit₂.2 f₄ hf₄σ₂
+lean/Taut/PrimeStep.lean:2195:    have hfc : faceCount ((removeTet M e).filter (fun t => t ⊆ B)).support f₄ = 1 :=
+lean/Taut/PrimeStep.lean:2200:    · have : t₀ ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support.filter (fun t => f₄ ⊆ t) := by
+lean/Taut/PrimeStep.lean:2202:      rw [Finset.mem_filter] at this; exact this
+lean/Taut/PrimeStep.lean:2204:      have : y ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support.filter (fun t => f₄ ⊆ t) :=
+lean/Taut/PrimeStep.lean:2205:        Finset.mem_filter.mpr hy
+lean/Taut/PrimeStep.lean:2207:  have huniq₁ : ∃! t, t ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧ f₃ ⊆ t := by
+lean/Taut/PrimeStep.lean:2208:    have hPM₁ : IsPseudomanifold ((removeTet M e).filter (fun t => t ⊆ A)).support :=
+lean/Taut/PrimeStep.lean:2210:    have hpure₁ : ∀ t ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support, t.card = 4 :=
+lean/Taut/PrimeStep.lean:2212:    have hf₃σ₁ : f₃ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) :=
+lean/Taut/PrimeStep.lean:2213:      Finset.mem_filter.mpr ⟨hf₃flip, hf₃A⟩
+lean/Taut/PrimeStep.lean:2214:    have hbd₁ : bdry ((removeTet M e).filter (fun t => t ⊆ A)) f₃ = 1 ∨
+lean/Taut/PrimeStep.lean:2215:        bdry ((removeTet M e).filter (fun t => t ⊆ A)) f₃ = -1 := hunit₁.2 f₃ hf₃σ₁
+lean/Taut/PrimeStep.lean:2216:    have hfc : faceCount ((removeTet M e).filter (fun t => t ⊆ A)).support f₃ = 1 :=
+lean/Taut/PrimeStep.lean:2221:    · have : t₀ ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support.filter (fun t => f₃ ⊆ t) := by
+lean/Taut/PrimeStep.lean:2223:      rw [Finset.mem_filter] at this; exact this
+lean/Taut/PrimeStep.lean:2225:      have : y ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support.filter (fun t => f₃ ⊆ t) :=
+lean/Taut/PrimeStep.lean:2226:        Finset.mem_filter.mpr hy
+lean/Taut/PrimeStep.lean:2228:  have hrecon₂ : σ = ((flipBoundary σ M e).filter (fun f => f ⊆ B)).erase f₄ ∪
+lean/Taut/PrimeStep.lean:2229:      σ.filter (fun f => ¬ f ⊆ B) :=
+lean/Taut/PrimeStep.lean:2232:  have hrecon₁ : σ = ((flipBoundary σ M e).filter (fun f => f ⊆ A)).erase f₃ ∪
+lean/Taut/PrimeStep.lean:2233:      σ.filter (fun f => ¬ f ⊆ A) :=
+lean/Taut/PrimeStep.lean:2250:      σ₁ := (flipBoundary σ M e).filter (fun f => f ⊆ A)
+lean/Taut/PrimeStep.lean:2251:      σ₂ := (flipBoundary σ M e).filter (fun f => f ⊆ B)
+lean/Taut/PrimeStep.lean:2252:      M₁ := (removeTet M e).filter (fun t => t ⊆ A)
+lean/Taut/PrimeStep.lean:2253:      M₂ := (removeTet M e).filter (fun t => t ⊆ B)
+lean/Taut/Theorem3Clean.lean:86:  simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter]
+lean/Taut/Theorem3Clean.lean:95:  simp only [vertexLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
+lean/Taut/Theorem3Clean.lean:630:  · -- hpmc: a singleton's `faceCount` is ≤ 1 (`card_filter_le`).
+lean/Taut/Theorem3Clean.lean:633:    simpa using Finset.card_filter_le ({starTet σ v} : Finset (Finset V)) (fun s => f ⊆ s)
+lean/Taut/Theorem3Clean.lean:717:  let ML : Chain V := M.filter (fun t => t ⊆ A)
+lean/Taut/Theorem3Clean.lean:718:  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
+lean/Taut/Theorem3Clean.lean:740:      exact star_filter_support_singleton ML (cappedCutLeft sigma W X γ c)
+lean/Taut/Theorem3Clean.lean:744:      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
+lean/Taut/Theorem3Clean.lean:745:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem3Clean.lean:750:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem3Clean.lean:766:        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem3Clean.lean:827:      have hfilt : (MR.support.filter (fun t => γ ⊆ t)).card = 1 := hγcount
+lean/Taut/Theorem3Clean.lean:829:      have hmem' : t₀' ∈ MR.support.filter (fun t => γ ⊆ t) := by
+lean/Taut/Theorem3Clean.lean:831:      obtain ⟨ht₀'mem, hγt₀'⟩ := Finset.mem_filter.mp hmem'
+lean/Taut/Theorem3Clean.lean:872:      exact star_filter_support_singleton MR (cappedCutRight sigma W X γ c)
+lean/Taut/Theorem3Clean.lean:875:    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+lean/Taut/Theorem3Clean.lean:878:      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem3Clean.lean:887:      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
+lean/Taut/Theorem3Clean.lean:888:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/Theorem3Clean.lean:893:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem3Clean.lean:908:            (M.filter (fun t => ¬ (¬ t ⊆ A))).support := by
+lean/Taut/Theorem3Clean.lean:909:        exact support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/Theorem3Clean.lean:967:      have hfilt : (ML.support.filter (fun t => γ ⊆ t)).card = 1 := hγcount
+lean/Taut/Theorem3Clean.lean:969:      have hmem' : t₀' ∈ ML.support.filter (fun t => γ ⊆ t) := by
+lean/Taut/Theorem3Clean.lean:971:      obtain ⟨ht₀'mem, hγt₀'⟩ := Finset.mem_filter.mp hmem'
+lean/Taut/Theorem3Clean.lean:1144:  have htmem : t ∈ (removeTet M e).support.filter (fun s => f ⊆ s) :=
+lean/Taut/Theorem3Clean.lean:1146:  rw [Finset.mem_filter] at htmem
+lean/Taut/Theorem3Clean.lean:1265:    have he_in : e ∈ M.support.filter (fun x => insert p ({z₃, z₄} : Finset V) ⊆ x) :=
+lean/Taut/Theorem3Clean.lean:1266:      Finset.mem_filter.mpr ⟨he.2.1, hg_sub_e⟩
+lean/Taut/Theorem3Clean.lean:1267:    have hs_in : s ∈ M.support.filter (fun x => insert p ({z₃, z₄} : Finset V) ⊆ x) :=
+lean/Taut/Theorem3Clean.lean:1268:      Finset.mem_filter.mpr ⟨hs, hsub⟩
+lean/Taut/Theorem3Clean.lean:1452:    have he_in : e ∈ M.support.filter (fun x => insert p ({z₃, z₄} : Finset V) ⊆ x) :=
+lean/Taut/Theorem3Clean.lean:1453:      Finset.mem_filter.mpr ⟨he.2.1, hg_sub_e⟩
+lean/Taut/Theorem3Clean.lean:1454:    have hs_in : s ∈ M.support.filter (fun x => insert p ({z₃, z₄} : Finset V) ⊆ x) :=
+lean/Taut/Theorem3Clean.lean:1455:      Finset.mem_filter.mpr ⟨hs, hsub⟩
+lean/Taut/Theorem3Clean.lean:1978:  -- The two filters by `O ⊆ ·` agree, so both the apex set and the link graph do.
+lean/Taut/Theorem3Clean.lean:1979:  have hfilter : τ.filter (fun t => O ⊆ t) = τ'.filter (fun t => O ⊆ t) := by
+lean/Taut/Theorem3Clean.lean:1981:    simp only [Finset.mem_filter]
+lean/Taut/Theorem3Clean.lean:1986:    unfold edgeLinkVerts; rw [hfilter]
+lean/Taut/Theorem3Clean.lean:2037:        ((removeTet M u).filter (fun t => t ⊆ A)).support := by
+lean/Taut/Theorem3Clean.lean:2039:      rw [Finsupp.support_filter, Finset.mem_filter]
+lean/Taut/Theorem3Clean.lean:2044:    have helcA : EdgeLinkConnected ((removeTet M u).filter (fun t => t ⊆ A)).support :=
+lean/Taut/Theorem3Clean.lean:2045:      IHelc ((flipBoundary σ M u).filter (fun f => f ⊆ A))
+lean/Taut/Theorem3Clean.lean:2046:        (bdry ((removeTet M u).filter (fun t => t ⊆ A)))
+lean/Taut/Theorem3Clean.lean:2047:        ((removeTet M u).filter (fun t => t ⊆ A)) hnrmA hsphA hUA hbA rfl hTA hSA
+lean/Taut/Theorem3Clean.lean:2049:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem3Clean.lean:2052:        ((removeTet M u).filter (fun t => t ⊆ B)).support := by
+lean/Taut/Theorem3Clean.lean:2054:      rw [Finsupp.support_filter, Finset.mem_filter]
+lean/Taut/Theorem3Clean.lean:2059:    have helcB : EdgeLinkConnected ((removeTet M u).filter (fun t => t ⊆ B)).support :=
+lean/Taut/Theorem3Clean.lean:2060:      IHelc ((flipBoundary σ M u).filter (fun f => f ⊆ B))
+lean/Taut/Theorem3Clean.lean:2061:        (bdry ((removeTet M u).filter (fun t => t ⊆ B)))
+lean/Taut/Theorem3Clean.lean:2062:        ((removeTet M u).filter (fun t => t ⊆ B)) hnrmB hsphB hUB hbB rfl hTB hSB
+lean/Taut/Theorem3Clean.lean:2064:    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+lean/Taut/Theorem3Clean.lean:2790:  set M₁ := (removeTet M e).filter (fun t => t ⊆ A) with hM₁
+lean/Taut/Theorem3Clean.lean:2791:  set M₂ := (removeTet M e).filter (fun t => t ⊆ B) with hM₂
+lean/Taut/Theorem3Clean.lean:2794:    IHelc ((flipBoundary σ M e).filter (fun f => f ⊆ A)) (bdry M₁) M₁ hnA hsphA hUA hbA rfl hTA hSA
+lean/Taut/Theorem3Clean.lean:2796:    IHelc ((flipBoundary σ M e).filter (fun f => f ⊆ B)) (bdry M₂) M₂ hnB hsphB hUB hbB rfl hTB hSB
+lean/Taut/Theorem3Clean.lean:2817:  -- ### Side-locality of `M₁, M₂` (filters by `⊆ A` / `⊆ B`).
+lean/Taut/Theorem3Clean.lean:2819:    intro t ht; rw [hM₁, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+lean/Taut/Theorem3Clean.lean:2821:    intro t ht; rw [hM₂, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+lean/Taut/Theorem3Clean.lean:2835:    rw [hM₁, Finsupp.support_filter, Finset.mem_filter]
+lean/Taut/Theorem3Clean.lean:2841:    rw [hM₂, Finsupp.support_filter, Finset.mem_filter]
+lean/Taut/Theorem3Clean.lean:2925:ML/MR filters, the star-side dichotomy, `hsupport`/`hTnot`/`hvNotR`); instead of
+lean/Taut/Theorem3Clean.lean:2946:  let ML : Chain V := M.filter (fun t => t ⊆ A)
+lean/Taut/Theorem3Clean.lean:2947:  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
+lean/Taut/Theorem3Clean.lean:2972:      star_filter_support_singleton ML (cappedCutLeft σ W X γ c)
+lean/Taut/Theorem3Clean.lean:2976:      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
+lean/Taut/Theorem3Clean.lean:2977:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem3Clean.lean:2982:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem3Clean.lean:3028:      have hfilt : (MR.support.filter (fun t => γ ⊆ t)).card = 1 := hγcount1
+lean/Taut/Theorem3Clean.lean:3030:      have hmem' : t₀' ∈ MR.support.filter (fun t => γ ⊆ t) := by
+lean/Taut/Theorem3Clean.lean:3032:      obtain ⟨ht₀'mem, hγt₀'⟩ := Finset.mem_filter.mp hmem'
+lean/Taut/Theorem3Clean.lean:3040:        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+lean/Taut/Theorem3Clean.lean:3057:      star_filter_support_singleton MR (cappedCutRight σ W X γ c)
+lean/Taut/Theorem3Clean.lean:3060:    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+lean/Taut/Theorem3Clean.lean:3063:      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+lean/Taut/Theorem3Clean.lean:3068:      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
+lean/Taut/Theorem3Clean.lean:3069:        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/Theorem3Clean.lean:3074:      rw [Finsupp.filter_apply]
+lean/Taut/Theorem3Clean.lean:3117:      have hfilt : (ML.support.filter (fun t => γ ⊆ t)).card = 1 := hγcount1
+lean/Taut/Theorem3Clean.lean:3119:      have hmem' : t₀' ∈ ML.support.filter (fun t => γ ⊆ t) := by
+lean/Taut/Theorem3Clean.lean:3121:      obtain ⟨ht₀'mem, hγt₀'⟩ := Finset.mem_filter.mp hmem'
+lean/Taut/Theorem3Clean.lean:3130:            (M.filter (fun t => ¬ (¬ t ⊆ A))).support :=
+lean/Taut/Theorem3Clean.lean:3131:        support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+lean/Taut/Theorem3Clean.lean:3354:  set M₁ := (removeTet M e).filter (fun t => t ⊆ A) with hM₁
+lean/Taut/Theorem3Clean.lean:3355:  set M₂ := (removeTet M e).filter (fun t => t ⊆ B) with hM₂
+lean/Taut/Theorem3Clean.lean:3356:  set σ₁ := (flipBoundary σ M e).filter (fun f => f ⊆ A) with hσ₁
+lean/Taut/Theorem3Clean.lean:3357:  set σ₂ := (flipBoundary σ M e).filter (fun f => f ⊆ B) with hσ₂
+lean/Taut/Theorem3Clean.lean:3358:  set K₂ := σ.filter (fun f => ¬ f ⊆ B) with hK₂
+lean/Taut/Theorem3Clean.lean:3359:  set K₁ := σ.filter (fun f => ¬ f ⊆ A) with hK₁
+lean/Taut/Theorem3Clean.lean:3390:    intro t ht; rw [hM₁, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+lean/Taut/Theorem3Clean.lean:3392:    intro t ht; rw [hM₂, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
+lean/Taut/Theorem3Clean.lean:3402:    rw [hM₁, Finsupp.support_filter, Finset.mem_filter]
+lean/Taut/Theorem3Clean.lean:3405:    rw [hM₂, Finsupp.support_filter, Finset.mem_filter]
+lean/Taut/Theorem3Clean.lean:3431:    have hemem : e ∈ M.support.filter (fun t => f ⊆ t) := Finset.mem_filter.mpr ⟨he.2.1, hfe⟩
+lean/Taut/Theorem3Clean.lean:3433:      unfold faceCount; rw [hsuppRe, Finset.filter_erase, Finset.card_erase_add_one hemem]
+lean/Taut/Theorem3Clean.lean:3443:    have hf₃σ₁ : f₃ ∈ σ₁ := Finset.mem_filter.mpr ⟨hf₃flip, hf₃A⟩
+lean/Taut/Theorem3Clean.lean:3449:    · have : t₀ ∈ M₁.support.filter (fun t => f₃ ⊆ t) := ht₀ ▸ Finset.mem_singleton_self t₀
+lean/Taut/Theorem3Clean.lean:3450:      rw [Finset.mem_filter] at this; exact this
+lean/Taut/Theorem3Clean.lean:3452:      have : y ∈ M₁.support.filter (fun t => f₃ ⊆ t) := Finset.mem_filter.mpr hy
+lean/Taut/Theorem3Clean.lean:3455:    have hf₄σ₂ : f₄ ∈ σ₂ := Finset.mem_filter.mpr ⟨hf₄flip, hf₄B⟩
+lean/Taut/Theorem3Clean.lean:3461:    · have : t₀ ∈ M₂.support.filter (fun t => f₄ ⊆ t) := ht₀ ▸ Finset.mem_singleton_self t₀
+lean/Taut/Theorem3Clean.lean:3462:      rw [Finset.mem_filter] at this; exact this
+lean/Taut/Theorem3Clean.lean:3464:      have : y ∈ M₂.support.filter (fun t => f₄ ⊆ t) := Finset.mem_filter.mpr hy
+lean/Taut/Theorem3Clean.lean:3484:    rw [hK₂, Finset.mem_filter] at hgK; exact hgK.2 hgB
+lean/Taut/Theorem3Clean.lean:3489:    rw [hK₁, Finset.mem_filter] at hgK; exact hgK.2 hgA
+lean/Taut/Theorem3Clean.lean:3516:    ext x; simp only [hσ₁, Finset.mem_inter, Finset.mem_filter, Finset.mem_singleton]
+lean/Taut/Theorem3Clean.lean:3525:    ext x; simp only [hσ₂, Finset.mem_inter, Finset.mem_filter, Finset.mem_singleton]
+
+exec
+/bin/zsh -lc 'rg -n "def QChain|abbrev QChain|IsQTaut|exists_nat_smul_integral|toInt_nat_smul|intToQChain|Qbdry|Qnrm|splits_full" lean -S' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Corollary1.lean:10:operators (`Qbdry`, `Qcone`), introduce the real-valued L¹ norm `Qnrm`
+lean/Taut/Corollary1.lean:13:order-optimal (taut) rational fillings `IsQTaut`, and the predicate
+lean/Taut/Corollary1.lean:16:The first bounded target is `exists_nat_smul_integral`: every rational chain
+lean/Taut/Corollary1.lean:30:abbrev QChain (V : Type*) := Finset V →₀ ℚ
+lean/Taut/Corollary1.lean:33:noncomputable def QbdryGen (s : Finset V) : QChain V :=
+lean/Taut/Corollary1.lean:37:noncomputable def Qbdry : QChain V →ₗ[ℚ] QChain V :=
+lean/Taut/Corollary1.lean:38:  Finsupp.lsum ℚ fun s => LinearMap.toSpanSingleton ℚ (QChain V) (QbdryGen s)
+lean/Taut/Corollary1.lean:40:@[simp] lemma Qbdry_single (s : Finset V) (c : ℚ) :
+lean/Taut/Corollary1.lean:41:    Qbdry (Finsupp.single s c) = c • QbdryGen s := by
+lean/Taut/Corollary1.lean:42:  simp [Qbdry, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+lean/Taut/Corollary1.lean:60:noncomputable def Qnrm (M : QChain V) : ℝ := ∑ s ∈ M.support, |(M s : ℝ)|
+lean/Taut/Corollary1.lean:64:  {r | ∃ M : QChain V, Qbdry M = X ∧ Qnrm M = r}
+lean/Taut/Corollary1.lean:69:/-- `M` is a *taut* (order-optimal) rational filling: it minimises `Qnrm` among
+lean/Taut/Corollary1.lean:70:all fillings of its boundary.  (Order-optimal, NOT `Qnrm = Qvol` — this avoids
+lean/Taut/Corollary1.lean:72:def IsQTaut (M : QChain V) : Prop := ∀ N : QChain V, Qbdry N = Qbdry M → Qnrm M ≤ Qnrm N
+lean/Taut/Corollary1.lean:75:def QChain.IsIntegral (M : QChain V) : Prop := ∀ s, ∃ z : ℤ, M s = (z : ℚ)
+lean/Taut/Corollary1.lean:82:lemma exists_nat_smul_integral (M : QChain V) :
+lean/Taut/Corollary1.lean:115:noncomputable def intToQChain (M : Chain V) : QChain V :=
+lean/Taut/Corollary1.lean:119:@[simp] lemma intToQChain_apply (M : Chain V) (s : Finset V) :
+lean/Taut/Corollary1.lean:120:    intToQChain M s = (M s : ℚ) := by
+lean/Taut/Corollary1.lean:121:  simp only [intToQChain, Finsupp.mapRange_apply]
+lean/Taut/Corollary1.lean:124:lemma intToQChain_add (M N : Chain V) :
+lean/Taut/Corollary1.lean:125:    intToQChain (M + N) = intToQChain M + intToQChain N := by
+lean/Taut/Corollary1.lean:129:lemma intToQChain_smul (z : ℤ) (M : Chain V) :
+lean/Taut/Corollary1.lean:130:    intToQChain (z • M) = (z : ℚ) • intToQChain M := by
+lean/Taut/Corollary1.lean:132:  simp only [intToQChain_apply, Finsupp.smul_apply, smul_eq_mul, Int.cast_mul]
+lean/Taut/Corollary1.lean:134:@[simp] lemma intToQChain_single (s : Finset V) (c : ℤ) :
+lean/Taut/Corollary1.lean:135:    intToQChain (Finsupp.single s c) = Finsupp.single s (c : ℚ) := by
+lean/Taut/Corollary1.lean:143:lemma QbdryGen_eq_intToQChain_bdryGen (s : Finset V) :
+lean/Taut/Corollary1.lean:144:    QbdryGen s = intToQChain (bdryGen s) := by
+lean/Taut/Corollary1.lean:146:  rw [QbdryGen, bdryGen, intToQChain_apply, Finsupp.finset_sum_apply,
+lean/Taut/Corollary1.lean:157:lemma Qbdry_intToQChain (M : Chain V) :
+lean/Taut/Corollary1.lean:158:    Qbdry (intToQChain M) = intToQChain (bdry M) := by
+lean/Taut/Corollary1.lean:160:  | zero => simp [intToQChain]
+lean/Taut/Corollary1.lean:162:      rw [map_add, intToQChain_add, map_add, ih, intToQChain_add,
+lean/Taut/Corollary1.lean:163:        intToQChain_single, Qbdry_single, bdry_single, intToQChain_smul,
+lean/Taut/Corollary1.lean:164:        QbdryGen_eq_intToQChain_bdryGen]
+lean/Taut/Corollary1.lean:168:lemma Qnrm_intToQChain (M : Chain V) : Qnrm (intToQChain M) = (nrm M : ℝ) := by
+lean/Taut/Corollary1.lean:169:  have hsupp : (intToQChain M).support = M.support := by
+lean/Taut/Corollary1.lean:170:    rw [intToQChain]
+lean/Taut/Corollary1.lean:172:  rw [Qnrm, hsupp, nrm, Nat.cast_sum]
+lean/Taut/Corollary1.lean:174:  rw [intToQChain_apply, Rat.cast_intCast, Nat.cast_natAbs, Int.cast_abs]
+lean/Taut/Corollary1.lean:187:noncomputable def QChain.toInt (M : QChain V) (_hM : QChain.IsIntegral M) :
+lean/Taut/Corollary1.lean:192:@[simp] lemma intToQChain_toInt (M : QChain V) (hM : QChain.IsIntegral M) :
+lean/Taut/Corollary1.lean:193:    intToQChain (QChain.toInt M hM) = M := by
+lean/Taut/Corollary1.lean:195:  rw [intToQChain_apply, QChain.toInt, Finsupp.mapRange_apply]
+lean/Taut/Corollary1.lean:211:lemma Qnrm_smul (c : ℚ) (M : QChain V) : Qnrm (c • M) = |(c : ℝ)| * Qnrm M := by
+lean/Taut/Corollary1.lean:215:    rw [zero_smul, Rat.cast_zero, abs_zero, zero_mul, Qnrm,
+lean/Taut/Corollary1.lean:223:    rw [Qnrm, Qnrm, hsupp, Finset.mul_sum]
+lean/Taut/Corollary1.lean:231:lemma Qnrm_nat_smul (q : ℕ) (M : QChain V) : Qnrm ((q : ℚ) • M) = (q : ℝ) * Qnrm M := by
+lean/Taut/Corollary1.lean:232:  rw [Qnrm_smul]
+lean/Taut/Corollary1.lean:239:lemma IsQTaut.toInt_nat_smul {M : QChain V} (hMt : IsQTaut M) {q : ℕ} (hq : 0 < q)
+lean/Taut/Corollary1.lean:247:  -- `intToQChain K = (q : ℚ) • M`.
+lean/Taut/Corollary1.lean:248:  have hKQ : intToQChain K = (q : ℚ) • M := intToQChain_toInt _ hM
+lean/Taut/Corollary1.lean:253:  -- `(nrm K : ℝ) = (q : ℝ) * Qnrm M`.
+lean/Taut/Corollary1.lean:254:  have hKn : (nrm K : ℝ) = (q : ℝ) * Qnrm M := by
+lean/Taut/Corollary1.lean:255:    rw [← Qnrm_intToQChain, hKQ, Qnrm_nat_smul]
+lean/Taut/Corollary1.lean:257:  set Nq : QChain V := ((q : ℚ)⁻¹) • intToQChain N with hNq
+lean/Taut/Corollary1.lean:258:  -- `Qbdry Nq = Qbdry M`.
+lean/Taut/Corollary1.lean:259:  have hbdry : Qbdry Nq = Qbdry M := by
+lean/Taut/Corollary1.lean:260:    have h1 : Qbdry (intToQChain N) = (q : ℚ) • Qbdry M := by
+lean/Taut/Corollary1.lean:261:      rw [Qbdry_intToQChain, hN, ← Qbdry_intToQChain, hKQ, map_smul]
+lean/Taut/Corollary1.lean:263:  -- Tautness of `M` gives `Qnrm M ≤ Qnrm Nq`.
+lean/Taut/Corollary1.lean:264:  have hcomp : Qnrm M ≤ Qnrm Nq := hMt Nq hbdry
+lean/Taut/Corollary1.lean:265:  -- `Qnrm Nq = (q : ℝ)⁻¹ * (nrm N : ℝ)`.
+lean/Taut/Corollary1.lean:266:  have hNqn : Qnrm Nq = (q : ℝ)⁻¹ * (nrm N : ℝ) := by
+lean/Taut/Corollary1.lean:267:    rw [hNq, Qnrm_smul, Qnrm_intToQChain, Rat.cast_inv, Rat.cast_natCast,
+lean/Taut/Corollary1.lean:271:  have key : (q : ℝ) * Qnrm M ≤ (nrm N : ℝ) := by
+lean/Taut/Splitting.lean:534:theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+
+codex
+The endpoint signature in `Splitting.lean` matches the user’s quoted form, and `Corollary1.lean` already has the forward transfer and cast/norm lemmas. I’m checking exact definitions now so I can avoid proposing lemmas that fight the current API.
+exec
+/bin/zsh -lc "sed -n '450,490p' lean/Taut/Chains.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '1,310p' lean/Taut/Corollary1.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '430,535p' lean/Taut/Splitting.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    nrm (Finsupp.single s c) = c.natAbs := by
+  by_cases hc : c = 0
+  · simp [hc]
+  · rw [nrm, Finsupp.support_single_ne_zero s hc, Finset.sum_singleton,
+      Finsupp.single_eq_same]
+
+@[simp] lemma nrm_neg (M : Chain V) : nrm (-M) = nrm M := by
+  rw [nrm, nrm, Finsupp.support_neg]
+  exact Finset.sum_congr rfl fun s _ => by simp
+
+lemma nrm_add_le (M N : Chain V) : nrm (M + N) ≤ nrm M + nrm N := by
+  rw [nrm_eq_sum_subset (Finsupp.support_add),
+    nrm_eq_sum_subset (M := M) (t := M.support ∪ N.support)
+      Finset.subset_union_left,
+    nrm_eq_sum_subset (M := N) (t := M.support ∪ N.support)
+      Finset.subset_union_right,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_le_sum fun s _ => ?_
+  rw [Finsupp.add_apply]
+  exact Int.natAbs_add_le _ _
+
+lemma nrm_filter_add_nrm_filter_neg (p : Finset V → Prop) [DecidablePred p]
+    (M : Chain V) :
+    nrm (M.filter p) + nrm (M.filter fun s => ¬ p s) = nrm M := by
+  have h1 : (M.filter p).support ⊆ M.support := by
+    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+  have h2 : (M.filter fun s => ¬ p s).support ⊆ M.support := by
+    rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
+  rw [nrm_eq_sum_subset h1, nrm_eq_sum_subset h2, ← Finset.sum_add_distrib, nrm]
+  refine Finset.sum_congr rfl fun s _ => ?_
+  rw [Finsupp.filter_apply, Finsupp.filter_apply]
+  by_cases hp : p s
+  · rw [if_pos hp, if_neg (not_not_intro hp), Int.natAbs_zero, add_zero]
+  · rw [if_neg hp, if_pos hp, Int.natAbs_zero, zero_add]
+
+/-- The degree of a vertex in a chain: the mass of its neighborhood. -/
+noncomputable def deg (x : V) (M : Chain V) : ℕ := nrm (nbhd x M)
+
+lemma deg_eq_zero_iff {x : V} {M : Chain V} : deg x M = 0 ↔ x ∉ vert M := by
+  rw [deg, nrm_eq_zero_iff, nbhd_eq_zero_iff]
+
+
+ succeeded in 0ms:
+/-! ## Theorem 1, part 2: taut fillings split -/
+
+/-- **Theorem 1, splitting** (Doyle–Ellison–Wang): for `n ≥ 2`, ANY taut
+filling `M` of an almost disjoint union `X + Y` splits: filtering `M`
+along `· ⊆ A` yields taut fillings of `X` and of `Y` summing to `M`. -/
+theorem IsTaut.splits {A B : Finset V} {n : ℕ}
+    (hn : 2 ≤ n) {p q : V} (hp : p ∈ A ∩ B) (hq : q ∈ A ∩ B) (hpq : p ≠ q)
+    (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+  classical
+  have hn1 : 1 ≤ n := by omega
+  -- context facts
+  have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
+    intro s hs
+    rw [hM1] at hs
+    rcases Finset.mem_union.mp (Finsupp.support_add hs) with h | h
+    · exact (hX s h).2
+    · exact (hY s h).2
+  have hpure : ∀ s ∈ M.support, s.card = n + 2 :=
+    fun s hs => hMt.dim_pure hbdsupp s hs
+  have hdim2 : ∀ s ∈ M.support, 2 ≤ s.card := by
+    intro s hs; rw [hpure s hs]; omega
+  have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B := by
+    intro t ht
+    refine (supp_subset_vert ht).trans ((hMt.vert_subset hdim2).trans ?_)
+    rw [hM1]
+    exact (vert_add_subset X Y).trans (Finset.union_subset_union
+      (vert_subset_of_supp fun s hs => (hX s hs).1)
+      (vert_subset_of_supp fun s hs => (hY s hs).1))
+  -- every generator is pure
+  have hdich : ∀ t ∈ M.support, t ⊆ A ∨ t ⊆ B := by
+    intro t ht
+    rcases hybrid_structure hn hp hq hpq hC hX hY hXc hYc hM1 hMt hpure
+      hsuppAB ht with h | h | ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · exact Or.inl h
+    · exact Or.inr h
+    · obtain ⟨y₀, hy⟩ := Finset.card_eq_one.mp h1
+      exact (no_extreme_hybrid hn hp hq hpq hC hX hY hXc hYc hM1 hMt hpure
+        hsuppAB ht hy h2).elim
+    · -- symmetric configuration, roles of A and B exchanged
+      obtain ⟨x₀, hx⟩ := Finset.card_eq_one.mp h1
+      have hM1' : bdry M = Y + X := by rw [hM1, add_comm]
+      have hsuppBA : ∀ t' ∈ M.support, t' ⊆ B ∪ A := by
+        intro t' ht'
+        rw [Finset.union_comm]
+        exact hsuppAB t' ht'
+      exact (no_extreme_hybrid hn (Finset.inter_comm A B ▸ hq)
+        (Finset.inter_comm A B ▸ hp) hpq.symm (Finset.inter_comm A B ▸ hC)
+        hY hX hYc hXc hM1' hMt hpure hsuppBA ht hx
+        (Finset.inter_comm A B ▸ h2)).elim
+  -- the split along `· ⊆ A`
+  set Mx := M.filter (fun t => t ⊆ A) with hMx
+  set My := M.filter (fun t => ¬ t ⊆ A) with hMy
+  have hsum : Mx + My = M := Finsupp.filter_pos_add_filter_neg M _
+  have hMxsupp : ∀ t ∈ Mx.support, t ⊆ A ∧ t.card = n + 2 := by
+    intro t ht
+    rw [hMx, Finsupp.support_filter, Finset.mem_filter] at ht
+    exact ⟨ht.2, hpure t ht.1⟩
+  have hMysupp : ∀ t ∈ My.support, t ⊆ B ∧ t.card = n + 2 := by
+    intro t ht
+    rw [hMy, Finsupp.support_filter, Finset.mem_filter] at ht
+    exact ⟨(hdich t ht.1).resolve_left ht.2, hpure t ht.1⟩
+  -- identify the boundaries by projecting
+  have hbsum : bdry Mx + bdry My = X + Y := by rw [← map_add, hsum, hM1]
+  have hbx : bdry Mx = X := by
+    have happly := congrArg (Kmap A p) hbsum
+    rw [map_add, map_add,
+      Kmap_eq_self (fun s hs => (bdry_supp_of_supp hMxsupp s hs).1),
+      Kmap_eq_zero_of_closed hn1 hp hC (bdry_supp_of_supp hMysupp)
+        (bdry_bdry My),
+      Kmap_eq_self (fun s hs => (hX s hs).1),
+      Kmap_eq_zero_of_closed hn1 hp hC hY hYc, add_zero, add_zero] at happly
+    exact happly
+  have hby : bdry My = Y := by
+    have h := hbsum
+    rw [hbx] at h
+    exact add_left_cancel h
+  -- tautness of the parts
+  have hnrm : nrm Mx + nrm My = nrm M := nrm_filter_add_nrm_filter_neg _ M
+  have hadd := Zvol_add_of_almost_disjoint hn1 hp hq hpq hC hX hY hXc hYc
+  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+  have h4 : Zvol X ≤ nrm Mx := Zvol_le hbx
+  have h5 : Zvol Y ≤ nrm My := Zvol_le hby
+  have hMxt : IsTaut Mx := by rw [IsTaut, hbx]; omega
+  have hMyt : IsTaut My := by rw [IsTaut, hby]; omega
+  exact ⟨hbx, hby, hMxt, hMyt, hsum⟩
+
+/-- **Theorem 1, splitting (full paper statement)**: for `n ≥ 2`, the
+hypothesis `(A ∩ B).card ≤ n + 1` alone suffices — no witnessing pair
+`p ≠ q` is needed.  When `|A ∩ B| ≥ 2` we extract a pair and invoke
+`IsTaut.splits`; when `|A ∩ B| ≤ 1` we enlarge both sides by the same
+fresh vertices `F` to reach `|A' ∩ B'| = 2 ≤ n + 1`, run the split along
+`· ⊆ A'`, then transfer it back to `· ⊆ A`.  The transfer is valid because
+every generator of the filling `M` lies in `A ∪ B`, hence is disjoint from
+the fresh set `F`, so `t ⊆ A' ↔ t ⊆ A` on `M.support`. -/
+theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 2 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+
+ succeeded in 0ms:
+import Taut.Splitting
+
+/-!
+# Corollary 1: rational filling foundations
+
+Rational analogue of the integral chain machinery in `Taut/Chains.lean`.
+
+A *rational chain* is a finitely supported `ℚ`-combination of simplices,
+`QChain V := Finset V →₀ ℚ`.  We mirror the integral boundary and cone
+operators (`Qbdry`, `Qcone`), introduce the real-valued L¹ norm `Qnrm`
+(real-valued so the filling-volume infimum lives in a conditionally complete
+order), the achievable-norm set `QvolSet`, the rational filling volume `Qvol`,
+order-optimal (taut) rational fillings `IsQTaut`, and the predicate
+`QChain.IsIntegral` (every coefficient is an integer).
+
+The first bounded target is `exists_nat_smul_integral`: every rational chain
+becomes integral after scaling by a positive natural number (the lcm of its
+coefficients' denominators).
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-! ## Rational chains and operators -/
+
+/-- A rational chain: a finitely supported ℚ-combination of simplices. -/
+abbrev QChain (V : Type*) := Finset V →₀ ℚ
+
+/-- Boundary of one generator over ℚ (mirrors `bdryGen`). -/
+noncomputable def QbdryGen (s : Finset V) : QChain V :=
+  ∑ x ∈ s, (sgn x s : ℚ) • Finsupp.single (s.erase x) (1 : ℚ)
+
+/-- The rational boundary operator. -/
+noncomputable def Qbdry : QChain V →ₗ[ℚ] QChain V :=
+  Finsupp.lsum ℚ fun s => LinearMap.toSpanSingleton ℚ (QChain V) (QbdryGen s)
+
+@[simp] lemma Qbdry_single (s : Finset V) (c : ℚ) :
+    Qbdry (Finsupp.single s c) = c • QbdryGen s := by
+  simp [Qbdry, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+
+/-- Cone of one generator over ℚ (mirrors `coneGen`). -/
+noncomputable def QconeGen (x : V) (s : Finset V) : QChain V :=
+  if x ∈ s then 0 else (sgn x s : ℚ) • Finsupp.single (insert x s) (1 : ℚ)
+
+/-- The rational cone operator. -/
+noncomputable def Qcone (x : V) : QChain V →ₗ[ℚ] QChain V :=
+  Finsupp.lsum ℚ fun s => LinearMap.toSpanSingleton ℚ (QChain V) (QconeGen x s)
+
+@[simp] lemma Qcone_single (x : V) (s : Finset V) (c : ℚ) :
+    Qcone x (Finsupp.single s c) = c • QconeGen x s := by
+  simp [Qcone, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+
+/-! ## Norm, volume, tautness, integrality -/
+
+/-- The rational L¹ norm (ℝ-valued, so `sInf` lives in a conditionally complete
+order). -/
+noncomputable def Qnrm (M : QChain V) : ℝ := ∑ s ∈ M.support, |(M s : ℝ)|
+
+/-- The set of achievable filling norms of `X`. -/
+noncomputable def QvolSet (X : QChain V) : Set ℝ :=
+  {r | ∃ M : QChain V, Qbdry M = X ∧ Qnrm M = r}
+
+/-- The rational filling volume. -/
+noncomputable def Qvol (X : QChain V) : ℝ := sInf (QvolSet X)
+
+/-- `M` is a *taut* (order-optimal) rational filling: it minimises `Qnrm` among
+all fillings of its boundary.  (Order-optimal, NOT `Qnrm = Qvol` — this avoids
+needing rational minimisers to exist.) -/
+def IsQTaut (M : QChain V) : Prop := ∀ N : QChain V, Qbdry N = Qbdry M → Qnrm M ≤ Qnrm N
+
+/-- A rational chain is *integral* if every coefficient is an integer. -/
+def QChain.IsIntegral (M : QChain V) : Prop := ∀ s, ∃ z : ℤ, M s = (z : ℚ)
+
+/-! ## Clearing denominators -/
+
+/-- **Clearing denominators.** Every rational chain becomes integral after
+scaling by a positive natural number (the lcm of its coefficients'
+denominators). -/
+lemma exists_nat_smul_integral (M : QChain V) :
+    ∃ q : ℕ, 0 < q ∧ QChain.IsIntegral ((q : ℚ) • M) := by
+  classical
+  refine ⟨M.support.lcm (fun s => (M s).den), ?_, ?_⟩
+  · -- positivity: the lcm of nonzero denominators is nonzero.
+    refine Nat.pos_of_ne_zero ?_
+    rw [Finset.lcm_ne_zero_iff]
+    intro s _
+    exact (M s).den_ne_zero
+  · -- integrality, coefficient by coefficient.
+    intro s
+    rw [Finsupp.smul_apply, smul_eq_mul]
+    by_cases hs : s ∈ M.support
+    · -- denominator of `M s` divides the lcm; clear it.
+      set q : ℕ := M.support.lcm (fun s => (M s).den) with hq
+      have hdvd : (M s).den ∣ q := Finset.dvd_lcm hs
+      refine ⟨((q / (M s).den : ℕ) : ℤ) * (M s).num, ?_⟩
+      have hden : ((M s).den : ℚ) ≠ 0 := by exact_mod_cast (M s).den_ne_zero
+      have hcancel : (q / (M s).den) * (M s).den = q := Nat.div_mul_cancel hdvd
+      have hqcast : (q : ℚ) = ((q / (M s).den : ℕ) : ℚ) * ((M s).den : ℚ) := by
+        rw [← Nat.cast_mul, hcancel]
+      have hmul : ((M s).den : ℚ) * M s = ((M s).num : ℚ) := by
+        have h := Rat.num_div_den (M s)
+        rw [div_eq_iff hden] at h
+        rw [h, mul_comm]
+      rw [hqcast, mul_assoc, hmul, Int.cast_mul, Int.cast_natCast]
+    · -- outside the support the coefficient is already `0`.
+      rw [Finsupp.notMem_support_iff.mp hs, mul_zero]
+      exact ⟨0, by push_cast; ring⟩
+
+/-! ## The ℤ ↔ ℚ bridge -/
+
+/-- Cast an integer chain to a rational chain (coefficientwise `Int.cast`). -/
+noncomputable def intToQChain (M : Chain V) : QChain V :=
+  Finsupp.mapRange (fun z : ℤ => (z : ℚ)) (by simp) M
+
+omit [LinearOrder V] in
+@[simp] lemma intToQChain_apply (M : Chain V) (s : Finset V) :
+    intToQChain M s = (M s : ℚ) := by
+  simp only [intToQChain, Finsupp.mapRange_apply]
+
+omit [LinearOrder V] in
+lemma intToQChain_add (M N : Chain V) :
+    intToQChain (M + N) = intToQChain M + intToQChain N := by
+  ext s; simp
+
+omit [LinearOrder V] in
+lemma intToQChain_smul (z : ℤ) (M : Chain V) :
+    intToQChain (z • M) = (z : ℚ) • intToQChain M := by
+  ext s
+  simp only [intToQChain_apply, Finsupp.smul_apply, smul_eq_mul, Int.cast_mul]
+
+@[simp] lemma intToQChain_single (s : Finset V) (c : ℤ) :
+    intToQChain (Finsupp.single s c) = Finsupp.single s (c : ℚ) := by
+  ext t
+  by_cases h : t = s
+  · subst h; simp
+  · simp [h]
+
+/-- The rational boundary of a cast generator equals the cast of the integer
+boundary generator. -/
+lemma QbdryGen_eq_intToQChain_bdryGen (s : Finset V) :
+    QbdryGen s = intToQChain (bdryGen s) := by
+  ext t
+  rw [QbdryGen, bdryGen, intToQChain_apply, Finsupp.finset_sum_apply,
+    Finsupp.finset_sum_apply, Int.cast_sum]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [Finsupp.smul_apply, Finsupp.smul_apply, smul_eq_mul, smul_eq_mul,
+    Int.cast_mul]
+  congr 1
+  by_cases h : t = s.erase x
+  · subst h; simp
+  · simp [h]
+
+/-- The boundary operator commutes with the integer→rational cast. -/
+lemma Qbdry_intToQChain (M : Chain V) :
+    Qbdry (intToQChain M) = intToQChain (bdry M) := by
+  induction M using Finsupp.induction with
+  | zero => simp [intToQChain]
+  | single_add s c M hs hc ih =>
+      rw [map_add, intToQChain_add, map_add, ih, intToQChain_add,
+        intToQChain_single, Qbdry_single, bdry_single, intToQChain_smul,
+        QbdryGen_eq_intToQChain_bdryGen]
+
+omit [LinearOrder V] in
+/-- The rational L¹ norm of a cast chain equals the integer L¹ norm. -/
+lemma Qnrm_intToQChain (M : Chain V) : Qnrm (intToQChain M) = (nrm M : ℝ) := by
+  have hsupp : (intToQChain M).support = M.support := by
+    rw [intToQChain]
+    exact Finsupp.support_mapRange_of_injective (by simp) M Int.cast_injective
+  rw [Qnrm, hsupp, nrm, Nat.cast_sum]
+  refine Finset.sum_congr rfl fun s _ => ?_
+  rw [intToQChain_apply, Rat.cast_intCast, Nat.cast_natAbs, Int.cast_abs]
+
+omit [LinearOrder V] in
+/-- The support of a positive natural scaling of a rational chain is unchanged. -/
+lemma support_nat_smul_of_pos {q : ℕ} (hq : 0 < q) (M : QChain V) :
+    ((q : ℚ) • M).support = M.support := by
+  have hqne : (q : ℚ) ≠ 0 := by exact_mod_cast hq.ne'
+  ext s
+  simp only [Finsupp.mem_support_iff, Finsupp.smul_apply, smul_eq_mul, ne_eq,
+    mul_eq_zero, hqne, false_or]
+
+/-- Recover the integer chain underlying an integral rational chain (the
+coefficient `M s` is an integer, so `⌊M s⌋` recovers it). -/
+noncomputable def QChain.toInt (M : QChain V) (_hM : QChain.IsIntegral M) :
+    Chain V :=
+  Finsupp.mapRange (fun r : ℚ => ⌊r⌋) Int.floor_zero M
+
+omit [LinearOrder V] in
+@[simp] lemma intToQChain_toInt (M : QChain V) (hM : QChain.IsIntegral M) :
+    intToQChain (QChain.toInt M hM) = M := by
+  ext s
+  rw [intToQChain_apply, QChain.toInt, Finsupp.mapRange_apply]
+  obtain ⟨z, hz⟩ := hM s
+  rw [hz, Int.floor_intCast]
+
+/-- **The integer bridge.** If `M` minimises `nrm` among all fillings of its
+own boundary (order-optimal), then `M` is taut (`nrm M = Zvol (bdry M)`). -/
+lemma IsTaut.of_forall_nrm_le {M : Chain V}
+    (h : ∀ N : Chain V, bdry N = bdry M → nrm M ≤ nrm N) : IsTaut M := by
+  obtain ⟨W, hW, hWn⟩ := exists_optimal_fill M
+  have hle : nrm M ≤ Zvol (bdry M) := hWn ▸ h W hW
+  exact le_antisymm hle (Zvol_le rfl)
+
+/-! ## Scaling the rational norm and forward tautness transfer -/
+
+omit [LinearOrder V] in
+/-- Scaling a rational chain by `c` scales its L¹ norm by `|c|`. -/
+lemma Qnrm_smul (c : ℚ) (M : QChain V) : Qnrm (c • M) = |(c : ℝ)| * Qnrm M := by
+  classical
+  rcases eq_or_ne c 0 with hc | hc
+  · subst hc
+    rw [zero_smul, Rat.cast_zero, abs_zero, zero_mul, Qnrm,
+      Finsupp.support_zero, Finset.sum_empty]
+  · -- `c ≠ 0`: the support is preserved.
+    have hcr : (c : ℝ) ≠ 0 := by exact_mod_cast hc
+    have hsupp : (c • M).support = M.support := by
+      ext s
+      simp only [Finsupp.mem_support_iff, Finsupp.smul_apply, smul_eq_mul, ne_eq,
+        mul_eq_zero, hc, false_or]
+    rw [Qnrm, Qnrm, hsupp, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun s _ => ?_
+    rw [Finsupp.smul_apply, smul_eq_mul]
+    push_cast
+    rw [abs_mul]
+
+omit [LinearOrder V] in
+/-- Scaling a rational chain by a natural number `q` scales its L¹ norm by `q`. -/
+lemma Qnrm_nat_smul (q : ℕ) (M : QChain V) : Qnrm ((q : ℚ) • M) = (q : ℝ) * Qnrm M := by
+  rw [Qnrm_smul]
+  congr 1
+  rw [Rat.cast_natCast, abs_of_nonneg (by positivity)]
+
+/-- **Forward tautness transfer (Cor 1, step 5).** If a rational chain `M` is
+taut and `(q : ℚ) • M` is integral (for `0 < q`), then the underlying integer
+chain `QChain.toInt ((q : ℚ) • M)` is taut. -/
+lemma IsQTaut.toInt_nat_smul {M : QChain V} (hMt : IsQTaut M) {q : ℕ} (hq : 0 < q)
+    (hM : QChain.IsIntegral ((q : ℚ) • M)) :
+    IsTaut (QChain.toInt ((q : ℚ) • M) hM) := by
+  classical
+  set K : Chain V := QChain.toInt ((q : ℚ) • M) hM with hK
+  have hqQ : (q : ℚ) ≠ 0 := by exact_mod_cast hq.ne'
+  have hqR : (q : ℝ) ≠ 0 := by exact_mod_cast hq.ne'
+  have hqRpos : (0 : ℝ) < (q : ℝ) := by exact_mod_cast hq
+  -- `intToQChain K = (q : ℚ) • M`.
+  have hKQ : intToQChain K = (q : ℚ) • M := intToQChain_toInt _ hM
+  apply IsTaut.of_forall_nrm_le
+  intro N hN
+  -- Reduce to the real inequality.
+  rw [← Nat.cast_le (α := ℝ)]
+  -- `(nrm K : ℝ) = (q : ℝ) * Qnrm M`.
+  have hKn : (nrm K : ℝ) = (q : ℝ) * Qnrm M := by
+    rw [← Qnrm_intToQChain, hKQ, Qnrm_nat_smul]
+  -- The ℚ-competitor for `M`.
+  set Nq : QChain V := ((q : ℚ)⁻¹) • intToQChain N with hNq
+  -- `Qbdry Nq = Qbdry M`.
+  have hbdry : Qbdry Nq = Qbdry M := by
+    have h1 : Qbdry (intToQChain N) = (q : ℚ) • Qbdry M := by
+      rw [Qbdry_intToQChain, hN, ← Qbdry_intToQChain, hKQ, map_smul]
+    rw [hNq, map_smul, h1, smul_smul, inv_mul_cancel₀ hqQ, one_smul]
+  -- Tautness of `M` gives `Qnrm M ≤ Qnrm Nq`.
+  have hcomp : Qnrm M ≤ Qnrm Nq := hMt Nq hbdry
+  -- `Qnrm Nq = (q : ℝ)⁻¹ * (nrm N : ℝ)`.
+  have hNqn : Qnrm Nq = (q : ℝ)⁻¹ * (nrm N : ℝ) := by
+    rw [hNq, Qnrm_smul, Qnrm_intToQChain, Rat.cast_inv, Rat.cast_natCast,
+      abs_of_nonneg (by positivity)]
+  -- Assemble.
+  rw [hNqn] at hcomp
+  have key : (q : ℝ) * Qnrm M ≤ (nrm N : ℝ) := by
+    have := mul_le_mul_of_nonneg_left hcomp hqRpos.le
+    rwa [← mul_assoc, mul_inv_cancel₀ hqR, one_mul] at this
+  rw [hKn]
+  exact key
+
+end Taut
+
+codex
+The rational side defines `IsQTaut` directly as order-optimal, while integer `IsTaut` is volume equality. That means the reverse transfer should first turn integer tautness into an integer competitor inequality, then clear each rational competitor.
+exec
+/bin/zsh -lc 'rg -n "def IsTaut|theorem.*Zvol_le|lemma Zvol_le|exists_optimal_fill|Zvol" lean/Taut -S' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Eligible.lean:15:* a count + Prop 2 (`Zvol_add_deg_le`) forces a double fiber to exist.
+lean/Taut/Eligible.lean:115:    have h2 := Zvol_add_deg_le x (bdry_bdry M)
+lean/Taut/Corollary1.lean:200:own boundary (order-optimal), then `M` is taut (`nrm M = Zvol (bdry M)`). -/
+lean/Taut/Corollary1.lean:203:  obtain ⟨W, hW, hWn⟩ := exists_optimal_fill M
+lean/Taut/Corollary1.lean:204:  have hle : nrm M ≤ Zvol (bdry M) := hWn ▸ h W hW
+lean/Taut/Corollary1.lean:205:  exact le_antisymm hle (Zvol_le rfl)
+lean/Taut/Zvol.lean:4:# Zvol, tautness, and Propositions 1–4 of "Taut fillings"
+lean/Taut/Zvol.lean:7:* `Zvol X` — minimum L¹ norm of a filling of `X`.
+lean/Taut/Zvol.lean:10:* Proposition 2 (`Zvol_add_deg_le`): `Zvol X + deg x X ≤ nrm X` for closed
+lean/Taut/Zvol.lean:11:  `X` (the paper's `Zvol(X) ≤ |X| − maxdeg(X)`, per vertex).
+lean/Taut/Zvol.lean:73:/-! ## Zvol and tautness -/
+lean/Taut/Zvol.lean:76:noncomputable def Zvol (X : Chain V) : ℕ :=
+lean/Taut/Zvol.lean:80:def IsTaut (M : Chain V) : Prop := nrm M = Zvol (bdry M)
+lean/Taut/Zvol.lean:82:lemma Zvol_le {X M : Chain V} (h : bdry M = X) : Zvol X ≤ nrm M :=
+lean/Taut/Zvol.lean:94:lemma exists_optimal_fill (W : Chain V) :
+lean/Taut/Zvol.lean:95:    ∃ M : Chain V, bdry M = bdry W ∧ nrm M = Zvol (bdry W) := by
+lean/Taut/Zvol.lean:104:  obtain ⟨W, hW, hWn⟩ := exists_optimal_fill U
+lean/Taut/Zvol.lean:109:  have hle : Zvol (bdry M) ≤ nrm (M - U) + nrm W :=
+lean/Taut/Zvol.lean:110:    le_trans (Zvol_le hbd) (nrm_add_le _ _)
+lean/Taut/Zvol.lean:112:  have h1 : Zvol (bdry U) ≤ nrm U := Zvol_le rfl
+lean/Taut/Zvol.lean:117:`Zvol X + deg x X ≤ nrm X`. -/
+lean/Taut/Zvol.lean:118:theorem Zvol_add_deg_le (x : V) {X : Chain V} (hX : bdry X = 0) :
+lean/Taut/Zvol.lean:119:    Zvol X + deg x X ≤ nrm X := by
+lean/Taut/Zvol.lean:120:  have h1 : Zvol X ≤ nrm (cone x X) := Zvol_le (bdry_cone_of_closed hX)
+lean/Taut/Zvol.lean:133:  have h2 := Zvol_add_deg_le x' hW
+lean/Taut/Projection.lean:1:import Taut.Zvol
+lean/Taut/Theorem1.lean:4:# Theorem 1 of "Taut fillings": additivity of Zvol
+lean/Taut/Theorem1.lean:10:This file proves `Zvol (X + Y) = Zvol X + Zvol Y`
+lean/Taut/Theorem1.lean:11:(`Zvol_add_of_almost_disjoint`).  The splitting statement for `n ≥ 2`
+lean/Taut/Theorem1.lean:148:  have h1 : Zvol (bdry M) ≤ nrm P := Zvol_le hbdP
+lean/Taut/Theorem1.lean:330:/-! ## Theorem 1, part 1: additivity of Zvol -/
+lean/Taut/Theorem1.lean:332:lemma exists_fill_eq_Zvol {X : Chain V} (W : Chain V) (hW : bdry W = X) :
+lean/Taut/Theorem1.lean:333:    ∃ M : Chain V, bdry M = X ∧ nrm M = Zvol X := by
+lean/Taut/Theorem1.lean:363:`Zvol (X + Y) = Zvol X + Zvol Y`. -/
+lean/Taut/Theorem1.lean:364:theorem Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n : ℕ}
+lean/Taut/Theorem1.lean:371:    Zvol (X + Y) = Zvol X + Zvol Y := by
+lean/Taut/Theorem1.lean:375:  obtain ⟨Mx, hMx, hMxn⟩ := exists_fill_eq_Zvol (cone p X) (bdry_cone_of_closed hXc)
+lean/Taut/Theorem1.lean:376:  obtain ⟨My, hMy, hMyn⟩ := exists_fill_eq_Zvol (cone p Y) (bdry_cone_of_closed hYc)
+lean/Taut/Theorem1.lean:378:    exists_fill_eq_Zvol (cone p (X + Y)) (bdry_cone_of_closed hXYc)
+lean/Taut/Theorem1.lean:382:    calc Zvol (X + Y) ≤ nrm (Mx + My) := Zvol_le hbd
+lean/Taut/Theorem1.lean:384:      _ = Zvol X + Zvol Y := by rw [hMxn, hMyn]
+lean/Taut/Theorem1.lean:424:    have h4 : Zvol X ≤ nrm (Kmap A p M) := Zvol_le hbx
+lean/Taut/Theorem1.lean:425:    have h5 : Zvol Y ≤ nrm (Kmap B q M) := Zvol_le hby
+lean/Taut/Theorem1.lean:431:`Zvol_add_of_almost_disjoint`; when `|A ∩ B| ≤ 1` we enlarge both `A` and
+lean/Taut/Theorem1.lean:434:theorem Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+lean/Taut/Theorem1.lean:440:    Zvol (X + Y) = Zvol X + Zvol Y := by
+lean/Taut/Theorem1.lean:444:    exact Zvol_add_of_almost_disjoint hn hp hq hpq hC hX hY hXc hYc
+lean/Taut/Theorem1.lean:488:    exact Zvol_add_of_almost_disjoint hn hp hq hpq hC' hX' hY' hXc hYc
+lean/Taut/Splitting.lean:13:   pair `(p', q')` — else `M` would beat `Zvol X + Zvol Y`
+lean/Taut/Splitting.lean:201:  have h4 : Zvol X ≤ nrm (Kmap A p' M) := Zvol_le hbx
+lean/Taut/Splitting.lean:202:  have h5 : Zvol Y ≤ nrm (Kmap B q' M) := Zvol_le hby
+lean/Taut/Splitting.lean:203:  have hadd := Zvol_add_of_almost_disjoint hn hp hq hpq hC hX hY hXc hYc
+lean/Taut/Splitting.lean:204:  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+lean/Taut/Splitting.lean:518:  have hadd := Zvol_add_of_almost_disjoint hn1 hp hq hpq hC hX hY hXc hYc
+lean/Taut/Splitting.lean:519:  have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
+lean/Taut/Splitting.lean:520:  have h4 : Zvol X ≤ nrm Mx := Zvol_le hbx
+lean/Taut/Splitting.lean:521:  have h5 : Zvol Y ≤ nrm My := Zvol_le hby
+lean/Taut/Theorem4.lean:325:`nrm U = Zvol 0 = 0` forces `U = 0` — but `U` carries a tet of `s`. -/
+lean/Taut/Theorem4.lean:340:  -- nrm U = Zvol (bdry U) = Zvol 0 = 0
+lean/Taut/Theorem4.lean:341:  have hZ0 : Zvol (0 : Chain V) = 0 := Nat.le_zero.mp (by
+lean/Taut/Theorem4.lean:342:    simpa using Zvol_le (show bdry (0 : Chain V) = 0 by simp))
+lean/Taut/Theorem2Aleph.lean:1318:  have hprop := Zvol_add_deg_le v (bdry_bdry M)
+lean/Taut/Theorem2Aleph.lean:1319:  have hvol : Zvol (bdry M) = nrm M := hT.symm
+lean/Taut/Theorem2Aleph.lean:1326:minimum-degree vertex — `Zvol_add_deg_le v` (Prop 2) on the closed chain `bdry M`, rewritten through
+lean/Taut/Theorem2Aleph.lean:1327:`IsTaut` (`Zvol (bdry M) = nrm M`), `nrm M = |M.support|`, and `nrm (bdry M) = σ.card`.  This supplies
+lean/Taut/Theorem2Aleph.lean:1332:  have hprop := Zvol_add_deg_le v (bdry_bdry M)
+lean/Taut/Theorem2Aleph.lean:1333:  have hvol : Zvol (bdry M) = nrm M := hT.symm
+
+exec
+/bin/zsh -lc 'rg -n "map_smul|filter_pos_add_filter_neg|support_filter|filter.*smul|filter_apply" $(pwd)/lean/.lake/packages/mathlib/Mathlib/Data/Finsupp -S' in /Users/doyle/Dropbox/taut
+ exited 2 in 0ms:
+rg: /Users/doyle/Dropbox/taut/lean/.lake/packages/mathlib/Mathlib/Data/Finsupp: IO error for operation on /Users/doyle/Dropbox/taut/lean/.lake/packages/mathlib/Mathlib/Data/Finsupp: No such file or directory (os error 2)
+
+codex
+WARN
+
+Verdict: do not build `isQTaut_intToQChain_of_isTaut` as stated. It is stronger than integer tautness gives: an integer-optimal chain need not be rational-optimal unless you prove an extra “all positive multiples stay integer-taut” or integrality-gap lemma. It is also unnecessary for `IsQTaut.splits_full`.
+
+Exact patch shape: clear `M X Y` with one `q`, run `IsQTaut.toInt_nat_smul` only on `M`, apply `IsTaut.splits_full`, cast/divide back for the two boundary equalities and sum, then prove the two output `IsQTaut` facts directly from global rational tautness of `M`.
+
+Files to edit: `lean/Taut/Corollary1.lean` only.
+
+Local lemmas needed:
+
+```lean
+lemma QChain.IsIntegral.nat_mul_smul {M : QChain V} {q r : ℕ}
+    (h : QChain.IsIntegral ((q : ℚ) • M)) :
+    QChain.IsIntegral (((r * q : ℕ) : ℚ) • M)
+
+lemma exists_nat_smul_integral_three (M X Y : QChain V) :
+    ∃ q : ℕ, 0 < q ∧
+      QChain.IsIntegral ((q : ℚ) • M) ∧
+      QChain.IsIntegral ((q : ℚ) • X) ∧
+      QChain.IsIntegral ((q : ℚ) • Y)
+```
+
+Use product clearing, not lcm-generalization first. If `qM qX qY` clear separately, take `q := qM * qX * qY`; use the first lemma with associativity/commutativity.
+
+```lean
+@[simp] lemma intToQChain_zero : intToQChain (0 : Chain V) = 0
+@[simp] lemma support_intToQChain (K : Chain V) :
+    (intToQChain K).support = K.support
+
+lemma intToQChain_injective :
+    Function.Injective (intToQChain : Chain V → QChain V)
+
+@[simp] lemma intToQChain_filter (K : Chain V)
+    (p : Finset V → Prop) [DecidablePred p] :
+    intToQChain (K.filter p) = (intToQChain K).filter p
+
+@[simp] lemma QChain.filter_smul (c : ℚ) (M : QChain V)
+    (p : Finset V → Prop) [DecidablePred p] :
+    (c • M).filter p = c • (M.filter p)
+```
+
+Recovery lemma, useful but optional if you divide boundary equations directly:
+
+```lean
+lemma inv_nat_smul_intToQChain_toInt_filter_eq_filter {q : ℕ} (hq : 0 < q)
+    {M : QChain V} (hM : QChain.IsIntegral ((q : ℚ) • M))
+    (p : Finset V → Prop) [DecidablePred p] :
+    ((q : ℚ)⁻¹) •
+      intToQChain ((QChain.toInt ((q : ℚ) • M) hM).filter p)
+      = M.filter p
+```
+
+Rational norm utilities for output tautness:
+
+```lean
+lemma Qnrm_add_le (M N : QChain V) :
+    Qnrm (M + N) ≤ Qnrm M + Qnrm N
+
+lemma Qnrm_filter_add_Qnrm_filter_neg (p : Finset V → Prop)
+    [DecidablePred p] (M : QChain V) :
+    Qnrm (M.filter p) + Qnrm (M.filter fun s => ¬ p s) = Qnrm M
+```
+
+Optional scaling lemma, true but not needed for splitting:
+
+```lean
+lemma IsQTaut.smul {M : QChain V} {c : ℚ} (hc : c ≠ 0)
+    (hM : IsQTaut M) : IsQTaut (c • M)
+```
+
+Main assembly order:
+
+1. Add cast/filter/support/injectivity and rational norm lemmas.
+2. Add common-clearing lemmas.
+3. In `IsQTaut.splits_full`, obtain common `q`.
+4. Define:
+   `K := QChain.toInt ((q : ℚ) • M) hMint`,
+   `KX := QChain.toInt ((q : ℚ) • X) hXint`,
+   `KY := QChain.toInt ((q : ℚ) • Y) hYint`.
+5. Prove `bdry K = KX + KY`, `bdry KX = 0`, `bdry KY = 0` by `intToQChain_injective`, `Qbdry_intToQChain`, `map_smul`, `hM1`, `hXc`, `hYc`.
+6. Transfer support hypotheses using:
+   `KX.support = X.support` and `KY.support = Y.support`, from `support_intToQChain`, `intToQChain_toInt`, and `support_nat_smul_of_pos hq`.
+7. Apply `IsTaut.splits_full hn hC` to `K KX KY`.
+8. Cast the two integer boundary equalities, rewrite filters/casts/scales, get
+   `(q : ℚ) • Qbdry (M.filter p) = (q : ℚ) • X`, then cancel by multiplying with `(q : ℚ)⁻¹`.
+9. Final sum is `Finsupp.filter_pos_add_filter_neg M p`.
+10. Prove both output `IsQTaut` facts from `hMt`, the two boundary equations, the final sum, `Qnrm_add_le`, and `Qnrm_filter_add_Qnrm_filter_neg`.
+
+First bounded sub-target: implement and build only the cast/filter/support/injectivity plus `Qnrm_add_le` / `Qnrm_filter_add_Qnrm_filter_neg`. That gives the algebra needed before touching the theorem.
+
+Blockers: only the proposed reverse transfer lemma. Step 7 rational `Qvol_add_of_almost_disjoint_full` is independent and not needed for this splitting endpoint.
+tokens used
+39,933
+WARN
+
+Verdict: do not build `isQTaut_intToQChain_of_isTaut` as stated. It is stronger than integer tautness gives: an integer-optimal chain need not be rational-optimal unless you prove an extra “all positive multiples stay integer-taut” or integrality-gap lemma. It is also unnecessary for `IsQTaut.splits_full`.
+
+Exact patch shape: clear `M X Y` with one `q`, run `IsQTaut.toInt_nat_smul` only on `M`, apply `IsTaut.splits_full`, cast/divide back for the two boundary equalities and sum, then prove the two output `IsQTaut` facts directly from global rational tautness of `M`.
+
+Files to edit: `lean/Taut/Corollary1.lean` only.
+
+Local lemmas needed:
+
+```lean
+lemma QChain.IsIntegral.nat_mul_smul {M : QChain V} {q r : ℕ}
+    (h : QChain.IsIntegral ((q : ℚ) • M)) :
+    QChain.IsIntegral (((r * q : ℕ) : ℚ) • M)
+
+lemma exists_nat_smul_integral_three (M X Y : QChain V) :
+    ∃ q : ℕ, 0 < q ∧
+      QChain.IsIntegral ((q : ℚ) • M) ∧
+      QChain.IsIntegral ((q : ℚ) • X) ∧
+      QChain.IsIntegral ((q : ℚ) • Y)
+```
+
+Use product clearing, not lcm-generalization first. If `qM qX qY` clear separately, take `q := qM * qX * qY`; use the first lemma with associativity/commutativity.
+
+```lean
+@[simp] lemma intToQChain_zero : intToQChain (0 : Chain V) = 0
+@[simp] lemma support_intToQChain (K : Chain V) :
+    (intToQChain K).support = K.support
+
+lemma intToQChain_injective :
+    Function.Injective (intToQChain : Chain V → QChain V)
+
+@[simp] lemma intToQChain_filter (K : Chain V)
+    (p : Finset V → Prop) [DecidablePred p] :
+    intToQChain (K.filter p) = (intToQChain K).filter p
+
+@[simp] lemma QChain.filter_smul (c : ℚ) (M : QChain V)
+    (p : Finset V → Prop) [DecidablePred p] :
+    (c • M).filter p = c • (M.filter p)
+```
+
+Recovery lemma, useful but optional if you divide boundary equations directly:
+
+```lean
+lemma inv_nat_smul_intToQChain_toInt_filter_eq_filter {q : ℕ} (hq : 0 < q)
+    {M : QChain V} (hM : QChain.IsIntegral ((q : ℚ) • M))
+    (p : Finset V → Prop) [DecidablePred p] :
+    ((q : ℚ)⁻¹) •
+      intToQChain ((QChain.toInt ((q : ℚ) • M) hM).filter p)
+      = M.filter p
+```
+
+Rational norm utilities for output tautness:
+
+```lean
+lemma Qnrm_add_le (M N : QChain V) :
+    Qnrm (M + N) ≤ Qnrm M + Qnrm N
+
+lemma Qnrm_filter_add_Qnrm_filter_neg (p : Finset V → Prop)
+    [DecidablePred p] (M : QChain V) :
+    Qnrm (M.filter p) + Qnrm (M.filter fun s => ¬ p s) = Qnrm M
+```
+
+Optional scaling lemma, true but not needed for splitting:
+
+```lean
+lemma IsQTaut.smul {M : QChain V} {c : ℚ} (hc : c ≠ 0)
+    (hM : IsQTaut M) : IsQTaut (c • M)
+```
+
+Main assembly order:
+
+1. Add cast/filter/support/injectivity and rational norm lemmas.
+2. Add common-clearing lemmas.
+3. In `IsQTaut.splits_full`, obtain common `q`.
+4. Define:
+   `K := QChain.toInt ((q : ℚ) • M) hMint`,
+   `KX := QChain.toInt ((q : ℚ) • X) hXint`,
+   `KY := QChain.toInt ((q : ℚ) • Y) hYint`.
+5. Prove `bdry K = KX + KY`, `bdry KX = 0`, `bdry KY = 0` by `intToQChain_injective`, `Qbdry_intToQChain`, `map_smul`, `hM1`, `hXc`, `hYc`.
+6. Transfer support hypotheses using:
+   `KX.support = X.support` and `KY.support = Y.support`, from `support_intToQChain`, `intToQChain_toInt`, and `support_nat_smul_of_pos hq`.
+7. Apply `IsTaut.splits_full hn hC` to `K KX KY`.
+8. Cast the two integer boundary equalities, rewrite filters/casts/scales, get
+   `(q : ℚ) • Qbdry (M.filter p) = (q : ℚ) • X`, then cancel by multiplying with `(q : ℚ)⁻¹`.
+9. Final sum is `Finsupp.filter_pos_add_filter_neg M p`.
+10. Prove both output `IsQTaut` facts from `hMt`, the two boundary equations, the final sum, `Qnrm_add_le`, and `Qnrm_filter_add_Qnrm_filter_neg`.
+
+First bounded sub-target: implement and build only the cast/filter/support/injectivity plus `Qnrm_add_le` / `Qnrm_filter_add_Qnrm_filter_neg`. That gives the algebra needed before touching the theorem.
+
+Blockers: only the proposed reverse transfer lemma. Step 7 rational `Qvol_add_of_almost_disjoint_full` is independent and not needed for this splitting endpoint.

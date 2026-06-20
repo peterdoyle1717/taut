@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1304-g1-corollary1-split-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1304-g1-corollary1-split-summary.txt
+
+=== raw size ===
+    1973  152973 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1304-g1-corollary1-split-raw.txt
+
+=== extracted markers ===
+1790:WARN
+1792:Verdict: do not build `isQTaut_intToQChain_of_isTaut` as stated. It is stronger than integer tautness gives: an integer-optimal chain need not be rational-optimal unless you prove an extra “all positive multiples stay integer-taut” or integrality-gap lemma. It is also unnecessary for `IsQTaut.splits_full`.
+1880:Blockers: only the proposed reverse transfer lemma. Step 7 rational `Qvol_add_of_almost_disjoint_full` is independent and not needed for this splitting endpoint.
+1883:WARN
+1885:Verdict: do not build `isQTaut_intToQChain_of_isTaut` as stated. It is stronger than integer tautness gives: an integer-optimal chain need not be rational-optimal unless you prove an extra “all positive multiples stay integer-taut” or integrality-gap lemma. It is also unnecessary for `IsQTaut.splits_full`.
+1973:Blockers: only the proposed reverse transfer lemma. Step 7 rational `Qvol_add_of_almost_disjoint_full` is independent and not needed for this splitting endpoint.
+
+=== final tail ===
+
+```lean
+lemma IsQTaut.smul {M : QChain V} {c : ℚ} (hc : c ≠ 0)
+    (hM : IsQTaut M) : IsQTaut (c • M)
+```
+
+Main assembly order:
+
+1. Add cast/filter/support/injectivity and rational norm lemmas.
+2. Add common-clearing lemmas.
+3. In `IsQTaut.splits_full`, obtain common `q`.
+4. Define:
+   `K := QChain.toInt ((q : ℚ) • M) hMint`,
+   `KX := QChain.toInt ((q : ℚ) • X) hXint`,
+   `KY := QChain.toInt ((q : ℚ) • Y) hYint`.
+5. Prove `bdry K = KX + KY`, `bdry KX = 0`, `bdry KY = 0` by `intToQChain_injective`, `Qbdry_intToQChain`, `map_smul`, `hM1`, `hXc`, `hYc`.
+6. Transfer support hypotheses using:
+   `KX.support = X.support` and `KY.support = Y.support`, from `support_intToQChain`, `intToQChain_toInt`, and `support_nat_smul_of_pos hq`.
+7. Apply `IsTaut.splits_full hn hC` to `K KX KY`.
+8. Cast the two integer boundary equalities, rewrite filters/casts/scales, get
+   `(q : ℚ) • Qbdry (M.filter p) = (q : ℚ) • X`, then cancel by multiplying with `(q : ℚ)⁻¹`.
+9. Final sum is `Finsupp.filter_pos_add_filter_neg M p`.
+10. Prove both output `IsQTaut` facts from `hMt`, the two boundary equations, the final sum, `Qnrm_add_le`, and `Qnrm_filter_add_Qnrm_filter_neg`.
+
+First bounded sub-target: implement and build only the cast/filter/support/injectivity plus `Qnrm_add_le` / `Qnrm_filter_add_Qnrm_filter_neg`. That gives the algebra needed before touching the theorem.
+
+Blockers: only the proposed reverse transfer lemma. Step 7 rational `Qvol_add_of_almost_disjoint_full` is independent and not needed for this splitting endpoint.
+tokens used
+39,933
+WARN
+
+Verdict: do not build `isQTaut_intToQChain_of_isTaut` as stated. It is stronger than integer tautness gives: an integer-optimal chain need not be rational-optimal unless you prove an extra “all positive multiples stay integer-taut” or integrality-gap lemma. It is also unnecessary for `IsQTaut.splits_full`.
+
+Exact patch shape: clear `M X Y` with one `q`, run `IsQTaut.toInt_nat_smul` only on `M`, apply `IsTaut.splits_full`, cast/divide back for the two boundary equalities and sum, then prove the two output `IsQTaut` facts directly from global rational tautness of `M`.
+
+Files to edit: `lean/Taut/Corollary1.lean` only.
+
+Local lemmas needed:
+
+```lean
+lemma QChain.IsIntegral.nat_mul_smul {M : QChain V} {q r : ℕ}
+    (h : QChain.IsIntegral ((q : ℚ) • M)) :
+    QChain.IsIntegral (((r * q : ℕ) : ℚ) • M)
+
+lemma exists_nat_smul_integral_three (M X Y : QChain V) :
+    ∃ q : ℕ, 0 < q ∧
+      QChain.IsIntegral ((q : ℚ) • M) ∧
+      QChain.IsIntegral ((q : ℚ) • X) ∧
+      QChain.IsIntegral ((q : ℚ) • Y)
+```
+
+Use product clearing, not lcm-generalization first. If `qM qX qY` clear separately, take `q := qM * qX * qY`; use the first lemma with associativity/commutativity.
+
+```lean
+@[simp] lemma intToQChain_zero : intToQChain (0 : Chain V) = 0
+@[simp] lemma support_intToQChain (K : Chain V) :
+    (intToQChain K).support = K.support
+
+lemma intToQChain_injective :
+    Function.Injective (intToQChain : Chain V → QChain V)
+
+@[simp] lemma intToQChain_filter (K : Chain V)
+    (p : Finset V → Prop) [DecidablePred p] :
+    intToQChain (K.filter p) = (intToQChain K).filter p
+
+@[simp] lemma QChain.filter_smul (c : ℚ) (M : QChain V)
+    (p : Finset V → Prop) [DecidablePred p] :
+    (c • M).filter p = c • (M.filter p)
+```
+
+Recovery lemma, useful but optional if you divide boundary equations directly:
+
+```lean
+lemma inv_nat_smul_intToQChain_toInt_filter_eq_filter {q : ℕ} (hq : 0 < q)
+    {M : QChain V} (hM : QChain.IsIntegral ((q : ℚ) • M))
+    (p : Finset V → Prop) [DecidablePred p] :
+    ((q : ℚ)⁻¹) •
+      intToQChain ((QChain.toInt ((q : ℚ) • M) hM).filter p)
+      = M.filter p
+```
+
+Rational norm utilities for output tautness:
+
+```lean
+lemma Qnrm_add_le (M N : QChain V) :
+    Qnrm (M + N) ≤ Qnrm M + Qnrm N
+
+lemma Qnrm_filter_add_Qnrm_filter_neg (p : Finset V → Prop)
+    [DecidablePred p] (M : QChain V) :
+    Qnrm (M.filter p) + Qnrm (M.filter fun s => ¬ p s) = Qnrm M
+```
+
+Optional scaling lemma, true but not needed for splitting:
+
+```lean
+lemma IsQTaut.smul {M : QChain V} {c : ℚ} (hc : c ≠ 0)
+    (hM : IsQTaut M) : IsQTaut (c • M)
+```
+
+Main assembly order:
+
+1. Add cast/filter/support/injectivity and rational norm lemmas.
+2. Add common-clearing lemmas.
+3. In `IsQTaut.splits_full`, obtain common `q`.
+4. Define:
+   `K := QChain.toInt ((q : ℚ) • M) hMint`,
+   `KX := QChain.toInt ((q : ℚ) • X) hXint`,
+   `KY := QChain.toInt ((q : ℚ) • Y) hYint`.
+5. Prove `bdry K = KX + KY`, `bdry KX = 0`, `bdry KY = 0` by `intToQChain_injective`, `Qbdry_intToQChain`, `map_smul`, `hM1`, `hXc`, `hYc`.
+6. Transfer support hypotheses using:
+   `KX.support = X.support` and `KY.support = Y.support`, from `support_intToQChain`, `intToQChain_toInt`, and `support_nat_smul_of_pos hq`.
+7. Apply `IsTaut.splits_full hn hC` to `K KX KY`.
+8. Cast the two integer boundary equalities, rewrite filters/casts/scales, get
+   `(q : ℚ) • Qbdry (M.filter p) = (q : ℚ) • X`, then cancel by multiplying with `(q : ℚ)⁻¹`.
+9. Final sum is `Finsupp.filter_pos_add_filter_neg M p`.
+10. Prove both output `IsQTaut` facts from `hMt`, the two boundary equations, the final sum, `Qnrm_add_le`, and `Qnrm_filter_add_Qnrm_filter_neg`.
+
+First bounded sub-target: implement and build only the cast/filter/support/injectivity plus `Qnrm_add_le` / `Qnrm_filter_add_Qnrm_filter_neg`. That gives the algebra needed before touching the theorem.
+
+Blockers: only the proposed reverse transfer lemma. Step 7 rational `Qvol_add_of_almost_disjoint_full` is independent and not needed for this splitting endpoint.
