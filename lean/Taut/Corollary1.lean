@@ -376,4 +376,132 @@ lemma Qnrm_filter_add_Qnrm_filter_neg (p : Finset V → Prop) [DecidablePred p]
   rw [hp, hnp, Qnrm,
     Finset.sum_filter_add_sum_filter_not M.support p (fun s => |(M s : ℝ)|)]
 
+/-! ## Common clearing of denominators across several chains -/
+
+omit [LinearOrder V] in
+/-- If `(q : ℚ) • M` is integral, then so is `((r * q : ℕ) : ℚ) • M` for any `r`. -/
+lemma QChain.IsIntegral.nat_mul_smul {M : QChain V} {q : ℕ} (r : ℕ)
+    (h : QChain.IsIntegral ((q : ℚ) • M)) :
+    QChain.IsIntegral (((r * q : ℕ) : ℚ) • M) := by
+  intro s
+  obtain ⟨z, hz⟩ := h s
+  refine ⟨r * z, ?_⟩
+  have hrw : (((r * q : ℕ) : ℚ) • M) s = (r : ℚ) * (((q : ℚ) • M) s) := by
+    simp only [Finsupp.smul_apply, smul_eq_mul]
+    push_cast
+    ring
+  rw [hrw, hz]
+  push_cast
+  ring
+
+/-- **Common clearing of denominators.** Three rational chains become
+simultaneously integral after scaling by a single positive natural number. -/
+lemma exists_nat_smul_integral_three (M X Y : QChain V) :
+    ∃ q : ℕ, 0 < q ∧ QChain.IsIntegral ((q : ℚ) • M) ∧
+      QChain.IsIntegral ((q : ℚ) • X) ∧ QChain.IsIntegral ((q : ℚ) • Y) := by
+  obtain ⟨qM, hqM, hM⟩ := exists_nat_smul_integral M
+  obtain ⟨qX, hqX, hX⟩ := exists_nat_smul_integral X
+  obtain ⟨qY, hqY, hY⟩ := exists_nat_smul_integral Y
+  refine ⟨qM * qX * qY, by positivity, ?_, ?_, ?_⟩
+  · have := hM.nat_mul_smul (qX * qY)
+    rwa [show qX * qY * qM = qM * qX * qY by ring] at this
+  · have := hX.nat_mul_smul (qM * qY)
+    rwa [show qM * qY * qX = qM * qX * qY by ring] at this
+  · have := hY.nat_mul_smul (qM * qX)
+    rwa [show qM * qX * qY = qM * qX * qY from rfl] at this
+
+/-! ## The rational splitting endpoint -/
+
+/-- **Rational splitting (Corollary 1, step 6 endpoint).** A taut rational
+filling `M` of a sum `X + Y` (with `X` supported on `A`, `Y` on `B`, both cycles,
+and a small intersection) splits along the predicate `· ⊆ A` into a taut filling
+of `X` and a taut filling of `Y`.  Proved by clearing denominators to the
+committed integer endpoint `IsTaut.splits_full` and dividing back. -/
+theorem IsQTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 2 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : QChain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : Qbdry X = 0) (hYc : Qbdry Y = 0)
+    {M : QChain V} (hMt : IsQTaut M) (hM1 : Qbdry M = X + Y) :
+    Qbdry (M.filter fun t => t ⊆ A) = X ∧ Qbdry (M.filter fun t => ¬ t ⊆ A) = Y ∧
+    IsQTaut (M.filter fun t => t ⊆ A) ∧ IsQTaut (M.filter fun t => ¬ t ⊆ A) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+  classical
+  -- Step 1: clear denominators of M, X, Y simultaneously.
+  obtain ⟨q, hq, hMint, hXint, hYint⟩ := exists_nat_smul_integral_three M X Y
+  have hqQ : (q : ℚ) ≠ 0 := by exact_mod_cast hq.ne'
+  -- Step 2: the underlying integer chains.
+  set K : Chain V := QChain.toInt ((q : ℚ) • M) hMint with hKdef
+  set KX : Chain V := QChain.toInt ((q : ℚ) • X) hXint with hKXdef
+  set KY : Chain V := QChain.toInt ((q : ℚ) • Y) hYint with hKYdef
+  have hKM : intToQChain K = (q : ℚ) • M := intToQChain_toInt _ hMint
+  have hKX : intToQChain KX = (q : ℚ) • X := intToQChain_toInt _ hXint
+  have hKY : intToQChain KY = (q : ℚ) • Y := intToQChain_toInt _ hYint
+  -- Step 4: KX, KY are integer cycles.
+  have hKXc : bdry KX = 0 := by
+    apply intToQChain_injective
+    rw [intToQChain_zero, ← Qbdry_intToQChain, hKX, map_smul, hXc, smul_zero]
+  have hKYc : bdry KY = 0 := by
+    apply intToQChain_injective
+    rw [intToQChain_zero, ← Qbdry_intToQChain, hKY, map_smul, hYc, smul_zero]
+  -- Step 5: bdry K = KX + KY.
+  have hKbdry : bdry K = KX + KY := by
+    apply intToQChain_injective
+    rw [← Qbdry_intToQChain, hKM, map_smul, hM1, smul_add, intToQChain_add, hKX,
+      hKY]
+  -- Step 6: support transfer for the side hypotheses.
+  have hKXsupp : KX.support = X.support := by
+    rw [← support_intToQChain KX, hKX, support_nat_smul_of_pos hq]
+  have hKYsupp : KY.support = Y.support := by
+    rw [← support_intToQChain KY, hKY, support_nat_smul_of_pos hq]
+  have hX' : ∀ s ∈ KX.support, s ⊆ A ∧ s.card = n + 1 := by
+    rw [hKXsupp]; exact hX
+  have hY' : ∀ s ∈ KY.support, s ⊆ B ∧ s.card = n + 1 := by
+    rw [hKYsupp]; exact hY
+  -- Step 7: K is a taut integer filling.
+  have hKtaut : IsTaut K := IsQTaut.toInt_nat_smul hMt hq hMint
+  -- Step 8: invoke the integer endpoint.
+  obtain ⟨hbA, hbB, _, _, _⟩ :=
+    IsTaut.splits_full hn hC hX' hY' hKXc hKYc hKtaut hKbdry
+  -- Step 9: boundary equalities, divided back.
+  have hQbA : Qbdry (M.filter fun t => t ⊆ A) = X := by
+    apply smul_right_injective (QChain V) hqQ
+    show (q : ℚ) • Qbdry (M.filter fun t => t ⊆ A) = (q : ℚ) • X
+    rw [← map_smul, ← QChain.filter_smul, ← hKM, ← intToQChain_filter,
+      Qbdry_intToQChain, hbA, hKX]
+  have hQbB : Qbdry (M.filter fun t => ¬ t ⊆ A) = Y := by
+    apply smul_right_injective (QChain V) hqQ
+    show (q : ℚ) • Qbdry (M.filter fun t => ¬ t ⊆ A) = (q : ℚ) • Y
+    rw [← map_smul, ← QChain.filter_smul, ← hKM, ← intToQChain_filter,
+      Qbdry_intToQChain, hbB, hKY]
+  -- Step 10: the filter partition recovers M.
+  have hMsum : M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M :=
+    Finsupp.filter_pos_add_filter_neg M _
+  -- Step 11: tautness of each piece, from global tautness of M (no reverse
+  -- transfer).
+  set MA : QChain V := M.filter (fun t => t ⊆ A) with hMAdef
+  set MB : QChain V := M.filter (fun t => ¬ t ⊆ A) with hMBdef
+  have hnorm : Qnrm MA + Qnrm MB = Qnrm M :=
+    Qnrm_filter_add_Qnrm_filter_neg _ M
+  have hMtaut_A : IsQTaut MA := by
+    intro N hN
+    have hbdryN : Qbdry (N + MB) = Qbdry M := by
+      rw [map_add, hN, hMAdef, hMBdef, hQbA, hQbB, hM1]
+    have hle : Qnrm M ≤ Qnrm (N + MB) := hMt (N + MB) hbdryN
+    have htri : Qnrm (N + MB) ≤ Qnrm N + Qnrm MB := Qnrm_add_le N MB
+    have : Qnrm M ≤ Qnrm N + Qnrm MB := le_trans hle htri
+    rw [← hnorm] at this
+    exact le_of_add_le_add_right this
+  have hMtaut_B : IsQTaut MB := by
+    intro N hN
+    have hbdryN : Qbdry (MA + N) = Qbdry M := by
+      rw [map_add, hN, hMAdef, hMBdef, hQbA, hQbB, hM1]
+    have hle : Qnrm M ≤ Qnrm (MA + N) := hMt (MA + N) hbdryN
+    have htri : Qnrm (MA + N) ≤ Qnrm MA + Qnrm N := Qnrm_add_le MA N
+    have : Qnrm M ≤ Qnrm MA + Qnrm N := le_trans hle htri
+    rw [← hnorm] at this
+    exact le_of_add_le_add_left this
+  exact ⟨hQbA, hQbB, hMtaut_A, hMtaut_B, hMsum⟩
+
 end Taut
