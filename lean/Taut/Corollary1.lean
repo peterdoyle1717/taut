@@ -109,4 +109,99 @@ lemma exists_nat_smul_integral (M : QChain V) :
       rw [Finsupp.notMem_support_iff.mp hs, mul_zero]
       exact ⟨0, by push_cast; ring⟩
 
+/-! ## The ℤ ↔ ℚ bridge -/
+
+/-- Cast an integer chain to a rational chain (coefficientwise `Int.cast`). -/
+noncomputable def intToQChain (M : Chain V) : QChain V :=
+  Finsupp.mapRange (fun z : ℤ => (z : ℚ)) (by simp) M
+
+omit [LinearOrder V] in
+@[simp] lemma intToQChain_apply (M : Chain V) (s : Finset V) :
+    intToQChain M s = (M s : ℚ) := by
+  simp only [intToQChain, Finsupp.mapRange_apply]
+
+omit [LinearOrder V] in
+lemma intToQChain_add (M N : Chain V) :
+    intToQChain (M + N) = intToQChain M + intToQChain N := by
+  ext s; simp
+
+omit [LinearOrder V] in
+lemma intToQChain_smul (z : ℤ) (M : Chain V) :
+    intToQChain (z • M) = (z : ℚ) • intToQChain M := by
+  ext s
+  simp only [intToQChain_apply, Finsupp.smul_apply, smul_eq_mul, Int.cast_mul]
+
+@[simp] lemma intToQChain_single (s : Finset V) (c : ℤ) :
+    intToQChain (Finsupp.single s c) = Finsupp.single s (c : ℚ) := by
+  ext t
+  by_cases h : t = s
+  · subst h; simp
+  · simp [h]
+
+/-- The rational boundary of a cast generator equals the cast of the integer
+boundary generator. -/
+lemma QbdryGen_eq_intToQChain_bdryGen (s : Finset V) :
+    QbdryGen s = intToQChain (bdryGen s) := by
+  ext t
+  rw [QbdryGen, bdryGen, intToQChain_apply, Finsupp.finset_sum_apply,
+    Finsupp.finset_sum_apply, Int.cast_sum]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [Finsupp.smul_apply, Finsupp.smul_apply, smul_eq_mul, smul_eq_mul,
+    Int.cast_mul]
+  congr 1
+  by_cases h : t = s.erase x
+  · subst h; simp
+  · simp [h]
+
+/-- The boundary operator commutes with the integer→rational cast. -/
+lemma Qbdry_intToQChain (M : Chain V) :
+    Qbdry (intToQChain M) = intToQChain (bdry M) := by
+  induction M using Finsupp.induction with
+  | zero => simp [intToQChain]
+  | single_add s c M hs hc ih =>
+      rw [map_add, intToQChain_add, map_add, ih, intToQChain_add,
+        intToQChain_single, Qbdry_single, bdry_single, intToQChain_smul,
+        QbdryGen_eq_intToQChain_bdryGen]
+
+omit [LinearOrder V] in
+/-- The rational L¹ norm of a cast chain equals the integer L¹ norm. -/
+lemma Qnrm_intToQChain (M : Chain V) : Qnrm (intToQChain M) = (nrm M : ℝ) := by
+  have hsupp : (intToQChain M).support = M.support := by
+    rw [intToQChain]
+    exact Finsupp.support_mapRange_of_injective (by simp) M Int.cast_injective
+  rw [Qnrm, hsupp, nrm, Nat.cast_sum]
+  refine Finset.sum_congr rfl fun s _ => ?_
+  rw [intToQChain_apply, Rat.cast_intCast, Nat.cast_natAbs, Int.cast_abs]
+
+omit [LinearOrder V] in
+/-- The support of a positive natural scaling of a rational chain is unchanged. -/
+lemma support_nat_smul_of_pos {q : ℕ} (hq : 0 < q) (M : QChain V) :
+    ((q : ℚ) • M).support = M.support := by
+  have hqne : (q : ℚ) ≠ 0 := by exact_mod_cast hq.ne'
+  ext s
+  simp only [Finsupp.mem_support_iff, Finsupp.smul_apply, smul_eq_mul, ne_eq,
+    mul_eq_zero, hqne, false_or]
+
+/-- Recover the integer chain underlying an integral rational chain (the
+coefficient `M s` is an integer, so `⌊M s⌋` recovers it). -/
+noncomputable def QChain.toInt (M : QChain V) (_hM : QChain.IsIntegral M) :
+    Chain V :=
+  Finsupp.mapRange (fun r : ℚ => ⌊r⌋) Int.floor_zero M
+
+omit [LinearOrder V] in
+@[simp] lemma intToQChain_toInt (M : QChain V) (hM : QChain.IsIntegral M) :
+    intToQChain (QChain.toInt M hM) = M := by
+  ext s
+  rw [intToQChain_apply, QChain.toInt, Finsupp.mapRange_apply]
+  obtain ⟨z, hz⟩ := hM s
+  rw [hz, Int.floor_intCast]
+
+/-- **The integer bridge.** If `M` minimises `nrm` among all fillings of its
+own boundary (order-optimal), then `M` is taut (`nrm M = Zvol (bdry M)`). -/
+lemma IsTaut.of_forall_nrm_le {M : Chain V}
+    (h : ∀ N : Chain V, bdry N = bdry M → nrm M ≤ nrm N) : IsTaut M := by
+  obtain ⟨W, hW, hWn⟩ := exists_optimal_fill M
+  have hle : nrm M ≤ Zvol (bdry M) := hWn ▸ h W hW
+  exact le_antisymm hle (Zvol_le rfl)
+
 end Taut
