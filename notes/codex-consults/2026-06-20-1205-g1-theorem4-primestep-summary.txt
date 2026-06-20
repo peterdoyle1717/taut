@@ -1,0 +1,131 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1205-g1-theorem4-primestep-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1205-g1-theorem4-primestep-summary.txt
+
+=== raw size ===
+    1264   74452 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1205-g1-theorem4-primestep-raw.txt
+
+=== extracted markers ===
+1045:PASS
+1156:PASS
+
+=== final tail ===
+Proof:
+- show `f₃ ∈ σ₁` using `flipBoundary`, `hexp`, `hf₃A`.
+- use `hUA.2 f₃ hf₃σ₁`, then `exists_tet_of_boundary_face_nonzero`.
+- unpack `M₁.support` via `Finsupp.support_filter` to get `t ∈ (removeTet M e).support` and `t ⊆ A`.
+- use `hAB` and `A ∩ B = f₃ ∩ f₄ ⊆ f₃ ⊆ t`.
+- repeat with `f₄`, `hUB`, `hf₄B` for side B.
+
+**Blockers**
+None apparent. Do not use `prime_isPM`; it is the wrong template here. Use `prime_edgeLinkConnected_case2` / `exists_clean_shelling_prime_case2` only for the side split and side IH pattern.
+tokens used
+44,138
+PASS
+
+**Verdict**
+Your order is correct: prove `¬ HasEmptyK3 M.support` first, then prove `¬ HasEmptyK4 M.support` using that established `hNoK3`.
+
+**Files To Edit**
+`lean/Taut/Theorem4.lean` only.
+
+**Recommended Patch Shape**
+Add one helper before `prime_no_emptyK3K4`, then implement the lemma in two internal subproofs:
+
+1. `have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU`
+2. derive `hPure` from `aleph_base_taut_support_card4_subset_verts`.
+3. `have hNoK3 : ¬ HasEmptyK3 M.support := by ...`
+4. `have hNoK4 : ¬ HasEmptyK4 M.support := by ...`
+5. return `⟨hNoK3, hNoK4⟩`.
+
+For K3:
+- `intro h3`
+- destruct `h3` as `⟨s, hs3, hsedges, hno⟩`
+- call `exists_good_flip_emptyK3 hσ hUb hS hT hPure hNo3 hs3 hsedges`
+- this gives `e g₃ g₄ he hsh hg havoid`
+- separately call `exposedFaces_eq_pair_of_eligible he` to get exposed `f₃ f₄ hf₃₄ hexp`
+- case split on `FlipEdgePresent σ f₃ f₄`.
+
+For K4:
+- `intro h4`
+- destruct `h4` as `⟨s, hs4, hsedges, hno⟩`
+- call `aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3`
+- use either eligible tet, e.g. `e`
+- get exposed pair with `exposedFaces_eq_pair_of_eligible he`
+- case split on `FlipEdgePresent σ f₃ f₄`.
+
+**Case A: No Flip**
+Use exactly these public lemmas:
+
+- `isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hNoFlip`
+- `unitOn_flipBoundary_of_eligible hUb hS he`
+- `isTaut_removeTet hT`
+- `simplicialChain_removeTet hS`
+- norm drop:
+  `have hnR : nrm (removeTet M e) < nrm M := by have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega`
+
+IH call shape:
+
+`IH ((σ \ sharedFaces M e) ∪ exposedFaces M e) (bdry (removeTet M e)) (removeTet M e) hnR hσe hUe (bdry_bdry _) rfl (isTaut_removeTet hT) (simplicialChain_removeTet hS)`
+
+Then:
+- K3 contradiction uses `hasEmptyK3_removeTet_of_avoids_sharedEdge he hsh hg hs3 hsedges havoid hno` against `(IH ...).1`.
+- K4 contradiction uses `hasEmptyK4_removeTet_of_eligible hNoK3 hs4 hsedges hno he` against `(IH ...).2`.
+
+**Case B: Flip Present**
+From `flipEdgePresent_side_sets` destruct:
+
+`A B hAB hcd2 hsphA hsphB hcover hsep hf₃A hf₃notB hf₄B hf₄notA hfaceCover`
+
+Here:
+- `hcover` comes directly from side sets.
+- `hsep` comes directly from side sets.
+- `hAB2 : (A ∩ B).card = 2` is `by rw [hAB]; exact hcd2`.
+- `hbridgeA/hbridgeB` need the helper below.
+
+From `flipEdgePresent_side_algebra` destruct:
+
+`hUA hUB hbA hbB hTA hTB hSA hSB hnA hnB ...`
+
+Set:
+- `M₁ := (removeTet M e).filter (fun t => t ⊆ A)`
+- `M₂ := (removeTet M e).filter (fun t => t ⊆ B)`
+- `σ₁ := (flipBoundary σ M e).filter (fun f => f ⊆ A)`
+- `σ₂ := (flipBoundary σ M e).filter (fun f => f ⊆ B)`
+
+Side IH calls:
+
+`IH σ₁ (bdry M₁) M₁ hnA hsphA hUA hbA rfl hTA hSA`
+
+`IH σ₂ (bdry M₂) M₂ hnB hsphB hUB hbB rfl hTB hSB`
+
+Persist first:
+- K3: `hR := hasEmptyK3_removeTet_of_avoids_sharedEdge ...`
+- K4: `hR := hasEmptyK4_removeTet_of_eligible hNoK3 ...`
+
+Localize:
+- K3: `hasEmptyK3_side_of_edge_split hcover hsep hAB2 hbridgeA hbridgeB hR`
+- K4: `hasEmptyK4_side_of_edge_split hcover hsep hAB2 hbridgeA hbridgeB hR`
+
+Contradict the matching side IH projection, converting supports with:
+`simpa [M₁, Finsupp.support_filter]` or `simpa [M₂, Finsupp.support_filter]`.
+
+**Local Lemma Needed**
+Add:
+
+`side_edge_bridges_of_flip_present`
+
+Statement shape:
+It should take `hexp`, `hAB`, `hf₃A`, `hf₄B`, and the two side `UnitOn`s from `flipEdgePresent_side_algebra`, and return:
+
+`(∃ t ∈ (removeTet M e).support, t ⊆ A ∧ A ∩ B ⊆ t) ∧
+ (∃ t ∈ (removeTet M e).support, t ⊆ B ∧ A ∩ B ⊆ t)`
+
+Proof:
+- show `f₃ ∈ σ₁` using `flipBoundary`, `hexp`, `hf₃A`.
+- use `hUA.2 f₃ hf₃σ₁`, then `exists_tet_of_boundary_face_nonzero`.
+- unpack `M₁.support` via `Finsupp.support_filter` to get `t ∈ (removeTet M e).support` and `t ⊆ A`.
+- use `hAB` and `A ∩ B = f₃ ∩ f₄ ⊆ f₃ ⊆ t`.
+- repeat with `f₄`, `hUB`, `hf₄B` for side B.
+
+**Blockers**
+None apparent. Do not use `prime_isPM`; it is the wrong template here. Use `prime_edgeLinkConnected_case2` / `exists_clean_shelling_prime_case2` only for the side split and side IH pattern.

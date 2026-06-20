@@ -1,0 +1,67 @@
+G1 FOCUSED SPEC — Theorem 4: exact prime_no_emptyK3K4 (the induction's prime branch).
+
+Reviewer: codex, ARCHITECT. Base + deg-3 step + all config-handling are DONE + CHECKED. The last piece
+before the final induction is `prime_no_emptyK3K4` (no-degree-3 branch). Your induction PLAN sketched it
+but `prime_isPM` is the WRONG template (it re-inserts e via removeTet_isPseudomanifold, NO FlipEdgePresent
+case-split), and `prime_edgeLinkConnected` is right-shaped but carries extra opp-edge machinery I don't
+need. Please give the EXACT minimal `prime_no_emptyK3K4` — both FlipEdgePresent cases, both K3 and K4,
+with the precise IH-recursion lemmas. I implement what you specify.
+
+=====================================================================
+TARGET
+=====================================================================
+lemma prime_no_emptyK3K4 (σ X M) (hσ hU hXc hMX hT hS) (hNo3 : NoDegree3Vertex σ)
+    (IH : ∀ σ' X' M', nrm M' < nrm M → (sphere-filling hyps) →
+      ¬ HasEmptyK3 M'.support ∧ ¬ HasEmptyK4 M'.support) :
+    ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support
+
+=====================================================================
+CONFIRMED recursion primitives (case a, removeTet M e as a taut filling of σe)
+=====================================================================
+- isSphere2_flipBoundary_of_eligible [FlipGeom] : σe := (σ\sharedFaces M e)∪exposedFaces M e is IsSphere2 (no-flip).
+- unitOn_flipBoundary_of_eligible [Theorem2] : UnitOn (bdry (removeTet M e)) σe.
+- isTaut_removeTet [FlipGeom]; simplicialChain_removeTet [Theorem2]; nrm_removeTet_add_one_of_simplicial
+  [Theorem2] (nrm (removeTet M e) + 1 = nrm M ⇒ nrm drop). [Please confirm these are the exact PUBLIC
+  lemmas + their signatures to feed IH for removeTet M e in the no-flip case.]
+
+=====================================================================
+CONFIRMED config-handling (CHECKED, Theorem4.lean)
+=====================================================================
+- K3 good flip: exists_good_flip_emptyK3 (… hNo3 hs3 hsedges) : ∃ e g₃ g₄, EligibleTet M e ∧ sharedFaces M e = {g₃,g₄} ∧ g₃≠g₄ ∧ (∀ x⊆s, card2 → x ≠ g₃∩g₄).
+- K3 persist (no-flip): hasEmptyK3_removeTet_of_avoids_sharedEdge (he hsh hg hs3 hedges havoid hno) : HasEmptyK3 (removeTet M e).support.
+- K4 persist (ANY eligible, no-flip): hasEmptyK4_removeTet_of_eligible (hNoK3 hs4 hsedges hno he) : HasEmptyK4 (removeTet M e).support.
+- Side localization (flip-present): hasEmptyK3/K4_side_of_edge_split (hcover hsep hAB2 hbridgeA hbridgeB h) : HasEmptyK3/4 (τ.filter(·⊆A)) ∨ HasEmptyK3/4 (τ.filter(·⊆B)).
+- Side data (flip-present): flipEdgePresent_side_sets [PrimeStep:1164] gives A,B with A∩B = f₃∩f₄, IsSphere2 of each (flipBoundary σ M e).filter(·⊆A/B), cover/sep of (removeTet M e).support tets, f₃⊆A etc.
+- flipEdgePresent_side_algebra [PrimeStep:1401] (side UnitOn/taut data). exposedFaces_eq_pair_of_eligible.
+
+=====================================================================
+QUESTIONS (give the exact proof)
+=====================================================================
+Q1. SHAPE. To get an eligible tet: K3 uses exists_good_flip_emptyK3 (a GOOD e, needs HasEmptyK3 in hand
+    to call it — so structure as: prove ¬HasEmptyK3 by `intro h3` (assume HasEmptyK3), get good e, derive
+    contradiction via IH). K4 uses ANY eligible (aleph_disjoint_eligible_pair gives one) + needs
+    ¬HasEmptyK3 (now proven) in hand. So the lemma proves ¬HasEmptyK3 FIRST (by_contra), THEN ¬HasEmptyK4
+    (by_contra, using the established ¬HasEmptyK3). Confirm this order/structure and give the skeleton.
+Q2. CASE A (no flip). For the good/any e with exposed pair {f₃,f₄} and ¬FlipEdgePresent σ f₃ f₄: removeTet
+    M e is a taut filling of σe. Give the EXACT IH call: `IH σe (bdry (removeTet M e)) (removeTet M e)
+    (nrm drop) (isSphere2_flipBoundary…) (unitOn_flipBoundary…) (bdry_bdry…) rfl (isTaut_removeTet…)
+    (simplicialChain_removeTet…)` — confirm arg order + the exact nrm-drop term from
+    nrm_removeTet_add_one_of_simplicial. Then K3: the persisted HasEmptyK3 (removeTet).support
+    (hasEmptyK3_removeTet_of_avoids_sharedEdge, havoid from exists_good_flip) contradicts (IH…).1; K4:
+    (hasEmptyK4_removeTet_of_eligible) contradicts (IH…).2.
+Q3. CASE B (flip present), the intricate one. FlipEdgePresent σ f₃ f₄. flipEdgePresent_side_sets gives
+    A,B. The persisted config (HasEmptyK3/4 (removeTet M e).support) localizes to a side via
+    hasEmptyK3/K4_side_of_edge_split — but that needs hcover, hsep, hAB2, hbridgeA, hbridgeB on
+    τ = (removeTet M e).support. Which of these come directly from flipEdgePresent_side_sets, and which
+    need a helper (my planned side_edge_bridges_of_flip_present)? Give the exact hbridgeA/hbridgeB
+    construction (via exists_tet_of_boundary_face_nonzero on f₃,f₄ since A∩B = f₃∩f₄ ⊆ f₃,f₄?). Then the
+    chosen side is a taut filling of a sub-sphere (IsSphere2 from side_sets; UnitOn/taut/nrm-drop from
+    flipEdgePresent_side_algebra) — give the EXACT IH call on the side (which lemma supplies side UnitOn,
+    side IsTaut, side SimplicialChain, and nrm(side) < nrm M). Contradict (IH side).1/.2.
+Q4. Confirm `side_edge_bridges_of_flip_present` exact statement (if needed) + where it plugs in.
+Q5. ORDER: implement which sub-piece first (side_edge_bridges? case-a? then case-b)? Then I assemble
+    no_emptyK3K4_of_taut = base/deg3/prime dispatch (copying taut_isPseudomanifold) and theorem4_flag.
+
+FILES: Theorem4.lean. Templates: prime_edgeLinkConnected (Theorem3Clean:2866, right-shaped),
+exists_clean_shelling_prime_case2 (Theorem3Clean:3326, the flip-present side recursion).
+BUILD: cd lean && lake build.

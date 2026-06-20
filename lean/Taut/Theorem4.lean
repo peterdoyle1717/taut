@@ -1481,4 +1481,122 @@ lemma deg3_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere
     exact ⟨fun h3 => hIH3 (hasEmptyK3_insert_star_to_remainder hstar_eq hvNotML ⟨tγ, htγ, hγtγ⟩ (hsupport ▸ h3)),
            fun h4 => hIH4 (hasEmptyK4_insert_star_to_remainder hstar_eq hvNotML ⟨tγ, htγ, hγtγ⟩ (hsupport ▸ h4))⟩
 
+/-! ## (7) The prime (no-degree-3) step of the nrm-induction
+
+When `σ` has no degree-3 vertex, the minimal-counterexample induction removes an eligible
+flip rather than a degree-3 star.  Both empty-`K₃` and empty-`K₄` are ruled out by the same
+two-case structure: if the flipped diagonal is already a flip edge of `σ` (`FlipEdgePresent`)
+the support splits across the seam `A ∩ B = f₃ ∩ f₄` into two smaller taut fillings (each on a
+single sphere), and an empty configuration localizes to one side (`hasEmptyK*_side_of_edge_split`)
+where the IH kills it; otherwise the remainder `removeTet M e` is itself a single smaller taut
+filling (sphere `flipBoundary σ M e`) and the IH applies directly. -/
+
+/-- **Both sides of an already-present flip carry a bridging tet of the seam edge.** With the
+flipped diagonal `A ∩ B = f₃ ∩ f₄` already a flip edge of `σ`, each exposed triangle is a
+boundary face of its side (`hUA`/`hUB`), so it is a facet of some tet of `removeTet M e` lying
+on that side; that tet contains the exposed triangle hence the seam edge `A ∩ B ⊆ f₃ ⊆ t`. -/
+lemma side_edge_bridges_of_flip_present {σ : Finset (Finset V)} {M : Chain V} {e f₃ f₄ A B : Finset V}
+    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄})
+    (hAB : A ∩ B = f₃ ∩ f₄) (hf₃A : f₃ ⊆ A) (hf₄B : f₄ ⊆ B)
+    (hUA : UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ A))) ((flipBoundary σ M e).filter (fun f => f ⊆ A)))
+    (hUB : UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ B))) ((flipBoundary σ M e).filter (fun f => f ⊆ B))) :
+    (∃ t ∈ (removeTet M e).support, t ⊆ A ∧ A ∩ B ⊆ t) ∧
+    (∃ t ∈ (removeTet M e).support, t ⊆ B ∧ A ∩ B ⊆ t) := by
+  classical
+  refine ⟨?_, ?_⟩
+  · -- side A, via f₃
+    have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ {f₄}
+    have hf₃flip : f₃ ∈ flipBoundary σ M e := Finset.subset_union_right hf₃exp
+    have hf₃σ₁ : f₃ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) :=
+      Finset.mem_filter.mpr ⟨hf₃flip, hf₃A⟩
+    have hbd : bdry ((removeTet M e).filter (fun t => t ⊆ A)) f₃ = 1 ∨
+        bdry ((removeTet M e).filter (fun t => t ⊆ A)) f₃ = -1 := hUA.2 f₃ hf₃σ₁
+    obtain ⟨t, ht, hf₃t⟩ := exists_tet_of_boundary_face_nonzero hbd
+    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+    refine ⟨t, ht.1, ht.2, ?_⟩
+    rw [hAB]
+    exact Finset.inter_subset_left.trans hf₃t
+  · -- side B, via f₄
+    have hf₄exp : f₄ ∈ exposedFaces M e := by
+      rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
+    have hf₄flip : f₄ ∈ flipBoundary σ M e := Finset.subset_union_right hf₄exp
+    have hf₄σ₁ : f₄ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ B) :=
+      Finset.mem_filter.mpr ⟨hf₄flip, hf₄B⟩
+    have hbd : bdry ((removeTet M e).filter (fun t => t ⊆ B)) f₄ = 1 ∨
+        bdry ((removeTet M e).filter (fun t => t ⊆ B)) f₄ = -1 := hUB.2 f₄ hf₄σ₁
+    obtain ⟨t, ht, hf₄t⟩ := exists_tet_of_boundary_face_nonzero hbd
+    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+    refine ⟨t, ht.1, ht.2, ?_⟩
+    rw [hAB]
+    exact Finset.inter_subset_right.trans hf₄t
+
+/-- **Prime (no-degree-3) step of the nrm-induction.** A minimal taut filling whose sphere has
+no degree-3 vertex has neither an empty `K₃` nor an empty `K₄`: pick an eligible flip and split
+on whether its diagonal is already a flip edge of `σ`.  Empty-`K₃` is handled first; empty-`K₄`
+reuses it via `hasEmptyK4_removeTet_of_eligible`. -/
+lemma prime_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+    (IH : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      ¬ HasEmptyK3 M'.support ∧ ¬ HasEmptyK4 M'.support) :
+    ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+    fun t ht => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
+  have hNoK3 : ¬ HasEmptyK3 M.support := by
+    rintro ⟨s, hs3, hsedges, hno⟩
+    obtain ⟨e, g₃, g₄, he, hsh, hg, havoid⟩ :=
+      exists_good_flip_emptyK3 hσ hUb hS hT hPure hNo3 hs3 hsedges
+    obtain ⟨f₃, f₄, hf₃₄, hexp⟩ := exposedFaces_eq_pair_of_eligible he
+    have hR : HasEmptyK3 (removeTet M e).support :=
+      hasEmptyK3_removeTet_of_avoids_sharedEdge he hsh hg hs3 hsedges havoid hno
+    by_cases hFlip : FlipEdgePresent σ f₃ f₄
+    · obtain ⟨A, B, hAB, hcd, hsphA, hsphB, hcover, hsep, hf₃A, hf₃nB, hf₄B, hf₄nA, hfc⟩ :=
+        flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+      obtain ⟨hUA, hUB, hXAc, hXBc, hTA, hTB, hSA, hSB, hnA, hnB, _, _, _, _⟩ :=
+        flipEdgePresent_side_algebra hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd hcover hsep
+      obtain ⟨hbridgeA, hbridgeB⟩ :=
+        side_edge_bridges_of_flip_present he hexp hAB hf₃A hf₄B hUA hUB
+      have hAB2 : (A ∩ B).card = 2 := by rw [hAB]; exact hcd
+      rcases hasEmptyK3_side_of_edge_split hcover hsep hAB2 hbridgeA hbridgeB hR with hA | hB
+      · exact (IH _ _ _ hnA hsphA hUA hXAc rfl hTA hSA).1
+          (by rw [Finsupp.support_filter]; exact hA)
+      · exact (IH _ _ _ hnB hsphB hUB hXBc rfl hTB hSB).1
+          (by rw [Finsupp.support_filter]; exact hB)
+    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
+      have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+      have hnR : nrm (removeTet M e) < nrm M := by
+        have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
+      exact (IH _ _ _ hnR hσe hUe (bdry_bdry _) rfl (isTaut_removeTet hT)
+        (simplicialChain_removeTet hS)).1 hR
+  have hNoK4 : ¬ HasEmptyK4 M.support := by
+    rintro ⟨s, hs4, hsedges, hno⟩
+    obtain ⟨e, u, hne, he, hu, hdisj⟩ :=
+      aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+    obtain ⟨f₃, f₄, hf₃₄, hexp⟩ := exposedFaces_eq_pair_of_eligible he
+    have hR : HasEmptyK4 (removeTet M e).support :=
+      hasEmptyK4_removeTet_of_eligible hNoK3 hs4 hsedges hno he
+    by_cases hFlip : FlipEdgePresent σ f₃ f₄
+    · obtain ⟨A, B, hAB, hcd, hsphA, hsphB, hcover, hsep, hf₃A, hf₃nB, hf₄B, hf₄nA, hfc⟩ :=
+        flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+      obtain ⟨hUA, hUB, hXAc, hXBc, hTA, hTB, hSA, hSB, hnA, hnB, _, _, _, _⟩ :=
+        flipEdgePresent_side_algebra hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd hcover hsep
+      obtain ⟨hbridgeA, hbridgeB⟩ :=
+        side_edge_bridges_of_flip_present he hexp hAB hf₃A hf₄B hUA hUB
+      have hAB2 : (A ∩ B).card = 2 := by rw [hAB]; exact hcd
+      rcases hasEmptyK4_side_of_edge_split hcover hsep hAB2 hbridgeA hbridgeB hR with hA | hB
+      · exact (IH _ _ _ hnA hsphA hUA hXAc rfl hTA hSA).2
+          (by rw [Finsupp.support_filter]; exact hA)
+      · exact (IH _ _ _ hnB hsphB hUB hXBc rfl hTB hSB).2
+          (by rw [Finsupp.support_filter]; exact hB)
+    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
+      have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+      have hnR : nrm (removeTet M e) < nrm M := by
+        have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
+      exact (IH _ _ _ hnR hσe hUe (bdry_bdry _) rfl (isTaut_removeTet hT)
+        (simplicialChain_removeTet hS)).2 hR
+  exact ⟨hNoK3, hNoK4⟩
+
 end Taut
