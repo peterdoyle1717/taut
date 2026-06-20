@@ -123,10 +123,23 @@ sphere/ball definitions.
   real work"]); the maxdeg lemmas (`exists_boundary_vertex_deg_ge_four_of_noDegree3`,
   `…_ge_five_of_not_octahedron`); and the wrappers `aleph_four/five_disjoint_eligible_family`. All CHECKED,
   build green 8273, grep ZERO, std-3 axioms. Commits `3d24c14` (Euler bridge), `7e538a7` (maxdeg+wrappers).
-  **REMAINING (Codex order, NOT yet started):** (b) `exists_good_flip_emptyK3/K4` (compose family +
-  sub-3 persistence + sub-4 localization + the ≤2-hit counting); (c) the `nrm M` strong induction
-  `no_emptyK3K4_of_taut` (deg-3 peel via `degree3_cut_*`/`IsTaut.splits`; prime via good-flip + case on
-  `FlipEdgePresent`, consuming sub-3 (absent) / sub-4 (present)); (d) the endpoint `theorem4_flag`
+- **✅ MILESTONE (2026-06-20): Theorem 4 — good-flip / per-config persistence stage COMPLETE.**
+  K3 (`57acfb5`): `disjoint_eligible_family_flipEdge_card_le_one` (flip edges distinct in a disjoint
+  family, via `edgeDeg=2` — the gap Claude caught) + `exists_good_flip_emptyK3` (4 tets, ≤1 per edge over
+  3 edges ⇒ a good flip avoiding all K3 edges; feeds sub-3). K4 (`788bd61`,`d1c9c72`): the boundary-face
+  counting route's bridge `bad_flip_edge_has_boundary_k4_face` was FALSE (Claude counterexample:
+  eligible `e={A,B,P,Q}`, `P,Q∉s`, flip edge `AB`, K4 faces interior; Codex CONFIRMED). Corrected to a
+  cleaner route: `emptyK4_face_simplex_of_no_emptyK3`, `exists_k4_face_through_edge_not_subset_tet`,
+  `k4_edge_has_witness_ne_removed_of_no_emptyK3`, `emptyK4_edge_witness_ne_removed_of_eligible`,
+  **`hasEmptyK4_removeTet_of_eligible`** — under `¬HasEmptyK3`, removing ANY eligible tet preserves an
+  empty K4 (no counting/octahedron/5-family needed for K4). All CHECKED, build green 8273, std-3.
+  NOTE: the corrected K4 route makes `aleph_five_disjoint_eligible_family` / `IsOctahedronSphere` /
+  `disjoint_eligible_family_hit_two_faces_card_le_two` unused for K4 (kept, harmless).
+  **REMAINING (Codex order):** (c) the `nrm M` strong induction `no_emptyK3K4_of_taut` — deg-3 peel via
+  `degree3_cut_*`/`IsTaut.splits`; prime branch picks an eligible tet, case-splits `FlipEdgePresent`
+  [absent: K3 via `exists_good_flip_emptyK3`+sub-3, K4 via `hasEmptyK4_removeTet_of_eligible`, recurse on
+  `removeTet`; present: split into 2 sides, localize via sub-4 (`hasEmptyK3/K4_side_of_edge_split`),
+  recurse on a side]. Needs a G1 architecture consult (capstone). (d) endpoint `theorem4_flag`
   (= `no_emptyK3K4_of_taut` + `theorem4_flag_from_no_emptyK3K4`). NOT proved until (d) is Lean-accepted.
   AlephProver still unusable.
 - Lean project: `lean/` (Mathlib v4.29.1, packages cached at
