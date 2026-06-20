@@ -700,4 +700,45 @@ lemma hasEmptyK4_side_of_edge_split {τ : Finset (Finset V)} {A B : Finset V}
           (fun t ht => (hcover t ht).symm) hAB2' hbridgeB' hsB hsedges hxs hx2
     · exact fun hc => hsno (hc.mono (Finset.filter_subset _ _))
 
+/-! ## (5) Flip-avoidance counting -/
+
+/-- The *octahedron* `2`-sphere: `6` vertices, no degree-3 vertex, every vertex of link-size `4`.
+This is the one prime sphere with `maxdeg = 4` exactly, excluded as a special case in the empty-`K₄`
+flip count (where the argument needs `maxdeg ≥ 5`). -/
+def IsOctahedronSphere (σ : Finset (Finset V)) : Prop :=
+  IsSphere2 σ ∧ (vertsOf σ).card = 6 ∧ NoDegree3Vertex σ ∧
+    ∀ v ∈ vertsOf σ, (linkVerts σ v).card = 4
+
+/-- **At most two members of a `sharedFaces`-disjoint eligible family hit a given pair of faces.**
+Since the families' shared-face sets are pairwise disjoint, each face `p` (resp. `q`) lies in the
+`sharedFaces` of at most one member; so at most two members hit `{p,q}`.  (This is the config-2
+counting input: `≤ 2` eligible tets can carry a forbidden interior face `ABC`/`BCD`.) -/
+lemma disjoint_eligible_family_hit_two_faces_card_le_two
+    {M : Chain V} {E : Finset (Finset V)} {p q : Finset V}
+    (hpair : (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e))
+    (_hpq : p ≠ q) :
+    (E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)).card ≤ 2 := by
+  classical
+  have key : ∀ r : Finset V, (E.filter (fun e => r ∈ sharedFaces M e)).card ≤ 1 := by
+    intro r
+    rw [Finset.card_le_one]
+    intro a ha b hb
+    rw [Finset.mem_filter] at ha hb
+    by_contra hab
+    exact (Finset.disjoint_left.mp
+      (hpair (Finset.mem_coe.mpr ha.1) (Finset.mem_coe.mpr hb.1) hab) ha.2) hb.2
+  have hsub : E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)
+      ⊆ E.filter (fun e => p ∈ sharedFaces M e) ∪ E.filter (fun e => q ∈ sharedFaces M e) := by
+    intro e he
+    rw [Finset.mem_filter] at he
+    rcases he.2 with h | h
+    · exact Finset.mem_union_left _ (Finset.mem_filter.mpr ⟨he.1, h⟩)
+    · exact Finset.mem_union_right _ (Finset.mem_filter.mpr ⟨he.1, h⟩)
+  calc (E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)).card
+      ≤ (E.filter (fun e => p ∈ sharedFaces M e)
+          ∪ E.filter (fun e => q ∈ sharedFaces M e)).card := Finset.card_le_card hsub
+    _ ≤ (E.filter (fun e => p ∈ sharedFaces M e)).card
+          + (E.filter (fun e => q ∈ sharedFaces M e)).card := Finset.card_union_le _ _
+    _ ≤ 2 := by have h1 := key p; have h2 := key q; omega
+
 end Taut
