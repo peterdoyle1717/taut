@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1149-g1-theorem4-induction-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1149-g1-theorem4-induction-summary.txt
+
+=== raw size ===
+    2200  145982 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1149-g1-theorem4-induction-raw.txt
+
+=== extracted markers ===
+2019:PASS
+2021:Verdict: use one strong induction returning the conjunction. It is cleaner, and it gives `¬ HasEmptyK3 M.support` in the same induction frame before proving the K4 half.
+2108:Blockers: none conceptual. The main audited piece is the degree-3 transfer lemma; implement it before prime. Then implement prime-absent, prime-present K3, prime-present K4, final induction.
+2111:PASS
+2113:Verdict: use one strong induction returning the conjunction. It is cleaner, and it gives `¬ HasEmptyK3 M.support` in the same induction frame before proving the K4 half.
+2200:Blockers: none conceptual. The main audited piece is the degree-3 transfer lemma; implement it before prime. Then implement prime-absent, prime-present K3, prime-present K4, final induction.
+
+=== final tail ===
+```lean
+lemma prime_no_emptyK3K4 ... (hNo3 : NoDegree3Vertex σ)
+  (IH : ∀ σ' X' M', nrm M' < nrm M → ... →
+    ¬ HasEmptyK3 M'.support ∧ ¬ HasEmptyK4 M'.support) :
+  ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support
+```
+Inside, prove K3 first, then K4.
+
+K3 branch: assume `HasEmptyK3`; use `exists_good_flip_emptyK3` to get good `e` and shared pair `g₃ g₄`; separately get exposed pair `f₃ f₄` via `exposedFaces_eq_pair_of_eligible`. Case on `FlipEdgePresent σ f₃ f₄`.
+
+Absent: `hasEmptyK3_removeTet_of_avoids_sharedEdge`, then IH on `removeTet M e` using `isSphere2_flipBoundary_of_eligible`.
+
+Present: same K3 persistence to `removeTet`; use `flipEdgePresent_side_sets`, side bridges, `hasEmptyK3_side_of_edge_split`; recurse on the side from `flipEdgePresent_side_algebra`.
+
+K4 branch: now have local `hNoK3 : ¬ HasEmptyK3 M.support`. Pick any eligible tet, e.g. from `aleph_disjoint_eligible_pair`. Case on exposed-face `FlipEdgePresent`.
+
+Absent: `hasEmptyK4_removeTet_of_eligible hNoK3`, then IH on `removeTet`.
+
+Present: `hasEmptyK4_removeTet_of_eligible hNoK3`, side-localize with `hasEmptyK4_side_of_edge_split`, recurse on the side. No good flip is needed for K4.
+
+6. Final theorem:
+```lean
+theorem no_emptyK3K4_of_taut ... :
+  ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support
+```
+Copy `taut_isPseudomanifold` induction structure exactly, swapping in `base_no_emptyK3K4`, `deg3_no_emptyK3K4`, `prime_no_emptyK3K4`.
+
+Blockers: none conceptual. The main audited piece is the degree-3 transfer lemma; implement it before prime. Then implement prime-absent, prime-present K3, prime-present K4, final induction.
+tokens used
+65,881
+PASS
+
+Verdict: use one strong induction returning the conjunction. It is cleaner, and it gives `¬ HasEmptyK3 M.support` in the same induction frame before proving the K4 half.
+
+Exact `H` shape:
+
+```lean
+suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N →
+  IsSphere2 σ → UnitOn X σ → bdry X = 0 → bdry M = X →
+  IsTaut M → SimplicialChain M →
+  ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support
+```
+
+Recommended patch shape in [Theorem4.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean):
+
+1. Add base:
+```lean
+lemma base_no_emptyK3K4 ... (hv : (vertsOf σ).card ≤ 4) :
+  ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support
+```
+Proof: reuse `aleph_base_verts_card_eq_four`, `aleph_base_taut_support_card4_subset_verts`, `aleph_base_support_eq_singleton_of_four_vertices`. Then prove no empty K3/K4 in `{T}`: every witness vertex lies in `T` because every vertex is in some witness edge, and every witness edge is a simplex of `{T}`.
+
+2. Add degree-3 transfer lemmas:
+```lean
+lemma exists_tet_of_boundary_face_nonzero
+  (hS : SimplicialChain R) (hγ : bdry R γ = 1 ∨ bdry R γ = -1) :
+  ∃ t ∈ R.support, γ ⊆ t
+```
+
+```lean
+lemma hasEmptyK3_insert_star_to_remainder
+  (hT : T = insert v γ) (hRnoV : ∀ t ∈ τ, v ∉ t)
+  (hγbridge : ∃ t ∈ τ, γ ⊆ t) :
+  HasEmptyK3 (insert T τ) → HasEmptyK3 τ
+```
+
+```lean
+lemma hasEmptyK4_insert_star_to_remainder
+  (hT : T = insert v γ) (hRnoV : ∀ t ∈ τ, v ∉ t)
+  (hγbridge : ∃ t ∈ τ, γ ⊆ t) :
+  HasEmptyK4 (insert T τ) → HasEmptyK4 τ
+```
+Route: a witness containing `v` is forced into the star tet, contradiction. A witness avoiding `v` keeps all edges in the remainder; if an edge was only carried by the star, it lies in `γ`, hence is carried by `hγbridge`.
+
+3. Add degree-3 step:
+```lean
+lemma deg3_no_emptyK3K4 ... (hd3 : HasDegree3Vertex σ)
+  (IH : ∀ σ' X' M', nrm M' < nrm M → ... →
+    ¬ HasEmptyK3 M'.support ∧ ¬ HasEmptyK4 M'.support) :
+  ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support
+```
+Mirror `deg3_isPM`: use `degree3_cut_setup`, `capped_cut_splits_unit`, `taut_splits_for_capped_cut`, `degree3_cut_star_side_glue`. In each branch prove `M.support = insert (starTet σ v) R.support`, `nrm R < nrm M`, `UnitOn (bdry R) σR`, `IsTaut R`, `SimplicialChain R`, `∀t∈R.support, v∉t`, and bridge `γ⊆tγ` from `UnitOn` at the cap face. Transfer any empty K into `R`, then contradict IH.
+
+4. Add side bridge helper for prime-present:
+```lean
+lemma side_edge_bridges_of_flip_present ... :
+  (∃ t ∈ (removeTet M e).support, t ⊆ A ∧ A ∩ B ⊆ t) ∧
+  (∃ t ∈ (removeTet M e).support, t ⊆ B ∧ A ∩ B ⊆ t)
+```
+Use `flipEdgePresent_side_algebra` for side `UnitOn` and `exists_tet_of_boundary_face_nonzero` on exposed faces `f₃`, `f₄`; `A∩B = f₃∩f₄`, so the bridge edge is contained in those faces.
+
+5. Add prime step:
+```lean
+lemma prime_no_emptyK3K4 ... (hNo3 : NoDegree3Vertex σ)
+  (IH : ∀ σ' X' M', nrm M' < nrm M → ... →
+    ¬ HasEmptyK3 M'.support ∧ ¬ HasEmptyK4 M'.support) :
+  ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support
+```
+Inside, prove K3 first, then K4.
+
+K3 branch: assume `HasEmptyK3`; use `exists_good_flip_emptyK3` to get good `e` and shared pair `g₃ g₄`; separately get exposed pair `f₃ f₄` via `exposedFaces_eq_pair_of_eligible`. Case on `FlipEdgePresent σ f₃ f₄`.
+
+Absent: `hasEmptyK3_removeTet_of_avoids_sharedEdge`, then IH on `removeTet M e` using `isSphere2_flipBoundary_of_eligible`.
+
+Present: same K3 persistence to `removeTet`; use `flipEdgePresent_side_sets`, side bridges, `hasEmptyK3_side_of_edge_split`; recurse on the side from `flipEdgePresent_side_algebra`.
+
+K4 branch: now have local `hNoK3 : ¬ HasEmptyK3 M.support`. Pick any eligible tet, e.g. from `aleph_disjoint_eligible_pair`. Case on exposed-face `FlipEdgePresent`.
+
+Absent: `hasEmptyK4_removeTet_of_eligible hNoK3`, then IH on `removeTet`.
+
+Present: `hasEmptyK4_removeTet_of_eligible hNoK3`, side-localize with `hasEmptyK4_side_of_edge_split`, recurse on the side. No good flip is needed for K4.
+
+6. Final theorem:
+```lean
+theorem no_emptyK3K4_of_taut ... :
+  ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support
+```
+Copy `taut_isPseudomanifold` induction structure exactly, swapping in `base_no_emptyK3K4`, `deg3_no_emptyK3K4`, `prime_no_emptyK3K4`.
+
+Blockers: none conceptual. The main audited piece is the degree-3 transfer lemma; implement it before prime. Then implement prime-absent, prime-present K3, prime-present K4, final induction.

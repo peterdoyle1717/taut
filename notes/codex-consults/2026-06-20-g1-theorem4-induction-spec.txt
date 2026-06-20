@@ -1,0 +1,78 @@
+G1 ARCHITECT SPEC — Theorem 4 CAPSTONE: the nrm-induction no_emptyK3K4_of_taut.
+
+Reviewer: codex, ARCHITECT. The per-config handling is DONE + CHECKED (K3 good-flip, K4 persistence).
+The last piece is the strong induction `no_emptyK3K4_of_taut`. Please give the induction architecture:
+the base lemma, the deg-3 peel branch (config persistence through the peel — NOT yet built), the prime
+branch (eligible flip, FlipEdgePresent case-split), and how they assemble. Give exact lemma statements +
+implementation order. I implement what you specify.
+
+=====================================================================
+TARGET (the entire remaining gap to theorem4_flag)
+=====================================================================
+theorem no_emptyK3K4_of_taut {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+    ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support
+Then theorem4_flag := theorem4_flag_from_no_emptyK3K4 … (no_emptyK3K4_of_taut …).1 (… ).2  [CHECKED assembly].
+
+=====================================================================
+THE TEMPLATE (taut_isPseudomanifold, PrimeStep.lean:1637 — MIRROR THIS)
+=====================================================================
+  suffices H : ∀ N, ∀ σ X M, nrm M = N → (sphere-filling hyps) → IsPseudomanifold M.support by …
+  intro N; induction N using Nat.strong_induction_on with | _ N IH =>
+    intro σ X M hN hσ hU hXc hMX hT hS
+    by_cases hv : (vertsOf σ).card ≤ 4
+    · exact base_isPM …                          -- BASE
+    · push_neg at hv
+      by_cases hd3 : HasDegree3Vertex σ
+      · refine deg3_isPM … ?_; <thread IH>        -- DEG-3 PEEL
+      · have hno3 : NoDegree3Vertex σ := …
+        refine prime_isPM … ?_; <thread IH>       -- PRIME (no deg-3)
+The IH is threaded as `∀ σ' X' M', nrm M' < N → (hyps') → <conclusion for M'>`.
+
+=====================================================================
+CHECKED config-handling pieces (all in Theorem4.lean, std-3)
+=====================================================================
+- Persistence under removing a tet (generic, witness-based):
+  hasEmptyK3/K4_removeTet_of_witness (he : e ∈ M.support) (hs3/4) (hedges : ∀ x⊆s, card2 → ∃ t∈M.support, t≠e ∧ x⊆t) (hno) : HasEmptyK3/K4 (removeTet M e).support.
+- K3 good flip: exists_good_flip_emptyK3 (… hNo3) (hs3) (hsedges) : ∃ e g₃ g₄, EligibleTet M e ∧ sharedFaces M e = {g₃,g₄} ∧ g₃≠g₄ ∧ (∀ x⊆s, card2 → x ≠ g₃∩g₄). Feeds hasEmptyK3_removeTet_of_avoids_sharedEdge (FlipEdge-absent).
+- K4 persistence (any eligible tet, no good-flip needed): hasEmptyK4_removeTet_of_eligible (… hNoK3 hs4 hsedges hno he) : HasEmptyK4 (removeTet M e).support.
+- Side localization (case b, FlipEdge present): hasEmptyK3/K4_side_of_edge_split (hcover) (hsep) (hAB2 : (A∩B).card=2) (hbridgeA) (hbridgeB) (h : HasEmptyK3/4 τ) : HasEmptyK3/4 (τ.filter (·⊆A)) ∨ HasEmptyK3/4 (τ.filter (·⊆B)).
+- emptyK4_face_simplex_of_no_emptyK3 (¬HasEmptyK3 needed for the K4 branch).
+
+NOTE the asymmetry: K3 needs a GOOD flip (avoid K3 edges) ⇒ exists_good_flip_emptyK3 + sub-3; K4 needs only ANY eligible tet ⇒ hasEmptyK4_removeTet_of_eligible. And the K4 branch needs ¬HasEmptyK3 IN HAND (so the induction must establish ¬HasEmptyK3 BEFORE/ALONGSIDE ¬HasEmptyK4 — order matters).
+
+=====================================================================
+EXISTING flip / deg-3 machinery (the induction's engine, from prime_isPM/deg3_isPM)
+=====================================================================
+- Prime branch: aleph_disjoint_eligible_pair / EligibleTet existence; removeTet; isTaut_removeTet, simplicialChain_removeTet, nrm_removeTet_add_one_of_simplicial (nrm strictly drops); case a sphere: isSphere2_flipBoundary_of_eligible + unitOn_flipBoundary_of_eligible; case b split: flipEdgePresent_side_sets (gives A,B with A∩B = flip edge, IsSphere2 of each side filter, cover/sep of removeTet tets), flipEdgePresent_side_algebra/_supports.
+- Deg-3 branch: degree3_cut_setup, degree3_cut_star_side_glue, starTet_card_of_degree3, IsTaut.splits (the connected-sum-with-a-tet peel). [How prime_isPM/deg3_isPM consume these — please cite.]
+
+=====================================================================
+QUESTIONS (give the architecture)
+=====================================================================
+Q1. ORDER / SHAPE. Prove the conjunction `¬HasEmptyK3 ∧ ¬HasEmptyK4` in ONE strong induction (so the IH
+    gives both for smaller M, and the K4 branch can use the IH's ¬HasEmptyK3)? Or prove ¬HasEmptyK3 first
+    (separate induction) then ¬HasEmptyK4 using it globally? Which is cleaner given the K4 branch needs
+    ¬HasEmptyK3 of the SAME M (is `¬HasEmptyK3 M.support` available at the point we handle K4, within one
+    induction)? Give the exact `H` statement.
+Q2. BASE CASE. `(vertsOf σ).card ≤ 4`: state + prove `base_no_emptyK3K4` (with ≤4 vertices, can an empty
+    K3 or K4 exist? a K4 needs 4 distinct vertices all present; sketch why impossible or how to discharge).
+Q3. DEG-3 PEEL BRANCH (the main NOT-yet-built piece). When σ has a deg-3 vertex v, the peel removes v's
+    star tet T and pulls v off σ. Design `deg3_no_emptyK3K4` (analogue of deg3_isPM): does the empty
+    K3/K4 witness `s` PERSIST under the peel (s avoids v? or s in the smaller complex)? What is the
+    config-persistence argument for the deg-3 peel, and which existing lemmas (degree3_cut_*, IsTaut.splits)
+    provide the smaller taut filling to recurse on? Exact statement + route.
+Q4. PRIME BRANCH. Design `prime_no_emptyK3K4` (no deg-3): pick an eligible tet; case-split FlipEdgePresent
+    on its exposed pair. Absent: removeTet is a sphere filling (isSphere2_flipBoundary_of_eligible), config
+    persists (K3: exists_good_flip_emptyK3 ⇒ the good e ⇒ sub-3; K4: hasEmptyK4_removeTet_of_eligible),
+    recurse via IH on removeTet. Present: flipEdgePresent_side_sets splits into A,B; config localizes to a
+    side (sub-4) which is a smaller sphere filling, recurse via IH. Give the exact statement + the case
+    plumbing (how to get hbridgeA/hbridgeB for sub-4 from flipEdgePresent_side_sets; how nrm drops on the
+    side). For K3 present case: exists_good_flip gives a good e, but does the SIDE-split need the good e
+    too, or any e? Clarify the K3-present vs K4-present handling.
+Q5. ORDER. Which bounded sub-target FIRST (base? the deg-3 peel persistence? the prime-absent case?), so
+    I implement one audited piece at a time and re-consult at forks.
+
+FILES: Theorem4.lean (target). Template: PrimeStep.lean:1637 (taut_isPseudomanifold), 1575 (prime_isPM),
+deg3_isPM. Deg-3: Theorem2Aleph.lean (degree3_cut_*), Splitting.lean (IsTaut.splits). Flip: FlipGeom.lean,
+PrimeStep.lean (flipEdgePresent_side_*). BUILD: cd lean && lake build.

@@ -1137,4 +1137,194 @@ lemma hasEmptyK4_removeTet_of_eligible {M : Chain V} {e s : Finset V}
   hasEmptyK4_removeTet_of_witness he.2.1 hs4
     (emptyK4_edge_witness_ne_removed_of_eligible hNoK3 hs4 hsedges hno he) hno
 
+/-! ## (6) The nrm-induction: base case and degree-3 star transfer
+
+The minimal-counterexample induction `no_emptyK3K4_of_taut` removes either a degree-3
+star tet `T = insert v γ` (`v` of degree 3, `γ` its link triangle) or an eligible flip.
+This section supplies the SELF-CONTAINED pieces: the base case (support is a single
+tet, so no empty `K₃`/`K₄`), the boundary-facet lemma, and the degree-3 star transfer
+(an empty configuration in the larger complex `insert T τ` already lives in `τ`, because
+its witness avoids `v` — the only new vertex of `T`). -/
+
+/-- **Base case of the nrm-induction.** For a minimal sphere (`≤ 4` vertices) the taut
+filling's support is a single tet `T = vertsOf σ` (card 4); any witness of an empty
+`K₃`/`K₄` has all its vertices in `T` (each lies in a witness edge, a simplex of `{T}`,
+hence `⊆ T`), so the witness is itself `⊆ T = a simplex`, contradicting `¬ SimplexOf`. -/
+lemma base_no_emptyK3K4 {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M)
+    (hv : (vertsOf σ).card ≤ 4) :
+    ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support := by
+  classical
+  set T := vertsOf σ with hTdef
+  have hVc : T.card = 4 := aleph_base_verts_card_eq_four hσ hv
+  have hsuppInfo : ∀ t ∈ M.support, t.card = 4 ∧ t ⊆ T :=
+    aleph_base_taut_support_card4_subset_verts hσ hU hMX hT
+  have hne : M.support.Nonempty := aleph_base_support_nonempty hσ hU hMX
+  have hsupp1 : M.support = {T} :=
+    aleph_base_support_eq_singleton_of_four_vertices hVc hsuppInfo hne
+  -- helper: a witness of card ≥ 2 whose edges are simplices is itself a simplex
+  have helper : ∀ s : Finset V, 2 ≤ s.card →
+      (∀ e, e ⊆ s → e.card = 2 → SimplexOf M.support e) → SimplexOf M.support s := by
+    intro s hs2 hedges
+    -- every vertex of `s` lies in `T`
+    have hsubT : s ⊆ T := by
+      intro v hv
+      obtain ⟨w, hws, hwv⟩ :=
+        (Finset.one_lt_card_iff_nontrivial.mp (show 1 < s.card by omega)).exists_ne v
+      have hvw2 : ({v, w} : Finset V).card = 2 := Finset.card_pair (Ne.symm hwv)
+      have hvwsub : ({v, w} : Finset V) ⊆ s := by
+        intro y hy
+        rcases Finset.mem_insert.mp hy with h | h
+        · exact h ▸ hv
+        · exact (Finset.mem_singleton.mp h) ▸ hws
+      have hsimp : SimplexOf M.support ({v, w} : Finset V) := hedges _ hvwsub hvw2
+      have hvw0 : ({v, w} : Finset V) ≠ ∅ := by
+        intro h; rw [h, Finset.card_empty] at hvw2; exact absurd hvw2 (by decide)
+      obtain ⟨t, htM, hvwt⟩ := hsimp.resolve_left hvw0
+      rw [hsupp1, Finset.mem_singleton] at htM
+      have hvt : v ∈ t := hvwt (Finset.mem_insert_self v {w})
+      exact htM ▸ hvt
+    exact Or.inr ⟨T, by rw [hsupp1]; exact Finset.mem_singleton_self T, hsubT⟩
+  refine ⟨?_, ?_⟩
+  · rintro ⟨s, hcard, hedges, hno⟩
+    exact hno (helper s (by omega) hedges)
+  · rintro ⟨s, hcard, hedges, hno⟩
+    exact hno (helper s (by omega) hedges)
+
+/-- **A boundary face is a facet of some tet.** If `bdry R γ = ±1`, the boundary sum
+`∑_{t} R t · bdryGen t γ` has a nonzero term, so some tet `t` of `R.support` has
+`bdryGen t γ ≠ 0`, hence `γ = t.erase w ⊆ t`. -/
+lemma exists_tet_of_boundary_face_nonzero {R : Chain V} {γ : Finset V}
+    (hγ : bdry R γ = 1 ∨ bdry R γ = -1) : ∃ t ∈ R.support, γ ⊆ t := by
+  classical
+  -- some term of the boundary sum is nonzero (else the sum is 0 ≠ ±1)
+  have hsum : bdry R γ = ∑ t ∈ R.support, R t * bdryGen t γ := bdry_apply_eq_sum R γ
+  have hne0 : bdry R γ ≠ 0 := by rcases hγ with h | h <;> rw [h] <;> decide
+  have hsumne : (∑ t ∈ R.support, R t * bdryGen t γ) ≠ 0 := by rw [← hsum]; exact hne0
+  obtain ⟨t, ht, htne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsumne
+  have hgen : bdryGen t γ ≠ 0 := fun h0 => htne (by rw [h0, mul_zero])
+  obtain ⟨w, hw, hγt⟩ := exists_facet_of_bdryGen_ne_zero hgen
+  exact ⟨t, ht, hγt ▸ Finset.erase_subset w t⟩
+
+/-- **Degree-3 star transfer for empty `K₃`.** Removing the star tet `T = insert v γ`
+(with `v ∉ γ`, `v` absent from every tet of the remainder `τ`, and `γ` bridged by some
+tet of `τ`) preserves an empty `K₃`: a witness in `insert T τ` cannot contain the new
+vertex `v` (else it would lie in `T`, a simplex), so each of its edges avoids `v` and,
+where it meets `T = insert v γ`, lands in `γ`, hence in the bridging tet of `τ`. -/
+lemma hasEmptyK3_insert_star_to_remainder {τ : Finset (Finset V)} {T γ : Finset V} {v : V}
+    (hT : T = insert v γ) (hRnoV : ∀ t ∈ τ, v ∉ t)
+    (hγbridge : ∃ t ∈ τ, γ ⊆ t) :
+    HasEmptyK3 (insert T τ) → HasEmptyK3 τ := by
+  classical
+  rintro ⟨s, hs3, hsedges, hsno⟩
+  -- `¬ SimplexOf τ s` is the contrapositive of `¬ SimplexOf (insert T τ) s`
+  have hsno' : ¬ SimplexOf τ s := fun h => hsno (h.mono (Finset.subset_insert T τ))
+  -- the witness `s` cannot contain `v`
+  have hvs : v ∉ s := by
+    intro hvs
+    -- every other vertex of `s` lies in `γ`, so `s ⊆ insert v γ = T`
+    have hsubT : s ⊆ T := by
+      intro u hu
+      by_cases huv : u = v
+      · rw [huv, hT]; exact Finset.mem_insert_self v γ
+      · have huvsub : ({v, u} : Finset V) ⊆ s := by
+          intro y hy
+          rcases Finset.mem_insert.mp hy with h | h
+          · exact h ▸ hvs
+          · exact (Finset.mem_singleton.mp h) ▸ hu
+        have hvu2 : ({v, u} : Finset V).card = 2 := Finset.card_pair (Ne.symm huv)
+        have hsimp : SimplexOf (insert T τ) ({v, u} : Finset V) :=
+          hsedges _ huvsub hvu2
+        have hvu0 : ({v, u} : Finset V) ≠ ∅ := by
+          intro h; rw [h, Finset.card_empty] at hvu2; exact absurd hvu2 (by decide)
+        obtain ⟨t, htmem, hvut⟩ := hsimp.resolve_left hvu0
+        have hvt : v ∈ t := hvut (Finset.mem_insert_self v {u})
+        have hut : u ∈ t := hvut (Finset.mem_insert_of_mem (Finset.mem_singleton_self u))
+        -- `v ∈ t` and `hRnoV` force `t = T`
+        have htT : t = T := by
+          rcases Finset.mem_insert.mp htmem with h | h
+          · exact h
+          · exact absurd hvt (hRnoV t h)
+        rw [htT, hT, Finset.mem_insert] at hut
+        rcases hut with h | h
+        · exact absurd h huv
+        · rw [hT]; exact Finset.mem_insert_of_mem h
+    exact hsno (Or.inr ⟨T, Finset.mem_insert_self T τ, hsubT⟩)
+  -- transfer the edge condition to `τ`
+  have hsedges' : ∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e := by
+    intro e hes he2
+    have hsimp : SimplexOf (insert T τ) e := hsedges e hes he2
+    have he0 : e ≠ ∅ := by
+      intro h; rw [h, Finset.card_empty] at he2; exact absurd he2 (by decide)
+    obtain ⟨t, htmem, het⟩ := hsimp.resolve_left he0
+    rcases Finset.mem_insert.mp htmem with htT | htτ
+    · -- `e ⊆ T = insert v γ`, and `v ∉ e` (since `e ⊆ s`, `v ∉ s`), so `e ⊆ γ`
+      have hve : v ∉ e := fun h => hvs (hes h)
+      have heγ : e ⊆ γ := by
+        intro x hx
+        have hxT : x ∈ insert v γ := hT ▸ htT ▸ het hx
+        rcases Finset.mem_insert.mp hxT with h | h
+        · exact absurd (h ▸ hx) hve
+        · exact h
+      obtain ⟨tγ, htγτ, hγtγ⟩ := hγbridge
+      exact Or.inr ⟨tγ, htγτ, heγ.trans hγtγ⟩
+    · exact Or.inr ⟨t, htτ, het⟩
+  exact ⟨s, hs3, hsedges', hsno'⟩
+
+/-- **Degree-3 star transfer for empty `K₄`.** Identical to the `K₃` case; the witness
+card (`4` vs `3`) plays no role beyond the `card ≥ 2` used to pick a second vertex. -/
+lemma hasEmptyK4_insert_star_to_remainder {τ : Finset (Finset V)} {T γ : Finset V} {v : V}
+    (hT : T = insert v γ) (hRnoV : ∀ t ∈ τ, v ∉ t)
+    (hγbridge : ∃ t ∈ τ, γ ⊆ t) :
+    HasEmptyK4 (insert T τ) → HasEmptyK4 τ := by
+  classical
+  rintro ⟨s, hs4, hsedges, hsno⟩
+  have hsno' : ¬ SimplexOf τ s := fun h => hsno (h.mono (Finset.subset_insert T τ))
+  have hvs : v ∉ s := by
+    intro hvs
+    have hsubT : s ⊆ T := by
+      intro u hu
+      by_cases huv : u = v
+      · rw [huv, hT]; exact Finset.mem_insert_self v γ
+      · have huvsub : ({v, u} : Finset V) ⊆ s := by
+          intro y hy
+          rcases Finset.mem_insert.mp hy with h | h
+          · exact h ▸ hvs
+          · exact (Finset.mem_singleton.mp h) ▸ hu
+        have hvu2 : ({v, u} : Finset V).card = 2 := Finset.card_pair (Ne.symm huv)
+        have hsimp : SimplexOf (insert T τ) ({v, u} : Finset V) :=
+          hsedges _ huvsub hvu2
+        have hvu0 : ({v, u} : Finset V) ≠ ∅ := by
+          intro h; rw [h, Finset.card_empty] at hvu2; exact absurd hvu2 (by decide)
+        obtain ⟨t, htmem, hvut⟩ := hsimp.resolve_left hvu0
+        have hvt : v ∈ t := hvut (Finset.mem_insert_self v {u})
+        have hut : u ∈ t := hvut (Finset.mem_insert_of_mem (Finset.mem_singleton_self u))
+        have htT : t = T := by
+          rcases Finset.mem_insert.mp htmem with h | h
+          · exact h
+          · exact absurd hvt (hRnoV t h)
+        rw [htT, hT, Finset.mem_insert] at hut
+        rcases hut with h | h
+        · exact absurd h huv
+        · rw [hT]; exact Finset.mem_insert_of_mem h
+    exact hsno (Or.inr ⟨T, Finset.mem_insert_self T τ, hsubT⟩)
+  have hsedges' : ∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e := by
+    intro e hes he2
+    have hsimp : SimplexOf (insert T τ) e := hsedges e hes he2
+    have he0 : e ≠ ∅ := by
+      intro h; rw [h, Finset.card_empty] at he2; exact absurd he2 (by decide)
+    obtain ⟨t, htmem, het⟩ := hsimp.resolve_left he0
+    rcases Finset.mem_insert.mp htmem with htT | htτ
+    · have hve : v ∉ e := fun h => hvs (hes h)
+      have heγ : e ⊆ γ := by
+        intro x hx
+        have hxT : x ∈ insert v γ := hT ▸ htT ▸ het hx
+        rcases Finset.mem_insert.mp hxT with h | h
+        · exact absurd (h ▸ hx) hve
+        · exact h
+      obtain ⟨tγ, htγτ, hγtγ⟩ := hγbridge
+      exact Or.inr ⟨tγ, htγτ, heγ.trans hγtγ⟩
+    · exact Or.inr ⟨t, htτ, het⟩
+  exact ⟨s, hs4, hsedges', hsno'⟩
+
 end Taut
