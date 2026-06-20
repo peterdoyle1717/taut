@@ -1327,4 +1327,158 @@ lemma hasEmptyK4_insert_star_to_remainder {τ : Finset (Finset V)} {T γ : Finse
     · exact Or.inr ⟨t, htτ, het⟩
   exact ⟨s, hs4, hsedges', hsno'⟩
 
+/-- **Degree-3 step for the empty-`K₃`/`K₄` ruleout.**  Mechanical adaptation of
+`deg3_isPM`: cut off the degree-3 star, apply the induction hypothesis (now returning the
+`¬ HasEmptyK3 ∧ ¬ HasEmptyK4` conjunction) to the non-star remainder, then transfer the
+two ruleouts back across the re-glued star tetrahedron via
+`hasEmptyK3/K4_insert_star_to_remainder`. -/
+lemma deg3_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex σ)
+    (IH : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      ¬ HasEmptyK3 M'.support ∧ ¬ HasEmptyK4 M'.support) :
+    ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support := by
+  classical
+  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ :=
+    degree3_cut_setup σ hσ hbig hd3
+  let γ : Finset V := linkVerts σ v
+  let A : Finset V := vertsOf (insert γ (cutSet σ W))
+  let ML : Chain V := M.filter (fun t => t ⊆ A)
+  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
+  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
+    capped_cut_splits_unit σ X hσ hγ3 hγe hγσ hW hU hXc
+  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
+    taut_splits_for_capped_cut σ X M hσ hσL hσR hγ3 hγe hW
+      hUL hXLc hUR hXRc hXsum hMX hT
+  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv hγ3 hW
+  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
+  -- γ lies in both candidate remainder spheres
+  have hγL : γ ∈ insert γ (cutSet σ W) := Finset.mem_insert_self _ _
+  have hγR : γ ∈ insert γ (cutSet σ (W + fun _ => 1)) := Finset.mem_insert_self _ _
+  rcases hsplit with hcase | hcase
+  · -- left side is the star; remainder is MR (the ¬⊆A side, sphere σR)
+    rcases hcase with ⟨hstar, _hglue⟩
+    have hULtet : UnitOn (cappedCutLeft σ W X γ c) (tetFaces (starTet σ v)) := by
+      dsimp [γ]; rw [← hstar]; exact hUL
+    have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet σ v := by
+      intro t ht
+      have htA : t ⊆ vertsOf (insert γ (cutSet σ W)) :=
+        hSuppL t (by simpa only [ML, A] using ht)
+      dsimp [γ] at htA
+      rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+      exact htA
+    have hMLsupp : ML.support = {starTet σ v} :=
+      star_filter_support_singleton ML (cappedCutLeft σ W X γ c)
+        (starTet σ v) hT4 hULtet (by simpa only [ML, A, γ] using hML)
+        (by simpa only [ML, A, γ] using hTL) hSuppLT
+    have hlt : nrm MR < nrm M := by
+      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
+        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+      simpa only [MR] using hlt'
+    have hSimpR : SimplicialChain MR := by
+      intro t
+      dsimp [MR, A, γ]
+      rw [Finsupp.filter_apply]
+      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))
+      · rw [if_pos ht]; exact hS t
+      · rw [if_neg ht]; exact Or.inr (Or.inl rfl)
+    have hbdMR : bdry MR = cappedCutRight σ W X γ c := by dsimp [MR, A, γ]; exact hMR
+    have hURMR : UnitOn (bdry MR) (insert γ (cutSet σ (W + fun _ => 1))) := by
+      rw [hbdMR]; dsimp [γ]; exact hUR
+    have hTRMR : IsTaut MR := by dsimp [MR, A, γ]; exact hTR
+    have hσRdef : IsSphere2 (insert γ (cutSet σ (W + fun _ => 1))) := by dsimp [γ]; exact hσR
+    obtain ⟨hIH3, hIH4⟩ :=
+      IH (insert γ (cutSet σ (W + fun _ => 1))) (bdry MR) MR hlt hσRdef hURMR
+        (bdry_bdry _) rfl hTRMR hSimpR
+    have hPT : (starTet σ v) ⊆ A := by
+      have hTin : starTet σ v ∈ ML.support := by rw [hMLsupp]; simp
+      have hTin' : ¬ M (starTet σ v) = 0 ∧ (starTet σ v) ⊆ A := by simpa [ML] using hTin
+      exact hTin'.2
+    have hvNotMR : ∀ t ∈ MR.support, v ∉ t := by
+      have hvNotSigmaR : v ∉ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+        degree3_apex_notMem_right_verts_of_left_star (σ := σ) (v := v) (W := W)
+          (γ := γ) hσ hγ3 rfl (by simpa [γ] using hW) hstar
+      have hsuppInfo :
+          ∀ t ∈ MR.support,
+            t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+        aleph_base_taut_support_card4_subset_verts hσRdef
+          (by dsimp [γ]; exact hUR) hbdMR hTRMR
+      intro t ht hvt
+      exact hvNotSigmaR ((hsuppInfo t ht).2 hvt)
+    have hURγ : bdry MR γ = 1 ∨ bdry MR γ = -1 := hURMR.2 γ hγR
+    have hsupport : M.support = insert (starTet σ v) MR.support := by
+      simpa only [MR] using
+        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+    obtain ⟨tγ, htγ, hγtγ⟩ := exists_tet_of_boundary_face_nonzero hURγ
+    have hstar_eq : starTet σ v = insert v γ := rfl
+    exact ⟨fun h3 => hIH3 (hasEmptyK3_insert_star_to_remainder hstar_eq hvNotMR ⟨tγ, htγ, hγtγ⟩ (hsupport ▸ h3)),
+           fun h4 => hIH4 (hasEmptyK4_insert_star_to_remainder hstar_eq hvNotMR ⟨tγ, htγ, hγtγ⟩ (hsupport ▸ h4))⟩
+  · -- right side is the star; remainder is ML (the ⊆A side, sphere σL)
+    rcases hcase with ⟨hstar, _hglue⟩
+    have hURtet : UnitOn (cappedCutRight σ W X γ c) (tetFaces (starTet σ v)) := by
+      dsimp [γ]; rw [← hstar]; exact hUR
+    have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet σ v := by
+      intro t ht
+      have htA : t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+        hSuppR t (by simpa only [MR, A] using ht)
+      dsimp [γ] at htA
+      rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+      exact htA
+    have hMRsupp : MR.support = {starTet σ v} :=
+      star_filter_support_singleton MR (cappedCutRight σ W X γ c)
+        (starTet σ v) hT4 hURtet (by simpa only [MR, A, γ] using hMR)
+        (by simpa only [MR, A, γ] using hTR) hSuppRT
+    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+      dsimp [ML]
+      ext t
+      rw [Finsupp.filter_apply, Finsupp.filter_apply]
+      by_cases ht : t ⊆ A
+      · rw [if_pos ht, if_pos]; intro hneg; exact hneg ht
+      · rw [if_neg ht, if_neg]; intro hnn; exact hnn ht
+    have hlt : nrm ML < nrm M := by
+      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
+        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+      rwa [← hML_eq] at hlt'
+    have hSimpL : SimplicialChain ML := by
+      intro t
+      dsimp [ML, A, γ]
+      rw [Finsupp.filter_apply]
+      by_cases ht : t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))
+      · rw [if_pos ht]; exact hS t
+      · rw [if_neg ht]; exact Or.inr (Or.inl rfl)
+    have hbdML : bdry ML = cappedCutLeft σ W X γ c := by dsimp [ML, A, γ]; exact hML
+    have hULML : UnitOn (bdry ML) (insert γ (cutSet σ W)) := by
+      rw [hbdML]; dsimp [γ]; exact hUL
+    have hTLML : IsTaut ML := by dsimp [ML, A, γ]; exact hTL
+    have hσLdef : IsSphere2 (insert γ (cutSet σ W)) := by dsimp [γ]; exact hσL
+    obtain ⟨hIH3, hIH4⟩ :=
+      IH (insert γ (cutSet σ W)) (bdry ML) ML hlt hσLdef hULML
+        (bdry_bdry _) rfl hTLML hSimpL
+    have hPstar : ¬ (starTet σ v) ⊆ A := by
+      have hTin : starTet σ v ∈ MR.support := by rw [hMRsupp]; simp
+      have hTin' : ¬ M (starTet σ v) = 0 ∧ ¬ (starTet σ v) ⊆ A := by simpa [MR] using hTin
+      exact hTin'.2
+    have hvNotML : ∀ t ∈ ML.support, v ∉ t := by
+      have hvNotSigmaL : v ∉ vertsOf (insert γ (cutSet σ W)) :=
+        degree3_apex_notMem_left_verts_of_right_star (σ := σ) (v := v) (W := W)
+          (γ := γ) hσ hγ3 rfl (by simpa [γ] using hW) hstar
+      have hsuppInfo :
+          ∀ t ∈ ML.support, t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ W)) :=
+        aleph_base_taut_support_card4_subset_verts hσLdef
+          (by dsimp [γ]; exact hUL) hbdML hTLML
+      intro t ht hvt
+      exact hvNotSigmaL ((hsuppInfo t ht).2 hvt)
+    have hURγ : bdry ML γ = 1 ∨ bdry ML γ = -1 := hULML.2 γ hγL
+    have hsupport : M.support = insert (starTet σ v) ML.support := by
+      have hsupport' :
+          M.support = insert (starTet σ v)
+            (M.filter (fun t => ¬ (¬ t ⊆ A))).support :=
+        support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+      rwa [← hML_eq] at hsupport'
+    obtain ⟨tγ, htγ, hγtγ⟩ := exists_tet_of_boundary_face_nonzero hURγ
+    have hstar_eq : starTet σ v = insert v γ := rfl
+    exact ⟨fun h3 => hIH3 (hasEmptyK3_insert_star_to_remainder hstar_eq hvNotML ⟨tγ, htγ, hγtγ⟩ (hsupport ▸ h3)),
+           fun h4 => hIH4 (hasEmptyK4_insert_star_to_remainder hstar_eq hvNotML ⟨tγ, htγ, hγtγ⟩ (hsupport ▸ h4))⟩
+
 end Taut
