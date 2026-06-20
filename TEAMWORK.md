@@ -101,12 +101,18 @@ sphere/ball definitions.
   from `bdry M f = 0` + `e`'s nonzero term) and `hasEmptyK3/K4_removeTet_of_avoids_sharedEdge` (compose
   with sub-target 2). Build green 8273, grep ZERO, all three std-3 axioms. **LESSON: exposedFaces =
   INTERIOR faces (survive removal); sharedFaces = BOUNDARY faces, their ∩ is the removed edge.**
-  **REMAINING (Codex order):** sub-target 4 = case-(b) side localization (`hasEmptyK3/K4_side_of_edge_split`
-  over the `flipEdgePresent_side_sets` A/B split); sub-target 5 = the flip-avoidance COUNTING lemmas
-  (Codex's honest BLOCKERS — no `≥4`/`≥5`-disjoint-eligible-family `aleph_disjoint_eligible_family`, no
-  `IsOctahedronSphere`/octahedron special case, no `disjoint_eligible_family_hit_two_faces_card_le_two`
-  yet) → `exists_good_flip_emptyK3/K4` + the `nrm M` induction assembling `no_emptyK3K4_of_taut`. The
-  counting all keys on `sharedFaces` (consistent with the correction). AlephProver still unusable.
+- **✅ MILESTONE (2026-06-19): Theorem 4 — sub-target 4 (case-(b) side localization) CHECKED.** In
+  `Theorem4.lean`: `hasEmptyK3/K4_side_of_edge_split` — over the `flipEdgePresent_side_sets` A/B split
+  (`A∩B` = the seam edge), an empty-K3/K4 of `τ` localizes to one side filter (a straddling witness
+  edge would fit no tet `⊆A` or `⊆B`; seam edges rescued by the `hbridge` hyps). Pure combinatorics
+  (helpers `witness_subset_side`, `edge_simplexOf_filter_of_subset`). Skeptical-reviewed TRUE before
+  implementing. Build green 8273, grep ZERO, std-3 axioms.
+  **REMAINING (Codex order):** sub-target 5 = the flip-avoidance COUNTING lemmas (Codex's honest
+  BLOCKERS — `≥4`/`≥5`-disjoint-eligible-family `aleph_disjoint_eligible_family`, `IsOctahedronSphere`/
+  octahedron special case, `disjoint_eligible_family_hit_two_faces_card_le_two`) →
+  `exists_good_flip_emptyK3/K4` + the `nrm M` induction assembling `no_emptyK3K4_of_taut`, then the full
+  endpoint `theorem4_flag` (= `no_emptyK3K4_of_taut` + `theorem4_flag_from_no_emptyK3K4`). Counting keys
+  on `sharedFaces`. AlephProver still unusable.
 - Lean project: `lean/` (Mathlib v4.29.1, packages cached at
   `~/.cache/taut-lean/packages`, APFS-cloned from glove). Builds:
   `cd lean && lake build`.

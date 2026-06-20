@@ -555,4 +555,149 @@ lemma hasEmptyK4_removeTet_of_avoids_sharedEdge {M : Chain V} {e g₃ g₄ s : F
         (havoid x hxs hx2))
     hno
 
+/-! ### Side localization of empty configurations (sub-target 4)
+
+In the eligible-flip / edge-split step of the minimal-counterexample induction the support `τ`
+of a taboo configuration sits across a separating edge `A ∩ B` (card 2): every tet lies in `A`
+or in `B`, the two sides are "bridged" by tets that cap the seam edge, and we must localize a
+whole empty `K₃`/`K₄` witness to a single side's filter.  The geometric content is:
+
+* a card-`≥ 2` witness whose every edge is a simplex lies entirely in one side (`witness_subset_side`);
+* once on side `P`, each of its edges transfers to the side filter `τ ↾ {t | t ⊆ P}`, seam edges
+  via the bridging tet (`edge_simplexOf_filter_of_subset`); and
+* `¬ SimplexOf` of the witness is monotone, so it survives the (smaller) side filter. -/
+
+/-- **A clique witness localizes to one side of a separating edge.** If every tet of `τ` lies in
+`A` or `B`, and every `2`-subset of `s` (card `≥ 2`) is a simplex of `τ`, then `s ⊆ A` or `s ⊆ B`.
+Each vertex of `s` lands in `A ∪ B` (an incident edge, being a simplex, sits in a side tet); a
+vertex outside `A` and one outside `B` would force the edge between them into a side tet, putting
+that vertex on the wrong side. -/
+private lemma witness_subset_side {τ : Finset (Finset V)} {A B s : Finset V}
+    (hcover : ∀ t ∈ τ, t ⊆ A ∨ t ⊆ B) (hs2 : 2 ≤ s.card)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf τ x) : s ⊆ A ∨ s ⊆ B := by
+  classical
+  by_contra hcon
+  push_neg at hcon
+  obtain ⟨hnA, hnB⟩ := hcon
+  obtain ⟨a, has, hanA⟩ := Finset.not_subset.mp hnA
+  obtain ⟨b, hbs, hbnB⟩ := Finset.not_subset.mp hnB
+  -- every vertex of `s` lands in `A ∪ B`
+  have hvAB : ∀ v ∈ s, v ∈ A ∨ v ∈ B := by
+    intro v hv
+    obtain ⟨w, hws, hwv⟩ :=
+      (Finset.one_lt_card_iff_nontrivial.mp (show 1 < s.card by omega)).exists_ne v
+    have hvw2 : ({v, w} : Finset V).card = 2 := Finset.card_pair (Ne.symm hwv)
+    have hvwsub : ({v, w} : Finset V) ⊆ s := by
+      intro y hy
+      rcases Finset.mem_insert.mp hy with h | h
+      · exact h ▸ hv
+      · exact (Finset.mem_singleton.mp h) ▸ hws
+    have hsimp : SimplexOf τ ({v, w} : Finset V) := hsedges _ hvwsub hvw2
+    have hvw0 : ({v, w} : Finset V) ≠ ∅ := by
+      intro h; rw [h, Finset.card_empty] at hvw2; exact absurd hvw2 (by decide)
+    obtain ⟨t, htτ, hvwt⟩ := hsimp.resolve_left hvw0
+    have hvt : v ∈ t := hvwt (Finset.mem_insert_self v {w})
+    rcases hcover t htτ with htA | htB
+    · exact Or.inl (htA hvt)
+    · exact Or.inr (htB hvt)
+  -- so `a ∈ B`, `b ∈ A`, and `a ≠ b`
+  have haB : a ∈ B := (hvAB a has).resolve_left hanA
+  have hbA : b ∈ A := (hvAB b hbs).resolve_right hbnB
+  have hab : a ≠ b := by intro h; exact hanA (h ▸ hbA)
+  -- the edge `{a, b}` lands in a side tet, putting `a` in `A` or `b` in `B`
+  have hab2 : ({a, b} : Finset V).card = 2 := Finset.card_pair hab
+  have habsub : ({a, b} : Finset V) ⊆ s := by
+    intro y hy
+    rcases Finset.mem_insert.mp hy with h | h
+    · exact h ▸ has
+    · exact (Finset.mem_singleton.mp h) ▸ hbs
+  have hsimp : SimplexOf τ ({a, b} : Finset V) := hsedges _ habsub hab2
+  have hab0 : ({a, b} : Finset V) ≠ ∅ := by
+    intro h; rw [h, Finset.card_empty] at hab2; exact absurd hab2 (by decide)
+  obtain ⟨t, htτ, habt⟩ := hsimp.resolve_left hab0
+  have hat : a ∈ t := habt (Finset.mem_insert_self a {b})
+  have hbt : b ∈ t := habt (Finset.mem_insert_of_mem (Finset.mem_singleton_self b))
+  rcases hcover t htτ with htA | htB
+  · exact hanA (htA hat)
+  · exact hbnB (htB hbt)
+
+/-- **An edge of a one-sided witness transfers to the side filter.** With `s ⊆ P` and every
+`2`-subset of `s` a simplex of `τ`, every `2`-subset `x` of `s` is a simplex of `τ ↾ {t | t ⊆ P}`.
+A witness tet `t ⊇ x` either already lies in `P` (done), or lies in the other side `Q`; then `x`
+sits in `P ∩ Q`, has the same card `2`, hence equals `P ∩ Q`, so the bridging tet of `P`
+(containing `P ∩ Q`) carries it. -/
+private lemma edge_simplexOf_filter_of_subset {τ : Finset (Finset V)} {P Q s : Finset V}
+    (hcover : ∀ t ∈ τ, t ⊆ P ∨ t ⊆ Q) (hPQ2 : (P ∩ Q).card = 2)
+    (hbridge : ∃ t ∈ τ, t ⊆ P ∧ P ∩ Q ⊆ t) (hsP : s ⊆ P)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf τ x)
+    {x : Finset V} (hxs : x ⊆ s) (hx2 : x.card = 2) :
+    SimplexOf (τ.filter (fun t => t ⊆ P)) x := by
+  classical
+  have hx0 : x ≠ ∅ := by
+    intro h; rw [h, Finset.card_empty] at hx2; exact absurd hx2 (by decide)
+  obtain ⟨t, htτ, hxt⟩ := (hsedges x hxs hx2).resolve_left hx0
+  rcases hcover t htτ with htP | htQ
+  · exact Or.inr ⟨t, Finset.mem_filter.mpr ⟨htτ, htP⟩, hxt⟩
+  · -- `x ⊆ P ∩ Q`, card-matched, so `x = P ∩ Q`; the bridge tet carries it
+    have hxPQ : x ⊆ P ∩ Q := Finset.subset_inter (hxs.trans hsP) (hxt.trans htQ)
+    have hxeq : x = P ∩ Q :=
+      Finset.eq_of_subset_of_card_le hxPQ (by rw [hPQ2, hx2])
+    obtain ⟨t', ht'τ, ht'P, ht'PQ⟩ := hbridge
+    exact Or.inr ⟨t', Finset.mem_filter.mpr ⟨ht'τ, ht'P⟩, hxeq ▸ ht'PQ⟩
+
+/-- **Side localization of an empty `K₃`.** Across a separating edge `A ∩ B` (card 2) with both
+sides bridged, an empty `K₃` of `τ` is an empty `K₃` of one side filter `τ ↾ {t | t ⊆ A}` or
+`τ ↾ {t | t ⊆ B}`.  (`hsep` is supplied by the call site but unused here.) -/
+lemma hasEmptyK3_side_of_edge_split {τ : Finset (Finset V)} {A B : Finset V}
+    (hcover : ∀ t ∈ τ, t ⊆ A ∨ t ⊆ B)
+    (_hsep : ∀ t ∈ τ, (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A))
+    (hAB2 : (A ∩ B).card = 2)
+    (hbridgeA : ∃ t ∈ τ, t ⊆ A ∧ A ∩ B ⊆ t)
+    (hbridgeB : ∃ t ∈ τ, t ⊆ B ∧ A ∩ B ⊆ t)
+    (h : HasEmptyK3 τ) :
+    HasEmptyK3 (τ.filter (fun t => t ⊆ A)) ∨ HasEmptyK3 (τ.filter (fun t => t ⊆ B)) := by
+  classical
+  obtain ⟨s, hcard, hsedges, hsno⟩ := h
+  have hs2 : 2 ≤ s.card := by omega
+  rcases witness_subset_side hcover hs2 hsedges with hsA | hsB
+  · refine Or.inl ⟨s, hcard, ?_, ?_⟩
+    · exact fun x hxs hx2 =>
+        edge_simplexOf_filter_of_subset (P := A) (Q := B) hcover hAB2 hbridgeA hsA hsedges hxs hx2
+    · exact fun hc => hsno (hc.mono (Finset.filter_subset _ _))
+  · have hAB2' : (B ∩ A).card = 2 := by rw [Finset.inter_comm]; exact hAB2
+    have hbridgeB' : ∃ t ∈ τ, t ⊆ B ∧ B ∩ A ⊆ t := by
+      rw [Finset.inter_comm]; exact hbridgeB
+    refine Or.inr ⟨s, hcard, ?_, ?_⟩
+    · exact fun x hxs hx2 =>
+        edge_simplexOf_filter_of_subset (P := B) (Q := A)
+          (fun t ht => (hcover t ht).symm) hAB2' hbridgeB' hsB hsedges hxs hx2
+    · exact fun hc => hsno (hc.mono (Finset.filter_subset _ _))
+
+/-- **Side localization of an empty `K₄`.** Identical argument to the `K₃` case (the witness card
+plays no role beyond `2 ≤ s.card`). -/
+lemma hasEmptyK4_side_of_edge_split {τ : Finset (Finset V)} {A B : Finset V}
+    (hcover : ∀ t ∈ τ, t ⊆ A ∨ t ⊆ B)
+    (_hsep : ∀ t ∈ τ, (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A))
+    (hAB2 : (A ∩ B).card = 2)
+    (hbridgeA : ∃ t ∈ τ, t ⊆ A ∧ A ∩ B ⊆ t)
+    (hbridgeB : ∃ t ∈ τ, t ⊆ B ∧ A ∩ B ⊆ t)
+    (h : HasEmptyK4 τ) :
+    HasEmptyK4 (τ.filter (fun t => t ⊆ A)) ∨ HasEmptyK4 (τ.filter (fun t => t ⊆ B)) := by
+  classical
+  obtain ⟨s, hcard, hsedges, hsno⟩ := h
+  have hs2 : 2 ≤ s.card := by omega
+  rcases witness_subset_side hcover hs2 hsedges with hsA | hsB
+  · refine Or.inl ⟨s, hcard, ?_, ?_⟩
+    · exact fun x hxs hx2 =>
+        edge_simplexOf_filter_of_subset (P := A) (Q := B) hcover hAB2 hbridgeA hsA hsedges hxs hx2
+    · exact fun hc => hsno (hc.mono (Finset.filter_subset _ _))
+  · have hAB2' : (B ∩ A).card = 2 := by rw [Finset.inter_comm]; exact hAB2
+    have hbridgeB' : ∃ t ∈ τ, t ⊆ B ∧ B ∩ A ⊆ t := by
+      rw [Finset.inter_comm]; exact hbridgeB
+    refine Or.inr ⟨s, hcard, ?_, ?_⟩
+    · exact fun x hxs hx2 =>
+        edge_simplexOf_filter_of_subset (P := B) (Q := A)
+          (fun t ht => (hcover t ht).symm) hAB2' hbridgeB' hsB hsedges hxs hx2
+    · exact fun hc => hsno (hc.mono (Finset.filter_subset _ _))
+
 end Taut
