@@ -204,4 +204,74 @@ lemma IsTaut.of_forall_nrm_le {M : Chain V}
   have hle : nrm M ≤ Zvol (bdry M) := hWn ▸ h W hW
   exact le_antisymm hle (Zvol_le rfl)
 
+/-! ## Scaling the rational norm and forward tautness transfer -/
+
+omit [LinearOrder V] in
+/-- Scaling a rational chain by `c` scales its L¹ norm by `|c|`. -/
+lemma Qnrm_smul (c : ℚ) (M : QChain V) : Qnrm (c • M) = |(c : ℝ)| * Qnrm M := by
+  classical
+  rcases eq_or_ne c 0 with hc | hc
+  · subst hc
+    rw [zero_smul, Rat.cast_zero, abs_zero, zero_mul, Qnrm,
+      Finsupp.support_zero, Finset.sum_empty]
+  · -- `c ≠ 0`: the support is preserved.
+    have hcr : (c : ℝ) ≠ 0 := by exact_mod_cast hc
+    have hsupp : (c • M).support = M.support := by
+      ext s
+      simp only [Finsupp.mem_support_iff, Finsupp.smul_apply, smul_eq_mul, ne_eq,
+        mul_eq_zero, hc, false_or]
+    rw [Qnrm, Qnrm, hsupp, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun s _ => ?_
+    rw [Finsupp.smul_apply, smul_eq_mul]
+    push_cast
+    rw [abs_mul]
+
+omit [LinearOrder V] in
+/-- Scaling a rational chain by a natural number `q` scales its L¹ norm by `q`. -/
+lemma Qnrm_nat_smul (q : ℕ) (M : QChain V) : Qnrm ((q : ℚ) • M) = (q : ℝ) * Qnrm M := by
+  rw [Qnrm_smul]
+  congr 1
+  rw [Rat.cast_natCast, abs_of_nonneg (by positivity)]
+
+/-- **Forward tautness transfer (Cor 1, step 5).** If a rational chain `M` is
+taut and `(q : ℚ) • M` is integral (for `0 < q`), then the underlying integer
+chain `QChain.toInt ((q : ℚ) • M)` is taut. -/
+lemma IsQTaut.toInt_nat_smul {M : QChain V} (hMt : IsQTaut M) {q : ℕ} (hq : 0 < q)
+    (hM : QChain.IsIntegral ((q : ℚ) • M)) :
+    IsTaut (QChain.toInt ((q : ℚ) • M) hM) := by
+  classical
+  set K : Chain V := QChain.toInt ((q : ℚ) • M) hM with hK
+  have hqQ : (q : ℚ) ≠ 0 := by exact_mod_cast hq.ne'
+  have hqR : (q : ℝ) ≠ 0 := by exact_mod_cast hq.ne'
+  have hqRpos : (0 : ℝ) < (q : ℝ) := by exact_mod_cast hq
+  -- `intToQChain K = (q : ℚ) • M`.
+  have hKQ : intToQChain K = (q : ℚ) • M := intToQChain_toInt _ hM
+  apply IsTaut.of_forall_nrm_le
+  intro N hN
+  -- Reduce to the real inequality.
+  rw [← Nat.cast_le (α := ℝ)]
+  -- `(nrm K : ℝ) = (q : ℝ) * Qnrm M`.
+  have hKn : (nrm K : ℝ) = (q : ℝ) * Qnrm M := by
+    rw [← Qnrm_intToQChain, hKQ, Qnrm_nat_smul]
+  -- The ℚ-competitor for `M`.
+  set Nq : QChain V := ((q : ℚ)⁻¹) • intToQChain N with hNq
+  -- `Qbdry Nq = Qbdry M`.
+  have hbdry : Qbdry Nq = Qbdry M := by
+    have h1 : Qbdry (intToQChain N) = (q : ℚ) • Qbdry M := by
+      rw [Qbdry_intToQChain, hN, ← Qbdry_intToQChain, hKQ, map_smul]
+    rw [hNq, map_smul, h1, smul_smul, inv_mul_cancel₀ hqQ, one_smul]
+  -- Tautness of `M` gives `Qnrm M ≤ Qnrm Nq`.
+  have hcomp : Qnrm M ≤ Qnrm Nq := hMt Nq hbdry
+  -- `Qnrm Nq = (q : ℝ)⁻¹ * (nrm N : ℝ)`.
+  have hNqn : Qnrm Nq = (q : ℝ)⁻¹ * (nrm N : ℝ) := by
+    rw [hNq, Qnrm_smul, Qnrm_intToQChain, Rat.cast_inv, Rat.cast_natCast,
+      abs_of_nonneg (by positivity)]
+  -- Assemble.
+  rw [hNqn] at hcomp
+  have key : (q : ℝ) * Qnrm M ≤ (nrm N : ℝ) := by
+    have := mul_le_mul_of_nonneg_left hcomp hqRpos.le
+    rwa [← mul_assoc, mul_inv_cancel₀ hqR, one_mul] at this
+  rw [hKn]
+  exact key
+
 end Taut
