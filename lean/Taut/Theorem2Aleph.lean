@@ -1474,6 +1474,72 @@ theorem aleph_disjoint_eligible_pair {M : Chain V} {σ : Finset (Finset V)}
     exact aleph_chosenFaceFibers_disjoint f hne
 
 
+/-- **`k`-element disjoint eligible family.** Generalizes `aleph_disjoint_eligible_pair` from `2` to
+`k`: for any `k ≤ deg v (bdry M)`, a no-degree-3 taut filling has `k` eligible tets whose
+`sharedFaces` are pairwise disjoint.  Same `f`-map setup as the pair lemma, but pigeonholed via
+`aleph_k_double_fibers` against the per-vertex degree gap `aleph_card_gap_deg`. -/
+theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) {k : ℕ} {v : V}
+    (hv : v ∈ vertsOf σ) (hk : k ≤ deg v (bdry M)) :
+    ∃ E : Finset (Finset V), E.card = k ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e) := by
+  classical
+  have hcov : ∀ α ∈ σ, ∃ t, ProperBoundaryFaceTet M α t := fun α hα =>
+    exists_properBoundaryFaceTet hS hPure (hU.2 α hα)
+  let f : {α // α ∈ σ} → {t // t ∈ M.support} := fun α =>
+    ⟨Classical.choose (hcov α.1 α.2), (Classical.choose_spec (hcov α.1 α.2)).1⟩
+  have hfspec : ∀ α : {α // α ∈ σ}, ProperBoundaryFaceTet M (α : Finset V) ((f α) : Finset V) := fun α =>
+    Classical.choose_spec (hcov α.1 α.2)
+  have hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2 := by
+    intro t ht
+    exact sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht)
+  -- Degree gap: `|M.support| + deg v (bdry M) ≤ |σ|`, hence `|M.support| + k ≤ |σ|`.
+  have hgap : M.support.card + deg v (bdry M) ≤ σ.card := aleph_card_gap_deg hU hS hT v
+  have hgapk : M.support.card + k ≤ σ.card := by omega
+  have hmap : ∀ a ∈ (Finset.univ : Finset {α // α ∈ σ}), f a ∈ (Finset.univ : Finset {t // t ∈ M.support}) := by
+    intro a _
+    exact Finset.mem_univ _
+  have hcard : (Finset.univ : Finset {t // t ∈ M.support}).card + k ≤ (Finset.univ : Finset {α // α ∈ σ}).card := by
+    rw [Finset.card_univ, Finset.card_univ, Fintype.card_coe, Fintype.card_coe]
+    exact hgapk
+  have hfiber_le2 : ∀ b ∈ (Finset.univ : Finset {t // t ∈ M.support}),
+      ((Finset.univ : Finset {α // α ∈ σ}).filter (fun a => f a = b)).card ≤ 2 := by
+    intro b _
+    have hle_shared : (alephChosenFiber f b).card ≤ (sharedFaces M (b : Finset V)).card :=
+      aleph_chosenFiber_card_le_sharedFaces hU f hfspec b
+    have hle2 : (sharedFaces M (b : Finset V)).card ≤ 2 := hShared2 (b : Finset V) b.property
+    exact le_trans hle_shared hle2
+  rcases aleph_k_double_fibers {α // α ∈ σ} {t // t ∈ M.support}
+      (Finset.univ : Finset {α // α ∈ σ}) (Finset.univ : Finset {t // t ∈ M.support}) f
+      hmap k hcard hfiber_le2 with ⟨D, hDsub, hDcard, hDfull⟩
+  -- For each chosen `b ∈ D`: it is an eligible tet, and `sharedFaces M b = alephChosenFaceFiber f b`.
+  have helig : ∀ b ∈ D, EligibleTet M (b : Finset V) ∧
+      sharedFaces M (b : Finset V) = alephChosenFaceFiber f b := by
+    intro b hb
+    have hbdbl : (alephChosenFiber f b).card = 2 := by
+      simpa only [alephChosenFiber] using hDfull b hb
+    exact aleph_double_fiber_eligible hU hPure hShared2 f hfspec b hbdbl
+  -- Assemble the family `E := D.image Subtype.val`.
+  refine ⟨D.image (fun b : {t // t ∈ M.support} => (b : Finset V)), ?_, ?_, ?_⟩
+  · rw [Finset.card_image_of_injective _ Subtype.val_injective]
+    exact hDcard
+  · intro e he
+    rcases Finset.mem_image.mp he with ⟨b, hbD, rfl⟩
+    exact (helig b hbD).1
+  · intro e₁ he₁ e₂ he₂ hne
+    rcases Finset.mem_image.mp he₁ with ⟨b₁, hb₁D, rfl⟩
+    rcases Finset.mem_image.mp he₂ with ⟨b₂, hb₂D, rfl⟩
+    have hbne : b₁ ≠ b₂ := by
+      intro hbeq
+      exact hne (by rw [hbeq])
+    show Disjoint (sharedFaces M (b₁ : Finset V)) (sharedFaces M (b₂ : Finset V))
+    rw [(helig b₁ hb₁D).2, (helig b₂ hb₂D).2]
+    exact aleph_chosenFaceFibers_disjoint f hbne
+
+
 /-- **Theorem 2's core, reduced to the prime step.** With `aleph_base` and
 `aleph_deg3_split` discharging two of `theorem2_core`'s three hypotheses, a taut
 filling of a 2-sphere is a ball provided the no-degree-3 step `prime_step` holds. -/
