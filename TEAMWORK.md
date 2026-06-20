@@ -25,6 +25,20 @@ sphere/ball definitions.
 
 ## Live state (update on every milestone)
 
+- **🏁🏁 MILESTONE (2026-06-20): COROLLARY 1 COMPLETE — the ENTIRE PAPER is now formalized.** Both
+  Cor-1 endpoints in `lean/Taut/Corollary1.lean` CHECKED (std-3 axioms, `lake build` green 8274, grep
+  over `lean/Taut` ZERO): **`IsQTaut.splits_full`** (taut ℚ-fillings split, n≥2 — the paper's explicitly
+  "new" result) and **`Qvol_add_of_almost_disjoint_full`** (Qvol adds under almost-disjoint union).
+  Route = clearing denominators (reuse the integer Theorem 1), with the KEY design choice (Codex):
+  **order-optimal `IsQTaut`** (`∀ N, Qbdry N = Qbdry M → Qnrm M ≤ Qnrm N`) instead of `Qnrm = Qvol`,
+  which avoids needing rational minimisers to exist — so **NO LP/integrality theorem was needed**. New
+  layer: `QChain := Finset V →₀ ℚ`, `Qbdry`/`Qcone` (ℚ chain-homotopy mirrored from `Chains.lean`),
+  `Qnrm`/`Qvol` over ℝ, `intToQChain`/`toInt` bridge, `exists_nat_smul_integral(_three)`, the forward
+  tautness transfer `IsQTaut.toInt_nat_smul`, the split algebra + `Qvol` csInf API. Commits
+  `64bc676`→`bcb3401`. Two auditor catches en route: my proposed reverse-transfer was false-as-stated
+  (Codex corrected → output tautness comes directly from global rational tautness + `Qnrm` subadditivity).
+  **ALL PAPER RESULTS FORMALIZED: Theorem 1 (full), Theorems 2/3 (weak + clean routes), Theorem 4
+  (flag complex), Corollary 1 (ℚ-fillings).** No open items remain from the paper.
 - **🏁 MILESTONE (2026-06-20): THEOREM 4 COMPLETE — `theorem4_flag` CHECKED.** Any taut filling of a
   combinatorial 2-sphere is a flag complex (`IsFlagComplex M.support`). Endpoint `theorem4_flag`
   (`lean/Taut/Theorem4.lean`) = `no_emptyK3K4_of_taut` (the nrm-strong-induction: base / deg-3-peel /
