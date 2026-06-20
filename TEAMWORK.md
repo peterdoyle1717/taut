@@ -25,6 +25,18 @@ sphere/ball definitions.
 
 ## Live state (update on every milestone)
 
+- **🏁 MILESTONE (2026-06-20): THEOREM 4 COMPLETE — `theorem4_flag` CHECKED.** Any taut filling of a
+  combinatorial 2-sphere is a flag complex (`IsFlagComplex M.support`). Endpoint `theorem4_flag`
+  (`lean/Taut/Theorem4.lean`) = `no_emptyK3K4_of_taut` (the nrm-strong-induction: base / deg-3-peel /
+  prime-flip dispatch mirroring `taut_isPseudomanifold`) + `theorem4_flag_from_no_emptyK3K4` (the K5
+  obstruction `no_k5Clique_of_no_emptyK4_taut`, replacing the paper's S³⊄B³ by "a taut filling has no
+  nonzero closed subchain"). Full stack CHECKED, `lake build` green (8273), grep over `lean/Taut` ZERO,
+  `#print axioms theorem4_flag = [propext, Classical.choice, Quot.sound]`. Commit `c6b246e`, pushed.
+  Highlights of the route (this session): K3 good-flip via flip-edge distinctness (`edgeDeg=2`); the K4
+  config-2 boundary-face counting route was FALSE (Claude counterexample, Codex-confirmed) → replaced by
+  "any eligible removal preserves an empty K4 under ¬HasEmptyK3"; octahedron Euler bridge
+  (incident-face = link-size). **So all four paper theorems are now formalized: Th1 (full), Th2/Th3
+  (weak + clean), Th4.** Open: Corollary 1 (ℚ-fillings).
 - **✅ MILESTONE (2026-06-19): weak→clean migration COMPLETE.** `theorem2_clean`
   (`IsCleanBall M.support σ`) and `theorem3_clean` (`FreelyCleanShellable M.support σ`)
   are CHECKED (`43faa7d`); `#print axioms` = `[propext, Classical.choice, Quot.sound]` for both.
