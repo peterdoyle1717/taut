@@ -107,12 +107,24 @@ sphere/ball definitions.
   edge would fit no tet `⊆A` or `⊆B`; seam edges rescued by the `hbridge` hyps). Pure combinatorics
   (helpers `witness_subset_side`, `edge_simplexOf_filter_of_subset`). Skeptical-reviewed TRUE before
   implementing. Build green 8273, grep ZERO, std-3 axioms.
-  **REMAINING (Codex order):** sub-target 5 = the flip-avoidance COUNTING lemmas (Codex's honest
-  BLOCKERS — `≥4`/`≥5`-disjoint-eligible-family `aleph_disjoint_eligible_family`, `IsOctahedronSphere`/
-  octahedron special case, `disjoint_eligible_family_hit_two_faces_card_le_two`) →
-  `exists_good_flip_emptyK3/K4` + the `nrm M` induction assembling `no_emptyK3K4_of_taut`, then the full
-  endpoint `theorem4_flag` (= `no_emptyK3K4_of_taut` + `theorem4_flag_from_no_emptyK3K4`). Counting keys
-  on `sharedFaces`. AlephProver still unusable.
+- **✅ MILESTONE (2026-06-19): Theorem 4 — sub-target 5 CRUX `aleph_disjoint_eligible_family` RESOLVED +
+  CHECKED.** Auditor flagged that the existing pigeonhole only exports `gap ≥ 2`, so Codex's `deg v`
+  family bound looked unsupported; focused family-route consult (`…-2021-g1-theorem4-family-route-*`,
+  verdict PASS) supplied the missing strengthening. Implemented in `Theorem2Aleph.lean`:
+  `aleph_card_gap_deg` (`|M.support| + deg v (bdry M) ≤ σ.card` for EVERY v, via `Zvol_add_deg_le`/Prop 2),
+  `aleph_k_double_fibers` (k-fold pigeonhole generalizing `aleph_two_double_fibers`), and
+  `aleph_disjoint_eligible_family` (k eligible tets, pairwise-disjoint `sharedFaces`, for `k ≤ deg v`).
+  Plus in `Theorem4.lean`: `IsOctahedronSphere`, `disjoint_eligible_family_hit_two_faces_card_le_two`.
+  All CHECKED, build green 8273, std-3 axioms. Commits `5dabec5`/`99a0346`/`bc8e307`/`db0eb0f`.
+  **REMAINING (Codex order):** (a) wrappers `aleph_four/five_disjoint_eligible_family` — need
+  `exists_boundary_vertex_deg_ge_four_of_noDegree3` (maxdeg ≥ 4) and `…_ge_five_of_not_octahedron`
+  (maxdeg ≥ 5 unless octahedron) + **the octahedron Euler bridge** ("all link sizes 4 ⇒ |verts| = 6 ⇒
+  `IsOctahedronSphere`" — Codex: "the only real work"); (b) `exists_good_flip_emptyK3/K4` (compose
+  family + persistence + localization + the ≤2-hit counting); (c) the `nrm M` strong induction
+  `no_emptyK3K4_of_taut` (deg-3 peel via `degree3_cut_*`/`IsTaut.splits`; prime via good-flip + case on
+  `FlipEdgePresent`, consuming sub-3 (absent) / sub-4 (present)); (d) the endpoint `theorem4_flag`
+  (= `no_emptyK3K4_of_taut` + `theorem4_flag_from_no_emptyK3K4`). NOT proved until (d) is Lean-accepted.
+  AlephProver still unusable.
 - Lean project: `lean/` (Mathlib v4.29.1, packages cached at
   `~/.cache/taut-lean/packages`, APFS-cloned from glove). Builds:
   `cd lean && lake build`.

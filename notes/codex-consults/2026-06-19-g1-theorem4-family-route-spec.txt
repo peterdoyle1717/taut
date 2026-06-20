@@ -1,0 +1,61 @@
+G1 FOCUSED PACKET — Theorem 4 sub-target 5 crux: aleph_disjoint_eligible_family proof route / bound.
+
+Reviewer: codex, ARCHITECT. Sub-targets 1-4 + two clean sub-5 pieces are DONE + CHECKED (committed).
+This is about the CRUX blocker `aleph_disjoint_eligible_family`. Claude (auditor) finds the stated bound
+`k ≤ deg v` is NOT supported by existing machinery, which yields a `gap` bound instead. Not claiming
+false — asking for the proof route + the bound to use. Do not restate the whole plan; resolve this.
+
+=====================================================================
+DONE + CHECKED so far (Theorem4.lean)
+=====================================================================
+- Sub-1 interface lock `theorem4_flag_from_no_emptyK3K4`; sub-2 persistence; sub-3 (CORRECTED, sharedFaces)
+  `edge_witness_ne_removed_of_not_sharedEdge` + `hasEmptyK3/K4_removeTet_of_avoids_sharedEdge`;
+  sub-4 `hasEmptyK3/K4_side_of_edge_split`.
+- Sub-5 clean pieces: `IsOctahedronSphere` (def) and
+  `disjoint_eligible_family_hit_two_faces_card_le_two` (≤2 hit).
+
+=====================================================================
+YOUR PROPOSED CRUX (sub-5)
+=====================================================================
+  aleph_disjoint_eligible_family ... {k : ℕ} {v : V} (hv : v ∈ vertsOf σ) (hk : k ≤ deg v (bdry M)) :
+    ∃ E, E.card = k ∧ (∀ e ∈ E, EligibleTet M e) ∧ PairwiseDisjoint (fun e => sharedFaces M e) E
+  + corollaries aleph_four/five_disjoint_eligible_family (five takes ¬ IsOctahedronSphere σ).
+
+=====================================================================
+CODE EVIDENCE (the concern)
+=====================================================================
+1. The existing `aleph_disjoint_eligible_pair` (Theorem2Aleph.lean:1380) proves its 2-element result via
+   a GLOBAL pigeonhole `aleph_two_double_fibers` (Theorem2Aleph.lean:1326):
+     aleph_two_double_fibers (α β) (s t : Finset) (f) (hmap : ∀a∈s, f a ∈ t)
+       (hcard : t.card + 2 ≤ s.card) (hfiber_le2 : ∀b∈t, (s.filter (f ·=b)).card ≤ 2)
+       : ∃ b₁ b₂ ∈ t, b₁≠b₂ ∧ fiber b₁ = 2 ∧ fiber b₂ = 2.
+   Here s = σ (boundary faces), t = M.support, f = ProperBoundaryFaceTet choice, fibers ≤ 2 =
+   `sharedFaces ≤ 2`. A full (card-2) fiber ⇒ the tet is eligible with sharedFaces = that fiber, and
+   distinct full fibers ⇒ disjoint sharedFaces.
+2. GENERALIZING the count: with fibers ≤ 2 and `t.card + m ≤ s.card`, the number of double-fibers is
+   `≥ s.card - t.card = gap`. (Σ fibers = s.card ≤ 2·#double + 1·(t.card - #double) = #double + t.card.)
+   So #disjoint-eligible ≥ gap := σ.card - M.support.card.
+3. `aleph_card_gap_two` (Theorem2Aleph.lean:1308) gives ONLY `gap ≥ 2`. Grep finds NO `gap ≥ deg v`,
+   NO `gap ≥ maxdeg`, no sharper gap lemma. So the machinery supports a `gap` bound, NOT a `deg v` bound.
+   (`Zvol_add_deg_le` (Zvol.lean) is `Zvol X ≤ |X| - maxdeg`, a different bound.)
+
+=====================================================================
+QUESTIONS (resolve the bound + route; I implement exactly what you specify)
+=====================================================================
+Q1. BOUND. Should `aleph_disjoint_eligible_family` be bounded by `gap = σ.card - M.support.card`
+    (clean: generalize `aleph_two_double_fibers` → `aleph_k_double_fibers` giving `#double-fibers ≥ gap`,
+    then pick `k` of them)? Or do you intend a different construction that genuinely gives `deg v`-many?
+Q2. WHAT FEEDS ≥4 / ≥5. The induction's prime branch needs ≥4 (config-1) and ≥5 (config-2, non-octa)
+    disjoint eligible tets. With a `gap` bound that means `gap ≥ 4` and `gap ≥ 5`. What establishes
+    these? Options: (a) a NEW lemma `gap ≥ maxdeg` (and `maxdeg ≥ 4` from `NoDegree3Vertex`,
+    `maxdeg ≥ 5` from `¬ IsOctahedronSphere`) — if so, what is its proof route?; (b) a LOCAL construction
+    of eligible tets in the star of the max-degree vertex giving `deg v`-many directly (not the global
+    pigeonhole); (c) something else. Pick one and name the existing lemmas it rides on.
+Q3. CORRECTED STATEMENTS. Give the exact final statements + hypotheses of `aleph_four_disjoint_eligible_family`
+    and `aleph_five_disjoint_eligible_family` (the two the induction consumes), and the FIRST bounded
+    sub-piece for Claude to implement (e.g. `aleph_k_double_fibers`, or the `gap ≥ maxdeg` lemma, or the
+    octahedron exclusion `maxdeg ≥ 5`), with its proof sketch.
+
+I will not invent the construction. FILES: Theorem2Aleph.lean (pigeonhole/gap/pair), Eligible.lean
+(EligibleTet, ProperBoundaryFaceTet, NoDegree3Vertex), Theorem4.lean (target). PAPER: taut.tex:996-1037.
+BUILD: cd lean && lake build.

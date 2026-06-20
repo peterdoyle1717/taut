@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-2021-g1-theorem4-family-route-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-2021-g1-theorem4-family-route-summary.txt
+
+=== raw size ===
+    1053   80470 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-19-2021-g1-theorem4-family-route-raw.txt
+
+=== extracted markers ===
+930:PASS
+932:Verdict: keep the `k ≤ deg v (bdry M)` bound. The auditor is right that the existing exported lemma only gives `gap ≥ 2`, but the intended route is a missing strengthening, not a different construction.
+990:Blockers: none conceptual. The only real work is the formal octahedron bridge from “all link sizes are 4” to `vertsOf σ.card = 6`.
+993:PASS
+995:Verdict: keep the `k ≤ deg v (bdry M)` bound. The auditor is right that the existing exported lemma only gives `gap ≥ 2`, but the intended route is a missing strengthening, not a different construction.
+1053:Blockers: none conceptual. The only real work is the formal octahedron bridge from “all link sizes are 4” to `vertsOf σ.card = 6`.
+
+=== final tail ===
+Exact recommended patch shape:
+1. Generalize `aleph_two_double_fibers` to `aleph_k_double_fibers`.
+2. Add `aleph_card_gap_deg`:
+   `M.support.card + deg v (bdry M) ≤ σ.card`.
+   Proof is the same as `aleph_card_gap_two`, but do not pick a minimum-degree vertex; apply `Zvol_add_deg_le v (bdry_bdry M)` directly, then rewrite `Zvol (bdry M) = nrm M`, `nrm M = M.support.card`, `nrm (bdry M) = σ.card`.
+3. Use `hk : k ≤ deg v (bdry M)` plus `aleph_card_gap_deg` to feed `support.card + k ≤ σ.card`.
+4. Pick `k` double fibers, convert each via `aleph_double_fiber_eligible`, and use existing fiber-disjointness for pairwise `sharedFaces`.
+
+Files to edit:
+- `lean/Taut/Theorem2Aleph.lean`: add the gap-degree lemma, generalized fiber lemma, and main family lemma.
+- `lean/Taut/Theorem4.lean`: add the four/five wrappers and octahedron/max-degree bridge lemmas.
+- Possibly `lean/Taut/Complex2.lean` if the link/incident-face count lemmas belong with sphere combinatorics.
+
+Corrected main statement:
+```lean
+theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) {k : ℕ} {v : V}
+    (hv : v ∈ vertsOf σ) (hk : k ≤ deg v (bdry M)) :
+    ∃ E : Finset (Finset V), E.card = k ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Four wrapper:
+```lean
+theorem aleph_four_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) :
+    ∃ E : Finset (Finset V), E.card = 4 ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Five wrapper:
+```lean
+theorem aleph_five_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) (hNotOct : ¬ IsOctahedronSphere σ) :
+    ∃ E : Finset (Finset V), E.card = 5 ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Local lemmas needed:
+- `aleph_card_gap_deg`.
+- `aleph_k_double_fibers`: with fibers `≤ 2` and `t.card + k ≤ s.card`, produce a finset `D ⊆ t` of cardinal `k` whose fibers have card `2`.
+- `incident_faces_card_eq_linkVerts_card` for `IsSphere2`.
+- `exists_boundary_vertex_deg_ge_four_of_noDegree3`.
+- `exists_boundary_vertex_deg_ge_five_of_not_octahedron`: prove contrapositive; if every vertex has link size `4`, Euler/counting gives `vertsOf σ.card = 6`, hence `IsOctahedronSphere σ`.
+
+First bounded sub-piece for Claude: implement `aleph_card_gap_deg`. It is small, rides directly on `Zvol_add_deg_le`, and confirms the `deg v` bound before the bigger pigeonhole refactor.
+
+Blockers: none conceptual. The only real work is the formal octahedron bridge from “all link sizes are 4” to `vertsOf σ.card = 6`.
+tokens used
+38,195
+PASS
+
+Verdict: keep the `k ≤ deg v (bdry M)` bound. The auditor is right that the existing exported lemma only gives `gap ≥ 2`, but the intended route is a missing strengthening, not a different construction.
+
+Exact recommended patch shape:
+1. Generalize `aleph_two_double_fibers` to `aleph_k_double_fibers`.
+2. Add `aleph_card_gap_deg`:
+   `M.support.card + deg v (bdry M) ≤ σ.card`.
+   Proof is the same as `aleph_card_gap_two`, but do not pick a minimum-degree vertex; apply `Zvol_add_deg_le v (bdry_bdry M)` directly, then rewrite `Zvol (bdry M) = nrm M`, `nrm M = M.support.card`, `nrm (bdry M) = σ.card`.
+3. Use `hk : k ≤ deg v (bdry M)` plus `aleph_card_gap_deg` to feed `support.card + k ≤ σ.card`.
+4. Pick `k` double fibers, convert each via `aleph_double_fiber_eligible`, and use existing fiber-disjointness for pairwise `sharedFaces`.
+
+Files to edit:
+- `lean/Taut/Theorem2Aleph.lean`: add the gap-degree lemma, generalized fiber lemma, and main family lemma.
+- `lean/Taut/Theorem4.lean`: add the four/five wrappers and octahedron/max-degree bridge lemmas.
+- Possibly `lean/Taut/Complex2.lean` if the link/incident-face count lemmas belong with sphere combinatorics.
+
+Corrected main statement:
+```lean
+theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) {k : ℕ} {v : V}
+    (hv : v ∈ vertsOf σ) (hk : k ≤ deg v (bdry M)) :
+    ∃ E : Finset (Finset V), E.card = k ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Four wrapper:
+```lean
+theorem aleph_four_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) :
+    ∃ E : Finset (Finset V), E.card = 4 ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Five wrapper:
+```lean
+theorem aleph_five_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) (hNotOct : ¬ IsOctahedronSphere σ) :
+    ∃ E : Finset (Finset V), E.card = 5 ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Local lemmas needed:
+- `aleph_card_gap_deg`.
+- `aleph_k_double_fibers`: with fibers `≤ 2` and `t.card + k ≤ s.card`, produce a finset `D ⊆ t` of cardinal `k` whose fibers have card `2`.
+- `incident_faces_card_eq_linkVerts_card` for `IsSphere2`.
+- `exists_boundary_vertex_deg_ge_four_of_noDegree3`.
+- `exists_boundary_vertex_deg_ge_five_of_not_octahedron`: prove contrapositive; if every vertex has link size `4`, Euler/counting gives `vertsOf σ.card = 6`, hence `IsOctahedronSphere σ`.
+
+First bounded sub-piece for Claude: implement `aleph_card_gap_deg`. It is small, rides directly on `Zvol_add_deg_le`, and confirms the `deg v` bound before the bigger pigeonhole refactor.
+
+Blockers: none conceptual. The only real work is the formal octahedron bridge from “all link sizes are 4” to `vertsOf σ.card = 6`.

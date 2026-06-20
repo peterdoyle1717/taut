@@ -1,0 +1,1053 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019ee267-28c4-7fe3-8e92-b08e29266ed9
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+G1 FOCUSED PACKET — Theorem 4 sub-target 5 crux: aleph_disjoint_eligible_family proof route / bound.
+
+Reviewer: codex, ARCHITECT. Sub-targets 1-4 + two clean sub-5 pieces are DONE + CHECKED (committed).
+This is about the CRUX blocker `aleph_disjoint_eligible_family`. Claude (auditor) finds the stated bound
+`k ≤ deg v` is NOT supported by existing machinery, which yields a `gap` bound instead. Not claiming
+false — asking for the proof route + the bound to use. Do not restate the whole plan; resolve this.
+
+=====================================================================
+DONE + CHECKED so far (Theorem4.lean)
+=====================================================================
+- Sub-1 interface lock `theorem4_flag_from_no_emptyK3K4`; sub-2 persistence; sub-3 (CORRECTED, sharedFaces)
+  `edge_witness_ne_removed_of_not_sharedEdge` + `hasEmptyK3/K4_removeTet_of_avoids_sharedEdge`;
+  sub-4 `hasEmptyK3/K4_side_of_edge_split`.
+- Sub-5 clean pieces: `IsOctahedronSphere` (def) and
+  `disjoint_eligible_family_hit_two_faces_card_le_two` (≤2 hit).
+
+=====================================================================
+YOUR PROPOSED CRUX (sub-5)
+=====================================================================
+  aleph_disjoint_eligible_family ... {k : ℕ} {v : V} (hv : v ∈ vertsOf σ) (hk : k ≤ deg v (bdry M)) :
+    ∃ E, E.card = k ∧ (∀ e ∈ E, EligibleTet M e) ∧ PairwiseDisjoint (fun e => sharedFaces M e) E
+  + corollaries aleph_four/five_disjoint_eligible_family (five takes ¬ IsOctahedronSphere σ).
+
+=====================================================================
+CODE EVIDENCE (the concern)
+=====================================================================
+1. The existing `aleph_disjoint_eligible_pair` (Theorem2Aleph.lean:1380) proves its 2-element result via
+   a GLOBAL pigeonhole `aleph_two_double_fibers` (Theorem2Aleph.lean:1326):
+     aleph_two_double_fibers (α β) (s t : Finset) (f) (hmap : ∀a∈s, f a ∈ t)
+       (hcard : t.card + 2 ≤ s.card) (hfiber_le2 : ∀b∈t, (s.filter (f ·=b)).card ≤ 2)
+       : ∃ b₁ b₂ ∈ t, b₁≠b₂ ∧ fiber b₁ = 2 ∧ fiber b₂ = 2.
+   Here s = σ (boundary faces), t = M.support, f = ProperBoundaryFaceTet choice, fibers ≤ 2 =
+   `sharedFaces ≤ 2`. A full (card-2) fiber ⇒ the tet is eligible with sharedFaces = that fiber, and
+   distinct full fibers ⇒ disjoint sharedFaces.
+2. GENERALIZING the count: with fibers ≤ 2 and `t.card + m ≤ s.card`, the number of double-fibers is
+   `≥ s.card - t.card = gap`. (Σ fibers = s.card ≤ 2·#double + 1·(t.card - #double) = #double + t.card.)
+   So #disjoint-eligible ≥ gap := σ.card - M.support.card.
+3. `aleph_card_gap_two` (Theorem2Aleph.lean:1308) gives ONLY `gap ≥ 2`. Grep finds NO `gap ≥ deg v`,
+   NO `gap ≥ maxdeg`, no sharper gap lemma. So the machinery supports a `gap` bound, NOT a `deg v` bound.
+   (`Zvol_add_deg_le` (Zvol.lean) is `Zvol X ≤ |X| - maxdeg`, a different bound.)
+
+=====================================================================
+QUESTIONS (resolve the bound + route; I implement exactly what you specify)
+=====================================================================
+Q1. BOUND. Should `aleph_disjoint_eligible_family` be bounded by `gap = σ.card - M.support.card`
+    (clean: generalize `aleph_two_double_fibers` → `aleph_k_double_fibers` giving `#double-fibers ≥ gap`,
+    then pick `k` of them)? Or do you intend a different construction that genuinely gives `deg v`-many?
+Q2. WHAT FEEDS ≥4 / ≥5. The induction's prime branch needs ≥4 (config-1) and ≥5 (config-2, non-octa)
+    disjoint eligible tets. With a `gap` bound that means `gap ≥ 4` and `gap ≥ 5`. What establishes
+    these? Options: (a) a NEW lemma `gap ≥ maxdeg` (and `maxdeg ≥ 4` from `NoDegree3Vertex`,
+    `maxdeg ≥ 5` from `¬ IsOctahedronSphere`) — if so, what is its proof route?; (b) a LOCAL construction
+    of eligible tets in the star of the max-degree vertex giving `deg v`-many directly (not the global
+    pigeonhole); (c) something else. Pick one and name the existing lemmas it rides on.
+Q3. CORRECTED STATEMENTS. Give the exact final statements + hypotheses of `aleph_four_disjoint_eligible_family`
+    and `aleph_five_disjoint_eligible_family` (the two the induction consumes), and the FIRST bounded
+    sub-piece for Claude to implement (e.g. `aleph_k_double_fibers`, or the `gap ≥ maxdeg` lemma, or the
+    octahedron exclusion `maxdeg ≥ 5`), with its proof sketch.
+
+I will not invent the construction. FILES: Theorem2Aleph.lean (pigeonhole/gap/pair), Eligible.lean
+(EligibleTet, ProperBoundaryFaceTet, NoDegree3Vertex), Theorem4.lean (target). PAPER: taut.tex:996-1037.
+BUILD: cd lean && lake build.
+codex
+I’ll check the existing Lean statements and the paper slice so the recommendation matches what is actually available, especially around the gap count and octahedron clause.
+exec
+/bin/zsh -lc "sed -n '1280,1425p' lean/Taut/Theorem2Aleph.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+          exact hvy_fy (by simp)
+    have hfx3 : fx.card = 3 := hσ.pure fx hfx
+    have hf_eq_fx : f = fx :=
+      Finset.eq_of_subset_of_card_le hfy_sub_fx (by rw [hfx3, hf3])
+    exact hfx_ne_f hf_eq_fx.symm
+  have hf_mem : f ∈ σ.filter (fun g => v ∈ g) :=
+    Finset.mem_filter.mpr ⟨hf, hvf⟩
+  have hfx_v : v ∈ fx := hvx_fx (Finset.mem_insert_self v _)
+  have hfx_mem : fx ∈ σ.filter (fun g => v ∈ g) :=
+    Finset.mem_filter.mpr ⟨hfx, hfx_v⟩
+  have hfy_v : v ∈ fy := hvy_fy (Finset.mem_insert_self v _)
+  have hfy_mem : fy ∈ σ.filter (fun g => v ∈ g) :=
+    Finset.mem_filter.mpr ⟨hfy, hfy_v⟩
+  calc
+    3 = ({f, fx, fy} : Finset (Finset V)).card :=
+      (Finset.card_eq_three.mpr ⟨f, fx, fy, hfx_ne_f.symm, hfy_ne_f.symm,
+        hfx_ne_fy, rfl⟩).symm
+    _ ≤ (σ.filter (fun g => v ∈ g)).card := by
+      refine Finset.card_le_card ?_
+      intro g hg
+      rcases Finset.mem_insert.mp hg with rfl | hg
+      · exact hf_mem
+      · rcases Finset.mem_insert.mp hg with rfl | hg
+        · exact hfx_mem
+        · rw [Finset.mem_singleton] at hg
+          exact hg ▸ hfy_mem
+
+open Finset in
+theorem aleph_card_gap_two {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M) :
+    M.support.card + 2 ≤ σ.card := by
+  classical
+  rcases hσ.vertsOf_nonempty with ⟨v, hv⟩
+  have hdeg_card : deg v (bdry M) = (σ.filter (fun s => v ∈ s)).card :=
+    aleph_deg_eq_card_filter_of_unitOn hU v
+  have hdeg_ge : 3 ≤ deg v (bdry M) := by
+    rw [hdeg_card]
+    exact aleph_incident_faces_card_ge_three hσ hv
+  have hprop := Zvol_add_deg_le v (bdry_bdry M)
+  have hvol : Zvol (bdry M) = nrm M := hT.symm
+  have hnrm_bdry : nrm (bdry M) = σ.card := UnitOn.nrm_eq hU
+  have hnrmM : nrm M = M.support.card := nrm_eq_support_card_of_simplicial hS
+  omega
+
+open Finset in
+open scoped BigOperators in
+theorem aleph_two_double_fibers (α β : Type*) [DecidableEq α] [DecidableEq β] (s : Finset α) (t : Finset β) (f : α → β)
+    (hmap : ∀ a ∈ s, f a ∈ t)
+    (hcard : t.card + 2 ≤ s.card)
+    (hfiber_le2 : ∀ b ∈ t, (s.filter (fun a => f a = b)).card ≤ 2) :
+    ∃ b₁ ∈ t, ∃ b₂ ∈ t, b₁ ≠ b₂ ∧
+      (s.filter (fun a => f a = b₁)).card = 2 ∧
+      (s.filter (fun a => f a = b₂)).card = 2 := by
+  classical
+  let g : β → ℕ := fun b => (s.filter (fun a => f a = b)).card
+  let D : Finset β := t.filter (fun b => g b = 2)
+  have hsum : s.card = ∑ b ∈ t, g b := by
+    dsimp [g]
+    exact Finset.card_eq_sum_card_fiberwise (by
+      intro a ha
+      exact hmap a ha)
+  have hterm_le : ∀ b ∈ t, g b ≤ 1 + if g b = 2 then 1 else 0 := by
+    intro b hb
+    have hle2 : g b ≤ 2 := by
+      dsimp [g]
+      exact hfiber_le2 b hb
+    by_cases h2 : g b = 2
+    · simpa [h2]
+    · have hle1 : g b ≤ 1 := by omega
+      simpa [h2] using hle1
+  have hsum_rhs : (∑ b ∈ t, (1 + if g b = 2 then 1 else 0)) = t.card + D.card := by
+    dsimp [D]
+    rw [Finset.sum_add_distrib]
+    rw [Finset.card_eq_sum_ones t]
+    rw [Finset.card_filter]
+  have hsum_le : s.card ≤ t.card + D.card := by
+    calc
+      s.card = ∑ b ∈ t, g b := hsum
+      _ ≤ ∑ b ∈ t, (1 + if g b = 2 then 1 else 0) := by
+        exact Finset.sum_le_sum (by
+          intro b hb
+          exact hterm_le b hb)
+      _ = t.card + D.card := hsum_rhs
+  have hDcard : 2 ≤ D.card := by
+    omega
+  have hDcard_lt : 1 < D.card := by omega
+  obtain ⟨b₁, hb₁D, b₂, hb₂D, hne⟩ := (Finset.one_lt_card.mp hDcard_lt)
+  have hb₁D' : b₁ ∈ t ∧ g b₁ = 2 := by
+    simpa [D] using hb₁D
+  have hb₂D' : b₂ ∈ t ∧ g b₂ = 2 := by
+    simpa [D] using hb₂D
+  rcases hb₁D' with ⟨hb₁t, hb₁eq⟩
+  rcases hb₂D' with ⟨hb₂t, hb₂eq⟩
+  refine ⟨b₁, hb₁t, b₂, hb₂t, hne, ?_, ?_⟩
+  · simpa [g] using hb₁eq
+  · simpa [g] using hb₂eq
+
+
+/-- M25b: a no-degree-3 taut filling has two distinct eligible tets whose shared
+boundary-face pairs are disjoint (needed by case-1's multiplicity-2 argument). -/
+theorem aleph_disjoint_eligible_pair {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+    ∃ t₁ t₂, t₁ ≠ t₂ ∧ EligibleTet M t₁ ∧ EligibleTet M t₂ ∧
+      Disjoint (sharedFaces M t₁) (sharedFaces M t₂) := by
+  classical
+  have hcov : ∀ α ∈ σ, ∃ t, ProperBoundaryFaceTet M α t := fun α hα =>
+    exists_properBoundaryFaceTet hS hPure (hU.2 α hα)
+  let f : {α // α ∈ σ} → {t // t ∈ M.support} := fun α =>
+    ⟨Classical.choose (hcov α.1 α.2), (Classical.choose_spec (hcov α.1 α.2)).1⟩
+  have hfspec : ∀ α : {α // α ∈ σ}, ProperBoundaryFaceTet M (α : Finset V) ((f α) : Finset V) := fun α =>
+    Classical.choose_spec (hcov α.1 α.2)
+  have hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2 := by
+    intro t ht
+    exact sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht)
+  have hgap : M.support.card + 2 ≤ σ.card := aleph_card_gap_two hσ hU hS hT
+  have hmap : ∀ a ∈ (Finset.univ : Finset {α // α ∈ σ}), f a ∈ (Finset.univ : Finset {t // t ∈ M.support}) := by
+    intro a ha
+    exact Finset.mem_univ _
+  have hcard : (Finset.univ : Finset {t // t ∈ M.support}).card + 2 ≤ (Finset.univ : Finset {α // α ∈ σ}).card := by
+    rw [Finset.card_univ, Finset.card_univ, Fintype.card_coe, Fintype.card_coe]
+    exact hgap
+  have hfiber_le2 : ∀ b ∈ (Finset.univ : Finset {t // t ∈ M.support}),
+      ((Finset.univ : Finset {α // α ∈ σ}).filter (fun a => f a = b)).card ≤ 2 := by
+    intro b hb
+    have hle_shared : (alephChosenFiber f b).card ≤ (sharedFaces M (b : Finset V)).card :=
+      aleph_chosenFiber_card_le_sharedFaces hU f hfspec b
+    have hle2 : (sharedFaces M (b : Finset V)).card ≤ 2 := hShared2 (b : Finset V) b.property
+    exact le_trans hle_shared hle2
+  rcases aleph_two_double_fibers {α // α ∈ σ} {t // t ∈ M.support}
+      (Finset.univ : Finset {α // α ∈ σ}) (Finset.univ : Finset {t // t ∈ M.support}) f
+      hmap hcard hfiber_le2 with ⟨τ₁, hτ₁mem, τ₂, hτ₂mem, hne, hτ₁card, hτ₂card⟩
+  have hτ₁dbl : (alephChosenFiber f τ₁).card = 2 := by
+    simpa only [alephChosenFiber] using hτ₁card
+  have hτ₂dbl : (alephChosenFiber f τ₂).card = 2 := by
+    simpa only [alephChosenFiber] using hτ₂card
+  rcases aleph_double_fiber_eligible hU hPure hShared2 f hfspec τ₁ hτ₁dbl with ⟨helig₁, hshared₁⟩
+  rcases aleph_double_fiber_eligible hU hPure hShared2 f hfspec τ₂ hτ₂dbl with ⟨helig₂, hshared₂⟩
+  refine ⟨(τ₁ : Finset V), (τ₂ : Finset V), ?_, helig₁, helig₂, ?_⟩
+  · intro hval
+    apply hne
+    exact Subtype.ext hval
+  · rw [hshared₁, hshared₂]
+    exact aleph_chosenFaceFibers_disjoint f hne
+
+
+
+exec
+/bin/zsh -lc "sed -n '996,1037p' taut.tex" in /Users/doyle/Dropbox/taut
+ exited 1 in 0ms:
+sed: taut.tex: No such file or directory
+
+exec
+/bin/zsh -lc 'rg -n "aleph_disjoint_eligible_pair|aleph_two_double_fibers|aleph_card_gap_two|IsOctahedronSphere|NoDegree3Vertex|maxdeg|deg v|Zvol_add_deg_le" lean -S' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Eligible.lean:15:* a count + Prop 2 (`Zvol_add_deg_le`) forces a double fiber to exist.
+lean/Taut/Eligible.lean:115:    have h2 := Zvol_add_deg_le x (bdry_bdry M)
+lean/Taut/Eligible.lean:160:def NoDegree3Vertex (σ : Finset (Finset V)) : Prop :=
+lean/Taut/Eligible.lean:293:    (hNo3 : NoDegree3Vertex σ) (ht4 : t.card = 4) :
+lean/Taut/Eligible.lean:300:and M25a'): the `sharedFaces ≤ 2` bound is now discharged from `NoDegree3Vertex
+lean/Taut/Eligible.lean:301:σ`. (Deriving `NoDegree3Vertex` from primality is M24, separate.) -/
+lean/Taut/Eligible.lean:304:    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+lean/Taut/Theorem3Clean.lean:28:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/Theorem3Clean.lean:51:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem3Clean.lean:2857:eligible pair (`aleph_disjoint_eligible_pair`).  Orientation
+lean/Taut/Theorem3Clean.lean:2868:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/Theorem3Clean.lean:2898:  obtain ⟨e₀, u₀, hne, he₀, hu₀, hdisj⟩ := aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+lean/Taut/Theorem3Clean.lean:3162:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem3Clean.lean:3563:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/Theorem3Clean.lean:3574:    aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+lean/Taut/Zvol.lean:10:* Proposition 2 (`Zvol_add_deg_le`): `Zvol X + deg x X ≤ nrm X` for closed
+lean/Taut/Zvol.lean:11:  `X` (the paper's `Zvol(X) ≤ |X| − maxdeg(X)`, per vertex).
+lean/Taut/Zvol.lean:116:/-- Proposition 2 (maxdeg bound, per vertex): for closed `X`,
+lean/Taut/Zvol.lean:118:theorem Zvol_add_deg_le (x : V) {X : Chain V} (hX : bdry X = 0) :
+lean/Taut/Zvol.lean:133:  have h2 := Zvol_add_deg_le x' hW
+lean/Taut/Theorem2Aleph.lean:12:connected-sum reduction) — together with M25b (`aleph_disjoint_eligible_pair`).
+lean/Taut/Theorem2Aleph.lean:1308:theorem aleph_card_gap_two {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Theorem2Aleph.lean:1313:  have hdeg_card : deg v (bdry M) = (σ.filter (fun s => v ∈ s)).card :=
+lean/Taut/Theorem2Aleph.lean:1315:  have hdeg_ge : 3 ≤ deg v (bdry M) := by
+lean/Taut/Theorem2Aleph.lean:1318:  have hprop := Zvol_add_deg_le v (bdry_bdry M)
+lean/Taut/Theorem2Aleph.lean:1326:theorem aleph_two_double_fibers (α β : Type*) [DecidableEq α] [DecidableEq β] (s : Finset α) (t : Finset β) (f : α → β)
+lean/Taut/Theorem2Aleph.lean:1380:theorem aleph_disjoint_eligible_pair {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Theorem2Aleph.lean:1382:    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+lean/Taut/Theorem2Aleph.lean:1395:  have hgap : M.support.card + 2 ≤ σ.card := aleph_card_gap_two hσ hU hS hT
+lean/Taut/Theorem2Aleph.lean:1409:  rcases aleph_two_double_fibers {α // α ∈ σ} {t // t ∈ M.support}
+lean/Taut/Theorem2Aleph.lean:1432:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/Theorem23.lean:53:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/Theorem23.lean:77:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem23.lean:114:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/Theorem23.lean:137:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem4.lean:706:This is the one prime sphere with `maxdeg = 4` exactly, excluded as a special case in the empty-`K₄`
+lean/Taut/Theorem4.lean:707:flip count (where the argument needs `maxdeg ≥ 5`). -/
+lean/Taut/Theorem4.lean:708:def IsOctahedronSphere (σ : Finset (Finset V)) : Prop :=
+lean/Taut/Theorem4.lean:709:  IsSphere2 σ ∧ (vertsOf σ).card = 6 ∧ NoDegree3Vertex σ ∧
+lean/Taut/PrimeStep.lean:1497:disjoint from `e`'s, from `aleph_disjoint_eligible_pair`) keeps both `e` and `w`,
+lean/Taut/PrimeStep.lean:1584:    (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/PrimeStep.lean:1594:    aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+lean/Taut/PrimeStep.lean:1655:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/PrimeStep.lean:2450:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/PrimeStep.lean:2468:    aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+
+codex
+The Lean side confirms the auditor’s reading: the current pair proof is global fiber counting, and the only exported gap lower bound is `+ 2`. I’m locating the paper file now to check whether the intended ≥4/≥5 input is textual or already formalized elsewhere.
+exec
+/bin/zsh -lc "sed -n '700,760p' lean/Taut/Theorem4.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+          (fun t ht => (hcover t ht).symm) hAB2' hbridgeB' hsB hsedges hxs hx2
+    · exact fun hc => hsno (hc.mono (Finset.filter_subset _ _))
+
+/-! ## (5) Flip-avoidance counting -/
+
+/-- The *octahedron* `2`-sphere: `6` vertices, no degree-3 vertex, every vertex of link-size `4`.
+This is the one prime sphere with `maxdeg = 4` exactly, excluded as a special case in the empty-`K₄`
+flip count (where the argument needs `maxdeg ≥ 5`). -/
+def IsOctahedronSphere (σ : Finset (Finset V)) : Prop :=
+  IsSphere2 σ ∧ (vertsOf σ).card = 6 ∧ NoDegree3Vertex σ ∧
+    ∀ v ∈ vertsOf σ, (linkVerts σ v).card = 4
+
+/-- **At most two members of a `sharedFaces`-disjoint eligible family hit a given pair of faces.**
+Since the families' shared-face sets are pairwise disjoint, each face `p` (resp. `q`) lies in the
+`sharedFaces` of at most one member; so at most two members hit `{p,q}`.  (This is the config-2
+counting input: `≤ 2` eligible tets can carry a forbidden interior face `ABC`/`BCD`.) -/
+lemma disjoint_eligible_family_hit_two_faces_card_le_two
+    {M : Chain V} {E : Finset (Finset V)} {p q : Finset V}
+    (hpair : (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e))
+    (_hpq : p ≠ q) :
+    (E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)).card ≤ 2 := by
+  classical
+  have key : ∀ r : Finset V, (E.filter (fun e => r ∈ sharedFaces M e)).card ≤ 1 := by
+    intro r
+    rw [Finset.card_le_one]
+    intro a ha b hb
+    rw [Finset.mem_filter] at ha hb
+    by_contra hab
+    exact (Finset.disjoint_left.mp
+      (hpair (Finset.mem_coe.mpr ha.1) (Finset.mem_coe.mpr hb.1) hab) ha.2) hb.2
+  have hsub : E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)
+      ⊆ E.filter (fun e => p ∈ sharedFaces M e) ∪ E.filter (fun e => q ∈ sharedFaces M e) := by
+    intro e he
+    rw [Finset.mem_filter] at he
+    rcases he.2 with h | h
+    · exact Finset.mem_union_left _ (Finset.mem_filter.mpr ⟨he.1, h⟩)
+    · exact Finset.mem_union_right _ (Finset.mem_filter.mpr ⟨he.1, h⟩)
+  calc (E.filter (fun e => p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e)).card
+      ≤ (E.filter (fun e => p ∈ sharedFaces M e)
+          ∪ E.filter (fun e => q ∈ sharedFaces M e)).card := Finset.card_le_card hsub
+    _ ≤ (E.filter (fun e => p ∈ sharedFaces M e)).card
+          + (E.filter (fun e => q ∈ sharedFaces M e)).card := Finset.card_union_le _ _
+    _ ≤ 2 := by have h1 := key p; have h2 := key q; omega
+
+end Taut
+
+exec
+/bin/zsh -lc "rg --files -g 'taut.tex' -g '*.tex'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+taut/taut.tex
+
+exec
+/bin/zsh -lc "sed -n '145,175p' lean/Taut/Eligible.lean && sed -n '110,125p' lean/Taut/Zvol.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  · rw [htt]; exact (hfspec α₂).2.2
+
+/-! ## M25a': the no-degree-3 face bound (architect: codex 019ec428, Q2)
+
+The hard combinatorial step: a tet with three boundary faces forces a degree-3
+vertex. Those three faces of `t` share a common vertex `d`; the three σ-faces
+make the other three vertices of `t` a 3-cycle in the link of `d`; 2-regularity
+(`link_two_regular`) pins each cycle vertex's neighbours to the cycle, and
+`linkConn` then traps the whole link inside it — so `d` has link exactly 3. -/
+
+/-- A vertex of `σ` whose link has exactly three vertices (degree 3). -/
+def HasDegree3Vertex (σ : Finset (Finset V)) : Prop :=
+  ∃ v ∈ vertsOf σ, (linkVerts σ v).card = 3
+
+/-- `σ` has no degree-3 vertex (the primality consequence the count needs). -/
+def NoDegree3Vertex (σ : Finset (Finset V)) : Prop :=
+  ∀ v ∈ vertsOf σ, (linkVerts σ v).card ≠ 3
+
+/-- Reachability stays inside a vertex set closed under taking neighbours. -/
+lemma walk_mem_of_adj_closed {G : SimpleGraph V} {S : Finset V}
+    (hclosed : ∀ u ∈ S, ∀ v, G.Adj u v → v ∈ S) {a x : V} (w : G.Walk a x) :
+    a ∈ S → x ∈ S := by
+  induction w with
+  | nil => exact id
+  | cons hadj _ ih => exact fun ha => ih (hclosed _ ha _ hadj)
+
+/-- **Three boundary faces force a degree-3 vertex.** If three of an eligible
+tet's four faces lie on `σ`, the shared vertex `d` of those faces has link
+exactly the opposite triangle. -/
+lemma exists_degree3Vertex_of_three_sharedFaces {σ : Finset (Finset V)}
+    {M : Chain V} {t : Finset V} (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    le_trans (Zvol_le hbd) (nrm_add_le _ _)
+  have hsplit := hU.nrm_add_nrm_sub
+  have h1 : Zvol (bdry U) ≤ nrm U := Zvol_le rfl
+  rw [IsTaut] at hM ⊢
+  omega
+
+/-- Proposition 2 (maxdeg bound, per vertex): for closed `X`,
+`Zvol X + deg x X ≤ nrm X`. -/
+theorem Zvol_add_deg_le (x : V) {X : Chain V} (hX : bdry X = 0) :
+    Zvol X + deg x X ≤ nrm X := by
+  have h1 : Zvol X ≤ nrm (cone x X) := Zvol_le (bdry_cone_of_closed hX)
+  have h2 := nrm_cone_add_deg x X
+  omega
+
+/-- Proposition 3 (nocone): a taut chain contains no nontrivial complete
+cone.  Here `cone x W ⊂ M` with `W` closed, `x ∉ vert W` (i.e.
+
+codex
+The Theorem4 octahedron definition is only a shape predicate right now; I don’t see a formal bridge from `¬ IsOctahedronSphere` to any max-degree statement in the checked code. I’m checking nearby paper text before giving the patch shape.
+exec
+/bin/zsh -lc "sed -n '996,1037p' taut/taut.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+If $\sigma$ has no vertex of degree 3.
+there are at least $\maxdeg \geq 4$ disjointly eligible tet.
+Removing any one of these tets performs an `edge flip' on the boundary
+$\sigma$,
+which either (a) remains a triangulation of the 2-sphere,
+or (b) becomes an almost disjoint union where
+two such triangulations are joined along an edge.
+We will show that some choice for the flip does not remove the taboo
+configuration.
+In case (a) we have a smaller counterexample already.
+In case (b) the key is that if a $K_3$ or $K_4$ occurs
+in the almost disjoint union, it occurs on one side or the other,
+also giving a counterexample.
+
+Configuration 1:
+When we remove an eligible tet from $\tau$ to flip an edge of $\sigma$,
+the only edge that disappears from $\tau$ is the edge that gets flipped.
+There are at least four choices of the edge to flip, and three edges we must
+avoid flipping to preserve the taboo $K_3$.
+
+Configuration 2:
+Now there are six edges we must avoid flipping.
+Having dealt with configuration 1,
+we know that along with the six edges of $\{A,B,C,D\}$,
+$\tau$ must contain all four of the unoriented faces
+$ABC$, $ABD$, $ACD$, $BCD$.
+At most two of these can be boundary faces, because
+$\sigma$ has no vertex of degree 3.
+So at most five of the $K_5$ edges are on the boundary.
+By treating the octahedron separately as a special case,
+we can assume $\maxdeg \geq 5$,
+so we have at least five boundary edges we can flip.
+The only potential problem is if five of the six $K_4$ edges are
+on the boundary.
+Say the interior edge is $AD$,
+so that the $K_4$ includes the faces $ABC,BCD$.
+If an eligible tet contains neither of these as one of its two boundary faces,
+we are fine.
+But at most two of our disjointly eligible tets
+can contain one of the faces $ABC,BCD$,
+leaving us at least $\maxdeg-2$ other flipping options.
+\proofend
+
+codex
+The paper explicitly wants “at least maxdeg” disjoint eligible tets. The missing Lean bridge should be a direct strengthening of `aleph_card_gap_two`: Proposition 2 gives `support.card + deg v ≤ σ.card` for every boundary vertex, so the global fiber count can still feed the degree bound.
+exec
+/bin/zsh -lc 'rg -n "linkVerts.*filter|filter.*linkVerts|deg_eq|incident_faces|card_ge_three|card = 4|= 4|card.*≠ 3|NoDegree3Vertex" lean/Taut -S' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Chains.lean:488:lemma deg_eq_zero_iff {x : V} {M : Chain V} : deg x M = 0 ↔ x ∉ vert M := by
+lean/Taut/Theorem23.lean:53:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/Theorem23.lean:77:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem23.lean:114:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/Theorem23.lean:137:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Complex2.lean:214:  have hne3 : (f₁ ∩ f₂).card ≠ 3 := by
+lean/Taut/Complex2.lean:257:    ((linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y)).card = 2 := by
+lean/Taut/Complex2.lean:261:  have himg : ((linkVerts σ v).filter
+lean/Taut/Complex2.lean:290:  have hinj : ∀ y₁ ∈ (linkVerts σ v).filter
+lean/Taut/Complex2.lean:292:      ∀ y₂ ∈ (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y),
+lean/Taut/Complex2.lean:381:private lemma tetra_T_card : ({a, b, c, d} : Finset V).card = 4 := by
+lean/Taut/Complex2.lean:609:theorem isSphere2_powersetCard3 {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Stickerball.lean:22:lemma bdryGen_ne_zero_of_subset {t f : Finset V} (ht : t.card = 4) (hf : f.card = 3)
+lean/Taut/Stickerball.lean:59:    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Stickerball.lean:104:    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Zvol.lean:178:  have hy' : deg y W ≠ 0 := fun h => (deg_eq_zero_iff.mp h) hyW
+lean/Taut/Splitting.lean:425:    exact (deg_eq_zero_iff.mp h)
+lean/Taut/Ball.lean:64:  card4 : t.card = 4
+lean/Taut/Ball.lean:79:  | t :: l, B => t.card = 4 ∧ ShellFrom (tetFaces t) l B
+lean/Taut/Ball.lean:395:theorem isBall_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Ball.lean:402:theorem freelyShellable_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Eligible.lean:55:    (hPure : ∀ t ∈ M.support, t.card = 4) {α : Finset V}
+lean/Taut/Eligible.lean:98:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Eligible.lean:114:    have hdeg : 1 ≤ deg x (bdry M) := Nat.pos_of_ne_zero fun h => (deg_eq_zero_iff.mp h) hx
+lean/Taut/Eligible.lean:160:def NoDegree3Vertex (σ : Finset (Finset V)) : Prop :=
+lean/Taut/Eligible.lean:161:  ∀ v ∈ vertsOf σ, (linkVerts σ v).card ≠ 3
+lean/Taut/Eligible.lean:176:    (ht4 : t.card = 4) (h3 : 3 ≤ (sharedFaces M t).card) :
+lean/Taut/Eligible.lean:270:        ⊆ (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w) := by
+lean/Taut/Eligible.lean:274:    have hNeq : (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w)
+lean/Taut/Eligible.lean:278:    have : v ∈ (linkVerts σ d).filter (fun w => (linkGraph σ d).Adj u w) :=
+lean/Taut/Eligible.lean:293:    (hNo3 : NoDegree3Vertex σ) (ht4 : t.card = 4) :
+lean/Taut/Eligible.lean:300:and M25a'): the `sharedFaces ≤ 2` bound is now discharged from `NoDegree3Vertex
+lean/Taut/Eligible.lean:301:σ`. (Deriving `NoDegree3Vertex` from primality is M24, separate.) -/
+lean/Taut/Eligible.lean:304:    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+lean/Taut/Theorem3.lean:94:  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+lean/Taut/Theorem3.lean:111:  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+lean/Taut/Theorem3.lean:171:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem3.lean:195:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem3.lean:247:  have hPureR : ∀ t ∈ MR.support, t.card = 4 := fun t ht =>
+lean/Taut/Theorem3.lean:277:  have ht₀card : t₀.card = 4 := hPureR t₀ ht₀mem
+lean/Taut/Theorem3.lean:278:  have hstarcard : T.card = 4 := by rw [hT]; exact starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3.lean:431:    (hγ : γ = linkVerts σ v) (hT4 : (starTet σ v).card = 4)
+lean/Taut/Theorem3.lean:434:    (hPureR : ∀ t ∈ R.support, t.card = 4)
+lean/Taut/Theorem3.lean:457:      have : (starTet σ v).card = 4 := hT4
+lean/Taut/Theorem3.lean:493:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
+lean/Taut/Theorem3.lean:547:            t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+lean/Taut/Theorem3.lean:552:    have hPureMR : ∀ t ∈ MR.support, t.card = 4 := by
+lean/Taut/Theorem3.lean:555:            t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+lean/Taut/Theorem3.lean:621:          ∀ t ∈ ML.support, t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ W)) :=
+lean/Taut/Theorem3.lean:626:    have hPureML : ∀ t ∈ ML.support, t.card = 4 := by
+lean/Taut/Theorem3.lean:628:          ∀ t ∈ ML.support, t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ W)) :=
+lean/Taut/Theorem3.lean:672:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3.lean:736:            t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet sigma (W + fun _ => 1))) :=
+lean/Taut/Theorem3.lean:775:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3.lean:847:          ∀ t ∈ ML.support, t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
+lean/Taut/Pseudomanifold.lean:129:lemma edgeLinkConnected_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Pseudomanifold.lean:142:    have hcard : (insert x (insert y e)).card = 4 := by
+lean/Taut/Pseudomanifold.lean:156:lemma insert_apexes_eq {t e : Finset V} {z w : V} (ht : t.card = 4) (he : e.card = 2)
+lean/Taut/Pseudomanifold.lean:163:  have hcard : (insert z (insert w e)).card = 4 := by
+lean/Taut/Pseudomanifold.lean:206:lemma edgeLinkConnected_insert {τ : Finset (Finset V)} {t : Finset V} (ht : t.card = 4)
+lean/Taut/Pseudomanifold.lean:249:lemma isStickerball_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Pseudomanifold.lean:262:    (ht : tt.card = 4) (httτ : tt ∉ τ)
+lean/Taut/Pseudomanifold.lean:467:def Pure3 (τ : Finset (Finset V)) : Prop := ∀ t ∈ τ, t.card = 4
+lean/Taut/Pseudomanifold.lean:480:lemma pure3_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Pseudomanifold.lean:484:lemma normal3_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Pseudomanifold.lean:489:lemma clean3Complex_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/Pseudomanifold.lean:500:    (ht : t.card = 4) (httτ : t ∉ τ) (hτ : Clean3Complex τ)
+lean/Taut/FlipGeom.lean:300:  have ht4 : e.card = 4 := he.1
+lean/Taut/FlipGeom.lean:463:theorem tetFaces_edge_filter_card_eq_two {e a : Finset V} (he : e.card = 4) (hae : a ⊆ e) (hacard : a.card = 2) :
+lean/Taut/FlipGeom.lean:709:theorem tetFaces_pair_union_eq {e F G : Finset V} (he : e.card = 4) (hF : F ∈ tetFaces e) (hG : G ∈ tetFaces e)
+lean/Taut/FlipGeom.lean:767:theorem tetFaces_pair_inter_card_eq_two {e F G : Finset V} (he : e.card = 4) (hF : F ∈ tetFaces e) (hG : G ∈ tetFaces e)
+lean/Taut/FlipGeom.lean:770:  have hU : (F ∪ G).card = 4 := by
+lean/Taut/FlipGeom.lean:1010:      (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj w y) = {p, q} ∧
+lean/Taut/FlipGeom.lean:1016:  have ht4 : e.card = 4 := he.1
+lean/Taut/FlipGeom.lean:1035:        (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj w y) = {p, q} ∧
+lean/Taut/FlipGeom.lean:1255:    have hneighbors : (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj w y) = ({p, q} : Finset V) := by
+lean/Taut/FlipGeom.lean:1257:      have hsub : ({p, q} : Finset V) ⊆ (linkVerts σ v).filter (fun y => (linkGraph σ v).Adj w y) := by
+lean/Taut/Theorem2.lean:100:  t.card = 4 ∧ t ∈ M.support ∧ (sharedFaces M t).card = 2 ∧
+lean/Taut/Theorem2.lean:109:lemma card_tetFaces {t : Finset V} (ht : t.card = 4) : (tetFaces t).card = 4 := by
+lean/Taut/Theorem2.lean:112:lemma erase_mem_tetFaces {t : Finset V} {x : V} (ht : t.card = 4) (hx : x ∈ t) :
+lean/Taut/Theorem2.lean:203:    (ht : t.card = 4) (hs : s ∉ tetFaces t) : tetContribution M t s = 0 := by
+lean/Taut/Theorem2.lean:213:lemma exists_erase_eq_of_mem_tetFaces {t s : Finset V} (ht : t.card = 4)
+lean/Taut/Theorem2.lean:227:    (ht : t.card = 4) (htM : M t ≠ 0) (hs : s ∈ tetFaces t) : tetContribution M t s ≠ 0 := by
+lean/Taut/Theorem2.lean:282:    (ht : t.card = 4) (hpm : M t = 1 ∨ M t = -1) (hs : s ∈ tetFaces t) :
+lean/Taut/Theorem3Clean.lean:28:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/Theorem3Clean.lean:51:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem3Clean.lean:64:  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+lean/Taut/Theorem3Clean.lean:112:    (hstar4 : (starTet σ v).card = 4)
+lean/Taut/Theorem3Clean.lean:591:    (hstar4 : (starTet σ v).card = 4)
+lean/Taut/Theorem3Clean.lean:592:    (hvt₀ : v ∉ t₀) (hγt₀ : γ ⊆ t₀) (ht₀4 : t₀.card = 4)
+lean/Taut/Theorem3Clean.lean:727:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3Clean.lean:787:          t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet sigma (W + fun _ => 1))) :=
+lean/Taut/Theorem3Clean.lean:812:    have hPureR : ∀ t ∈ MR.support, t.card = 4 := fun t ht => (hsuppInfo t ht).1
+lean/Taut/Theorem3Clean.lean:845:    have ht₀4 : t₀.card = 4 := hPureR t₀ ht₀
+lean/Taut/Theorem3Clean.lean:859:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3Clean.lean:929:        ∀ t ∈ ML.support, t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
+lean/Taut/Theorem3Clean.lean:954:    have hPureL : ∀ t ∈ ML.support, t.card = 4 := fun t ht => (hsuppInfo t ht).1
+lean/Taut/Theorem3Clean.lean:983:    have ht₀4 : t₀.card = 4 := hPureL t₀ ht₀
+lean/Taut/Theorem3Clean.lean:1048:  have he4 : e.card = 4 := he.1
+lean/Taut/Theorem3Clean.lean:1123:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem3Clean.lean:1136:  have hPureE : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+lean/Taut/Theorem3Clean.lean:1157:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem3Clean.lean:1172:  have he4 : e.card = 4 := he.1
+lean/Taut/Theorem3Clean.lean:1276:  have ht4 : t.card = 4 := hPure t htM
+lean/Taut/Theorem3Clean.lean:1340:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem3Clean.lean:1358:  have he4 : e.card = 4 := he.1
+lean/Taut/Theorem3Clean.lean:1473:  have ht4 : t.card = 4 := hPure t htM
+lean/Taut/Theorem3Clean.lean:1558:  have ht4 : t.card = 4 := ht.1
+lean/Taut/Theorem3Clean.lean:1709:  have ht4 : t.card = 4 := ht.1
+lean/Taut/Theorem3Clean.lean:1815:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem3Clean.lean:1870:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem3Clean.lean:1901:    have he4 : e.card = 4 := he.1
+lean/Taut/Theorem3Clean.lean:2104:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem3Clean.lean:2160:    have he4 : e.card = 4 := he.1
+lean/Taut/Theorem3Clean.lean:2161:    have hPureE : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+lean/Taut/Theorem3Clean.lean:2165:    have hs4 : s.card = 4 := hPureE s hsmem
+lean/Taut/Theorem3Clean.lean:2240:      have hPureE : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+lean/Taut/Theorem3Clean.lean:2250:    have he4 : e.card = 4 := he.1
+lean/Taut/Theorem3Clean.lean:2359:    have he4 : e.card = 4 := he.1
+lean/Taut/Theorem3Clean.lean:2447:    (hAB : A ∩ B = cd) (hcd2 : cd.card = 2) (he4 : e.card = 4)
+lean/Taut/Theorem3Clean.lean:2537:    (hAB : A ∩ B = cd) (hcd2 : cd.card = 2) (he4 : e.card = 4)
+lean/Taut/Theorem3Clean.lean:2683:    (hAB : A ∩ B = cd) (hcd2 : cd.card = 2) (he4 : e.card = 4)
+lean/Taut/Theorem3Clean.lean:2774:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem3Clean.lean:2807:  have he4 : e.card = 4 := he.1
+lean/Taut/Theorem3Clean.lean:2811:  -- `e = f₃ ∪ f₄`: `f₃ ∪ f₄ ⊆ e` with `|f₃ ∪ f₄| = 3 + 3 - 2 = 4 = |e|`.
+lean/Taut/Theorem3Clean.lean:2868:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/Theorem3Clean.lean:2875:  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+lean/Taut/Theorem3Clean.lean:2914:  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+lean/Taut/Theorem3Clean.lean:2954:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
+lean/Taut/Theorem3Clean.lean:3011:            t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+lean/Taut/Theorem3Clean.lean:3016:    have hPureMR : ∀ t ∈ MR.support, t.card = 4 := by
+lean/Taut/Theorem3Clean.lean:3019:            t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) :=
+lean/Taut/Theorem3Clean.lean:3102:          ∀ t ∈ ML.support, t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ W)) :=
+lean/Taut/Theorem3Clean.lean:3107:    have hPureML : ∀ t ∈ ML.support, t.card = 4 := by
+lean/Taut/Theorem3Clean.lean:3109:          ∀ t ∈ ML.support, t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet σ W)) :=
+lean/Taut/Theorem3Clean.lean:3162:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/Theorem3Clean.lean:3192:  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+lean/Taut/Theorem3Clean.lean:3259:    (he4 : e.card = 4)
+lean/Taut/Theorem3Clean.lean:3266:    (ht₄ : t₄ ∈ M₂) (hf₄t₄ : f₄ ⊆ t₄) (ht₄card : t₄.card = 4)
+lean/Taut/Theorem3Clean.lean:3340:  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+lean/Taut/Theorem3Clean.lean:3375:  have he4 : e.card = 4 := he.1
+lean/Taut/Theorem3Clean.lean:3407:  have ht₃card : t₃.card = 4 := hPure t₃ (by
+lean/Taut/Theorem3Clean.lean:3409:  have ht₄card : t₄.card = 4 := hPure t₄ (by
+lean/Taut/Theorem3Clean.lean:3436:  have hpureM₁ : ∀ t ∈ M₁.support, t.card = 4 :=
+lean/Taut/Theorem3Clean.lean:3438:  have hpureM₂ : ∀ t ∈ M₂.support, t.card = 4 :=
+lean/Taut/Theorem3Clean.lean:3563:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/Theorem3Clean.lean:3571:  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+lean/Taut/CleanShelling.lean:76:  | t :: l, B => t.card = 4 ∧ CleanShellFrom {t} (tetFaces t) l B
+lean/Taut/CleanShelling.lean:128:lemma isCleanShelling_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/CleanShelling.lean:132:lemma isCleanBall_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/CleanShelling.lean:137:lemma freelyCleanShellable_singleton {t : Finset V} (ht : t.card = 4) :
+lean/Taut/CleanShelling.lean:429:    {t₄ : Finset V} (ht₄τ : t₄ ∈ τ) (hf₄t₄ : f₄ ⊆ t₄) (ht₄card : t₄.card = 4)
+lean/Taut/CleanShelling.lean:534:    (ht₄Δ : t₄ ∉ Δ) (ht₄B : t₄ ⊆ Bside) (ht₄card : t₄.card = 4)
+lean/Taut/CleanShelling.lean:612:    (hf₄t₄ : f₄ ⊆ t₄) (ht₄card : t₄.card = 4) (hf₄card : f₄.card = 3)
+lean/Taut/Theorem4.lean:56:  ∃ s : Finset V, s.card = 4 ∧ (∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e) ∧ ¬ SimplexOf τ s
+lean/Taut/Theorem4.lean:106:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem4.lean:109:    (hqs : q ⊆ s) (hq4 : q.card = 4) : q ∈ M.support := by
+lean/Taut/Theorem4.lean:127:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem4.lean:144:  have hca : (insert a f).card = 4 := by rw [Finset.card_insert_of_notMem haf, hf3]
+lean/Taut/Theorem4.lean:145:  have hcb : (insert b f).card = 4 := by rw [Finset.card_insert_of_notMem hbf, hf3]
+lean/Taut/Theorem4.lean:167:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem4.lean:207:    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem4.lean:250:    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem4.lean:311:    -- f ⊆ s but ¬(f⊆s ∧ card=3) ⟹ f.card ≠ 3 ⟹ bdryGen t f = 0
+lean/Taut/Theorem4.lean:312:    have hf3 : f.card ≠ 3 := fun h => hcase ⟨hfs, h⟩
+lean/Taut/Theorem4.lean:329:    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem4.lean:367:  have hPure : ∀ t ∈ M.support, t.card = 4 := fun t ht =>
+lean/Taut/Theorem4.lean:404:    (hs4 : s.card = 4)
+lean/Taut/Theorem4.lean:423:    (hs4 : s.card = 4)
+lean/Taut/Theorem4.lean:547:    (hs4 : s.card = 4)
+lean/Taut/Theorem4.lean:706:This is the one prime sphere with `maxdeg = 4` exactly, excluded as a special case in the empty-`K₄`
+lean/Taut/Theorem4.lean:709:  IsSphere2 σ ∧ (vertsOf σ).card = 6 ∧ NoDegree3Vertex σ ∧
+lean/Taut/Theorem4.lean:710:    ∀ v ∈ vertsOf σ, (linkVerts σ v).card = 4
+lean/Taut/Separation.lean:992:their χ's add to `χσ + 2 = 4`, forcing each to be exactly 2. -/
+lean/Taut/Degree3.lean:42:  have hsub : (linkVerts σ v).filter (fun w => (linkGraph σ v).Adj x w)
+lean/Taut/Degree3.lean:47:  have hymem : y ∈ (linkVerts σ v).filter (fun w => (linkGraph σ v).Adj x w) := by
+lean/Taut/Degree3.lean:81:  have hTcard : T.card = 4 := by rw [hTdef, Finset.card_insert_of_notMem hvγ, h3]
+lean/Taut/Theorem2Aleph.lean:34:theorem aleph_base_sphere_eq_powersetCard3 {σ : Finset (Finset V)} (hσ : IsSphere2 σ) (hcard : (vertsOf σ).card = 4) :
+lean/Taut/Theorem2Aleph.lean:50:theorem aleph_base_support_eq_singleton_of_four_vertices {M : Chain V} {T : Finset V} (hTcard : T.card = 4)
+lean/Taut/Theorem2Aleph.lean:51:    (hsupp : ∀ t ∈ M.support, t.card = 4 ∧ t ⊆ T)
+lean/Taut/Theorem2Aleph.lean:99:    ∀ t ∈ M.support, t.card = 4 ∧ t ⊆ vertsOf σ := by
+lean/Taut/Theorem2Aleph.lean:110:  have hcard : t.card = 4 := by
+lean/Taut/Theorem2Aleph.lean:115:    have hu_card : u.card = 4 := by
+lean/Taut/Theorem2Aleph.lean:129:    (vertsOf σ).card = 4 := by
+lean/Taut/Theorem2Aleph.lean:155:  have hcard : T.card = 4 := aleph_base_verts_card_eq_four hσ hv
+lean/Taut/Theorem2Aleph.lean:157:  have hsuppInfo : ∀ t ∈ M.support, t.card = 4 ∧ t ⊆ T := aleph_base_taut_support_card4_subset_verts hσ hU hMX hT
+lean/Taut/Theorem2Aleph.lean:459:    (starTet σ v).card = 4 := by
+lean/Taut/Theorem2Aleph.lean:483:  have hTcard : T.card = 4 := by
+lean/Taut/Theorem2Aleph.lean:672:theorem star_filter_support_singleton (Mstar Y : Chain V) (T : Finset V) (hT4 : T.card = 4)
+lean/Taut/Theorem2Aleph.lean:683:    have hcardt : t.card = 4 := by
+lean/Taut/Theorem2Aleph.lean:687:    have hcardfaces : (tetFaces T).card = 4 := card_tetFaces hT4
+lean/Taut/Theorem2Aleph.lean:887:theorem vertsOf_tetFaces_eq (T : Finset V) (hT4 : T.card = 4) : vertsOf (tetFaces T) = T := by
+lean/Taut/Theorem2Aleph.lean:919:    (hML : bdry (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))) =
+lean/Taut/Theorem2Aleph.lean:921:    (hMR : bdry (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))) =
+lean/Taut/Theorem2Aleph.lean:923:    (hTL : IsTaut (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
+lean/Taut/Theorem2Aleph.lean:924:    (hTR : IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
+lean/Taut/Theorem2Aleph.lean:925:    (hSuppL : ∀ t ∈ (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))).support,
+lean/Taut/Theorem2Aleph.lean:927:    (hSuppR : ∀ t ∈ (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))).support,
+lean/Taut/Theorem2Aleph.lean:929:    (hMsum : M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))) +
+lean/Taut/Theorem2Aleph.lean:930:      M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))) = M)
+lean/Taut/Theorem2Aleph.lean:963:    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:980:      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:1016:    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:1045:      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:1163:theorem aleph_deg_eq_card_filter_of_unitOn {X : Chain V} {σ : Finset (Finset V)} (hU : UnitOn X σ) (x : V) :
+lean/Taut/Theorem2Aleph.lean:1176:    (hU : UnitOn (bdry M) σ) (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/Theorem2Aleph.lean:1221:theorem aleph_incident_faces_card_ge_three {σ : Finset (Finset V)} (hσ : IsSphere2 σ) {v : V} (hv : v ∈ vertsOf σ) :
+lean/Taut/Theorem2Aleph.lean:1314:    aleph_deg_eq_card_filter_of_unitOn hU v
+lean/Taut/Theorem2Aleph.lean:1317:    exact aleph_incident_faces_card_ge_three hσ hv
+lean/Taut/Theorem2Aleph.lean:1382:    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+lean/Taut/Theorem2Aleph.lean:1432:      SimplicialChain M → NoDegree3Vertex σ →
+lean/Taut/PrimeStep.lean:397:    have htcard : t.card = 4 := by
+lean/Taut/PrimeStep.lean:1191:    (hpure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/PrimeStep.lean:1351:  have hpure : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+lean/Taut/PrimeStep.lean:1353:    have hMinfo : ∀ t ∈ M.support, t.card = 4 ∧ t ⊆ vertsOf σ :=
+lean/Taut/PrimeStep.lean:1504:    (hPure : ∀ t ∈ M.support, t.card = 4)
+lean/Taut/PrimeStep.lean:1526:  have hPureU : ∀ t ∈ (removeTet M u).support, t.card = 4 := by
+lean/Taut/PrimeStep.lean:1584:    (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/PrimeStep.lean:1591:  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+lean/Taut/PrimeStep.lean:1622:      have hPureE : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+lean/Taut/PrimeStep.lean:1655:      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+lean/Taut/PrimeStep.lean:1683:  have he4 : e.card = 4 := he.1
+lean/Taut/PrimeStep.lean:2189:    have hpure₂ : ∀ t ∈ ((removeTet M e).filter (fun t => t ⊆ B)).support, t.card = 4 :=
+lean/Taut/PrimeStep.lean:2210:    have hpure₁ : ∀ t ∈ ((removeTet M e).filter (fun t => t ⊆ A)).support, t.card = 4 :=
+lean/Taut/PrimeStep.lean:2450:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+lean/Taut/PrimeStep.lean:2465:  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+
+exec
+/bin/zsh -lc 'rg -n "vertsOf_nonempty|Euler|vertsOf.*card|linkVerts.*card|degree" lean/Taut -S' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Complex2.lean:12:two faces), connected vertex links, connected, Euler characteristic 2.
+lean/Taut/Complex2.lean:13:With χ in the definition, the Euler counting relations (`3f = 2e`,
+lean/Taut/Complex2.lean:95:r₁ = V−1) actually rests on. Euler enters `IsSphere2` only via nonemptiness. -/
+lean/Taut/Complex2.lean:102:/-- A combinatorial 2-sphere: a closed surface with Euler characteristic 2.
+lean/Taut/Complex2.lean:110:  euler : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2
+lean/Taut/Complex2.lean:112:/-- Forget the Euler constraint: every sphere is a closed surface. -/
+lean/Taut/Complex2.lean:117:/-! ## Euler counting -/
+lean/Taut/Complex2.lean:153:    3 * (vertsOf σ).card = (edgesOf σ).card + 6 := by
+lean/Taut/Complex2.lean:160:    2 * (vertsOf σ).card = σ.card + 4 := by
+lean/Taut/Complex2.lean:257:    ((linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y)).card = 2 := by
+lean/Taut/Complex2.lean:310:/-- Minimum degree three: every vertex of a sphere has at least three
+lean/Taut/Complex2.lean:313:    {v : V} (hv : v ∈ vertsOf σ) : 3 ≤ (linkVerts σ v).card := by
+lean/Taut/Complex2.lean:358:    _ ≤ (linkVerts σ v).card := by
+lean/Taut/Complex2.lean:596:  · -- Euler: 4 + 4 = 6 + 2
+lean/Taut/Eligible.lean:6:For the Theorem-2 induction we need, in a no-degree-3 taut filling, an *eligible*
+lean/Taut/Eligible.lean:92:/-- **One eligible tet exists** (M25a), given the no-degree-3 face bound
+lean/Taut/Eligible.lean:147:/-! ## M25a': the no-degree-3 face bound (architect: codex 019ec428, Q2)
+lean/Taut/Eligible.lean:149:The hard combinatorial step: a tet with three boundary faces forces a degree-3
+lean/Taut/Eligible.lean:155:/-- A vertex of `σ` whose link has exactly three vertices (degree 3). -/
+lean/Taut/Eligible.lean:157:  ∃ v ∈ vertsOf σ, (linkVerts σ v).card = 3
+lean/Taut/Eligible.lean:159:/-- `σ` has no degree-3 vertex (the primality consequence the count needs). -/
+lean/Taut/Eligible.lean:161:  ∀ v ∈ vertsOf σ, (linkVerts σ v).card ≠ 3
+lean/Taut/Eligible.lean:171:/-- **Three boundary faces force a degree-3 vertex.** If three of an eligible
+lean/Taut/Eligible.lean:174:lemma exists_degree3Vertex_of_three_sharedFaces {σ : Finset (Finset V)}
+lean/Taut/Eligible.lean:289:/-- **The no-degree-3 face bound** (discharges `exists_eligibleTet`'s hypothesis):
+lean/Taut/Eligible.lean:290:if `σ` has no degree-3 vertex, no tet has more than two boundary faces. -/
+lean/Taut/Eligible.lean:296:  obtain ⟨v, hv, hcard⟩ := exists_degree3Vertex_of_three_sharedFaces hσ hU ht4 (by omega)
+lean/Taut/Eligible.lean:299:/-- **One eligible tet exists in a no-degree-3 taut filling** (M25, combining M25a
+lean/Taut/Chains.lean:485:/-- The degree of a vertex in a chain: the mass of its neighborhood. -/
+lean/Taut/Homology2.lean:10:* the Euler–Poincaré identity χ = b₀ − b₁ + b₂ is pure linear algebra;
+lean/Taut/Homology2.lean:372:/-- A sphere is nonempty (its Euler relation fails on the empty complex). -/
+lean/Taut/Homology2.lean:424:lemma IsSphere2.vertsOf_nonempty {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+lean/Taut/Homology2.lean:432:    finrank (ZMod 2) (LinearMap.ker (aug σ)) = (vertsOf σ).card - 1 := by
+lean/Taut/Homology2.lean:444:  rw [h1, show finrank (ZMod 2) (C0 σ) = (vertsOf σ).card from by
+lean/Taut/Homology2.lean:552:    finrank (ZMod 2) (LinearMap.range (bd1 σ)) = (vertsOf σ).card - 1 := by
+lean/Taut/Homology2.lean:576:      = (edgesOf σ).card - ((vertsOf σ).card - 1) := by
+lean/Taut/Homology2.lean:578:    rw [finrank_range_bd1 h.toClosedSurface h.vertsOf_nonempty, hE] at this; omega
+lean/Taut/Homology2.lean:580:  have hV : 1 ≤ (vertsOf σ).card := h.vertsOf_nonempty.card_pos
+lean/Taut/Homology2.lean:583:/-! ### χ ≤ 2 for closed surfaces (no Euler hypothesis) -/
+lean/Taut/Homology2.lean:588:which needs the extra Euler input.) -/
+lean/Taut/Homology2.lean:591:    (vertsOf σ).card + σ.card ≤ (edgesOf σ).card + 2 := by
+lean/Taut/Homology2.lean:610:  have hV : 1 ≤ (vertsOf σ).card := hne0.card_pos
+lean/Taut/Ball.lean:218:This is the degree-3 star-start transport target: after the first remainder tet
+lean/Taut/Degree3.lean:6:A degree-3 vertex `v` of a 2-sphere `σ` (its link is a triangle) gives a non-face
+lean/Taut/Degree3.lean:11:* `linkGraph_complete_of_linkVerts_card_three` — a degree-3 link is a triangle;
+lean/Taut/Degree3.lean:13:* `linkVerts_not_mem_of_card_three_of_four_lt_verts` — the link triangle is a
+lean/Taut/Degree3.lean:36:/-- **A degree-3 link is a triangle.** With exactly three link vertices, any two
+lean/Taut/Degree3.lean:38:lemma linkGraph_complete_of_linkVerts_card_three {σ : Finset (Finset V)}
+lean/Taut/Degree3.lean:40:    (hxy : x ≠ y) (h3 : (linkVerts σ v).card = 3) : (linkGraph σ v).Adj x y := by
+lean/Taut/Degree3.lean:45:  have hcardE : ((linkVerts σ v).erase x).card = 2 := by rw [Finset.card_erase_of_mem hx, h3]
+lean/Taut/Degree3.lean:51:/-- **A degree-3 link spans edges of σ:** each pair of its three vertices is an
+lean/Taut/Degree3.lean:54:    (hσ : IsSphere2 σ) {v : V} (h3 : (linkVerts σ v).card = 3) :
+lean/Taut/Degree3.lean:59:  obtain ⟨_, hf⟩ := linkGraph_complete_of_linkVerts_card_three hσ
+lean/Taut/Degree3.lean:69:/-- **The degree-3 link triangle is a non-face** once `σ` has more than four
+lean/Taut/Degree3.lean:74:lemma linkVerts_not_mem_of_card_three_of_four_lt_verts {σ : Finset (Finset V)}
+lean/Taut/Degree3.lean:75:    (hσ : IsSphere2 σ) {v : V} (hv : v ∈ vertsOf σ) (h3 : (linkVerts σ v).card = 3)
+lean/Taut/Degree3.lean:76:    (hbig : 4 < (vertsOf σ).card) : linkVerts σ v ∉ σ := by
+lean/Taut/Degree3.lean:90:      have hcard2 : ((linkVerts σ v).erase w).card = 2 := by
+lean/Taut/Degree3.lean:97:      obtain ⟨_, hf'⟩ := linkGraph_complete_of_linkVerts_card_three hσ hxγ hyγ hxy h3
+lean/Taut/Degree3.lean:150:  -- so vertsOf σ = T, of card four — contradiction
+lean/Taut/Degree3.lean:155:  have hcard_le : (vertsOf σ).card ≤ 4 := hTcard ▸ Finset.card_le_card hverts
+lean/Taut/Degree3.lean:158:/-- **The degree-3 cut datum** (M24a): from a degree-3 vertex of a 2-sphere on more
+lean/Taut/Degree3.lean:161:lemma degree3_link_triangle_cut_data {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
+lean/Taut/Degree3.lean:162:    {v : V} (hv : v ∈ vertsOf σ) (h3 : (linkVerts σ v).card = 3)
+lean/Taut/Degree3.lean:163:    (hbig : 4 < (vertsOf σ).card) :
+lean/Taut/Degree3.lean:164:    (linkVerts σ v).card = 3 ∧ (linkVerts σ v).powersetCard 2 ⊆ edgesOf σ ∧
+lean/Taut/Degree3.lean:167:    linkVerts_not_mem_of_card_three_of_four_lt_verts hσ hv h3 hbig⟩
+lean/Taut/Separation.lean:99:/-- The edge-degree in a capped side splits into the γ-contribution and the
+lean/Taut/Separation.lean:996:    (vertsOf (insert γ (cutSet σ W))).card + (insert γ (cutSet σ W)).card
+lean/Taut/FlipGeom.lean:65:theorem connOn_erase_of_degree_two_bypass {G H : SimpleGraph V} [DecidableRel G.Adj] {S : Finset V} {x p q : V}
+lean/Taut/FlipGeom.lean:1414:  exact connOn_erase_of_degree_two_bypass (G := linkGraph σ v) (H := linkGraph τ v)
+lean/Taut/FlipGeom.lean:1511:    (vertsOf ((σ \ sharedFaces M e) ∪ exposedFaces M e)).card +
+lean/Taut/FlipGeom.lean:1533:  have hvert : (vertsOf τ).card = (vertsOf σ).card := by
+lean/Taut/FlipGeom.lean:1536:  have heulerσ : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2 := by
+lean/Taut/Theorem3Clean.lean:12:(`base_free_clean`), while the degree-3 and prime steps remain the named, unproven
+lean/Taut/Theorem3Clean.lean:17:      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+lean/Taut/Theorem3Clean.lean:20:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem3Clean.lean:27:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem3Clean.lean:44:    by_cases hv : (vertsOf σ).card ≤ 4
+lean/Taut/Theorem3Clean.lean:63:    (hv : (vertsOf σ).card ≤ 4) : FreelyCleanShellable M.support σ := by
+lean/Taut/Theorem3Clean.lean:64:  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+lean/Taut/Theorem3Clean.lean:65:  have hσeq : σ = (vertsOf σ).powersetCard 3 := aleph_base_sphere_eq_powersetCard3 hσ hcard
+lean/Taut/Theorem3Clean.lean:75:For the degree-3 reduction the new tet is the star `starTet σ v = insert v γ`
+lean/Taut/Theorem3Clean.lean:101:/-- **One clean glue step for the degree-3 star tet onto a fixed remainder.**
+lean/Taut/Theorem3Clean.lean:111:    (hγ : γ = linkVerts σ v) (hγ3 : (linkVerts σ v).card = 3)
+lean/Taut/Theorem3Clean.lean:217:/-! ## τ-extension of the link-compat fields (degree-3 star-start glue)
+lean/Taut/Theorem3Clean.lean:242:degree-3 reduction glue onto `insert (starTet σ v) τ`; this transports the
+lean/Taut/Theorem3Clean.lean:250:    (hγ : γ = linkVerts σ v) (hγ3 : γ.card = 3)
+lean/Taut/Theorem3Clean.lean:302:    (hγ : γ = linkVerts σ v) (hγ3 : γ.card = 3) (hvt : v ∉ t)
+lean/Taut/Theorem3Clean.lean:346:starting at `s`.  This is the old-target half of the degree-3 reduction; it composes
+lean/Taut/Theorem3Clean.lean:361:The star-start (new-target) half of the degree-3 reduction.  Here the *star* tet
+lean/Taut/Theorem3Clean.lean:363:The data is the clean analogue of the weak `degree3_star_start_shellFrom`
+lean/Taut/Theorem3Clean.lean:372:clean glue step, provided `v ∉ t`, `γ = linkVerts σ v` (card 3) sits in a tet
+lean/Taut/Theorem3Clean.lean:383:    (hγ : γ = linkVerts σ v) (hγ3 : γ.card = 3)
+lean/Taut/Theorem3Clean.lean:435:/-- **Combined per-step upgrade for the degree-3 star-start shelling.**  Compose the
+lean/Taut/Theorem3Clean.lean:443:    (hγ : γ = linkVerts σ v) (hγ3 : γ.card = 3)
+lean/Taut/Theorem3Clean.lean:452:/-- **The degree-3 star-start transport (the heart).**  Clean analogue of
+lean/Taut/Theorem3Clean.lean:467:      t₀ ∈ τ₀ → γ ⊆ t₀ → γ = linkVerts σ v → γ.card = 3 →
+lean/Taut/Theorem3Clean.lean:500:`degree3_star_start_shellFrom`.  From a clean free shelling of the remainder `τ`
+lean/Taut/Theorem3Clean.lean:512:lemma degree3_star_start_cleanShellFrom (σ B τ : Finset (Finset V)) {v : V}
+lean/Taut/Theorem3Clean.lean:515:    (hγ : γ = linkVerts σ v) (hγ3 : γ.card = 3) (hγt₀ : γ ⊆ t₀)
+lean/Taut/Theorem3Clean.lean:590:    (hγ : γ = linkVerts σ v) (hγ3 : (linkVerts σ v).card = 3)
+lean/Taut/Theorem3Clean.lean:687:/-! ## The clean degree-3 step: assemble the two halves
+lean/Taut/Theorem3Clean.lean:690:dichotomy, `degree3_hanchor`), but where the weak step applies its IH to get
+lean/Taut/Theorem3Clean.lean:693:`IsPseudomanifold` facts the preamble + `degree3_hanchor` still need are *derived*
+lean/Taut/Theorem3Clean.lean:697:`degree3_star_start_cleanShellFrom` (whose first non-head glue is the new
+lean/Taut/Theorem3Clean.lean:700:/-- **deg3_step_clean** (the discharged degree-3 hole of `theorem3_core_clean`).
+lean/Taut/Theorem3Clean.lean:703:    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
+lean/Taut/Theorem3Clean.lean:713:    degree3_cut_setup sigma hsigma hbig hd3
+lean/Taut/Theorem3Clean.lean:724:  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
+lean/Taut/Theorem3Clean.lean:727:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3Clean.lean:791:        degree3_apex_notMem_right_verts_of_left_star (σ := sigma) (v := v) (W := W)
+lean/Taut/Theorem3Clean.lean:801:      exact degree3_hanchor sigma (insert γ (cutSet sigma (W + fun _ => 1))) MR
+lean/Taut/Theorem3Clean.lean:851:      degree3_star_start_cleanShellFrom sigma
+lean/Taut/Theorem3Clean.lean:859:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3Clean.lean:933:        degree3_apex_notMem_left_verts_of_right_star (σ := sigma) (v := v) (W := W)
+lean/Taut/Theorem3Clean.lean:943:      exact degree3_hanchor sigma (insert γ (cutSet sigma W)) ML
+lean/Taut/Theorem3Clean.lean:989:      degree3_star_start_cleanShellFrom sigma
+lean/Taut/Theorem3Clean.lean:2855:/-- **Prime (no-degree-3) step of the edge-link-connectedness induction.**
+lean/Taut/Theorem3Clean.lean:2856:Mirror of `prime_isPM`: when `σ` has no degree-3 vertex, pick a face-disjoint
+lean/Taut/Theorem3Clean.lean:2912:    (hS : SimplicialChain M) (hv : (vertsOf σ).card ≤ 4) :
+lean/Taut/Theorem3Clean.lean:2914:  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+lean/Taut/Theorem3Clean.lean:2922:/-- **deg3_edgeLinkConnected** (edge-link degree-3 step): a taut filling of a
+lean/Taut/Theorem3Clean.lean:2923:2-sphere with a degree-3 vertex is edge-link connected, given that every strictly
+lean/Taut/Theorem3Clean.lean:2930:`degree3_cut_star_side_glue`).  The remainder PM (needed to pin `γ` into a unique
+lean/Taut/Theorem3Clean.lean:2934:    (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0)
+lean/Taut/Theorem3Clean.lean:2942:    degree3_cut_setup σ hσ hbig hd3
+lean/Taut/Theorem3Clean.lean:2953:  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv hγ3 hW
+lean/Taut/Theorem3Clean.lean:2954:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
+lean/Taut/Theorem3Clean.lean:3007:        degree3_apex_notMem_right_verts_of_left_star (σ := σ) (v := v) (W := W)
+lean/Taut/Theorem3Clean.lean:3099:        degree3_apex_notMem_left_verts_of_right_star (σ := σ) (v := v) (W := W)
+lean/Taut/Theorem3Clean.lean:3141:`base_edgeLinkConnected`; degree-3 vertex by `deg3_edgeLinkConnected`; otherwise by
+lean/Taut/Theorem3Clean.lean:3155:    by_cases hv : (vertsOf σ).card ≤ 4
+lean/Taut/Theorem3Clean.lean:3556:/-- **prime_step_clean** (the `theorem3_core_clean` hole): a no-degree-3 taut filling
+lean/Taut/Theorem3Clean.lean:3562:    (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+lean/Taut/Theorem2.lean:19:oriented separation bridge to `IsTaut.splits` (M23), the connected-sum/degree-3
+lean/Taut/OrientedBridge.lean:6:For the connected-sum (degree-3) reduction, a non-face triangle `γ` cuts the unit
+lean/Taut/Theorem23.lean:16:* `base` — the minimal sphere `(vertsOf σ).card ≤ 4` (a tetrahedron boundary): its
+lean/Taut/Theorem23.lean:18:* `deg3_split` — a sphere with a degree-3 vertex splits (connected sum along the
+lean/Taut/Theorem23.lean:21:* `prime_step` — a no-degree-3 ("prime") sphere: remove an eligible tet
+lean/Taut/Theorem23.lean:42:      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+lean/Taut/Theorem23.lean:45:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem23.lean:52:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem23.lean:70:    by_cases hv : (vertsOf σ).card ≤ 4
+lean/Taut/Theorem23.lean:103:      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+lean/Taut/Theorem23.lean:106:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem23.lean:113:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+lean/Taut/Theorem23.lean:130:    by_cases hv : (vertsOf σ).card ≤ 4
+lean/Taut/Theorem3.lean:93:    (hv : (vertsOf σ).card ≤ 4) : IsPseudomanifold M.support := by
+lean/Taut/Theorem3.lean:94:  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+lean/Taut/Theorem3.lean:108:    (hv : (vertsOf σ).card ≤ 4) :
+lean/Taut/Theorem3.lean:111:  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+lean/Taut/Theorem3.lean:112:  have hσeq : σ = (vertsOf σ).powersetCard 3 := aleph_base_sphere_eq_powersetCard3 hσ hcard
+lean/Taut/Theorem3.lean:124:`GlueStep` alone.  The actual degree-3 use also needs a first remainder tet `t₀`
+lean/Taut/Theorem3.lean:129:lemma degree3_star_start_shellFrom (σ B τ : Finset (Finset V)) {v : V}
+lean/Taut/Theorem3.lean:159:/-- If the `W` capped side is the degree-3 star, then the opposite capped side has
+lean/Taut/Theorem3.lean:162:lemma degree3_apex_notMem_right_verts_of_left_star {σ : Finset (Finset V)}
+lean/Taut/Theorem3.lean:164:    (hσ : IsSphere2 σ) (h3 : (linkVerts σ v).card = 3)
+lean/Taut/Theorem3.lean:171:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem3.lean:184:/-- If the `W + 1` capped side is the degree-3 star, then the opposite capped side
+lean/Taut/Theorem3.lean:186:lemma degree3_apex_notMem_left_verts_of_right_star {σ : Finset (Finset V)}
+lean/Taut/Theorem3.lean:188:    (hσ : IsSphere2 σ) (h3 : (linkVerts σ v).card = 3)
+lean/Taut/Theorem3.lean:195:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem3.lean:208:/-- **Degree-3 anchor target.** In the degree-3 cut context, once one side is the
+lean/Taut/Theorem3.lean:217:lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
+lean/Taut/Theorem3.lean:220:    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
+lean/Taut/Theorem3.lean:222:    (hγ : γ = linkVerts sigma v) (hγ3 : (linkVerts sigma v).card = 3)
+lean/Taut/Theorem3.lean:278:  have hstarcard : T.card = 4 := by rw [hT]; exact starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3.lean:283:  -- γ ∉ σ (a degree-3 link triangle is not itself a face).
+lean/Taut/Theorem3.lean:286:    exact linkVerts_not_mem_of_card_three_of_four_lt_verts hsigma hv hγ3 hbig
+lean/Taut/Theorem3.lean:368:    have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
+lean/Taut/Theorem3.lean:394:      rw [hSR, vertsOf_tetFaces_eq T hstarcard] at ht₀V
+lean/Taut/Theorem3.lean:424:degree-3 star tet onto the remainder side `R`. A triangle `f` of `starTet σ v`
+lean/Taut/Theorem3.lean:431:    (hγ : γ = linkVerts σ v) (hT4 : (starTet σ v).card = 4)
+lean/Taut/Theorem3.lean:466:/-- **deg3_isPM** (PM degree-3 step): a taut filling of a 2-sphere with a degree-3
+lean/Taut/Theorem3.lean:472:by `deg3_clean_glue_of_remainder`. Does NOT use `degree3_hanchor`. -/
+lean/Taut/Theorem3.lean:474:    (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+lean/Taut/Theorem3.lean:482:    degree3_cut_setup σ hσ hbig hd3
+lean/Taut/Theorem3.lean:492:  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv hγ3 hW
+lean/Taut/Theorem3.lean:493:  have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
+lean/Taut/Theorem3.lean:543:        degree3_apex_notMem_right_verts_of_left_star (σ := σ) (v := v) (W := W)
+lean/Taut/Theorem3.lean:618:        degree3_apex_notMem_left_verts_of_right_star (σ := σ) (v := v) (W := W)
+lean/Taut/Theorem3.lean:643:/-- Degree-3 step for the free-shelling induction: cut off the degree-3 star,
+lean/Taut/Theorem3.lean:647:    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
+lean/Taut/Theorem3.lean:659:    degree3_cut_setup sigma hsigma hbig hd3
+lean/Taut/Theorem3.lean:669:  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
+lean/Taut/Theorem3.lean:672:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3.lean:726:        degree3_apex_notMem_right_verts_of_left_star (σ := sigma) (v := v) (W := W)
+lean/Taut/Theorem3.lean:749:      exact degree3_hanchor sigma (insert γ (cutSet sigma (W + fun _ => 1))) MR
+lean/Taut/Theorem3.lean:761:      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma (W + fun _ => 1)))
+lean/Taut/Theorem3.lean:775:    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
+lean/Taut/Theorem3.lean:838:        degree3_apex_notMem_left_verts_of_right_star (σ := sigma) (v := v) (W := W)
+lean/Taut/Theorem3.lean:863:      exact degree3_hanchor sigma (insert γ (cutSet sigma W)) ML
+lean/Taut/Theorem3.lean:875:      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma W)) ML.support
+lean/Taut/PrimeStep.lean:9:(architect: codex assembly pass). With no degree-3 vertex, pick (via M25b's disjoint
+lean/Taut/PrimeStep.lean:1575:/-- **prime_isPM** (PM no-degree-3 step): a no-degree-3 taut filling of a 2-sphere
+lean/Taut/PrimeStep.lean:1633:(≤ 4 vertices) by `base_isPM`; degree-3 vertex by `deg3_isPM`; otherwise by
+lean/Taut/PrimeStep.lean:1648:    by_cases hv : (vertsOf σ).card ≤ 4
+lean/Taut/PrimeStep.lean:2444:/-- **prime_step** (the `theorem3_core` hole): a no-degree-3 taut filling is a free
+lean/Taut/PrimeStep.lean:2449:    (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+lean/Taut/Theorem4.lean:44:  s ⊆ vertsOf τ ∧ ∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e
+lean/Taut/Theorem4.lean:376:degree-3 star or an eligible flip — and need the taboo configuration to SURVIVE in the smaller
+lean/Taut/Theorem4.lean:705:/-- The *octahedron* `2`-sphere: `6` vertices, no degree-3 vertex, every vertex of link-size `4`.
+lean/Taut/Theorem4.lean:709:  IsSphere2 σ ∧ (vertsOf σ).card = 6 ∧ NoDegree3Vertex σ ∧
+lean/Taut/Theorem4.lean:710:    ∀ v ∈ vertsOf σ, (linkVerts σ v).card = 4
+lean/Taut/StickerballRuleouts.lean:6:The two remaining geometry holes (`degree3_hanchor`, `flipEdgePresent_side_bridge`)
+lean/Taut/Theorem2Aleph.lean:11:`aleph_base` (minimal-sphere base case) and `aleph_deg3_split` (degree-3 /
+lean/Taut/Theorem2Aleph.lean:14:Provenance: the proofs and the auxiliary `aleph_*` / `degree3_*` / `cut*` lemma
+lean/Taut/Theorem2Aleph.lean:20:dependent on a single remaining step `prime_step` (the no-degree-3 inductive step,
+lean/Taut/Theorem2Aleph.lean:34:theorem aleph_base_sphere_eq_powersetCard3 {σ : Finset (Finset V)} (hσ : IsSphere2 σ) (hcard : (vertsOf σ).card = 4) :
+lean/Taut/Theorem2Aleph.lean:128:theorem aleph_base_verts_card_eq_four {σ : Finset (Finset V)} (hσ : IsSphere2 σ) (hv : (vertsOf σ).card ≤ 4) :
+lean/Taut/Theorem2Aleph.lean:129:    (vertsOf σ).card = 4 := by
+lean/Taut/Theorem2Aleph.lean:137:  have hlink3 : 3 ≤ (linkVerts σ v).card := three_le_card_linkVerts hσ hvV
+lean/Taut/Theorem2Aleph.lean:143:  have hcardle : (linkVerts σ v).card ≤ ((vertsOf σ).erase v).card := Finset.card_le_card hsub
+lean/Taut/Theorem2Aleph.lean:144:  have herase : ((vertsOf σ).erase v).card = (vertsOf σ).card - 1 := Finset.card_erase_of_mem hvV
+lean/Taut/Theorem2Aleph.lean:145:  have hlow : 4 ≤ (vertsOf σ).card := by omega
+lean/Taut/Theorem2Aleph.lean:153:    (hv : (vertsOf σ).card ≤ 4) : IsBall M.support σ := by
+lean/Taut/Theorem2Aleph.lean:426:theorem degree3_cut_setup (σ : Finset (Finset V)) (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card)
+lean/Taut/Theorem2Aleph.lean:429:      v ∈ vertsOf σ ∧ (linkVerts σ v).card = 3 ∧
+lean/Taut/Theorem2Aleph.lean:435:  rcases degree3_link_triangle_cut_data hσ hv h3 hbig with ⟨hγ3, hγe, hγσ⟩
+lean/Taut/Theorem2Aleph.lean:458:theorem starTet_card_of_degree3 (σ : Finset (Finset V)) {v : V} (h3 : (linkVerts σ v).card = 3) :
+lean/Taut/Theorem2Aleph.lean:465:theorem degree3_cut_star_side_glue (σ : Finset (Finset V)) {v : V} {W : C2 σ}
+lean/Taut/Theorem2Aleph.lean:466:    (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card) (hv : v ∈ vertsOf σ)
+lean/Taut/Theorem2Aleph.lean:467:    (h3 : (linkVerts σ v).card = 3)
+lean/Taut/Theorem2Aleph.lean:476:  have hdata := degree3_link_triangle_cut_data hσ hv h3 hbig
+lean/Taut/Theorem2Aleph.lean:484:    simpa [T, starTet, γ] using starTet_card_of_degree3 σ (v := v) h3
+lean/Taut/Theorem2Aleph.lean:513:        obtain ⟨_, hface⟩ := linkGraph_complete_of_linkVerts_card_three hσ
+lean/Taut/Theorem2Aleph.lean:887:theorem vertsOf_tetFaces_eq (T : Finset V) (hT4 : T.card = 4) : vertsOf (tetFaces T) = T := by
+lean/Taut/Theorem2Aleph.lean:909:theorem degree3_reassemble_from_cut_split (σ : Finset (Finset V)) (X M : Chain V) {v : V} {W : C2 σ} {c : ℤ}
+lean/Taut/Theorem2Aleph.lean:910:    (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card) (hv : v ∈ vertsOf σ)
+lean/Taut/Theorem2Aleph.lean:911:    (h3 : (linkVerts σ v).card = 3)
+lean/Taut/Theorem2Aleph.lean:941:  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv h3 hW
+lean/Taut/Theorem2Aleph.lean:963:    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:980:      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:1016:    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:1045:      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+lean/Taut/Theorem2Aleph.lean:1076:/-- M26 hole `deg3_split`: a 2-sphere with a degree-3 vertex (> 4 vertices) splits,
+lean/Taut/Theorem2Aleph.lean:1080:    (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+lean/Taut/Theorem2Aleph.lean:1086:  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ := degree3_cut_setup σ hσ hbig hd3
+lean/Taut/Theorem2Aleph.lean:1089:  exact degree3_reassemble_from_cut_split σ X M hσ hbig hv hγ3 hW hσL hσR hUL hXLc hUR hXRc hML hMR hTL hTR hSuppL hSuppR hMsum hS
+lean/Taut/Theorem2Aleph.lean:1312:  rcases hσ.vertsOf_nonempty with ⟨v, hv⟩
+lean/Taut/Theorem2Aleph.lean:1378:/-- M25b: a no-degree-3 taut filling has two distinct eligible tets whose shared
+lean/Taut/Theorem2Aleph.lean:1428:filling of a 2-sphere is a ball provided the no-degree-3 step `prime_step` holds. -/
+lean/Taut/Theorem2Aleph.lean:1431:      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+
+codex
+PASS
+
+Verdict: keep the `k ≤ deg v (bdry M)` bound. The auditor is right that the existing exported lemma only gives `gap ≥ 2`, but the intended route is a missing strengthening, not a different construction.
+
+Exact recommended patch shape:
+1. Generalize `aleph_two_double_fibers` to `aleph_k_double_fibers`.
+2. Add `aleph_card_gap_deg`:
+   `M.support.card + deg v (bdry M) ≤ σ.card`.
+   Proof is the same as `aleph_card_gap_two`, but do not pick a minimum-degree vertex; apply `Zvol_add_deg_le v (bdry_bdry M)` directly, then rewrite `Zvol (bdry M) = nrm M`, `nrm M = M.support.card`, `nrm (bdry M) = σ.card`.
+3. Use `hk : k ≤ deg v (bdry M)` plus `aleph_card_gap_deg` to feed `support.card + k ≤ σ.card`.
+4. Pick `k` double fibers, convert each via `aleph_double_fiber_eligible`, and use existing fiber-disjointness for pairwise `sharedFaces`.
+
+Files to edit:
+- `lean/Taut/Theorem2Aleph.lean`: add the gap-degree lemma, generalized fiber lemma, and main family lemma.
+- `lean/Taut/Theorem4.lean`: add the four/five wrappers and octahedron/max-degree bridge lemmas.
+- Possibly `lean/Taut/Complex2.lean` if the link/incident-face count lemmas belong with sphere combinatorics.
+
+Corrected main statement:
+```lean
+theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) {k : ℕ} {v : V}
+    (hv : v ∈ vertsOf σ) (hk : k ≤ deg v (bdry M)) :
+    ∃ E : Finset (Finset V), E.card = k ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Four wrapper:
+```lean
+theorem aleph_four_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) :
+    ∃ E : Finset (Finset V), E.card = 4 ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Five wrapper:
+```lean
+theorem aleph_five_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) (hNotOct : ¬ IsOctahedronSphere σ) :
+    ∃ E : Finset (Finset V), E.card = 5 ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Local lemmas needed:
+- `aleph_card_gap_deg`.
+- `aleph_k_double_fibers`: with fibers `≤ 2` and `t.card + k ≤ s.card`, produce a finset `D ⊆ t` of cardinal `k` whose fibers have card `2`.
+- `incident_faces_card_eq_linkVerts_card` for `IsSphere2`.
+- `exists_boundary_vertex_deg_ge_four_of_noDegree3`.
+- `exists_boundary_vertex_deg_ge_five_of_not_octahedron`: prove contrapositive; if every vertex has link size `4`, Euler/counting gives `vertsOf σ.card = 6`, hence `IsOctahedronSphere σ`.
+
+First bounded sub-piece for Claude: implement `aleph_card_gap_deg`. It is small, rides directly on `Zvol_add_deg_le`, and confirms the `deg v` bound before the bigger pigeonhole refactor.
+
+Blockers: none conceptual. The only real work is the formal octahedron bridge from “all link sizes are 4” to `vertsOf σ.card = 6`.
+tokens used
+38,195
+PASS
+
+Verdict: keep the `k ≤ deg v (bdry M)` bound. The auditor is right that the existing exported lemma only gives `gap ≥ 2`, but the intended route is a missing strengthening, not a different construction.
+
+Exact recommended patch shape:
+1. Generalize `aleph_two_double_fibers` to `aleph_k_double_fibers`.
+2. Add `aleph_card_gap_deg`:
+   `M.support.card + deg v (bdry M) ≤ σ.card`.
+   Proof is the same as `aleph_card_gap_two`, but do not pick a minimum-degree vertex; apply `Zvol_add_deg_le v (bdry_bdry M)` directly, then rewrite `Zvol (bdry M) = nrm M`, `nrm M = M.support.card`, `nrm (bdry M) = σ.card`.
+3. Use `hk : k ≤ deg v (bdry M)` plus `aleph_card_gap_deg` to feed `support.card + k ≤ σ.card`.
+4. Pick `k` double fibers, convert each via `aleph_double_fiber_eligible`, and use existing fiber-disjointness for pairwise `sharedFaces`.
+
+Files to edit:
+- `lean/Taut/Theorem2Aleph.lean`: add the gap-degree lemma, generalized fiber lemma, and main family lemma.
+- `lean/Taut/Theorem4.lean`: add the four/five wrappers and octahedron/max-degree bridge lemmas.
+- Possibly `lean/Taut/Complex2.lean` if the link/incident-face count lemmas belong with sphere combinatorics.
+
+Corrected main statement:
+```lean
+theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) {k : ℕ} {v : V}
+    (hv : v ∈ vertsOf σ) (hk : k ≤ deg v (bdry M)) :
+    ∃ E : Finset (Finset V), E.card = k ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Four wrapper:
+```lean
+theorem aleph_four_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) :
+    ∃ E : Finset (Finset V), E.card = 4 ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Five wrapper:
+```lean
+theorem aleph_five_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) (hNotOct : ¬ IsOctahedronSphere σ) :
+    ∃ E : Finset (Finset V), E.card = 5 ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e)
+```
+
+Local lemmas needed:
+- `aleph_card_gap_deg`.
+- `aleph_k_double_fibers`: with fibers `≤ 2` and `t.card + k ≤ s.card`, produce a finset `D ⊆ t` of cardinal `k` whose fibers have card `2`.
+- `incident_faces_card_eq_linkVerts_card` for `IsSphere2`.
+- `exists_boundary_vertex_deg_ge_four_of_noDegree3`.
+- `exists_boundary_vertex_deg_ge_five_of_not_octahedron`: prove contrapositive; if every vertex has link size `4`, Euler/counting gives `vertsOf σ.card = 6`, hence `IsOctahedronSphere σ`.
+
+First bounded sub-piece for Claude: implement `aleph_card_gap_deg`. It is small, rides directly on `Zvol_add_deg_le`, and confirms the `deg v` bound before the bigger pigeonhole refactor.
+
+Blockers: none conceptual. The only real work is the formal octahedron bridge from “all link sizes are 4” to `vertsOf σ.card = 6`.
