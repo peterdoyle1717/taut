@@ -116,11 +116,15 @@ sphere/ball definitions.
   `aleph_disjoint_eligible_family` (k eligible tets, pairwise-disjoint `sharedFaces`, for `k ≤ deg v`).
   Plus in `Theorem4.lean`: `IsOctahedronSphere`, `disjoint_eligible_family_hit_two_faces_card_le_two`.
   All CHECKED, build green 8273, std-3 axioms. Commits `5dabec5`/`99a0346`/`bc8e307`/`db0eb0f`.
-  **REMAINING (Codex order):** (a) wrappers `aleph_four/five_disjoint_eligible_family` — need
-  `exists_boundary_vertex_deg_ge_four_of_noDegree3` (maxdeg ≥ 4) and `…_ge_five_of_not_octahedron`
-  (maxdeg ≥ 5 unless octahedron) + **the octahedron Euler bridge** ("all link sizes 4 ⇒ |verts| = 6 ⇒
-  `IsOctahedronSphere`" — Codex: "the only real work"); (b) `exists_good_flip_emptyK3/K4` (compose
-  family + persistence + localization + the ≤2-hit counting); (c) the `nrm M` strong induction
+- **✅ MILESTONE (2026-06-20): Theorem 4 — WRAPPER STAGE COMPLETE.** In `Theorem4.lean`: the octahedron
+  Euler bridge (`incident_faces_card_eq_linkVerts_card` [incident-face count = link size, via the
+  `2·incident = 2·|linkVerts|` double count on `hσ.closed`/`edgeDeg = 2`], `sum_incident_faces_eq_three_mul_card`
+  [Σ_v incident = 3F], `card_verts_eq_six_of_all_links_four` [all links 4 ⇒ |verts| = 6, Codex's "only
+  real work"]); the maxdeg lemmas (`exists_boundary_vertex_deg_ge_four_of_noDegree3`,
+  `…_ge_five_of_not_octahedron`); and the wrappers `aleph_four/five_disjoint_eligible_family`. All CHECKED,
+  build green 8273, grep ZERO, std-3 axioms. Commits `3d24c14` (Euler bridge), `7e538a7` (maxdeg+wrappers).
+  **REMAINING (Codex order, NOT yet started):** (b) `exists_good_flip_emptyK3/K4` (compose family +
+  sub-3 persistence + sub-4 localization + the ≤2-hit counting); (c) the `nrm M` strong induction
   `no_emptyK3K4_of_taut` (deg-3 peel via `degree3_cut_*`/`IsTaut.splits`; prime via good-flip + case on
   `FlipEdgePresent`, consuming sub-3 (absent) / sub-4 (present)); (d) the endpoint `theorem4_flag`
   (= `no_emptyK3K4_of_taut` + `theorem4_flag_from_no_emptyK3K4`). NOT proved until (d) is Lean-accepted.
