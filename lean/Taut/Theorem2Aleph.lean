@@ -1321,6 +1321,20 @@ theorem aleph_card_gap_two {M : Chain V} {σ : Finset (Finset V)}
   have hnrmM : nrm M = M.support.card := nrm_eq_support_card_of_simplicial hS
   omega
 
+/-- **Per-vertex degree gap.** Strengthening of `aleph_card_gap_two`: for *every* vertex `v`,
+`M.support.card + deg v (bdry M) ≤ σ.card`.  Same proof as `aleph_card_gap_two` but without picking a
+minimum-degree vertex — `Zvol_add_deg_le v` (Prop 2) on the closed chain `bdry M`, rewritten through
+`IsTaut` (`Zvol (bdry M) = nrm M`), `nrm M = |M.support|`, and `nrm (bdry M) = σ.card`.  This supplies
+the `deg v` bound the eligible-tet family count needs. -/
+theorem aleph_card_gap_deg {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M) (v : V) :
+    M.support.card + deg v (bdry M) ≤ σ.card := by
+  have hprop := Zvol_add_deg_le v (bdry_bdry M)
+  have hvol : Zvol (bdry M) = nrm M := hT.symm
+  have hnrm_bdry : nrm (bdry M) = σ.card := UnitOn.nrm_eq hU
+  have hnrmM : nrm M = M.support.card := nrm_eq_support_card_of_simplicial hS
+  omega
+
 open Finset in
 open scoped BigOperators in
 theorem aleph_two_double_fibers (α β : Type*) [DecidableEq α] [DecidableEq β] (s : Finset α) (t : Finset β) (f : α → β)
