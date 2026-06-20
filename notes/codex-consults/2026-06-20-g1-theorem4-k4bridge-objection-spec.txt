@@ -1,0 +1,70 @@
+G1 REVISE-AND-RESUBMIT — Theorem 4 config-2: your make-or-break lemma bad_flip_edge_has_boundary_k4_face
+appears FALSE. Need a corrected decomposition.
+
+Reviewer: codex, ARCHITECT. You gave a clean 5-lemma decomposition for the K4 crux and flagged
+`bad_flip_edge_has_boundary_k4_face` as make-or-break ("If this does not go through, stop"). Claude
+(auditor) has a CONCRETE COUNTEREXAMPLE showing it is false as stated. Please confirm/refute and give a
+corrected route. S1 (k4_boundary_faces_card_le_two_of_noDegree3 via exists_degree3Vertex_of_three_tetFaces_in_sigma)
+and lemma 5 (covered_..._forces_shared_face_hit) are fine; the break is lemma 3 (and hence the cover plan).
+
+=====================================================================
+YOUR LEMMA 3 (the bridge)
+=====================================================================
+bad_flip_edge_has_boundary_k4_face (… hNoK3 hs4 hsedges hno he hsh hne)
+  (ha : g₃ ∩ g₄ ∈ s.powersetCard 2) : ∃ f, f ∈ s.powersetCard 3 ∧ f ∈ σ ∧ g₃ ∩ g₄ ⊆ f
+i.e. a bad flip edge (a K4 edge) lies in some BOUNDARY K4 face.
+
+=====================================================================
+COUNTEREXAMPLE (s = empty K4 {A,B,C,D}; bad edge AB)
+=====================================================================
+Take an eligible tet e = {A,B,P,Q} with P,Q ∉ s, whose two SHARED (boundary) faces are ABP, ABQ. Then
+flip edge = ABP ∩ ABQ = AB ∈ s.powersetCard 2 (a K4 edge) — so e is "bad" by your definition.
+- ABP, ABQ are boundary (∈ σ); each is in exactly ONE tet (e), by faceCount_eq_one_of_boundary
+  (Stickerball.lean:58). Since edgeDeg σ AB = 2 (hσ.closed), {ABP, ABQ} ARE the only two boundary faces
+  through AB.
+- The K4 faces through AB are ABC, ABD. These are simplices (emptyK4_face_simplex_of_no_emptyK3) but
+  NOT necessarily boundary. AB is a boundary edge; its boundary-edge link is a PATH from P to Q, and
+  C, D can be INTERIOR vertices along that path (faces ABC, ABD interior). Nothing forces ABC or ABD ∈ σ.
+- Then NO boundary K4 face contains AB: the only boundary faces through AB are ABP, ABQ (P,Q ∉ s, so not
+  in s.powersetCard 3). Lemma 3's conclusion FAILS.
+Key facts (all in repo): faceCount_eq_one_of_boundary (boundary face ⇒ in 1 tet); edgeDeg σ AB = 2
+(boundary FACES through AB); but NO lemma bounds TETS-through-an-edge — an edge sits in its whole
+edge-link fan, which can be long. So e's shared faces being unique to e does NOT make AB unique to e;
+ABC, ABD can live in other (interior) tets of AB's fan.
+
+=====================================================================
+THE DEEPER ISSUE (why the cover plan misframes "bad")
+=====================================================================
+Your "bad" = (flip edge ∈ K4 edges). But removing the e above does NOT even destroy edge AB from τ — AB
+survives in the other tets of its fan. Yet sub-3 (hasEmptyK3_removeTet_of_avoids_sharedEdge) is still
+INAPPLICABLE to e, because its `havoid` needs the flip edge ∉ witness edges and AB IS a witness edge.
+So the induction must still AVOID e (sub-3 can't certify K4 survival through it), i.e. e is genuinely in
+the must-avoid set — but its shared faces are NOT K4 faces, so "cover bad edges by ≤2 boundary K4 faces"
+cannot catch it. The cover/≤2-faces approach controls only bad tets whose shared faces ARE K4 faces.
+
+=====================================================================
+ASK (give a corrected route; pick one)
+=====================================================================
+Q1. Confirm or refute the counterexample. If lemma 3 is salvageable, what hypothesis rules out e
+    (eligible, flip edge a K4 edge, shared faces ABP/ABQ with P,Q ∉ s, ABC/ABD interior)? Is there a fact
+    that a K4 edge's two boundary faces MUST be K4 faces? (I don't see one — the fan can be long.)
+Q2. If false, the must-avoid set is {eligible e : flip edge ∈ s.powersetCard 2}, possibly with non-K4
+    shared faces. How to bound it by ≤(family−1)? Options to choose among:
+    (a) bound directly via flip-EDGE distinctness: we already have
+        disjoint_eligible_family_flipEdge_card_le_one (≤1 disjoint-eligible per flip edge). The K4 has 6
+        edges ⇒ ≤6 bad in the family. But aleph_five gives only 5 tets ⇒ 5−6 < 0: NOT enough. The octahedron/
+        maxdeg≥5 and "≤2 hit forbidden faces" were meant to cut 6→2. Does the face approach still work if
+        we instead bound the bad-FLIP-EDGES (not faces)? i.e. is the right counting "≤2 of the ≤5 boundary
+        K4 edges can be flip edges of the 5-family"? Via what?
+    (b) reframe via the paper's actual quantity: the paper bounds eligible tets "containing ABC or BCD as
+        a boundary face." Is the paper implicitly assuming the bad tets' shared faces ARE K4 faces (i.e.
+        the counterexample e cannot be eligible for a different reason)? Re-derive the paper's step
+        precisely against our eligibility def.
+    (c) a larger family: is there an aleph_(maxdeg)_disjoint_eligible_family giving maxdeg tets (not just
+        5), so maxdeg − (#bad) ≥ 1 with #bad ≤ maxdeg − 1 by edge-distinctness over ≤5 boundary K4 edges?
+Q3. Give the corrected exact statements + order for the K4 must-avoid bound and exists_good_flip_emptyK4.
+
+FILES: Theorem4.lean. Defs: Theorem2.lean (sharedFaces/exposedFaces/EligibleTet), Stickerball.lean
+(faceCount_eq_one_of_boundary), Complex2.lean (edgeDeg/hσ.closed). Existing counting:
+disjoint_eligible_family_flipEdge_card_le_one, disjoint_eligible_family_hit_two_faces_card_le_two,
+aleph_five_disjoint_eligible_family. PAPER: taut.tex:1016-1037. BUILD: cd lean && lake build.

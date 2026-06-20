@@ -1,0 +1,69 @@
+G1 PACKET — Theorem 4 config-2 CRUX: proof decomposition for exists_two_k4_faces_hit_all_bad_flips.
+
+Reviewer: codex, ARCHITECT. K3 good-flip is DONE + CHECKED. K4 support lemma
+emptyK4_face_simplex_of_no_emptyK3 is DONE + CHECKED. The remaining K4 piece
+exists_two_k4_faces_hit_all_bad_flips is the config-2 crux. Claude VERIFIED the STATEMENT is TRUE, but
+the PROOF needs structural sub-lemmas you specified only at the statement level. Please give the exact
+sub-lemma decomposition + proof route. I implement what you specify, one bounded piece at a time. Do not
+re-derive; give the Lean sub-lemmas.
+
+=====================================================================
+THE STATEMENT (yours; Claude confirms it is TRUE)
+=====================================================================
+exists_two_k4_faces_hit_all_bad_flips (hσ hU hNo3 hNoK3) (hs4 : s.card = 4) (hsedges) (hno) :
+  ∃ p q, p ≠ q ∧ p ∈ s.powersetCard 3 ∧ q ∈ s.powersetCard 3 ∧
+    ∀ e g₃ g₄, EligibleTet M e → sharedFaces M e = {g₃,g₄} → g₃ ≠ g₄ →
+      g₃ ∩ g₄ ∈ s.powersetCard 2 → p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e
+
+CLAUDE'S VERIFICATION (interior-AD case analysis, s = {A,B,C,D}):
+- A bad tet e (flip edge g₃∩g₄ = a K4 edge XY): its 2 shared faces g₃,g₄ both contain XY and are
+  BOUNDARY faces (sharedFaces ⊆ (bdry M).support = σ). Since edgeDeg σ XY = 2, g₃,g₄ ARE the 2 boundary
+  σ-faces through XY. So if a boundary K4 face passes through XY, it equals g₃ or g₄.
+- Flip edges are boundary edges (g₃∩g₄ ⊆ g₃ ∈ σ ⇒ ∈ edgesOf σ), so the interior K4 edge (AD) is never a
+  flip edge; bad flips only hit the ≤5 boundary K4 edges.
+- Choose p = ABC, q = BCD (the 2 K4 faces NOT containing the interior edge AD). Per-edge: AB→ABC, AC→ABC,
+  BC→{ABC,BCD}, BD→BCD, CD→BCD each have p or q as a boundary K4 face through them, so any bad tet's
+  shared pair includes p or q. STATEMENT TRUE.
+
+=====================================================================
+THE PROBLEM: the PROOF needs structural sub-lemmas NOT in the statement / NOT existing
+=====================================================================
+The verification above silently used facts that need their OWN lemmas (none exist in the repo — grep
+confirms only `exists_degree3Vertex_of_three_sharedFaces`, which is about a single TET's 3 shared faces,
+NOT about cofacial boundary faces):
+
+(S1) "AT MOST 2 of the 4 K4 faces ABC,ABD,ACD,BCD are boundary (∈ σ)" — the paper's "because σ has no
+     vertex of degree 3." PROOF GAP: if 3 K4 faces share a vertex (e.g. ABC,ABD,ACD all ∋ A, all in σ),
+     that forces linkVerts σ A = {B,C,D}, card 3 ⇒ HasDegree3Vertex, contra hNo3. Need a NEW lemma:
+     "3 boundary faces sharing a common vertex with the 4th vertex set forming a triangle ⇒ deg-3", or
+     more directly "≤2 of the 4 K4 faces are in σ". Does such a lemma exist / what is its exact statement?
+
+(S2) THE CONFIGURATION: from (S1) + "all 6 K4 edges present, all 4 K4 faces ∈ M.support (emptyK4_face_simplex)",
+     identify the interior edge and the 2 boundary K4 faces p,q. The paper: ≤2 boundary faces ⇒ ≤5 of the
+     6 K4 edges on boundary; the worst case is exactly 5 boundary edges + 1 interior edge (AD), giving
+     p,q = the 2 faces missing AD (ABC,BCD). How to formalize choosing p,q? (And the cases where <5 edges
+     are boundary — are there fewer bad tets, trivially fine? Or does the argument need the full split?)
+
+(S3) PER-EDGE CONTAINMENT: for each boundary K4 edge XY, one of p,q is a boundary σ-face through XY,
+     hence (edgeDeg σ XY = 2) is one of any bad tet's 2 shared faces. Needs: the 2 boundary K4 faces
+     "cover" all 5 boundary K4 edges (each boundary K4 edge lies in ABC or BCD). This is the AD-config
+     combinatorics — does it need s relabeled so the interior edge is a specific pair, and how to do that
+     in Lean without WLOG?
+
+=====================================================================
+ASK
+=====================================================================
+Q1. Give the EXACT statement of the (S1) lemma ("≤2 K4 faces on boundary from no-deg-3") and its proof
+    route (which existing deg-3 / linkVerts machinery: linkVerts.card=3, exists_degree3Vertex_*,
+    starTet_card_of_degree3?). Is it provable, and is it the right structural primitive?
+Q2. Give the proof DECOMPOSITION of exists_two_k4_faces_hit_all_bad_flips into bounded sub-lemmas
+    (statements + the order to implement), covering S1/S2/S3. In particular how to handle the
+    configuration/relabel (interior edge could be any of the 6) without an unwieldy WLOG — is there a
+    cleaner invariant (e.g. "∃ 2 boundary K4 faces whose union covers all boundary K4 edges")?
+Q3. Confirm exists_good_flip_emptyK4 then composes: aleph_five (5 tets) +
+    disjoint_eligible_family_hit_two_faces_card_le_two (p,q ⇒ ≤2 bad) ⇒ ≥3 good ⇒ ∃ good flip. Any gap?
+
+FILES: Theorem4.lean (target). Existing: Eligible.lean (exists_degree3Vertex_of_three_sharedFaces,
+HasDegree3Vertex, NoDegree3Vertex), Degree3.lean (linkVerts deg-3 machinery), Complex2.lean
+(edgeDeg/hσ.closed/linkVerts), Theorem2Aleph.lean (starTet). PAPER: taut.tex:1016-1037.
+BUILD: cd lean && lake build.

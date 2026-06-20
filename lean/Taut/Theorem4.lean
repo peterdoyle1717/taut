@@ -1059,4 +1059,82 @@ lemma emptyK4_face_simplex_of_no_emptyK3 {τ : Finset (Finset V)} {s f : Finset 
   by_contra hns
   exact hNoK3 ⟨f, hf3, fun x hxf hx2 => hsedges x (hxf.trans hf) hx2, hns⟩
 
+/-! ### Theorem 4 config-2 (K₄) corrected persistence route
+
+Under `¬ HasEmptyK3`, removing ANY eligible tet `e` preserves an empty `K₄`.  The insight: a
+`K₄` edge `x ⊆ e` that is the deleted diagonal still survives, because some `K₄` FACE through it
+is a simplex (`emptyK4_face_simplex_of_no_emptyK3`) living in a tet `≠ e` (the face is `¬ ⊆ e`,
+since `s ⊄ e`).  No counting / octahedron / 5-family is needed — only the diagonal edge needs the
+face argument; every other edge already has a witness `≠ e` from
+`edge_witness_ne_removed_of_not_sharedEdge`. -/
+
+/-- **A `K₄` face through an edge `x ⊆ e` that escapes `e`.**  Since `s ⊄ e` (else `s` is a
+simplex), some `v ∈ s \ e`; then `f := insert v x` is a card-`3` subset of `s` containing `x`
+with `f ⊄ e` (as `v ∈ f`, `v ∉ e`). -/
+lemma exists_k4_face_through_edge_not_subset_tet {τ : Finset (Finset V)} {e s x : Finset V}
+    (hs4 : s.card = 4) (hno : ¬ SimplexOf τ s) (he : e ∈ τ)
+    (hx : x ⊆ s) (hx2 : x.card = 2) (hxe : x ⊆ e) :
+    ∃ f, f ⊆ s ∧ f.card = 3 ∧ x ⊆ f ∧ ¬ f ⊆ e := by
+  -- `s ⊄ e`, else `s` is a simplex via `e`
+  have hse : ¬ s ⊆ e := fun hse => hno (Or.inr ⟨e, he, hse⟩)
+  have hne : (s \ e).Nonempty := Finset.sdiff_nonempty.mpr hse
+  obtain ⟨v, hv⟩ := hne
+  have hvs : v ∈ s := (Finset.mem_sdiff.mp hv).1
+  have hve : v ∉ e := (Finset.mem_sdiff.mp hv).2
+  refine ⟨insert v x, Finset.insert_subset hvs hx, ?_, Finset.subset_insert v x, ?_⟩
+  · have hvx : v ∉ x := fun h => hve (hxe h)
+    rw [Finset.card_insert_of_notMem hvx, hx2]
+  · intro hfe
+    exact hve (hfe (Finset.mem_insert_self v x))
+
+/-- **A `K₄` edge `x ⊆ e` keeps a witness `≠ e` (no empty `K₃` case).**  Take a `K₄` face `f`
+through `x` escaping `e`; under `¬ HasEmptyK3` it is a simplex of `M.support`, so `f ⊆ t` for some
+tet `t`.  Then `t ≠ e` (else `f ⊆ e`) and `x ⊆ f ⊆ t`. -/
+lemma k4_edge_has_witness_ne_removed_of_no_emptyK3 {M : Chain V} {e s x : Finset V}
+    (hNoK3 : ¬ HasEmptyK3 M.support) (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s) (he : e ∈ M.support)
+    (hx : x ⊆ s) (hx2 : x.card = 2) (hxe : x ⊆ e) :
+    ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t := by
+  obtain ⟨f, hfs, hf3, hxf, hfe⟩ :=
+    exists_k4_face_through_edge_not_subset_tet hs4 hno he hx hx2 hxe
+  have hsimp : SimplexOf M.support f :=
+    emptyK4_face_simplex_of_no_emptyK3 hNoK3 hs4 hsedges hfs hf3
+  rcases hsimp with hempty | ⟨t, htM, hft⟩
+  · rw [hempty, Finset.card_empty] at hf3; exact absurd hf3 (by decide)
+  · refine ⟨t, htM, ?_, hxf.trans hft⟩
+    intro hte
+    exact hfe (hte ▸ hft)
+
+/-- **Every edge of a `K₄` witness keeps a witness `≠ e` past an eligible removal (no empty `K₃`).**
+For the flip diagonal `x = g₃ ∩ g₄` (which lies `⊆ e`), route through the `K₄`-face argument;
+every other edge already has a witness `≠ e` via `edge_witness_ne_removed_of_not_sharedEdge`. -/
+lemma emptyK4_edge_witness_ne_removed_of_eligible {M : Chain V} {e s : Finset V}
+    (hNoK3 : ¬ HasEmptyK3 M.support) (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s) (he : EligibleTet M e) :
+    ∀ x, x ⊆ s → x.card = 2 → ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t := by
+  obtain ⟨g₃, g₄, hg, hsh⟩ := Finset.card_eq_two.mp he.2.2.1
+  intro x hxs hx2
+  have hxsimp : SimplexOf M.support x := hsedges x hxs hx2
+  by_cases hxflip : x = g₃ ∩ g₄
+  · -- `x` is the flip edge: it lies `⊆ e`, so use the `K₄`-face route
+    have hg₃sh : g₃ ∈ sharedFaces M e := by rw [hsh]; exact Finset.mem_insert_self _ _
+    have hg₃e : g₃ ⊆ e :=
+      (Finset.mem_powersetCard.mp (sharedFaces_subset_tetFaces M e hg₃sh)).1
+    have hxe : x ⊆ e := hxflip ▸ Finset.inter_subset_left.trans hg₃e
+    exact k4_edge_has_witness_ne_removed_of_no_emptyK3 hNoK3 hs4 hsedges hno he.2.1 hxs hx2 hxe
+  · exact edge_witness_ne_removed_of_not_sharedEdge he hsh hg hxsimp hx2 hxflip
+
+/-- **Empty-`K₄` persists past removing ANY eligible tet, under `¬ HasEmptyK3`.**  Assembles the
+edge-witness lemma into `removeTet`-persistence; the witness card-`4` `s` survives because each of
+its edges keeps a witness tet `≠ e`. -/
+lemma hasEmptyK4_removeTet_of_eligible {M : Chain V} {e s : Finset V}
+    (hNoK3 : ¬ HasEmptyK3 M.support) (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s) (he : EligibleTet M e) :
+    HasEmptyK4 (removeTet M e).support :=
+  hasEmptyK4_removeTet_of_witness he.2.1 hs4
+    (emptyK4_edge_witness_ne_removed_of_eligible hNoK3 hs4 hsedges hno he) hno
+
 end Taut

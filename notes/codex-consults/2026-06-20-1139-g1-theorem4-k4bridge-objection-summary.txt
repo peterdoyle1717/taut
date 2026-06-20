@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1139-g1-theorem4-k4bridge-objection-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1139-g1-theorem4-k4bridge-objection-summary.txt
+
+=== raw size ===
+    2053  146429 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1139-g1-theorem4-k4bridge-objection-raw.txt
+
+=== extracted markers ===
+1980:WARN
+1982:Verdict: counterexample confirmed. `bad_flip_edge_has_boundary_k4_face` is false as stated. Nothing in `EligibleTet`, `faceCount_eq_one_of_boundary`, or `edgeDeg σ ab = 2` forces a K4 edge’s two boundary faces to be K4 faces. The ABP/ABQ fan example is compatible with the repo definitions.
+2013:Blockers:
+2018:WARN
+2020:Verdict: counterexample confirmed. `bad_flip_edge_has_boundary_k4_face` is false as stated. Nothing in `EligibleTet`, `faceCount_eq_one_of_boundary`, or `edgeDeg σ ab = 2` forces a K4 edge’s two boundary faces to be K4 faces. The ABP/ABQ fan example is compatible with the repo definitions.
+2051:Blockers:
+
+=== final tail ===
+def ConnOn (G : SimpleGraph V) (s : Finset V) : Prop :=
+  ∀ a ∈ s, ∀ b ∈ s, G.Reachable a b
+
+/-! ## Combinatorial 2-spheres -/
+
+/-- A combinatorial closed surface: pure 2-dimensional, every edge in exactly
+two faces, connected vertex links, connected. This is `IsSphere2` minus the
+`χ = 2` constraint — the geometric content the homology machinery (b₂ = 1,
+r₁ = V−1) actually rests on. Euler enters `IsSphere2` only via nonemptiness. -/
+structure IsClosedSurface (σ : Finset (Finset V)) : Prop where
+  pure : ∀ f ∈ σ, f.card = 3
+  closed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2
+  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+  conn : ConnOn (skel σ) (vertsOf σ)
+
+/-- A combinatorial 2-sphere: a closed surface with Euler characteristic 2.
+This is the paper's "clean complex" (normal pseudomanifold) sharpened by
+`χ = 2`, replacing "simplicial triangulation of S²". -/
+structure IsSphere2 (σ : Finset (Finset V)) : Prop where
+  pure : ∀ f ∈ σ, f.card = 3
+  closed : ∀ e ∈ edgesOf σ, edgeDeg σ e = 2
+  linkConn : ∀ v ∈ vertsOf σ, ConnOn (linkGraph σ v) (linkVerts σ v)
+  conn : ConnOn (skel σ) (vertsOf σ)
+  euler : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2
+
+/-- Forget the Euler constraint: every sphere is a closed surface. -/
+def IsSphere2.toClosedSurface {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    IsClosedSurface σ :=
+  ⟨h.pure, h.closed, h.linkConn, h.conn⟩
+
+/-! ## Euler counting -/
+
+/-- Double counting face–edge incidences: `3f = 2e`. -/
+theorem three_mul_card_faces {σ : Finset (Finset V)} (h : IsSphere2 σ) :
+    3 * σ.card = 2 * (edgesOf σ).card := by
+  classical
+  have hfilter : ∀ f ∈ σ, (edgesOf σ).filter (fun e => e ⊆ f)
+      = f.powersetCard 2 := by
+    intro f hf
+    ext e
+    simp only [Finset.mem_filter, Finset.mem_powersetCard]
+    constructor
+    · rintro ⟨he, hef⟩
+      exact ⟨hef, card_of_mem_edgesOf he⟩
+
+codex
+WARN
+
+Verdict: counterexample confirmed. `bad_flip_edge_has_boundary_k4_face` is false as stated. Nothing in `EligibleTet`, `faceCount_eq_one_of_boundary`, or `edgeDeg σ ab = 2` forces a K4 edge’s two boundary faces to be K4 faces. The ABP/ABQ fan example is compatible with the repo definitions.
+
+Recommended patch shape: do not bound “bad flip edges” by boundary K4 faces. Instead strengthen K4 persistence so a flip edge lying in the empty K4 is harmless unless deleting `e` is the sole support for that edge; under `¬ HasEmptyK3`, that sole-support case is impossible.
+
+Files to edit:
+- `lean/Taut/Theorem4.lean`
+- No changes needed in `Theorem2.lean`, `Stickerball.lean`, or `Complex2.lean`.
+
+Local lemmas needed, in order:
+
+1. `exists_k4_face_through_edge_not_subset_tet`
+   Given `e ∈ τ`, `e.card = 4`, `s.card = 4`, `¬ SimplexOf τ s`, `x ⊆ s`, `x.card = 2`, `x ⊆ e`, produce a 3-face `f ⊆ s` with `x ⊆ f`, `f.card = 3`, and `¬ f ⊆ e`.
+   Proof: since `s ⊄ e`, choose `v ∈ s \ e`; set `f = insert v x`.
+
+2. `k4_edge_has_witness_ne_removed_of_no_emptyK3`
+   If `¬ HasEmptyK3 M.support`, `s` is an empty K4 witness, and `x ⊆ s`, `x.card = 2`, `x ⊆ e`, then there is `t ∈ M.support`, `t ≠ e`, `x ⊆ t`.
+   Proof: use lemma 1 to get `f`; `emptyK4_face_simplex_of_no_emptyK3` makes `f` a simplex; any tet witnessing `f` cannot be `e`.
+
+3. `emptyK4_edge_witness_ne_removed_of_eligible`
+   For eligible `e` with `sharedFaces M e = {g₃,g₄}`, every K4 edge survives removing `e`.
+   Proof split on `x = g₃ ∩ g₄`.
+   - If false: existing `edge_witness_ne_removed_of_not_sharedEdge`.
+   - If true: lemma 2.
+
+4. `hasEmptyK4_removeTet_of_eligible`
+   New K4 persistence lemma with no `havoid`:
+   any eligible tet preserves an empty K4 witness, assuming `¬ HasEmptyK3 M.support`.
+
+5. `exists_good_flip_emptyK4`
+   Replace the five-family/cover argument with “pick any eligible tet” via existing eligible existence from no-degree-3, then apply lemma 4.
+
+Blockers:
+- The old bridge lemma and any cover lemma depending on it should be deleted or left unused.
+- The paper’s boundary-face counting route does not match the current formal eligibility definition; the corrected route should avoid that dependency entirely.
+tokens used
+50,681
+WARN
+
+Verdict: counterexample confirmed. `bad_flip_edge_has_boundary_k4_face` is false as stated. Nothing in `EligibleTet`, `faceCount_eq_one_of_boundary`, or `edgeDeg σ ab = 2` forces a K4 edge’s two boundary faces to be K4 faces. The ABP/ABQ fan example is compatible with the repo definitions.
+
+Recommended patch shape: do not bound “bad flip edges” by boundary K4 faces. Instead strengthen K4 persistence so a flip edge lying in the empty K4 is harmless unless deleting `e` is the sole support for that edge; under `¬ HasEmptyK3`, that sole-support case is impossible.
+
+Files to edit:
+- `lean/Taut/Theorem4.lean`
+- No changes needed in `Theorem2.lean`, `Stickerball.lean`, or `Complex2.lean`.
+
+Local lemmas needed, in order:
+
+1. `exists_k4_face_through_edge_not_subset_tet`
+   Given `e ∈ τ`, `e.card = 4`, `s.card = 4`, `¬ SimplexOf τ s`, `x ⊆ s`, `x.card = 2`, `x ⊆ e`, produce a 3-face `f ⊆ s` with `x ⊆ f`, `f.card = 3`, and `¬ f ⊆ e`.
+   Proof: since `s ⊄ e`, choose `v ∈ s \ e`; set `f = insert v x`.
+
+2. `k4_edge_has_witness_ne_removed_of_no_emptyK3`
+   If `¬ HasEmptyK3 M.support`, `s` is an empty K4 witness, and `x ⊆ s`, `x.card = 2`, `x ⊆ e`, then there is `t ∈ M.support`, `t ≠ e`, `x ⊆ t`.
+   Proof: use lemma 1 to get `f`; `emptyK4_face_simplex_of_no_emptyK3` makes `f` a simplex; any tet witnessing `f` cannot be `e`.
+
+3. `emptyK4_edge_witness_ne_removed_of_eligible`
+   For eligible `e` with `sharedFaces M e = {g₃,g₄}`, every K4 edge survives removing `e`.
+   Proof split on `x = g₃ ∩ g₄`.
+   - If false: existing `edge_witness_ne_removed_of_not_sharedEdge`.
+   - If true: lemma 2.
+
+4. `hasEmptyK4_removeTet_of_eligible`
+   New K4 persistence lemma with no `havoid`:
+   any eligible tet preserves an empty K4 witness, assuming `¬ HasEmptyK3 M.support`.
+
+5. `exists_good_flip_emptyK4`
+   Replace the five-family/cover argument with “pick any eligible tet” via existing eligible existence from no-degree-3, then apply lemma 4.
+
+Blockers:
+- The old bridge lemma and any cover lemma depending on it should be deleted or left unused.
+- The paper’s boundary-face counting route does not match the current formal eligibility definition; the corrected route should avoid that dependency entirely.

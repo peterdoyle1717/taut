@@ -1,0 +1,133 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1132-g1-theorem4-k4crux-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1132-g1-theorem4-k4crux-summary.txt
+
+=== raw size ===
+    3530  296906 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1132-g1-theorem4-k4crux-raw.txt
+
+=== extracted markers ===
+3387:WARN
+3389:Verdict: S1 is provable and should be added, but S2/S3 need one extra bridge lemma. The key missing bridge is: a bad flip edge lying in `s.powersetCard 2` must lie in some boundary K4 face `f ∈ s.powersetCard 3 ∩ σ`. Without that, “≤2 K4 faces on σ” does not by itself control external σ-faces through the edge.
+3460:WARN
+3462:Verdict: S1 is provable and should be added, but S2/S3 need one extra bridge lemma. The key missing bridge is: a bad flip edge lying in `s.powersetCard 2` must lie in some boundary K4 face `f ∈ s.powersetCard 3 ∩ σ`. Without that, “≤2 K4 faces on σ” does not by itself control external σ-faces through the edge.
+
+=== final tail ===
+
+```lean
+lemma bad_flip_edge_has_boundary_k4_face
+    {M : Chain V} {σ : Finset (Finset V)} {s e g₃ g₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (hNoK3 : ¬ HasEmptyK3 M.support) (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s)
+    (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃, g₄}) (hne : g₃ ≠ g₄)
+    (ha : g₃ ∩ g₄ ∈ s.powersetCard 2) :
+    ∃ f, f ∈ s.powersetCard 3 ∧ f ∈ σ ∧ g₃ ∩ g₄ ⊆ f
+```
+
+This is the real config-2 bridge. If this does not go through, stop: the later cover argument is not enough.
+
+```lean
+lemma exists_two_k4_faces_cover_bad_edges
+    {M : Chain V} {σ : Finset (Finset V)} {s : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (hNo3 : NoDegree3Vertex σ) (hNoK3 : ¬ HasEmptyK3 M.support)
+    (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s) :
+    ∃ p q, p ≠ q ∧ p ∈ s.powersetCard 3 ∧ q ∈ s.powersetCard 3 ∧
+      ∀ e g₃ g₄, EligibleTet M e → sharedFaces M e = {g₃,g₄} → g₃ ≠ g₄ →
+        g₃ ∩ g₄ ∈ s.powersetCard 2 →
+          (p ∈ σ ∧ g₃ ∩ g₄ ⊆ p) ∨ (q ∈ σ ∧ g₃ ∩ g₄ ⊆ q)
+```
+
+Proof route: use `k4_boundary_faces_card_le_two_of_noDegree3`; choose `p q` as two distinct faces of `s.powersetCard 3` padding the boundary-face set if it has card `0` or `1`. Use `bad_flip_edge_has_boundary_k4_face`; since boundary K4 faces have card ≤ 2, the witness face is one of `p,q`. No AD/WLOG split.
+
+```lean
+lemma covered_boundary_k4_edge_forces_shared_face_hit
+    {M : Chain V} {σ p q e g₃ g₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃,g₄}) (hne : g₃ ≠ g₄)
+    (hcover : (p ∈ σ ∧ g₃ ∩ g₄ ⊆ p) ∨ (q ∈ σ ∧ g₃ ∩ g₄ ⊆ q)) :
+    p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e
+```
+
+Proof route: `g₃,g₄ ∈ sharedFaces`, hence `g₃,g₄ ∈ σ` by `hU`. Let `a = g₃ ∩ g₄`. Use `tetFaces_pair_inter_card_eq_two` to get `a.card = 2`, then `a ∈ edgesOf σ`. From `hσ.closed a`, the σ-filter of faces containing `a` has card `2`; since `{g₃,g₄}` are two distinct such faces, any covered `p` or `q` in σ containing `a` equals `g₃` or `g₄`.
+
+Then `exists_two_k4_faces_hit_all_bad_flips` is just:
+1. get `p q` from `exists_two_k4_faces_cover_bad_edges`;
+2. for arbitrary bad `e g₃ g₄`, apply `covered_boundary_k4_edge_forces_shared_face_hit`.
+
+Q3: yes, composition is clean once this theorem exists. In the non-octahedron branch, `aleph_five_disjoint_eligible_family` gives `E.card = 5`; this theorem makes every bad member hit `p` or `q`; `disjoint_eligible_family_hit_two_faces_card_le_two` gives bad count ≤ 2; hence at least 3 good, so certainly `∃` good flip. Blocker is only `bad_flip_edge_has_boundary_k4_face`.
+tokens used
+65,250
+WARN
+
+Verdict: S1 is provable and should be added, but S2/S3 need one extra bridge lemma. The key missing bridge is: a bad flip edge lying in `s.powersetCard 2` must lie in some boundary K4 face `f ∈ s.powersetCard 3 ∩ σ`. Without that, “≤2 K4 faces on σ” does not by itself control external σ-faces through the edge.
+
+Exact recommended patch shape: add these lemmas in [Theorem4.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean), after `emptyK4_face_simplex_of_no_emptyK3`.
+
+```lean
+lemma exists_degree3Vertex_of_three_tetFaces_in_sigma
+    {σ : Finset (Finset V)} {t : Finset V}
+    (hσ : IsSphere2 σ) (ht4 : t.card = 4)
+    (h3 : 3 ≤ ((tetFaces t).filter (fun f => f ∈ σ)).card) :
+    HasDegree3Vertex σ
+```
+
+Proof route: copy the body of `exists_degree3Vertex_of_three_sharedFaces`, replacing `t.erase x ∈ sharedFaces M t` by `t.erase x ∈ σ`. No `M`, `hU`, or `sharedFaces` needed.
+
+```lean
+lemma k4_boundary_faces_card_le_two_of_noDegree3
+    {σ : Finset (Finset V)} {s : Finset V}
+    (hσ : IsSphere2 σ) (hNo3 : NoDegree3Vertex σ) (hs4 : s.card = 4) :
+    ((s.powersetCard 3).filter (fun f => f ∈ σ)).card ≤ 2
+```
+
+Proof route: by contradiction; apply `exists_degree3Vertex_of_three_tetFaces_in_sigma hσ hs4`; contradict `hNo3`.
+
+```lean
+lemma bad_flip_edge_has_boundary_k4_face
+    {M : Chain V} {σ : Finset (Finset V)} {s e g₃ g₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (hNoK3 : ¬ HasEmptyK3 M.support) (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s)
+    (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃, g₄}) (hne : g₃ ≠ g₄)
+    (ha : g₃ ∩ g₄ ∈ s.powersetCard 2) :
+    ∃ f, f ∈ s.powersetCard 3 ∧ f ∈ σ ∧ g₃ ∩ g₄ ⊆ f
+```
+
+This is the real config-2 bridge. If this does not go through, stop: the later cover argument is not enough.
+
+```lean
+lemma exists_two_k4_faces_cover_bad_edges
+    {M : Chain V} {σ : Finset (Finset V)} {s : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (hNo3 : NoDegree3Vertex σ) (hNoK3 : ¬ HasEmptyK3 M.support)
+    (hs4 : s.card = 4)
+    (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
+    (hno : ¬ SimplexOf M.support s) :
+    ∃ p q, p ≠ q ∧ p ∈ s.powersetCard 3 ∧ q ∈ s.powersetCard 3 ∧
+      ∀ e g₃ g₄, EligibleTet M e → sharedFaces M e = {g₃,g₄} → g₃ ≠ g₄ →
+        g₃ ∩ g₄ ∈ s.powersetCard 2 →
+          (p ∈ σ ∧ g₃ ∩ g₄ ⊆ p) ∨ (q ∈ σ ∧ g₃ ∩ g₄ ⊆ q)
+```
+
+Proof route: use `k4_boundary_faces_card_le_two_of_noDegree3`; choose `p q` as two distinct faces of `s.powersetCard 3` padding the boundary-face set if it has card `0` or `1`. Use `bad_flip_edge_has_boundary_k4_face`; since boundary K4 faces have card ≤ 2, the witness face is one of `p,q`. No AD/WLOG split.
+
+```lean
+lemma covered_boundary_k4_edge_forces_shared_face_hit
+    {M : Chain V} {σ p q e g₃ g₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
+    (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃,g₄}) (hne : g₃ ≠ g₄)
+    (hcover : (p ∈ σ ∧ g₃ ∩ g₄ ⊆ p) ∨ (q ∈ σ ∧ g₃ ∩ g₄ ⊆ q)) :
+    p ∈ sharedFaces M e ∨ q ∈ sharedFaces M e
+```
+
+Proof route: `g₃,g₄ ∈ sharedFaces`, hence `g₃,g₄ ∈ σ` by `hU`. Let `a = g₃ ∩ g₄`. Use `tetFaces_pair_inter_card_eq_two` to get `a.card = 2`, then `a ∈ edgesOf σ`. From `hσ.closed a`, the σ-filter of faces containing `a` has card `2`; since `{g₃,g₄}` are two distinct such faces, any covered `p` or `q` in σ containing `a` equals `g₃` or `g₄`.
+
+Then `exists_two_k4_faces_hit_all_bad_flips` is just:
+1. get `p q` from `exists_two_k4_faces_cover_bad_edges`;
+2. for arbitrary bad `e g₃ g₄`, apply `covered_boundary_k4_edge_forces_shared_face_hit`.
+
+Q3: yes, composition is clean once this theorem exists. In the non-octahedron branch, `aleph_five_disjoint_eligible_family` gives `E.card = 5`; this theorem makes every bad member hit `p` or `q`; `disjoint_eligible_family_hit_two_faces_card_le_two` gives bad count ≤ 2; hence at least 3 good, so certainly `∃` good flip. Blocker is only `bad_flip_edge_has_boundary_k4_face`.
