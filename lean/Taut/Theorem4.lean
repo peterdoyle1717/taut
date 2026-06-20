@@ -1599,4 +1599,42 @@ lemma prime_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSpher
         (simplicialChain_removeTet hS)).2 hR
   exact ⟨hNoK3, hNoK4⟩
 
+/-! ## (6) The induction and the Theorem-4 endpoint -/
+
+/-- **No empty `K₃`/`K₄` in a taut filling of a 2-sphere.** Strong induction on `nrm M`, mirroring
+`taut_isPseudomanifold`: base case (`≤ 4` vertices) by `base_no_emptyK3K4`; a degree-3 vertex by
+`deg3_no_emptyK3K4`; otherwise by `prime_no_emptyK3K4`. -/
+theorem no_emptyK3K4_of_taut {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support := by
+  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+      ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support by
+    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N IH =>
+    intro σ X M hN hσ hU hXc hMX hT hS
+    by_cases hv : (vertsOf σ).card ≤ 4
+    · exact base_no_emptyK3K4 hσ hU hMX hT hv
+    · push_neg at hv
+      by_cases hd3 : HasDegree3Vertex σ
+      · refine deg3_no_emptyK3K4 σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+        refine prime_no_emptyK3K4 σ X M hσ hU hXc hMX hT hS hno3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+
+/-- **Theorem 4 (the flag-complex theorem).** Any taut filling `M` of a combinatorial 2-sphere `σ` is a
+flag complex: every clique of its 1-skeleton spans a simplex.  Combines `no_emptyK3K4_of_taut` (the
+minimal-counterexample / edge-flip induction) with `theorem4_flag_from_no_emptyK3K4` (which adds the
+`K₅` obstruction). -/
+theorem theorem4_flag {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsFlagComplex M.support :=
+  let ⟨hK3, hK4⟩ := no_emptyK3K4_of_taut hσ hU hXc hMX hT hS
+  theorem4_flag_from_no_emptyK3K4 hσ hU hXc hMX hT hS hK3 hK4
+
 end Taut
