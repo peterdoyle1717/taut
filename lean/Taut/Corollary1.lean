@@ -679,4 +679,136 @@ lemma Qvol_nat_smul {q : ℕ} (hq : 0 < q) (X : QChain V) :
         rw [Qnrm_nat_smul, smul_eq_mul]
   rw [Qvol, hset, Real.sInf_smul_of_nonneg hqR, smul_eq_mul, Qvol]
 
+/-! ## The rational additivity endpoint (Corollary 1, final) -/
+
+/-- **Rational additivity of the filling volume (Corollary 1, final endpoint).**
+For almost-disjoint cycles `X` (supported on `A`) and `Y` (supported on `B`),
+the rational filling volume is additive: `Qvol (X + Y) = Qvol X + Qvol Y`.
+
+Proved by antisymmetry.  The `≤` direction is inf-subadditivity (any pair of
+fillings of `X` and `Y` sums to a filling of `X + Y`).  The `≥` direction clears
+denominators to the committed integer endpoint `Zvol_add_of_almost_disjoint_full`
+and divides back. -/
+theorem Qvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 1 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : QChain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : Qbdry X = 0) (hYc : Qbdry Y = 0) :
+    Qvol (X + Y) = Qvol X + Qvol Y := by
+  classical
+  have hXYc : Qbdry (X + Y) = 0 := by rw [map_add, hXc, hYc, add_zero]
+  -- A cone apex (exists because `V` is infinite, hence nonempty).
+  let x₀ : V := Classical.arbitrary V
+  -- ≤ direction: inf-subadditivity.
+  have hle : Qvol (X + Y) ≤ Qvol X + Qvol Y := by
+    -- Inner: any pair of fillings of `X` and `Y` sums to a filling of `X + Y`.
+    have hinner : ∀ MX MY, Qbdry MX = X → Qbdry MY = Y →
+        Qvol (X + Y) ≤ Qnrm MX + Qnrm MY := by
+      intro MX MY hMX hMY
+      have hfill : Qbdry (MX + MY) = X + Y := by rw [map_add, hMX, hMY]
+      exact le_trans (Qvol_le hfill) (Qnrm_add_le MX MY)
+    -- Fix `MX`; minimise over `MY` filling `Y`.
+    have hstep : ∀ MX, Qbdry MX = X → Qvol (X + Y) ≤ Qnrm MX + Qvol Y := by
+      intro MX hMX
+      have hY' : Qvol (X + Y) - Qnrm MX ≤ Qvol Y := by
+        refine le_Qvol_of_closed (x := x₀) hYc ?_
+        intro MY hMY
+        have := hinner MX MY hMX hMY
+        linarith
+      linarith
+    -- Minimise over `MX` filling `X`.
+    have hX' : Qvol (X + Y) - Qvol Y ≤ Qvol X := by
+      refine le_Qvol_of_closed (x := x₀) hXc ?_
+      intro MX hMX
+      have := hstep MX hMX
+      linarith
+    linarith
+  -- ≥ direction: clear denominators to the integer endpoint and divide back.
+  have hge : Qvol X + Qvol Y ≤ Qvol (X + Y) := by
+    refine le_Qvol_of_closed (x := x₀) hXYc ?_
+    intro M hM
+    -- Clear denominators of `M`, `X`, `Y` simultaneously.
+    obtain ⟨q, hq, hMint, hXint, hYint⟩ := exists_nat_smul_integral_three M X Y
+    have hqR : (0 : ℝ) < (q : ℝ) := by exact_mod_cast hq
+    -- The underlying integer chains.
+    set K : Chain V := QChain.toInt ((q : ℚ) • M) hMint with hKdef
+    set KX : Chain V := QChain.toInt ((q : ℚ) • X) hXint with hKXdef
+    set KY : Chain V := QChain.toInt ((q : ℚ) • Y) hYint with hKYdef
+    have hKM : intToQChain K = (q : ℚ) • M := intToQChain_toInt _ hMint
+    have hKX : intToQChain KX = (q : ℚ) • X := intToQChain_toInt _ hXint
+    have hKY : intToQChain KY = (q : ℚ) • Y := intToQChain_toInt _ hYint
+    -- `KX`, `KY` are integer cycles; `bdry K = KX + KY`.
+    have hKXc : bdry KX = 0 := by
+      apply intToQChain_injective
+      rw [intToQChain_zero, ← Qbdry_intToQChain, hKX, map_smul, hXc, smul_zero]
+    have hKYc : bdry KY = 0 := by
+      apply intToQChain_injective
+      rw [intToQChain_zero, ← Qbdry_intToQChain, hKY, map_smul, hYc, smul_zero]
+    have hKbdry : bdry K = KX + KY := by
+      apply intToQChain_injective
+      rw [← Qbdry_intToQChain, hKM, map_smul, hM, smul_add, intToQChain_add, hKX,
+        hKY]
+    -- Support transfer for the side hypotheses.
+    have hKXsupp : KX.support = X.support := by
+      rw [← support_intToQChain KX, hKX, support_nat_smul_of_pos hq]
+    have hKYsupp : KY.support = Y.support := by
+      rw [← support_intToQChain KY, hKY, support_nat_smul_of_pos hq]
+    have hX' : ∀ s ∈ KX.support, s ⊆ A ∧ s.card = n + 1 := by
+      rw [hKXsupp]; exact hX
+    have hY' : ∀ s ∈ KY.support, s ⊆ B ∧ s.card = n + 1 := by
+      rw [hKYsupp]; exact hY
+    -- Integer additivity.
+    have hZadd : Zvol (KX + KY) = Zvol KX + Zvol KY :=
+      Zvol_add_of_almost_disjoint_full hn hC hX' hY' hKXc hKYc
+    -- `Zvol (KX + KY) ≤ nrm K`.
+    have hZK : (Zvol (KX + KY) : ℝ) ≤ (nrm K : ℝ) := by
+      have h : Zvol (bdry K) ≤ nrm K := Zvol_le rfl
+      rw [hKbdry] at h
+      exact_mod_cast h
+    -- `(nrm K : ℝ) = (q : ℝ) * Qnrm M`.
+    have hnrmK : (nrm K : ℝ) = (q : ℝ) * Qnrm M := by
+      rw [← Qnrm_intToQChain, hKM, Qnrm_nat_smul]
+    -- `(q : ℝ) * Qvol X ≤ (Zvol KX : ℝ)`, via the achieved integer filling.
+    have hQvolKX : Qvol (intToQChain KX) ≤ (Zvol KX : ℝ) := by
+      obtain ⟨W, hWb, hWn⟩ := exists_optimal_fill (cone x₀ KX)
+      have hWbKX : bdry W = KX := by rw [hWb, bdry_cone_of_closed hKXc]
+      have hWnKX : nrm W = Zvol KX := by
+        rw [hWn, bdry_cone_of_closed hKXc]
+      have hfill : Qbdry (intToQChain W) = intToQChain KX := by
+        rw [Qbdry_intToQChain, hWbKX]
+      calc Qvol (intToQChain KX) ≤ Qnrm (intToQChain W) := Qvol_le hfill
+        _ = (nrm W : ℝ) := Qnrm_intToQChain W
+        _ = (Zvol KX : ℝ) := by rw [hWnKX]
+    have hqX : (q : ℝ) * Qvol X ≤ (Zvol KX : ℝ) := by
+      have heq : (q : ℝ) * Qvol X = Qvol (intToQChain KX) := by
+        rw [hKX, Qvol_nat_smul hq]
+      rw [heq]; exact hQvolKX
+    have hQvolKY : Qvol (intToQChain KY) ≤ (Zvol KY : ℝ) := by
+      obtain ⟨W, hWb, hWn⟩ := exists_optimal_fill (cone x₀ KY)
+      have hWbKY : bdry W = KY := by rw [hWb, bdry_cone_of_closed hKYc]
+      have hWnKY : nrm W = Zvol KY := by
+        rw [hWn, bdry_cone_of_closed hKYc]
+      have hfill : Qbdry (intToQChain W) = intToQChain KY := by
+        rw [Qbdry_intToQChain, hWbKY]
+      calc Qvol (intToQChain KY) ≤ Qnrm (intToQChain W) := Qvol_le hfill
+        _ = (nrm W : ℝ) := Qnrm_intToQChain W
+        _ = (Zvol KY : ℝ) := by rw [hWnKY]
+    have hqY : (q : ℝ) * Qvol Y ≤ (Zvol KY : ℝ) := by
+      have heq : (q : ℝ) * Qvol Y = Qvol (intToQChain KY) := by
+        rw [hKY, Qvol_nat_smul hq]
+      rw [heq]; exact hQvolKY
+    -- Combine and divide by `q > 0`.
+    have hZaddR : (Zvol (KX + KY) : ℝ) = (Zvol KX : ℝ) + (Zvol KY : ℝ) := by
+      rw [hZadd]; push_cast; ring
+    have hcombine : (q : ℝ) * (Qvol X + Qvol Y) ≤ (q : ℝ) * Qnrm M := by
+      have h1 : (q : ℝ) * (Qvol X + Qvol Y) ≤ (Zvol KX : ℝ) + (Zvol KY : ℝ) := by
+        rw [mul_add]; linarith
+      rw [← hnrmK]
+      calc (q : ℝ) * (Qvol X + Qvol Y) ≤ (Zvol KX : ℝ) + (Zvol KY : ℝ) := h1
+        _ = (Zvol (KX + KY) : ℝ) := hZaddR.symm
+        _ ≤ (nrm K : ℝ) := hZK
+    exact le_of_mul_le_mul_left hcombine hqR
+  exact le_antisymm hle hge
+
 end Taut
