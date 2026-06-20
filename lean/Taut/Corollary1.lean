@@ -504,4 +504,179 @@ theorem IsQTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
     exact le_of_add_le_add_left this
   exact ⟨hQbA, hQbB, hMtaut_A, hMtaut_B, hMsum⟩
 
+/-! ## The rational chain homotopy
+
+The ℚ-coefficient analogues of `bdry_bdry` and `bdry_cone_add_cone_bdry`
+(`Taut/Chains.lean`).  The cone operator `Qcone x` is a contracting homotopy of
+the augmented full simplex over ℚ, so every closed rational chain is filled by
+its cone (`Qbdry_Qcone_of_closed`). -/
+
+/-- Cast of `sgn_mul_self` to ℚ: the rational sign squares to `1`. -/
+private lemma Qsgn_mul_self (x : V) (s : Finset V) :
+    (sgn x s : ℚ) * (sgn x s : ℚ) = 1 := by
+  rw [← Int.cast_mul, sgn_mul_self, Int.cast_one]
+
+/-- Cast of the double-sign self-cancellation to a ℚ-chain `smul`. -/
+private lemma Qsgn_smul_sgn_smul (x : V) (s : Finset V) (M : QChain V) :
+    (sgn x s : ℚ) • (sgn x s : ℚ) • M = M := by
+  rw [smul_smul, Qsgn_mul_self, one_smul]
+
+/-- Rational `∂∂ = 0` on a single generator (mirrors `bdry_bdryGen`). -/
+lemma Qbdry_QbdryGen (s : Finset V) : Qbdry (QbdryGen s) = (0 : QChain V) := by
+  have step : ∀ x ∈ s, Qbdry ((sgn x s : ℚ) • Finsupp.single (s.erase x) (1 : ℚ))
+      = ∑ z ∈ s, (if z = x then 0 else
+          ((sgn x s : ℚ) * (sgn z (s.erase x) : ℚ)) •
+            Finsupp.single ((s.erase x).erase z) (1 : ℚ)) := by
+    intro x hx
+    rw [map_smul, Qbdry_single, one_smul, QbdryGen, Finset.smul_sum]
+    rw [← Finset.sum_erase (f := fun z => if z = x then 0 else
+        ((sgn x s : ℚ) * (sgn z (s.erase x) : ℚ)) •
+          Finsupp.single ((s.erase x).erase z) (1 : ℚ)) s (if_pos rfl)]
+    refine Finset.sum_congr rfl fun z hz => ?_
+    rw [if_neg (Finset.ne_of_mem_erase hz), smul_smul]
+  rw [QbdryGen, map_sum, Finset.sum_congr rfl step, ← Finset.sum_product']
+  refine Finset.sum_involution (fun p _ => p.swap) ?_ ?_ ?_ ?_
+  · intro p hp
+    obtain ⟨h1, h2⟩ := Finset.mem_product.mp hp
+    simp only [Prod.fst_swap, Prod.snd_swap]
+    by_cases he : p.2 = p.1
+    · simp [he]
+    · have hne : ¬(p.1 = p.2) := fun h => he h.symm
+      have hsgn : (sgn p.1 s : ℚ) * (sgn p.2 (s.erase p.1) : ℚ)
+          = -((sgn p.2 s : ℚ) * (sgn p.1 (s.erase p.2) : ℚ)) := by
+        rw [← Int.cast_mul, ← Int.cast_mul, ← Int.cast_neg,
+          sgn_erase_cancel h1 h2 hne]
+      rw [if_neg he, if_neg hne, Finset.erase_right_comm, hsgn, neg_smul,
+        neg_add_cancel]
+  · intro p _ hF hswap
+    apply hF
+    have h : p.2 = p.1 := by
+      have h1 := congrArg Prod.fst hswap
+      simpa using h1
+    rw [if_pos h]
+  · intro p hp
+    obtain ⟨h1, h2⟩ := Finset.mem_product.mp hp
+    exact Finset.mem_product.mpr ⟨h2, h1⟩
+  · intro p _
+    exact Prod.swap_swap p
+
+/-- Rational `∂∂ = 0`. -/
+theorem Qbdry_Qbdry (M : QChain V) : Qbdry (Qbdry M) = 0 := by
+  induction M using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg => rw [map_add, map_add, hf, hg, add_zero]
+  | single s c => rw [Qbdry_single, map_smul, Qbdry_QbdryGen, smul_zero]
+
+/-- The contracting homotopy of the augmented full simplex over ℚ:
+`∂(x ∗ M) + x ∗ (∂M) = M` (mirrors `bdry_cone_add_cone_bdry`). -/
+theorem Qbdry_Qcone_add_Qcone_Qbdry (x : V) (M : QChain V) :
+    Qbdry (Qcone x M) + Qcone x (Qbdry M) = M := by
+  induction M using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg =>
+    rw [map_add, map_add, map_add, map_add, add_add_add_comm, hf, hg]
+  | single s c =>
+    by_cases hx : x ∈ s
+    · -- cone kills the generator; the cone of the boundary restores it.
+      have key : Qcone x (QbdryGen s) = Finsupp.single s (1 : ℚ) := by
+        rw [QbdryGen, map_sum]
+        rw [Finset.sum_eq_single_of_mem x hx]
+        · rw [map_smul, Qcone_single, one_smul, QconeGen,
+            if_neg (Finset.notMem_erase x s), sgn_erase_self,
+            Finset.insert_erase hx, Qsgn_smul_sgn_smul]
+        · intro z hz hzx
+          rw [map_smul, Qcone_single, one_smul, QconeGen,
+            if_pos (Finset.mem_erase_of_ne_of_mem (Ne.symm hzx) hx), smul_zero]
+      rw [Qcone_single, QconeGen, if_pos hx, smul_zero, map_zero, zero_add,
+        Qbdry_single, map_smul, key, Finsupp.smul_single, smul_eq_mul, mul_one]
+    · -- the generic case: the two sums cancel termwise.
+      have h1 : Qbdry ((sgn x s : ℚ) • Finsupp.single (insert x s) (1 : ℚ))
+          = Finsupp.single s (1 : ℚ) + ∑ z ∈ s,
+              ((sgn x s : ℚ) * (sgn z (insert x s) : ℚ)) •
+                Finsupp.single (insert x (s.erase z)) (1 : ℚ) := by
+        rw [map_smul, Qbdry_single, one_smul, QbdryGen, Finset.sum_insert hx,
+          smul_add, Finset.smul_sum]
+        congr 1
+        · rw [Finset.erase_insert hx, sgn_self_insert x s hx, Qsgn_smul_sgn_smul]
+        · refine Finset.sum_congr rfl fun z hz => ?_
+          rw [smul_smul,
+            Finset.erase_insert_of_ne (fun h => hx (by rw [h]; exact hz))]
+      have h2 : Qcone x (QbdryGen s) = ∑ z ∈ s,
+          ((sgn z s : ℚ) * (sgn x (s.erase z) : ℚ)) •
+            Finsupp.single (insert x (s.erase z)) (1 : ℚ) := by
+        rw [QbdryGen, map_sum]
+        refine Finset.sum_congr rfl fun z hz => ?_
+        rw [map_smul, Qcone_single, one_smul, QconeGen,
+          if_neg (fun h => hx (Finset.mem_of_mem_erase h)), smul_smul]
+      rw [Qcone_single, QconeGen, if_neg hx, map_smul, h1, Qbdry_single, map_smul,
+        h2, ← smul_add, add_assoc, ← Finset.sum_add_distrib]
+      have hzero : ∀ z ∈ s,
+          ((sgn x s : ℚ) * (sgn z (insert x s) : ℚ)) •
+              Finsupp.single (insert x (s.erase z)) (1 : ℚ)
+            + ((sgn z s : ℚ) * (sgn x (s.erase z) : ℚ)) •
+              Finsupp.single (insert x (s.erase z)) (1 : ℚ) = 0 := by
+        intro z hz
+        have hsgn : (sgn x s : ℚ) * (sgn z (insert x s) : ℚ)
+            = -((sgn z s : ℚ) * (sgn x (s.erase z) : ℚ)) := by
+          rw [← Int.cast_mul, ← Int.cast_mul, ← Int.cast_neg,
+            sgn_insert_cancel hx hz]
+        rw [← add_smul, hsgn, neg_add_cancel, zero_smul]
+      rw [Finset.sum_congr rfl hzero, Finset.sum_const_zero, add_zero,
+        Finsupp.smul_single, smul_eq_mul, mul_one]
+
+/-- Coning fills a closed rational chain (mirrors `bdry_cone_of_closed`). -/
+lemma Qbdry_Qcone_of_closed {x : V} {X : QChain V} (hX : Qbdry X = 0) :
+    Qbdry (Qcone x X) = X := by
+  have h := Qbdry_Qcone_add_Qcone_Qbdry x X
+  rw [hX, map_zero, add_zero] at h
+  exact h
+
+/-! ## The `Qvol` order API -/
+
+omit [LinearOrder V] in
+lemma Qnrm_nonneg (M : QChain V) : 0 ≤ Qnrm M :=
+  Finset.sum_nonneg (fun s _ => abs_nonneg _)
+
+lemma QvolSet_bddBelow (X : QChain V) : BddBelow (QvolSet X) :=
+  ⟨0, by rintro r ⟨M, _, rfl⟩; exact Qnrm_nonneg M⟩
+
+/-- Any filling of `X` bounds `Qvol X` from above. -/
+lemma Qvol_le {X M : QChain V} (h : Qbdry M = X) : Qvol X ≤ Qnrm M :=
+  csInf_le (QvolSet_bddBelow X) ⟨M, h, rfl⟩
+
+/-- A lower bound for every filling of a closed chain `X` is a lower bound for
+`Qvol X` (nonemptiness of `QvolSet X` is witnessed by the cone from any `x`). -/
+lemma le_Qvol_of_closed {x : V} {X : QChain V} (hXc : Qbdry X = 0) {r : ℝ}
+    (h : ∀ M, Qbdry M = X → r ≤ Qnrm M) : r ≤ Qvol X := by
+  apply le_csInf
+  · exact ⟨Qnrm (Qcone x X), Qcone x X, Qbdry_Qcone_of_closed hXc, rfl⟩
+  · rintro s ⟨M, hM, rfl⟩; exact h M hM
+
+open scoped Pointwise in
+/-- Scaling a closed chain by a positive natural number scales `Qvol` by it. -/
+lemma Qvol_nat_smul {q : ℕ} (hq : 0 < q) (X : QChain V) :
+    Qvol ((q : ℚ) • X) = (q : ℝ) * Qvol X := by
+  have hqR : (0 : ℝ) ≤ (q : ℝ) := by positivity
+  -- The filling sets are related by the pointwise scalar action `(q:ℝ) • ·`.
+  have hset : QvolSet ((q : ℚ) • X) = (q : ℝ) • QvolSet X := by
+    ext r
+    constructor
+    · rintro ⟨M, hM, rfl⟩
+      -- `M` fills `(q:ℚ)•X`, so `(q:ℚ)⁻¹•M` fills `X`.
+      have hqQ : (q : ℚ) ≠ 0 := by exact_mod_cast hq.ne'
+      have hqR' : (q : ℝ) ≠ 0 := by exact_mod_cast hq.ne'
+      refine ⟨Qnrm ((q : ℚ)⁻¹ • M), ⟨(q : ℚ)⁻¹ • M, ?_, rfl⟩, ?_⟩
+      · rw [map_smul, hM, smul_smul, inv_mul_cancel₀ hqQ, one_smul]
+      · show (q : ℝ) • Qnrm ((q : ℚ)⁻¹ • M) = Qnrm M
+        rw [smul_eq_mul, Qnrm_smul, Rat.cast_inv, Rat.cast_natCast,
+          abs_of_nonneg (by positivity), ← mul_assoc, mul_inv_cancel₀ hqR',
+          one_mul]
+    · rintro ⟨s, ⟨N, hN, rfl⟩, rfl⟩
+      -- `N` fills `X`, so `(q:ℚ)•N` fills `(q:ℚ)•X`.
+      refine ⟨(q : ℚ) • N, ?_, ?_⟩
+      · rw [map_smul, hN]
+      · show Qnrm ((q : ℚ) • N) = (q : ℝ) • Qnrm N
+        rw [Qnrm_nat_smul, smul_eq_mul]
+  rw [Qvol, hset, Real.sInf_smul_of_nonneg hqR, smul_eq_mul, Qvol]
+
 end Taut
