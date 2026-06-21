@@ -530,7 +530,13 @@ hypothesis `(A ∩ B).card ≤ n + 1` alone suffices — no witnessing pair
 fresh vertices `F` to reach `|A' ∩ B'| = 2 ≤ n + 1`, run the split along
 `· ⊆ A'`, then transfer it back to `· ⊆ A`.  The transfer is valid because
 every generator of the filling `M` lies in `A ∪ B`, hence is disjoint from
-the fresh set `F`, so `t ⊆ A' ↔ t ⊆ A` on `M.support`. -/
+the fresh set `F`, so `t ⊆ A' ↔ t ⊆ A` on `M.support`.
+
+`[Infinite V]` is pure ambient bookkeeping, not a finiteness restriction: chains are finitely
+supported (`Chain V := Finset V →₀ ℤ`), so the active vertex set is always finite.  It only
+guarantees that *fresh cut vertices are available* for the `|A ∩ B| ≤ 1` enlargement; a taut
+filling never uses vertices beyond its boundary (`IsTaut.vert_subset`), so unused ambient
+vertices play no mathematical role. -/
 theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
     {A B : Finset V} {n : ℕ} (hn : 2 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
     {X Y : Chain V}

@@ -1,0 +1,637 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019ee778-3816-7163-b865-a22af4bc63bc
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+G1 ARCHITECT PACKET — Theorem 1 cleanup w.r.t. the ambient vertex type V (AUDIT, not implementation).
+
+Reviewer: codex, ARCHITECT. Peter asks: in Theorem 1, V should be pure ambient bookkeeping (taut fillings
+don't depend on unused ambient vertices); concern that Th1 is tied to a fixed finite V or [Fintype V].
+Claude AUDITED. HEADLINE: the [Fintype V] concern is NOT borne out — there is NO [Fintype V] / [DecidableEq V]
+anywhere. Th1 already lives over arbitrary {V} [LinearOrder V] [Infinite V]. So this is largely "is the
+current form the elegant final one, or do we add an enlargement-invariance theorem?" Please pick the
+route + first bounded target. Do not assume cleanup is needed; decide from the audit.
+
+=====================================================================
+(1) EXACT current Theorem 1 endpoints (no theorem1/theorem1_full wrapper exists)
+=====================================================================
+FULL endpoints (the public Th1, paper hypothesis |A∩B| ≤ n+1, no p,q):
+- Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V] {A B : Finset V} {n : ℕ}
+    (hn : 1 ≤ n) (hC : (A∩B).card ≤ n+1) {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s⊆A ∧ s.card=n+1) (hY : ∀ s ∈ Y.support, s⊆B ∧ s.card=n+1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0) : Zvol (X+Y) = Zvol X + Zvol Y      [Theorem1.lean:434]
+- IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V] {A B} {n} (hn : 2 ≤ n) (hC) {X Y}
+    (hX hY hXc hYc) {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X+Y) :
+    <5-way split: bdry (M.filter (·⊆A)) = X ∧ bdry (M.filter ¬(·⊆A)) = Y ∧ IsTaut both ∧ sum = M>
+                                                                              [Splitting.lean:534]
+HARD-CASE lemmas (with explicit cut points p ≠ q ∈ A∩B; section var only):
+- Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n} (hn : 1 ≤ n) (hp : p ∈ A∩B) (hq) (hpq : p≠q)
+    (hC) {X Y} (hX hY hXc hYc) : Zvol (X+Y) = Zvol X + Zvol Y                  [Theorem1.lean:364]
+- IsTaut.splits {A B} {n} (hn : 2 ≤ n) {p q : V} (hp hq hpq) (hC) {X Y} (hX hY hXc hYc) {M} (hMt hM1)
+    : <same 5-way split>                                                        [Splitting.lean:435]
+
+=====================================================================
+(2) EXACT V typeclass assumptions present (project-wide audit)
+=====================================================================
+- Section variable (both Theorem1.lean:35 and Splitting.lean:26): `variable {V : Type*} [LinearOrder V]`.
+- FULL endpoints ADD `[Infinite V]` (re-declared on the theorem line).
+- HARD cases: `[LinearOrder V]` only (section), + explicit `{p q : V}`.
+- `[Fintype V]`: NONE anywhere in lean/Taut (grep empty). `[DecidableEq V]`: NONE separately (LinearOrder
+  supplies DecidableEq for free). NO other ambient assumptions.
+- Th2/3/4 (`theorem2_clean`/`theorem3_clean`/`theorem4_flag`) and the deg-3 machinery: `[LinearOrder V]`
+  only — NO `[Infinite V]`. They use the HARD-case `IsTaut.splits` (explicit p,q from a degree-3 vertex),
+  NOT the full endpoint.
+
+=====================================================================
+(3) WHERE the assumptions are genuinely used
+=====================================================================
+- `[LinearOrder V]`: FOUNDATIONAL. The sign function `sgn x s := (-1)^(cnt x s)` (cnt = #elements of s
+  below x) needs a linear order; the whole Chains/bdry/cone/nrm/Zvol layer is built on it. Cannot be
+  dropped/weakened without rebuilding Chains. (Not a "restriction" to clean — it's the carrier structure.)
+- `[Infinite V]`: used in EXACTLY ONE place per full endpoint — the `|A∩B| ≤ 1` branch, via
+  `Infinite.exists_superset_card_eq (A ∪ B) _ hle` (Theorem1.lean:450, Splitting.lean:555), to pick a
+  fresh set `F := W \ (A∪B)` of size `2 - |A∩B|` and enlarge A,B to A∪F, B∪F so `|A'∩B'| = 2 ≤ n+1`, then
+  apply the hard case. THIS IS the paper's "add brand-new points to C if necessary." Already implemented.
+- Chains are `Finset V →₀ ℤ` (finitely supported), so the ACTIVE vertex set is finite even when V is
+  infinite — confirming finite V is NOT needed. No cohomology/Fintype dependence.
+- Zvol existence / filling: via `cone` + `bdry_cone_of_closed` (Zvol.lean) — needs no finite ambient V.
+
+=====================================================================
+(4) The noInteriorVertices observation — its Lean counterpart EXISTS
+=====================================================================
+- `IsTaut.no_internal_vertex (hM : IsTaut M) (hdim : ∀ s ∈ M.support, 2 ≤ s.card) (hxM : x ∈ vert M)
+   (hxB : x ∉ vert (bdry M)) : False`  [Zvol.lean:139] — Prop 4: a taut chain (dim ≥ 1) has no internal
+   vertices.
+- `IsTaut.vert_subset (hM : IsTaut M) (hdim) : vert M ⊆ vert (bdry M)` (wrapper)  [Theorem1.lean:159].
+- USED in the splitting proofs (Splitting.lean:182, PrimeStep.lean:368) to show M's tets only use boundary
+  vertices, so the filter `t ⊆ A` behaves correctly. So "filling uses only boundary/support vertices" is
+  already a proven, used lemma.
+
+=====================================================================
+(5) Relabeling / enlargement-invariance machinery — DOES NOT EXIST
+=====================================================================
+- grep for mapDomain / Finsupp.comap / embDomain / relabel / Function.Embedding (V ↪ W) / Chain.map over
+  lean/Taut: NONE. There is no map of `Chain V → Chain W` along an injection, and no lemma that
+  bdry/nrm/support/Zvol/IsTaut are preserved/reflected under relabeling.
+- The current enlargement happens WITHIN `[Infinite V]` (no type change): A,B grow inside the same V.
+
+=====================================================================
+(6) Auditor's assessment + PROPOSED targets (deferring the choice to you)
+=====================================================================
+The stated concern (Th1 tied to finite V / [Fintype V]) is UNFOUNDED: no [Fintype V] exists; Th1 is already
+over arbitrary [LinearOrder V] [Infinite V] (Option A is essentially the CURRENT state). `[Infinite V]` is
+the clean "fresh vertices always available" device and is the minimal thing the WLOG move needs; it
+propagates only to Corollary 1 (which threads it itself). So there may be NOTHING mathematically to fix.
+
+The only genuine design question: do we ALSO want Option B — an explicit AMBIENT-ENLARGEMENT INVARIANCE
+theorem stating "taut fillings don't depend on unused ambient vertices" via a relabeling `e : V ↪ W`? It
+is mathematically the content of Peter's motivation, but NO current consumer needs it (Cor 1 uses
+[Infinite V] directly; Th2/3/4 don't touch Infinite). It would be NEW machinery (a `Chain.map e`, plus
+bdry/nrm/support/Zvol/IsTaut compatibility), not a cleanup of existing code.
+
+PROPOSED (mark PROPOSED, your call):
+- PROPOSED-Bridge (Option B): `Chain.embed (e : V ↪ W) : Chain V →+ Chain W` (= Finsupp relabel by `s ↦
+  s.map e`), with `bdry_embed`, `nrm_embed` (= nrm), `support_embed`, `Zvol_embed` (= Zvol), `IsTaut_embed`
+  (iff), and `Zvol_add/​splits transport` — then a corollary "Th1 over any V by embedding into V ⊕ ℕ
+  (infinite)" so a caller with NON-infinite V can apply Th1. [Note: `s.map e` needs e to also be order-
+  compatible OR a fresh `sgn` argument, since `sgn` depends on the order — flag this as a subtlety: the
+  relabel must commute with `sgn`, i.e. e order-embedding, else bdry isn't preserved. This is the crux of
+  Option B and may make it heavier than it looks.]
+- PROPOSED-Cosmetic: leave the endpoints as-is; add a docstring/lemma name documenting that `[Infinite V]`
+  is the intentional "fresh vertices" device and Th1 does not depend on unused vertices (pointing at
+  IsTaut.vert_subset).
+
+=====================================================================
+ASK
+=====================================================================
+Q1. Generalize Th1 over V directly (Option A) vs prove ambient-enlargement invariance (Option B)? Given
+    the audit (Th1 is ALREADY over [LinearOrder V] [Infinite V], no [Fintype V]), is any change warranted,
+    or is the current form the elegant endpoint? If B, note the `sgn`/order-compatibility subtlety: a
+    relabel `s ↦ s.map e` only preserves `bdry` if `e` is an ORDER embedding (else the sign flips) — is
+    that acceptable, or does B need a sign-aware transport?
+Q2. What EXACT Lean statement should express "taut fillings do not depend on unused ambient vertices"?
+    (e.g. `IsTaut_embed (e : V ↪o W) : IsTaut (Chain.embed e M) ↔ IsTaut M`, or a Zvol/Splits transport.)
+    Or is `IsTaut.vert_subset` (already proven) sufficient as that statement?
+Q3. Minimal lemma to justify "add brand-new points to C if necessary": is the existing
+    `Infinite.exists_superset_card_eq`-based enlargement (already in the full endpoints) the intended
+    minimal device, or do you want it factored into a reusable `exists_enlarged_cut` lemma?
+Q4. Which endpoints MUST remain stable so Th2-4 + Cor 1 don't break? (Audit: Cor 1 calls
+    `Zvol_add_of_almost_disjoint_full` / `IsTaut.splits_full` (both [Infinite V]); Th2/3/4 call only the
+    hard-case `IsTaut.splits`. Any change to the full endpoints must keep those signatures or add
+    compatibility wrappers.)
+Q5. First bounded target for Claude (if any change is warranted)? Or confirm "no change; document only".
+
+CONSTRAINTS: do not break completed endpoints (Th1-4 + Cor 1 all CHECKED, std-3, build green 8274); any
+change ends with lake build green + same no-sorry/no-admit/no-project-axiom audit; preserve checked
+signatures or add wrappers; distinguish mathematical cleanup from cosmetic. The old theorem is not wrong —
+the question is elegance of the ambient bookkeeping.
+
+FILES: Theorem1.lean (Zvol_add_of_almost_disjoint[_full], IsTaut.vert_subset), Splitting.lean
+(IsTaut.splits[_full]), Zvol.lean (no_internal_vertex, Zvol API), Chains.lean (sgn/bdry/cone). PAPER:
+taut.tex (noInteriorVertices observation; th1:525; "add a brand new point to C":505). BUILD: cd lean && lake build.
+codex
+I’ll verify the stated endpoints and the order/fresh-vertex dependencies in the Lean files, then I’ll give a bounded architecture verdict rather than proposing edits blindly.
+exec
+/bin/zsh -lc "sed -n '1,90p' lean/Taut/Chains.lean && sed -n '130,180p' lean/Taut/Theorem1.lean && sed -n '430,470p' lean/Taut/Theorem1.lean && sed -n '530,565p' lean/Taut/Splitting.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Mathlib
+
+/-!
+# Simplicial chains on a full simplex
+
+Foundation for formalizing Doyle–Ellison–Wang, "Taut fillings".
+
+We work with the AUGMENTED, dimension-mixed simplicial chain group of the
+full simplex on a linearly ordered vertex type `V`: a chain is a finitely
+supported function `Finset V →₀ ℤ`, a generator being an unoriented simplex
+`s : Finset V` carrying its canonical orientation (vertices in increasing
+order).  `∅` is the (−1)-simplex; its presence makes the contracting
+homotopy `∂ ∘ cone + cone ∘ ∂ = id` exact and global, which is what gives
+filling-existence for closed chains.
+
+Sign bookkeeping is via `cnt x s = #{y ∈ s | y < x}` and
+`sgn x s = (-1) ^ cnt x s`: the `i`-th vertex of a sorted simplex has
+exactly `i` smaller members, so `sgn` is the classical `(-1)^i`.
+
+Main definitions: `bdry` (boundary), `cone`, `lk` (link/strip), `nbhd`
+(restriction to simplices containing a vertex), `vert`, `nrm` (L¹ norm),
+`deg`, `SubChain`.
+
+Main results (the validation invariants of the G1 spec):
+* `bdry_bdry` : ∂∂ = 0;
+* `bdry_cone_add_cone_bdry` : ∂(cone x M) + cone x (∂M) = M;
+* `cone_lk` : cone x (lk x M) = nbhd x M;
+* `nrm_cone_add_deg` : nrm (cone x M) + deg x M = nrm M.
+-/
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-- Augmented, dimension-mixed simplicial chains on the full simplex with
+vertex type `V`. -/
+abbrev Chain (V : Type*) := Finset V →₀ ℤ
+
+/-! ## Counting below, and signs -/
+
+/-- The number of vertices of `s` strictly below `x`: the position `x` takes
+(or would take) in the sorted listing of `insert x s`. -/
+def cnt (x : V) (s : Finset V) : ℕ := (s.filter (· < x)).card
+
+/-- The sign `(-1) ^ cnt x s`: the sign of the permutation sorting `x`
+into `s`. -/
+def sgn (x : V) (s : Finset V) : ℤ := (-1) ^ cnt x s
+
+lemma sgn_mul_self (x : V) (s : Finset V) : sgn x s * sgn x s = 1 := by
+  simp only [sgn, ← pow_add]
+  exact Even.neg_one_pow ⟨_, rfl⟩
+
+lemma natAbs_sgn (x : V) (s : Finset V) : (sgn x s).natAbs = 1 := by
+  simp [sgn, Int.natAbs_pow]
+
+lemma sgn_smul_sgn_smul (x : V) (s : Finset V) (M : Chain V) :
+    sgn x s • sgn x s • M = M := by
+  rw [smul_smul, sgn_mul_self, one_smul]
+
+lemma cnt_insert (x z : V) (t : Finset V) (hz : z ∉ t) :
+    cnt x (insert z t) = cnt x t + if z < x then 1 else 0 := by
+  unfold cnt
+  rw [Finset.filter_insert]
+  split
+  · rw [Finset.card_insert_of_notMem (fun h => hz (Finset.mem_of_mem_filter z h))]
+  · rw [add_zero]
+
+lemma cnt_self_insert (x : V) (t : Finset V) (hx : x ∉ t) :
+    cnt x (insert x t) = cnt x t := by
+  rw [cnt_insert x x t hx, if_neg (lt_irrefl x), add_zero]
+
+lemma sgn_insert (x z : V) (t : Finset V) (hz : z ∉ t) :
+    sgn x (insert z t) = (if z < x then -1 else 1) * sgn x t := by
+  rw [sgn, sgn, cnt_insert x z t hz]
+  split <;> simp [pow_add]
+
+lemma sgn_self_insert (x : V) (t : Finset V) (hx : x ∉ t) :
+    sgn x (insert x t) = sgn x t := by
+  rw [sgn, sgn, cnt_self_insert x t hx]
+
+/-- Express the sign on `s` via the sign on `s.erase z`. -/
+lemma sgn_eq_erase (x z : V) (s : Finset V) (hz : z ∈ s) :
+    sgn x s = (if z < x then -1 else 1) * sgn x (s.erase z) := by
+  conv_lhs => rw [← Finset.insert_erase hz]
+  exact sgn_insert x z _ (Finset.notMem_erase z s)
+
+lemma sgn_erase_self (x : V) (s : Finset V) : sgn x (s.erase x) = sgn x s := by
+  by_cases hx : x ∈ s
+  · rw [sgn_eq_erase x x s hx, if_neg (lt_irrefl x), one_mul]
+  · rw [Finset.erase_eq_of_notMem hx]
+          intro h
+          apply hs
+          have hcard := Finset.card_erase_of_mem hz
+          rw [h, hu] at hcard
+          have hpos : 0 < s.card := Finset.card_pos.mpr ⟨z, hz⟩
+          omega
+        rw [hgen, smul_zero]
+      · rfl
+
+/-- A taut chain whose boundary is pure of dimension `k` is itself pure of
+dimension `k+1`: optimal fillings carry no junk. -/
+theorem IsTaut.dim_pure {M : Chain V} (hM : IsTaut M) {k : ℕ}
+    (hbd : ∀ s ∈ (bdry M).support, s.card = k) :
+    ∀ s ∈ M.support, s.card = k + 1 := by
+  set P := dimPart (k + 1) M with hP
+  have hPM : SubChain P M := subChain_filter _ M
+  have hbdP : bdry P = bdry M := by
+    rw [hP, ← dimPart_bdry, dimPart_eq_self hbd]
+  have h1 : Zvol (bdry M) ≤ nrm P := Zvol_le hbdP
+  have h2 := hPM.nrm_add_nrm_sub
+  rw [IsTaut] at hM
+  have h0 : nrm (M - P) = 0 := by omega
+  have hMP : M = P := sub_eq_zero.mp (nrm_eq_zero_iff.mp h0)
+  intro s hs
+  rw [hMP, hP] at hs
+  rw [dimPart, Finsupp.support_filter, Finset.mem_filter] at hs
+  exact hs.2
+
+/-- A taut chain in dimensions ≥ 1 has all its vertices on its boundary. -/
+theorem IsTaut.vert_subset {M : Chain V} (hM : IsTaut M)
+    (hdim : ∀ s ∈ M.support, 2 ≤ s.card) :
+    vert M ⊆ vert (bdry M) := by
+  intro x hx
+  by_contra hxB
+  exact hM.no_internal_vertex hdim hx hxB
+
+/-! ## K on supported chains, and recovery -/
+
+/-- `K_{A,p}` is the identity on chains supported in `A`. -/
+lemma Kmap_eq_self {A : Finset V} {p : V} {M : Chain V}
+    (h : ∀ s ∈ M.support, s ⊆ A) : Kmap A p M = M := by
+  rw [Kmap_eq_sum]
+  conv_rhs => rw [← Finsupp.sum_single M, Finsupp.sum]
+  refine Finset.sum_congr rfl fun s hs => ?_
+  rw [KGen_of_subset (h s hs), Finsupp.smul_single, smul_eq_mul, mul_one]
+
+lemma inter_eq_erase_of_sdiff_singleton {A s : Finset V} {z : V}
+    (hz : s \ A = {z}) : s ∩ A = s.erase z := by
+  ext y
+  simp only [Finset.mem_inter, Finset.mem_erase]
+  constructor
+`p ≠ q` is needed.  When `|A ∩ B| ≥ 2` we extract a pair and invoke
+`Zvol_add_of_almost_disjoint`; when `|A ∩ B| ≤ 1` we enlarge both `A` and
+`B` by the same fresh vertices to reach exactly `|A' ∩ B'| = 2` (still
+`≤ n + 1`), which never changes `X`, `Y`, or the conclusion. -/
+theorem Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 1 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0) :
+    Zvol (X + Y) = Zvol X + Zvol Y := by
+  classical
+  by_cases h2 : 2 ≤ (A ∩ B).card
+  · obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.mp h2
+    exact Zvol_add_of_almost_disjoint hn hp hq hpq hC hX hY hXc hYc
+  · push_neg at h2
+    -- `|A ∩ B| ≤ 1`: enlarge both sides by `F`, a fresh set capping the
+    -- intersection to exactly two shared vertices.
+    have hle : (A ∪ B).card ≤ (A ∪ B).card + (2 - (A ∩ B).card) := Nat.le_add_right _ _
+    obtain ⟨W, hWsub, hWcard⟩ :=
+      Infinite.exists_superset_card_eq (A ∪ B) _ hle
+    set F := W \ (A ∪ B) with hF
+    have hFdisj : Disjoint F (A ∪ B) := Finset.sdiff_disjoint
+    have hFcard : F.card = 2 - (A ∩ B).card := by
+      have hkey : F.card + (A ∪ B).card = (A ∪ B).card + (2 - (A ∩ B).card) := by
+        rw [hF, Finset.card_sdiff_add_card_eq_card hWsub, hWcard]
+      omega
+    set A' := A ∪ F with hA'
+    set B' := B ∪ F with hB'
+    have hFA : Disjoint F A := hFdisj.mono_right Finset.subset_union_left
+    have hFB : Disjoint F B := hFdisj.mono_right Finset.subset_union_right
+    -- the new intersection is exactly `(A ∩ B) ∪ F`
+    have hinter : A' ∩ B' = (A ∩ B) ∪ F := by
+      ext x
+      simp only [hA', hB', Finset.mem_inter, Finset.mem_union]
+      constructor
+      · rintro ⟨hxA | hxF, hxB | hxF⟩
+        · exact Or.inl ⟨hxA, hxB⟩
+        · exact Or.inr hxF
+        · exact Or.inr hxF
+        · exact Or.inr hxF
+fresh vertices `F` to reach `|A' ∩ B'| = 2 ≤ n + 1`, run the split along
+`· ⊆ A'`, then transfer it back to `· ⊆ A`.  The transfer is valid because
+every generator of the filling `M` lies in `A ∪ B`, hence is disjoint from
+the fresh set `F`, so `t ⊆ A' ↔ t ⊆ A` on `M.support`. -/
+theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 2 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+  classical
+  by_cases h2 : 2 ≤ (A ∩ B).card
+  · obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.mp h2
+    exact IsTaut.splits hn hp hq hpq hC hX hY hXc hYc hMt hM1
+  · push_neg at h2
+    have hn1 : 1 ≤ n := by omega
+    -- enlarge both sides by a fresh set `F` capping the intersection at two
+    have hle : (A ∪ B).card ≤ (A ∪ B).card + (2 - (A ∩ B).card) := Nat.le_add_right _ _
+    obtain ⟨W, hWsub, hWcard⟩ :=
+      Infinite.exists_superset_card_eq (A ∪ B) _ hle
+    set F := W \ (A ∪ B) with hF
+    have hFdisj : Disjoint F (A ∪ B) := Finset.sdiff_disjoint
+    have hFcard : F.card = 2 - (A ∩ B).card := by
+      have hkey : F.card + (A ∪ B).card = (A ∪ B).card + (2 - (A ∩ B).card) := by
+        rw [hF, Finset.card_sdiff_add_card_eq_card hWsub, hWcard]
+      omega
+    set A' := A ∪ F with hA'
+    set B' := B ∪ F with hB'
+    have hinter : A' ∩ B' = (A ∩ B) ∪ F := by
+      ext x
+
+exec
+/bin/zsh -lc "rg -n \"Zvol_add_of_almost_disjoint|splits_full|no_internal_vertex|vert_subset|exists_superset_card_eq|variable \\{V : Type\\*\\}|Fintype V|DecidableEq V|Function\\.Embedding|mapDomain|embDomain|Chain\\.map|def .*embed|sgn\" lean/Taut" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Complex2.lean:29:variable {V : Type*} [LinearOrder V]
+lean/Taut/Eligible.lean:25:variable {V : Type*} [LinearOrder V]
+lean/Taut/Eligible.lean:38:    rcases mul_self_eq_one_iff.mp (sgn_mul_self x t) with h1 | h1
+lean/Taut/Chains.lean:17:`sgn x s = (-1) ^ cnt x s`: the `i`-th vertex of a sorted simplex has
+lean/Taut/Chains.lean:18:exactly `i` smaller members, so `sgn` is the classical `(-1)^i`.
+lean/Taut/Chains.lean:33:variable {V : Type*} [LinearOrder V]
+lean/Taut/Chains.lean:47:def sgn (x : V) (s : Finset V) : ℤ := (-1) ^ cnt x s
+lean/Taut/Chains.lean:49:lemma sgn_mul_self (x : V) (s : Finset V) : sgn x s * sgn x s = 1 := by
+lean/Taut/Chains.lean:50:  simp only [sgn, ← pow_add]
+lean/Taut/Chains.lean:53:lemma natAbs_sgn (x : V) (s : Finset V) : (sgn x s).natAbs = 1 := by
+lean/Taut/Chains.lean:54:  simp [sgn, Int.natAbs_pow]
+lean/Taut/Chains.lean:56:lemma sgn_smul_sgn_smul (x : V) (s : Finset V) (M : Chain V) :
+lean/Taut/Chains.lean:57:    sgn x s • sgn x s • M = M := by
+lean/Taut/Chains.lean:58:  rw [smul_smul, sgn_mul_self, one_smul]
+lean/Taut/Chains.lean:72:lemma sgn_insert (x z : V) (t : Finset V) (hz : z ∉ t) :
+lean/Taut/Chains.lean:73:    sgn x (insert z t) = (if z < x then -1 else 1) * sgn x t := by
+lean/Taut/Chains.lean:74:  rw [sgn, sgn, cnt_insert x z t hz]
+lean/Taut/Chains.lean:77:lemma sgn_self_insert (x : V) (t : Finset V) (hx : x ∉ t) :
+lean/Taut/Chains.lean:78:    sgn x (insert x t) = sgn x t := by
+lean/Taut/Chains.lean:79:  rw [sgn, sgn, cnt_self_insert x t hx]
+lean/Taut/Chains.lean:82:lemma sgn_eq_erase (x z : V) (s : Finset V) (hz : z ∈ s) :
+lean/Taut/Chains.lean:83:    sgn x s = (if z < x then -1 else 1) * sgn x (s.erase z) := by
+lean/Taut/Chains.lean:85:  exact sgn_insert x z _ (Finset.notMem_erase z s)
+lean/Taut/Chains.lean:87:lemma sgn_erase_self (x : V) (s : Finset V) : sgn x (s.erase x) = sgn x s := by
+lean/Taut/Chains.lean:89:  · rw [sgn_eq_erase x x s hx, if_neg (lt_irrefl x), one_mul]
+lean/Taut/Chains.lean:102:lemma sgn_erase_cancel {x z : V} {s : Finset V} (hx : x ∈ s) (hz : z ∈ s)
+lean/Taut/Chains.lean:104:    sgn x s * sgn z (s.erase x) = -(sgn z s * sgn x (s.erase z)) := by
+lean/Taut/Chains.lean:105:  rw [sgn_eq_erase x z s hz, sgn_eq_erase z x s hx]
+lean/Taut/Chains.lean:112:lemma sgn_insert_cancel {x z : V} {s : Finset V} (hx : x ∉ s) (hz : z ∈ s) :
+lean/Taut/Chains.lean:113:    sgn x s * sgn z (insert x s) = -(sgn z s * sgn x (s.erase z)) := by
+lean/Taut/Chains.lean:115:  rw [sgn_insert z x s hx, sgn_eq_erase x z s hz]
+lean/Taut/Chains.lean:124:  ∑ x ∈ s, sgn x s • Finsupp.single (s.erase x) 1
+lean/Taut/Chains.lean:137:  if x ∈ s then 0 else sgn x s • Finsupp.single (insert x s) 1
+lean/Taut/Chains.lean:150:  if x ∈ s then sgn x s • Finsupp.single (s.erase x) 1 else 0
+lean/Taut/Chains.lean:210:    cone x M u = if x ∈ u then sgn x (u.erase x) * M (u.erase x) else 0 := by
+lean/Taut/Chains.lean:242:  have step : ∀ x ∈ s, bdry (sgn x s • Finsupp.single (s.erase x) 1)
+lean/Taut/Chains.lean:244:          (sgn x s * sgn z (s.erase x)) •
+lean/Taut/Chains.lean:249:        (sgn x s * sgn z (s.erase x)) •
+lean/Taut/Chains.lean:262:        sgn_erase_cancel h1 h2 hne, neg_smul, neg_add_cancel]
+lean/Taut/Chains.lean:297:            if_neg (Finset.notMem_erase x s), sgn_erase_self,
+lean/Taut/Chains.lean:298:            Finset.insert_erase hx, sgn_smul_sgn_smul]
+lean/Taut/Chains.lean:305:      have h1 : bdry (sgn x s • Finsupp.single (insert x s) (1 : ℤ))
+lean/Taut/Chains.lean:307:              (sgn x s * sgn z (insert x s)) •
+lean/Taut/Chains.lean:312:        · rw [Finset.erase_insert hx, sgn_self_insert x s hx, sgn_smul_sgn_smul]
+lean/Taut/Chains.lean:317:          (sgn z s * sgn x (s.erase z)) •
+lean/Taut/Chains.lean:326:          (sgn x s * sgn z (insert x s)) •
+lean/Taut/Chains.lean:328:            + (sgn z s * sgn x (s.erase z)) •
+lean/Taut/Chains.lean:331:        rw [← add_smul, sgn_insert_cancel hx hz, neg_add_cancel, zero_smul]
+lean/Taut/Chains.lean:337:lemma sgn_ne_zero (x : V) (s : Finset V) : sgn x s ≠ 0 := by
+lean/Taut/Chains.lean:338:  simp [sgn]
+lean/Taut/Chains.lean:349:        if_neg (Finset.notMem_erase x s), sgn_erase_self,
+lean/Taut/Chains.lean:350:        Finset.insert_erase hxs, sgn_smul_sgn_smul,
+lean/Taut/Chains.lean:425:    exact (mul_eq_zero.mp hc).resolve_left (sgn_ne_zero x t)
+lean/Taut/Chains.lean:528:      Finset.erase_insert (hfree t ht), Int.natAbs_mul, natAbs_sgn, one_mul]
+lean/Taut/Theorem2.lean:27:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem2.lean:181:    bdryGen t (t.erase x) = sgn x t := by
+lean/Taut/Theorem2.lean:184:      (sgn y t • Finsupp.single (t.erase y) (1 : ℤ)) (t.erase x) = 0 := by
+lean/Taut/Theorem2.lean:195:/-- The tet's contribution at one of its faces is `M t · sgn`. -/
+lean/Taut/Theorem2.lean:197:    tetContribution M t (t.erase x) = M t * sgn x t := by
+lean/Taut/Theorem2.lean:230:  exact mul_ne_zero htM (by rw [sgn]; exact pow_ne_zero _ (by norm_num))
+lean/Taut/Theorem2.lean:286:  have hsgn : sgn y t = 1 ∨ sgn y t = -1 := mul_self_eq_one_iff.mp (sgn_mul_self y t)
+lean/Taut/Theorem2.lean:287:  rcases hpm with hm | hm <;> rcases hsgn with hs1 | hs1 <;> rw [hm, hs1] <;> decide
+lean/Taut/Corollary1.lean:25:variable {V : Type*} [LinearOrder V]
+lean/Taut/Corollary1.lean:34:  ∑ x ∈ s, (sgn x s : ℚ) • Finsupp.single (s.erase x) (1 : ℚ)
+lean/Taut/Corollary1.lean:46:  if x ∈ s then 0 else (sgn x s : ℚ) • Finsupp.single (insert x s) (1 : ℚ)
+lean/Taut/Corollary1.lean:419:committed integer endpoint `IsTaut.splits_full` and dividing back. -/
+lean/Taut/Corollary1.lean:420:theorem IsQTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+lean/Taut/Corollary1.lean:466:    IsTaut.splits_full hn hC hX' hY' hKXc hKYc hKtaut hKbdry
+lean/Taut/Corollary1.lean:514:/-- Cast of `sgn_mul_self` to ℚ: the rational sign squares to `1`. -/
+lean/Taut/Corollary1.lean:515:private lemma Qsgn_mul_self (x : V) (s : Finset V) :
+lean/Taut/Corollary1.lean:516:    (sgn x s : ℚ) * (sgn x s : ℚ) = 1 := by
+lean/Taut/Corollary1.lean:517:  rw [← Int.cast_mul, sgn_mul_self, Int.cast_one]
+lean/Taut/Corollary1.lean:520:private lemma Qsgn_smul_sgn_smul (x : V) (s : Finset V) (M : QChain V) :
+lean/Taut/Corollary1.lean:521:    (sgn x s : ℚ) • (sgn x s : ℚ) • M = M := by
+lean/Taut/Corollary1.lean:522:  rw [smul_smul, Qsgn_mul_self, one_smul]
+lean/Taut/Corollary1.lean:526:  have step : ∀ x ∈ s, Qbdry ((sgn x s : ℚ) • Finsupp.single (s.erase x) (1 : ℚ))
+lean/Taut/Corollary1.lean:528:          ((sgn x s : ℚ) * (sgn z (s.erase x) : ℚ)) •
+lean/Taut/Corollary1.lean:533:        ((sgn x s : ℚ) * (sgn z (s.erase x) : ℚ)) •
+lean/Taut/Corollary1.lean:545:      have hsgn : (sgn p.1 s : ℚ) * (sgn p.2 (s.erase p.1) : ℚ)
+lean/Taut/Corollary1.lean:546:          = -((sgn p.2 s : ℚ) * (sgn p.1 (s.erase p.2) : ℚ)) := by
+lean/Taut/Corollary1.lean:548:          sgn_erase_cancel h1 h2 hne]
+lean/Taut/Corollary1.lean:549:      rw [if_neg he, if_neg hne, Finset.erase_right_comm, hsgn, neg_smul,
+lean/Taut/Corollary1.lean:585:            if_neg (Finset.notMem_erase x s), sgn_erase_self,
+lean/Taut/Corollary1.lean:586:            Finset.insert_erase hx, Qsgn_smul_sgn_smul]
+lean/Taut/Corollary1.lean:593:      have h1 : Qbdry ((sgn x s : ℚ) • Finsupp.single (insert x s) (1 : ℚ))
+lean/Taut/Corollary1.lean:595:              ((sgn x s : ℚ) * (sgn z (insert x s) : ℚ)) •
+lean/Taut/Corollary1.lean:600:        · rw [Finset.erase_insert hx, sgn_self_insert x s hx, Qsgn_smul_sgn_smul]
+lean/Taut/Corollary1.lean:605:          ((sgn z s : ℚ) * (sgn x (s.erase z) : ℚ)) •
+lean/Taut/Corollary1.lean:614:          ((sgn x s : ℚ) * (sgn z (insert x s) : ℚ)) •
+lean/Taut/Corollary1.lean:616:            + ((sgn z s : ℚ) * (sgn x (s.erase z) : ℚ)) •
+lean/Taut/Corollary1.lean:619:        have hsgn : (sgn x s : ℚ) * (sgn z (insert x s) : ℚ)
+lean/Taut/Corollary1.lean:620:            = -((sgn z s : ℚ) * (sgn x (s.erase z) : ℚ)) := by
+lean/Taut/Corollary1.lean:622:            sgn_insert_cancel hx hz]
+lean/Taut/Corollary1.lean:623:        rw [← add_smul, hsgn, neg_add_cancel, zero_smul]
+lean/Taut/Corollary1.lean:690:denominators to the committed integer endpoint `Zvol_add_of_almost_disjoint_full`
+lean/Taut/Corollary1.lean:763:      Zvol_add_of_almost_disjoint_full hn hC hX' hY' hKXc hKYc
+lean/Taut/Splitting.lean:26:variable {V : Type*} [LinearOrder V]
+lean/Taut/Splitting.lean:182:    refine (supp_subset_vert ht).trans ((hMt.vert_subset hdim2).trans ?_)
+lean/Taut/Splitting.lean:185:      (vert_subset_of_supp fun s hs => (hX s hs).1)
+lean/Taut/Splitting.lean:186:      (vert_subset_of_supp fun s hs => (hY s hs).1))
+lean/Taut/Splitting.lean:203:  have hadd := Zvol_add_of_almost_disjoint hn hp hq hpq hC hX hY hXc hYc
+lean/Taut/Splitting.lean:463:    refine (supp_subset_vert ht).trans ((hMt.vert_subset hdim2).trans ?_)
+lean/Taut/Splitting.lean:466:      (vert_subset_of_supp fun s hs => (hX s hs).1)
+lean/Taut/Splitting.lean:467:      (vert_subset_of_supp fun s hs => (hY s hs).1))
+lean/Taut/Splitting.lean:518:  have hadd := Zvol_add_of_almost_disjoint hn1 hp hq hpq hC hX hY hXc hYc
+lean/Taut/Splitting.lean:534:theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+lean/Taut/Splitting.lean:555:      Infinite.exists_superset_card_eq (A ∪ B) _ hle
+lean/Taut/Splitting.lean:606:      refine (supp_subset_vert ht).trans ((hMt.vert_subset hdim2).trans ?_)
+lean/Taut/Splitting.lean:609:        (vert_subset_of_supp fun s hs => (hX s hs).1)
+lean/Taut/Splitting.lean:610:        (vert_subset_of_supp fun s hs => (hY s hs).1))
+lean/Taut/Zvol.lean:14:* Proposition 4 (`IsTaut.no_internal_vertex`): a taut chain (in dimensions
+lean/Taut/Zvol.lean:21:variable {V : Type*} [LinearOrder V]
+lean/Taut/Zvol.lean:139:theorem IsTaut.no_internal_vertex {M : Chain V} (hM : IsTaut M) {x : V}
+lean/Taut/PrimeStep.lean:23:variable {V : Type*} [LinearOrder V]
+lean/Taut/PrimeStep.lean:368:    refine (supp_subset_vert ht).trans ((hM't.vert_subset hdim2).trans ?_)
+lean/Taut/PrimeStep.lean:371:      (vert_subset_of_supp fun s hs => (hXA_supp s hs).1)
+lean/Taut/PrimeStep.lean:372:      (vert_subset_of_supp fun s hs => (hXB_supp s hs).1))
+lean/Taut/Ball.lean:46:variable {V : Type*} [LinearOrder V]
+lean/Taut/CleanShelling.lean:38:variable {V : Type*} [LinearOrder V]
+lean/Taut/Separation.lean:21:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem23.lean:34:variable {V : Type*} [LinearOrder V]
+lean/Taut/Homology2.lean:31:variable {V : Type*} [LinearOrder V]
+lean/Taut/StickerballRuleouts.lean:27:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem4.lean:32:variable {V : Type*} [LinearOrder V]
+lean/Taut/Degree3.lean:24:variable {V : Type*} [LinearOrder V]
+lean/Taut/Stickerball.lean:18:variable {V : Type*} [LinearOrder V]
+lean/Taut/Stickerball.lean:36:  have hss := sgn_mul_self y t
+lean/Taut/OrientedBridge.lean:27:variable {V : Type*} [LinearOrder V]
+lean/Taut/OrientedBridge.lean:43:  set c : ℤ := C (γ.erase a) * sgn a (γ.erase a) with hcdef
+lean/Taut/Projection.lean:12:  replaces `z` by `p`, with the sign `sgn z s • coneGen p (s.erase z)`
+lean/Taut/Projection.lean:27:variable {V : Type*} [LinearOrder V]
+lean/Taut/Projection.lean:40:    ∑ z ∈ s \ A, sgn z s • coneGen p (s.erase z)
+lean/Taut/Projection.lean:71:    KGen A p s = sgn z s • coneGen p (s.erase z) := by
+lean/Taut/Projection.lean:118:  have hterm : ∀ w ∈ s, Kmap A p (sgn w s • Finsupp.single (s.erase w) 1)
+lean/Taut/Projection.lean:119:      = sgn w s • KGen A p (s.erase w) := fun w _ => by
+lean/Taut/Projection.lean:165:          sgn w s • KGen A p (s.erase w) = 0 := by
+lean/Taut/Projection.lean:177:        ← add_smul, sgn_erase_cancel hz₁s.1 hz₂s.1 hne, neg_add_cancel,
+lean/Taut/Projection.lean:196:  have hterm : ∀ w ∈ s, Kmap A p (sgn w s • Finsupp.single (s.erase w) 1)
+lean/Taut/Projection.lean:197:      = sgn w s • KGen A p (s.erase w) := fun w _ => by
+lean/Taut/Projection.lean:200:      sgn w s • KGen A p (s.erase w) = 0 := by
+lean/Taut/Projection.lean:228:  have hc := sgn_erase_cancel hps hz₀s hpz
+lean/Taut/Projection.lean:229:  have h2 := sgn_erase_self p (s.erase z₀)
+lean/Taut/Projection.lean:230:  have h3 := sgn_mul_self p (s.erase z₀)
+lean/Taut/Projection.lean:231:  have hcoef : sgn z₀ s + sgn p s * sgn z₀ (s.erase p) *
+lean/Taut/Projection.lean:232:      sgn p ((s.erase z₀).erase p) = 0 := by
+lean/Taut/Projection.lean:234:    linear_combination sgn p (s.erase z₀) * hc - sgn z₀ s * h3
+lean/Taut/Projection.lean:258:      = sgn z₀ s • Finsupp.single u 1
+lean/Taut/Projection.lean:259:        - sgn z₀ s • cone p (bdryGen u) := by
+lean/Taut/Projection.lean:263:  have hterm : ∀ w ∈ s, Kmap A p (sgn w s • Finsupp.single (s.erase w) 1)
+lean/Taut/Projection.lean:264:      = sgn w s • KGen A p (s.erase w) := fun w _ => by
+lean/Taut/Projection.lean:269:  have hrest : ∀ w ∈ u, sgn w s • KGen A p (s.erase w)
+lean/Taut/Projection.lean:270:      = (sgn w s * sgn z₀ (s.erase w)) • coneGen p (u.erase w) := by
+lean/Taut/Projection.lean:278:      = ∑ w ∈ u, (sgn w u) • coneGen p (u.erase w) := by
+lean/Taut/Projection.lean:290:  have hc := sgn_erase_cancel hz₀s hws (Ne.symm hwz)
+lean/Taut/Projection.lean:338:  · rw [nrm_smul, nrm_single, natAbs_sgn, Int.natAbs_one, mul_one]
+lean/Taut/Projection.lean:348:      rw [hz, Finset.sum_singleton, nrm_smul, natAbs_sgn, one_mul]
+lean/Taut/Projection.lean:422:  have hbW : bdryGen W (W.erase x) = sgn x W := by
+lean/Taut/Projection.lean:430:  have h0 : (M W) * sgn x W = 0 := by
+lean/Taut/Projection.lean:442:    · exact absurd h (sgn_ne_zero x W)
+lean/Taut/Theorem3.lean:23:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem1.lean:11:(`Zvol_add_of_almost_disjoint`).  The splitting statement for `n ≥ 2`
+lean/Taut/Theorem1.lean:29:* `IsTaut.vert_subset` — a taut filling has no vertices beyond its
+lean/Taut/Theorem1.lean:35:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem1.lean:48:lemma vert_subset_of_supp {M : Chain V} {W : Finset V}
+lean/Taut/Theorem1.lean:159:theorem IsTaut.vert_subset {M : Chain V} (hM : IsTaut M)
+lean/Taut/Theorem1.lean:164:  exact hM.no_internal_vertex hdim hx hxB
+lean/Taut/Theorem1.lean:214:          (mul_ne_zero (sgn_ne_zero _ _) (sgn_ne_zero _ _)),
+lean/Taut/Theorem1.lean:364:theorem Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n : ℕ}
+lean/Taut/Theorem1.lean:400:      refine (hMt.vert_subset hdim2).trans ?_
+lean/Taut/Theorem1.lean:404:        (vert_subset_of_supp fun s hs => (hX s hs).1)
+lean/Taut/Theorem1.lean:405:        (vert_subset_of_supp fun s hs => (hY s hs).1)
+lean/Taut/Theorem1.lean:431:`Zvol_add_of_almost_disjoint`; when `|A ∩ B| ≤ 1` we enlarge both `A` and
+lean/Taut/Theorem1.lean:434:theorem Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+lean/Taut/Theorem1.lean:444:    exact Zvol_add_of_almost_disjoint hn hp hq hpq hC hX hY hXc hYc
+lean/Taut/Theorem1.lean:450:      Infinite.exists_superset_card_eq (A ∪ B) _ hle
+lean/Taut/Theorem1.lean:488:    exact Zvol_add_of_almost_disjoint hn hp hq hpq hC' hX' hY' hXc hYc
+lean/Taut/FlipGeom.lean:22:variable {V : Type*} [LinearOrder V]
+lean/Taut/Pseudomanifold.lean:19:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem3Clean.lean:6:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem2Aleph.lean:28:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem2Aleph.lean:119:  have hvsub : vert M ⊆ vert (bdry M) := hT.vert_subset hdim2
+lean/Taut/Theorem2Aleph.lean:199:    have hb : bdryGen f (f.erase z) = sgn z f := by
+lean/Taut/Theorem2Aleph.lean:205:    rw [heeq, hb, natAbs_sgn]
+lean/Taut/Theorem2Aleph.lean:842:    refine (supp_subset_vert ht).trans ((hT.vert_subset hdim2).trans ?_)
+lean/Taut/Theorem2Aleph.lean:846:        (vert_subset_of_supp fun s hs => (hXsupp s hs).1)
+lean/Taut/Theorem2Aleph.lean:847:        (vert_subset_of_supp fun s hs => (hYsupp s hs).1))
+
+codex
+PASS
+
+Verdict: no Theorem 1 cleanup is warranted now. The current endpoint is the elegant one: arbitrary `{V}` with `[LinearOrder V] [Infinite V]`, no `[Fintype V]`, and `[Infinite V]` is exactly the “fresh vertices available” hypothesis used by the paper’s WLOG step.
+
+Exact recommended patch shape: document-only, if Peter wants an explicit artifact. Do not change theorem signatures. Add a short note near the full endpoints saying `[Infinite V]` is ambient bookkeeping for adding fresh cut vertices and does not impose finite ambient dependence. Point to `IsTaut.vert_subset` as the formal “taut fillings use only boundary vertices” statement.
+
+Files to edit:
+- `lean/Taut/Theorem1.lean`: optional docstring/comment before `Zvol_add_of_almost_disjoint_full`.
+- `lean/Taut/Splitting.lean`: optional matching docstring/comment before `IsTaut.splits_full`.
+- No edits to `Chains.lean` or `Zvol.lean` recommended.
+
+Local lemmas needed: none for the recommended route.
+
+Do not pursue Option B as the first bounded target. Ambient-enlargement invariance is new infrastructure, not cleanup. If later required, it must be order-aware:
+- `Chain.embed (e : V ↪o W) : Chain V →+ Chain W`
+- `sgn_embed`
+- `bdry_embed`
+- `support_embed`
+- `nrm_embed`
+- `Zvol_embed`
+- `IsTaut_embed_iff`
+- then optional transported Th1/splitting corollaries.
+
+The key subtlety is real: plain injections are insufficient because `bdry` depends on `sgn`, and `sgn` depends on the linear order. Any relabeling theorem must use an order embedding or carry explicit sign/orientation transport. That makes Option B substantially heavier than the concern justifies.
+
+`IsTaut.vert_subset` is sufficient for the present mathematical claim that taut fillings do not introduce unused ambient vertices. The existing `Infinite.exists_superset_card_eq` enlargement is also the right minimal device for “add brand-new points to C”; factoring it into `exists_enlarged_cut` is optional cleanup only, not needed for correctness.
+
+Stable endpoints to preserve:
+- `Zvol_add_of_almost_disjoint_full`
+- `IsTaut.splits_full`
+- hard-case `Zvol_add_of_almost_disjoint`
+- hard-case `IsTaut.splits`
+
+First bounded target for Claude: no theorem changes. If action is desired, make only the docstring patch above and run `cd lean && lake build` plus the existing no-sorry/no-admit/no-project-axiom audit.
+tokens used
+17,213
+PASS
+
+Verdict: no Theorem 1 cleanup is warranted now. The current endpoint is the elegant one: arbitrary `{V}` with `[LinearOrder V] [Infinite V]`, no `[Fintype V]`, and `[Infinite V]` is exactly the “fresh vertices available” hypothesis used by the paper’s WLOG step.
+
+Exact recommended patch shape: document-only, if Peter wants an explicit artifact. Do not change theorem signatures. Add a short note near the full endpoints saying `[Infinite V]` is ambient bookkeeping for adding fresh cut vertices and does not impose finite ambient dependence. Point to `IsTaut.vert_subset` as the formal “taut fillings use only boundary vertices” statement.
+
+Files to edit:
+- `lean/Taut/Theorem1.lean`: optional docstring/comment before `Zvol_add_of_almost_disjoint_full`.
+- `lean/Taut/Splitting.lean`: optional matching docstring/comment before `IsTaut.splits_full`.
+- No edits to `Chains.lean` or `Zvol.lean` recommended.
+
+Local lemmas needed: none for the recommended route.
+
+Do not pursue Option B as the first bounded target. Ambient-enlargement invariance is new infrastructure, not cleanup. If later required, it must be order-aware:
+- `Chain.embed (e : V ↪o W) : Chain V →+ Chain W`
+- `sgn_embed`
+- `bdry_embed`
+- `support_embed`
+- `nrm_embed`
+- `Zvol_embed`
+- `IsTaut_embed_iff`
+- then optional transported Th1/splitting corollaries.
+
+The key subtlety is real: plain injections are insufficient because `bdry` depends on `sgn`, and `sgn` depends on the linear order. Any relabeling theorem must use an order embedding or carry explicit sign/orientation transport. That makes Option B substantially heavier than the concern justifies.
+
+`IsTaut.vert_subset` is sufficient for the present mathematical claim that taut fillings do not introduce unused ambient vertices. The existing `Infinite.exists_superset_card_eq` enlargement is also the right minimal device for “add brand-new points to C”; factoring it into `exists_enlarged_cut` is optional cleanup only, not needed for correctness.
+
+Stable endpoints to preserve:
+- `Zvol_add_of_almost_disjoint_full`
+- `IsTaut.splits_full`
+- hard-case `Zvol_add_of_almost_disjoint`
+- hard-case `IsTaut.splits`
+
+First bounded target for Claude: no theorem changes. If action is desired, make only the docstring patch above and run `cd lean && lake build` plus the existing no-sorry/no-admit/no-project-axiom audit.

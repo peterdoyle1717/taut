@@ -430,7 +430,14 @@ theorem Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n : ℕ}
 `p ≠ q` is needed.  When `|A ∩ B| ≥ 2` we extract a pair and invoke
 `Zvol_add_of_almost_disjoint`; when `|A ∩ B| ≤ 1` we enlarge both `A` and
 `B` by the same fresh vertices to reach exactly `|A' ∩ B'| = 2` (still
-`≤ n + 1`), which never changes `X`, `Y`, or the conclusion. -/
+`≤ n + 1`), which never changes `X`, `Y`, or the conclusion.
+
+`[Infinite V]` is pure ambient bookkeeping, not a finiteness restriction: chains are
+finitely supported (`Chain V := Finset V →₀ ℤ`), so the active vertex set is always finite.
+The hypothesis only guarantees that *fresh cut vertices are available* for the `|A ∩ B| ≤ 1`
+enlargement above (the paper's "add a brand-new point to `C` if necessary"); a taut filling
+never uses vertices beyond its boundary (`IsTaut.vert_subset`), so the unused ambient vertices
+play no mathematical role. -/
 theorem Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
     {A B : Finset V} {n : ℕ} (hn : 1 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
     {X Y : Chain V}

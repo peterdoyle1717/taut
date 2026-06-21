@@ -1,0 +1,133 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1957-g1-theorem1-ambient-V-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1957-g1-theorem1-ambient-V-summary.txt
+
+=== raw size ===
+     637   41715 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-20-1957-g1-theorem1-ambient-V-raw.txt
+
+=== extracted markers ===
+568:PASS
+570:Verdict: no Theorem 1 cleanup is warranted now. The current endpoint is the elegant one: arbitrary `{V}` with `[LinearOrder V] [Infinite V]`, no `[Fintype V]`, and `[Infinite V]` is exactly the “fresh vertices available” hypothesis used by the paper’s WLOG step.
+604:PASS
+606:Verdict: no Theorem 1 cleanup is warranted now. The current endpoint is the elegant one: arbitrary `{V}` with `[LinearOrder V] [Infinite V]`, no `[Fintype V]`, and `[Infinite V]` is exactly the “fresh vertices available” hypothesis used by the paper’s WLOG step.
+
+=== final tail ===
+lean/Taut/Projection.lean:197:      = sgn w s • KGen A p (s.erase w) := fun w _ => by
+lean/Taut/Projection.lean:200:      sgn w s • KGen A p (s.erase w) = 0 := by
+lean/Taut/Projection.lean:228:  have hc := sgn_erase_cancel hps hz₀s hpz
+lean/Taut/Projection.lean:229:  have h2 := sgn_erase_self p (s.erase z₀)
+lean/Taut/Projection.lean:230:  have h3 := sgn_mul_self p (s.erase z₀)
+lean/Taut/Projection.lean:231:  have hcoef : sgn z₀ s + sgn p s * sgn z₀ (s.erase p) *
+lean/Taut/Projection.lean:232:      sgn p ((s.erase z₀).erase p) = 0 := by
+lean/Taut/Projection.lean:234:    linear_combination sgn p (s.erase z₀) * hc - sgn z₀ s * h3
+lean/Taut/Projection.lean:258:      = sgn z₀ s • Finsupp.single u 1
+lean/Taut/Projection.lean:259:        - sgn z₀ s • cone p (bdryGen u) := by
+lean/Taut/Projection.lean:263:  have hterm : ∀ w ∈ s, Kmap A p (sgn w s • Finsupp.single (s.erase w) 1)
+lean/Taut/Projection.lean:264:      = sgn w s • KGen A p (s.erase w) := fun w _ => by
+lean/Taut/Projection.lean:269:  have hrest : ∀ w ∈ u, sgn w s • KGen A p (s.erase w)
+lean/Taut/Projection.lean:270:      = (sgn w s * sgn z₀ (s.erase w)) • coneGen p (u.erase w) := by
+lean/Taut/Projection.lean:278:      = ∑ w ∈ u, (sgn w u) • coneGen p (u.erase w) := by
+lean/Taut/Projection.lean:290:  have hc := sgn_erase_cancel hz₀s hws (Ne.symm hwz)
+lean/Taut/Projection.lean:338:  · rw [nrm_smul, nrm_single, natAbs_sgn, Int.natAbs_one, mul_one]
+lean/Taut/Projection.lean:348:      rw [hz, Finset.sum_singleton, nrm_smul, natAbs_sgn, one_mul]
+lean/Taut/Projection.lean:422:  have hbW : bdryGen W (W.erase x) = sgn x W := by
+lean/Taut/Projection.lean:430:  have h0 : (M W) * sgn x W = 0 := by
+lean/Taut/Projection.lean:442:    · exact absurd h (sgn_ne_zero x W)
+lean/Taut/Theorem3.lean:23:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem1.lean:11:(`Zvol_add_of_almost_disjoint`).  The splitting statement for `n ≥ 2`
+lean/Taut/Theorem1.lean:29:* `IsTaut.vert_subset` — a taut filling has no vertices beyond its
+lean/Taut/Theorem1.lean:35:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem1.lean:48:lemma vert_subset_of_supp {M : Chain V} {W : Finset V}
+lean/Taut/Theorem1.lean:159:theorem IsTaut.vert_subset {M : Chain V} (hM : IsTaut M)
+lean/Taut/Theorem1.lean:164:  exact hM.no_internal_vertex hdim hx hxB
+lean/Taut/Theorem1.lean:214:          (mul_ne_zero (sgn_ne_zero _ _) (sgn_ne_zero _ _)),
+lean/Taut/Theorem1.lean:364:theorem Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n : ℕ}
+lean/Taut/Theorem1.lean:400:      refine (hMt.vert_subset hdim2).trans ?_
+lean/Taut/Theorem1.lean:404:        (vert_subset_of_supp fun s hs => (hX s hs).1)
+lean/Taut/Theorem1.lean:405:        (vert_subset_of_supp fun s hs => (hY s hs).1)
+lean/Taut/Theorem1.lean:431:`Zvol_add_of_almost_disjoint`; when `|A ∩ B| ≤ 1` we enlarge both `A` and
+lean/Taut/Theorem1.lean:434:theorem Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+lean/Taut/Theorem1.lean:444:    exact Zvol_add_of_almost_disjoint hn hp hq hpq hC hX hY hXc hYc
+lean/Taut/Theorem1.lean:450:      Infinite.exists_superset_card_eq (A ∪ B) _ hle
+lean/Taut/Theorem1.lean:488:    exact Zvol_add_of_almost_disjoint hn hp hq hpq hC' hX' hY' hXc hYc
+lean/Taut/FlipGeom.lean:22:variable {V : Type*} [LinearOrder V]
+lean/Taut/Pseudomanifold.lean:19:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem3Clean.lean:6:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem2Aleph.lean:28:variable {V : Type*} [LinearOrder V]
+lean/Taut/Theorem2Aleph.lean:119:  have hvsub : vert M ⊆ vert (bdry M) := hT.vert_subset hdim2
+lean/Taut/Theorem2Aleph.lean:199:    have hb : bdryGen f (f.erase z) = sgn z f := by
+lean/Taut/Theorem2Aleph.lean:205:    rw [heeq, hb, natAbs_sgn]
+lean/Taut/Theorem2Aleph.lean:842:    refine (supp_subset_vert ht).trans ((hT.vert_subset hdim2).trans ?_)
+lean/Taut/Theorem2Aleph.lean:846:        (vert_subset_of_supp fun s hs => (hXsupp s hs).1)
+lean/Taut/Theorem2Aleph.lean:847:        (vert_subset_of_supp fun s hs => (hYsupp s hs).1))
+
+codex
+PASS
+
+Verdict: no Theorem 1 cleanup is warranted now. The current endpoint is the elegant one: arbitrary `{V}` with `[LinearOrder V] [Infinite V]`, no `[Fintype V]`, and `[Infinite V]` is exactly the “fresh vertices available” hypothesis used by the paper’s WLOG step.
+
+Exact recommended patch shape: document-only, if Peter wants an explicit artifact. Do not change theorem signatures. Add a short note near the full endpoints saying `[Infinite V]` is ambient bookkeeping for adding fresh cut vertices and does not impose finite ambient dependence. Point to `IsTaut.vert_subset` as the formal “taut fillings use only boundary vertices” statement.
+
+Files to edit:
+- `lean/Taut/Theorem1.lean`: optional docstring/comment before `Zvol_add_of_almost_disjoint_full`.
+- `lean/Taut/Splitting.lean`: optional matching docstring/comment before `IsTaut.splits_full`.
+- No edits to `Chains.lean` or `Zvol.lean` recommended.
+
+Local lemmas needed: none for the recommended route.
+
+Do not pursue Option B as the first bounded target. Ambient-enlargement invariance is new infrastructure, not cleanup. If later required, it must be order-aware:
+- `Chain.embed (e : V ↪o W) : Chain V →+ Chain W`
+- `sgn_embed`
+- `bdry_embed`
+- `support_embed`
+- `nrm_embed`
+- `Zvol_embed`
+- `IsTaut_embed_iff`
+- then optional transported Th1/splitting corollaries.
+
+The key subtlety is real: plain injections are insufficient because `bdry` depends on `sgn`, and `sgn` depends on the linear order. Any relabeling theorem must use an order embedding or carry explicit sign/orientation transport. That makes Option B substantially heavier than the concern justifies.
+
+`IsTaut.vert_subset` is sufficient for the present mathematical claim that taut fillings do not introduce unused ambient vertices. The existing `Infinite.exists_superset_card_eq` enlargement is also the right minimal device for “add brand-new points to C”; factoring it into `exists_enlarged_cut` is optional cleanup only, not needed for correctness.
+
+Stable endpoints to preserve:
+- `Zvol_add_of_almost_disjoint_full`
+- `IsTaut.splits_full`
+- hard-case `Zvol_add_of_almost_disjoint`
+- hard-case `IsTaut.splits`
+
+First bounded target for Claude: no theorem changes. If action is desired, make only the docstring patch above and run `cd lean && lake build` plus the existing no-sorry/no-admit/no-project-axiom audit.
+tokens used
+17,213
+PASS
+
+Verdict: no Theorem 1 cleanup is warranted now. The current endpoint is the elegant one: arbitrary `{V}` with `[LinearOrder V] [Infinite V]`, no `[Fintype V]`, and `[Infinite V]` is exactly the “fresh vertices available” hypothesis used by the paper’s WLOG step.
+
+Exact recommended patch shape: document-only, if Peter wants an explicit artifact. Do not change theorem signatures. Add a short note near the full endpoints saying `[Infinite V]` is ambient bookkeeping for adding fresh cut vertices and does not impose finite ambient dependence. Point to `IsTaut.vert_subset` as the formal “taut fillings use only boundary vertices” statement.
+
+Files to edit:
+- `lean/Taut/Theorem1.lean`: optional docstring/comment before `Zvol_add_of_almost_disjoint_full`.
+- `lean/Taut/Splitting.lean`: optional matching docstring/comment before `IsTaut.splits_full`.
+- No edits to `Chains.lean` or `Zvol.lean` recommended.
+
+Local lemmas needed: none for the recommended route.
+
+Do not pursue Option B as the first bounded target. Ambient-enlargement invariance is new infrastructure, not cleanup. If later required, it must be order-aware:
+- `Chain.embed (e : V ↪o W) : Chain V →+ Chain W`
+- `sgn_embed`
+- `bdry_embed`
+- `support_embed`
+- `nrm_embed`
+- `Zvol_embed`
+- `IsTaut_embed_iff`
+- then optional transported Th1/splitting corollaries.
+
+The key subtlety is real: plain injections are insufficient because `bdry` depends on `sgn`, and `sgn` depends on the linear order. Any relabeling theorem must use an order embedding or carry explicit sign/orientation transport. That makes Option B substantially heavier than the concern justifies.
+
+`IsTaut.vert_subset` is sufficient for the present mathematical claim that taut fillings do not introduce unused ambient vertices. The existing `Infinite.exists_superset_card_eq` enlargement is also the right minimal device for “add brand-new points to C”; factoring it into `exists_enlarged_cut` is optional cleanup only, not needed for correctness.
+
+Stable endpoints to preserve:
+- `Zvol_add_of_almost_disjoint_full`
+- `IsTaut.splits_full`
+- hard-case `Zvol_add_of_almost_disjoint`
+- hard-case `IsTaut.splits`
+
+First bounded target for Claude: no theorem changes. If action is desired, make only the docstring patch above and run `cd lean && lake build` plus the existing no-sorry/no-admit/no-project-axiom audit.

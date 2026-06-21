@@ -1,0 +1,126 @@
+G1 ARCHITECT PACKET — Theorem 1 cleanup w.r.t. the ambient vertex type V (AUDIT, not implementation).
+
+Reviewer: codex, ARCHITECT. Peter asks: in Theorem 1, V should be pure ambient bookkeeping (taut fillings
+don't depend on unused ambient vertices); concern that Th1 is tied to a fixed finite V or [Fintype V].
+Claude AUDITED. HEADLINE: the [Fintype V] concern is NOT borne out — there is NO [Fintype V] / [DecidableEq V]
+anywhere. Th1 already lives over arbitrary {V} [LinearOrder V] [Infinite V]. So this is largely "is the
+current form the elegant final one, or do we add an enlargement-invariance theorem?" Please pick the
+route + first bounded target. Do not assume cleanup is needed; decide from the audit.
+
+=====================================================================
+(1) EXACT current Theorem 1 endpoints (no theorem1/theorem1_full wrapper exists)
+=====================================================================
+FULL endpoints (the public Th1, paper hypothesis |A∩B| ≤ n+1, no p,q):
+- Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V] {A B : Finset V} {n : ℕ}
+    (hn : 1 ≤ n) (hC : (A∩B).card ≤ n+1) {X Y : Chain V}
+    (hX : ∀ s ∈ X.support, s⊆A ∧ s.card=n+1) (hY : ∀ s ∈ Y.support, s⊆B ∧ s.card=n+1)
+    (hXc : bdry X = 0) (hYc : bdry Y = 0) : Zvol (X+Y) = Zvol X + Zvol Y      [Theorem1.lean:434]
+- IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V] {A B} {n} (hn : 2 ≤ n) (hC) {X Y}
+    (hX hY hXc hYc) {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X+Y) :
+    <5-way split: bdry (M.filter (·⊆A)) = X ∧ bdry (M.filter ¬(·⊆A)) = Y ∧ IsTaut both ∧ sum = M>
+                                                                              [Splitting.lean:534]
+HARD-CASE lemmas (with explicit cut points p ≠ q ∈ A∩B; section var only):
+- Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n} (hn : 1 ≤ n) (hp : p ∈ A∩B) (hq) (hpq : p≠q)
+    (hC) {X Y} (hX hY hXc hYc) : Zvol (X+Y) = Zvol X + Zvol Y                  [Theorem1.lean:364]
+- IsTaut.splits {A B} {n} (hn : 2 ≤ n) {p q : V} (hp hq hpq) (hC) {X Y} (hX hY hXc hYc) {M} (hMt hM1)
+    : <same 5-way split>                                                        [Splitting.lean:435]
+
+=====================================================================
+(2) EXACT V typeclass assumptions present (project-wide audit)
+=====================================================================
+- Section variable (both Theorem1.lean:35 and Splitting.lean:26): `variable {V : Type*} [LinearOrder V]`.
+- FULL endpoints ADD `[Infinite V]` (re-declared on the theorem line).
+- HARD cases: `[LinearOrder V]` only (section), + explicit `{p q : V}`.
+- `[Fintype V]`: NONE anywhere in lean/Taut (grep empty). `[DecidableEq V]`: NONE separately (LinearOrder
+  supplies DecidableEq for free). NO other ambient assumptions.
+- Th2/3/4 (`theorem2_clean`/`theorem3_clean`/`theorem4_flag`) and the deg-3 machinery: `[LinearOrder V]`
+  only — NO `[Infinite V]`. They use the HARD-case `IsTaut.splits` (explicit p,q from a degree-3 vertex),
+  NOT the full endpoint.
+
+=====================================================================
+(3) WHERE the assumptions are genuinely used
+=====================================================================
+- `[LinearOrder V]`: FOUNDATIONAL. The sign function `sgn x s := (-1)^(cnt x s)` (cnt = #elements of s
+  below x) needs a linear order; the whole Chains/bdry/cone/nrm/Zvol layer is built on it. Cannot be
+  dropped/weakened without rebuilding Chains. (Not a "restriction" to clean — it's the carrier structure.)
+- `[Infinite V]`: used in EXACTLY ONE place per full endpoint — the `|A∩B| ≤ 1` branch, via
+  `Infinite.exists_superset_card_eq (A ∪ B) _ hle` (Theorem1.lean:450, Splitting.lean:555), to pick a
+  fresh set `F := W \ (A∪B)` of size `2 - |A∩B|` and enlarge A,B to A∪F, B∪F so `|A'∩B'| = 2 ≤ n+1`, then
+  apply the hard case. THIS IS the paper's "add brand-new points to C if necessary." Already implemented.
+- Chains are `Finset V →₀ ℤ` (finitely supported), so the ACTIVE vertex set is finite even when V is
+  infinite — confirming finite V is NOT needed. No cohomology/Fintype dependence.
+- Zvol existence / filling: via `cone` + `bdry_cone_of_closed` (Zvol.lean) — needs no finite ambient V.
+
+=====================================================================
+(4) The noInteriorVertices observation — its Lean counterpart EXISTS
+=====================================================================
+- `IsTaut.no_internal_vertex (hM : IsTaut M) (hdim : ∀ s ∈ M.support, 2 ≤ s.card) (hxM : x ∈ vert M)
+   (hxB : x ∉ vert (bdry M)) : False`  [Zvol.lean:139] — Prop 4: a taut chain (dim ≥ 1) has no internal
+   vertices.
+- `IsTaut.vert_subset (hM : IsTaut M) (hdim) : vert M ⊆ vert (bdry M)` (wrapper)  [Theorem1.lean:159].
+- USED in the splitting proofs (Splitting.lean:182, PrimeStep.lean:368) to show M's tets only use boundary
+  vertices, so the filter `t ⊆ A` behaves correctly. So "filling uses only boundary/support vertices" is
+  already a proven, used lemma.
+
+=====================================================================
+(5) Relabeling / enlargement-invariance machinery — DOES NOT EXIST
+=====================================================================
+- grep for mapDomain / Finsupp.comap / embDomain / relabel / Function.Embedding (V ↪ W) / Chain.map over
+  lean/Taut: NONE. There is no map of `Chain V → Chain W` along an injection, and no lemma that
+  bdry/nrm/support/Zvol/IsTaut are preserved/reflected under relabeling.
+- The current enlargement happens WITHIN `[Infinite V]` (no type change): A,B grow inside the same V.
+
+=====================================================================
+(6) Auditor's assessment + PROPOSED targets (deferring the choice to you)
+=====================================================================
+The stated concern (Th1 tied to finite V / [Fintype V]) is UNFOUNDED: no [Fintype V] exists; Th1 is already
+over arbitrary [LinearOrder V] [Infinite V] (Option A is essentially the CURRENT state). `[Infinite V]` is
+the clean "fresh vertices always available" device and is the minimal thing the WLOG move needs; it
+propagates only to Corollary 1 (which threads it itself). So there may be NOTHING mathematically to fix.
+
+The only genuine design question: do we ALSO want Option B — an explicit AMBIENT-ENLARGEMENT INVARIANCE
+theorem stating "taut fillings don't depend on unused ambient vertices" via a relabeling `e : V ↪ W`? It
+is mathematically the content of Peter's motivation, but NO current consumer needs it (Cor 1 uses
+[Infinite V] directly; Th2/3/4 don't touch Infinite). It would be NEW machinery (a `Chain.map e`, plus
+bdry/nrm/support/Zvol/IsTaut compatibility), not a cleanup of existing code.
+
+PROPOSED (mark PROPOSED, your call):
+- PROPOSED-Bridge (Option B): `Chain.embed (e : V ↪ W) : Chain V →+ Chain W` (= Finsupp relabel by `s ↦
+  s.map e`), with `bdry_embed`, `nrm_embed` (= nrm), `support_embed`, `Zvol_embed` (= Zvol), `IsTaut_embed`
+  (iff), and `Zvol_add/​splits transport` — then a corollary "Th1 over any V by embedding into V ⊕ ℕ
+  (infinite)" so a caller with NON-infinite V can apply Th1. [Note: `s.map e` needs e to also be order-
+  compatible OR a fresh `sgn` argument, since `sgn` depends on the order — flag this as a subtlety: the
+  relabel must commute with `sgn`, i.e. e order-embedding, else bdry isn't preserved. This is the crux of
+  Option B and may make it heavier than it looks.]
+- PROPOSED-Cosmetic: leave the endpoints as-is; add a docstring/lemma name documenting that `[Infinite V]`
+  is the intentional "fresh vertices" device and Th1 does not depend on unused vertices (pointing at
+  IsTaut.vert_subset).
+
+=====================================================================
+ASK
+=====================================================================
+Q1. Generalize Th1 over V directly (Option A) vs prove ambient-enlargement invariance (Option B)? Given
+    the audit (Th1 is ALREADY over [LinearOrder V] [Infinite V], no [Fintype V]), is any change warranted,
+    or is the current form the elegant endpoint? If B, note the `sgn`/order-compatibility subtlety: a
+    relabel `s ↦ s.map e` only preserves `bdry` if `e` is an ORDER embedding (else the sign flips) — is
+    that acceptable, or does B need a sign-aware transport?
+Q2. What EXACT Lean statement should express "taut fillings do not depend on unused ambient vertices"?
+    (e.g. `IsTaut_embed (e : V ↪o W) : IsTaut (Chain.embed e M) ↔ IsTaut M`, or a Zvol/Splits transport.)
+    Or is `IsTaut.vert_subset` (already proven) sufficient as that statement?
+Q3. Minimal lemma to justify "add brand-new points to C if necessary": is the existing
+    `Infinite.exists_superset_card_eq`-based enlargement (already in the full endpoints) the intended
+    minimal device, or do you want it factored into a reusable `exists_enlarged_cut` lemma?
+Q4. Which endpoints MUST remain stable so Th2-4 + Cor 1 don't break? (Audit: Cor 1 calls
+    `Zvol_add_of_almost_disjoint_full` / `IsTaut.splits_full` (both [Infinite V]); Th2/3/4 call only the
+    hard-case `IsTaut.splits`. Any change to the full endpoints must keep those signatures or add
+    compatibility wrappers.)
+Q5. First bounded target for Claude (if any change is warranted)? Or confirm "no change; document only".
+
+CONSTRAINTS: do not break completed endpoints (Th1-4 + Cor 1 all CHECKED, std-3, build green 8274); any
+change ends with lake build green + same no-sorry/no-admit/no-project-axiom audit; preserve checked
+signatures or add wrappers; distinguish mathematical cleanup from cosmetic. The old theorem is not wrong —
+the question is elegance of the ambient bookkeeping.
+
+FILES: Theorem1.lean (Zvol_add_of_almost_disjoint[_full], IsTaut.vert_subset), Splitting.lean
+(IsTaut.splits[_full]), Zvol.lean (no_internal_vertex, Zvol API), Chains.lean (sgn/bdry/cone). PAPER:
+taut.tex (noInteriorVertices observation; th1:525; "add a brand new point to C":505). BUILD: cd lean && lake build.
