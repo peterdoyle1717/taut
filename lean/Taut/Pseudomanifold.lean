@@ -236,11 +236,20 @@ lemma edgeLinkConnected_insert {τ : Finset (Finset V)} {t : Finset V} (ht : t.c
 
 /-! ## The faithful stickerball -/
 
-/-- A **faithful stickerball**: freely shellable *and* genuinely simplicial —
-every triangle in at most two tets (`IsPseudomanifold`) and every edge-link
-connected (`EdgeLinkConnected`).  This is the invariant the Theorem-2 induction
-must carry; the boundary-only `FreelyShellable` alone is too weak (it admits the
-re-exposed-face and stray-ring configurations). -/
+/-- **LEGACY / superseded — do not use in new code.**  This early "stickerball" predicate predates the
+clean-shelling migration and is no longer referenced by any endpoint (its only lemmas
+`isStickerball_singleton`/`isStickerball_insert` are unused).  Two reasons it is *not* the right
+vocabulary, both fixed by the clean route:
+
+* it **bundles `FreelyShellable`**, conflating *stickerball* (= a shellable clean ball) with *freely
+  shellable* (= shellable starting at any prescribed tet).  The live split keeps these distinct:
+  `IsCleanBall` is the stickerball notion, `FreelyCleanShellable` is the free-start notion;
+* it **omits `VertexLinkConnected`** — it carries only `EdgeLinkConnected`, so it is weaker than the
+  paper's "normal/clean".  The live normality package is `Clean3Complex = Pure3 ∧ TriangleBounded3 ∧
+  Normal3` with `Normal3 = EdgeLinkConnected ∧ VertexLinkConnected` (see `taut_clean3Complex`).
+
+Kept (unused) only to avoid churning the committed bridge; new work should use `IsCleanBall` /
+`FreelyCleanShellable` / `Clean3Complex`. -/
 def IsStickerball (τ B : Finset (Finset V)) : Prop :=
   FreelyShellable τ B ∧ IsPseudomanifold τ ∧ EdgeLinkConnected τ
 

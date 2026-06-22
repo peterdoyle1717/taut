@@ -3595,13 +3595,40 @@ theorem theorem3_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2
   theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean hσ hU hXc hMX hT hS
 
 /-- **Theorem 2 (clean route)**: a taut filling of a combinatorial 2-sphere `σ` is a *clean ball*
-— it admits a clean shelling (self-certifying `Clean3Complex`), the faithful-stickerball upgrade of
-`theorem2`.  Immediate from `theorem3_clean` at any tet of the (nonempty) support. -/
+(`IsCleanBall` = the paper's *stickerball* = a shellable clean ball: it admits a clean shelling).
+
+Two facts about this endpoint are worth making explicit (both are *named theorems*, not handwaves):
+
+* **It is genuinely clean, including connected vertex links.**  `IsCleanBall M.support σ` provably
+  entails `Clean3Complex M.support` via `IsCleanBall.clean3Complex` — exported here as the standalone
+  endpoint `taut_clean3Complex`.  `Clean3Complex = Pure3 ∧ TriangleBounded3 ∧ Normal3` and
+  `Normal3 = EdgeLinkConnected ∧ VertexLinkConnected`, so connected vertex links (dim-0 links) and
+  connected edge links (dim-1 links) — the paper's "normal" condition — are both delivered.  The
+  per-step vertex-link compatibility is the `CleanGlueStep.hvlc` field, folded by
+  `IsCleanShelling.clean3Complex`.
+
+* **The proof actually establishes the stronger free-start statement.**  `IsCleanBall` asks only for
+  *one* clean shelling, but this theorem is a one-line weakening of `theorem3_clean`, which produces a
+  clean shelling beginning with *any* prescribed tet (`FreelyCleanShellable`).  So the substance of
+  Theorem 3 (free choice of starting tet) is already proved by the same minimal-counterexample
+  induction; `theorem2_clean` simply forgets the head condition.  `IsCleanBall` (stickerball /
+  shellable) and `FreelyCleanShellable` (free-start) are kept as *distinct* predicates on purpose —
+  "stickerball" is not silently redefined to mean "freely shellable". -/
 theorem theorem2_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
     (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
     (hS : SimplicialChain M) : IsCleanBall M.support σ := by
   obtain ⟨t, ht⟩ := aleph_base_support_nonempty hσ hU hMX
   obtain ⟨l, _, hlτ, hlnodup, hlshell⟩ := theorem3_clean hσ hU hXc hMX hT hS t ht
   exact ⟨l, hlτ, hlnodup, hlshell⟩
+
+/-- **Theorem 2, normality endpoint**: a taut filling of a combinatorial 2-sphere is a *clean
+3-complex* — `Pure3 ∧ TriangleBounded3 ∧ Normal3`, where `Normal3 = EdgeLinkConnected ∧
+VertexLinkConnected`.  This makes the paper's "normal" condition (connected vertex *and* edge links)
+a first-class named conclusion rather than something a consumer must unpack from `IsCleanBall`.
+In particular `(taut_clean3Complex …).2.2.2 : VertexLinkConnected M.support`. -/
+theorem taut_clean3Complex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : Clean3Complex M.support :=
+  (theorem2_clean hσ hU hXc hMX hT hS).clean3Complex
 
 end Taut
