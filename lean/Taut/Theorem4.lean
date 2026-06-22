@@ -1637,4 +1637,11 @@ theorem theorem4_flag {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 
   let ⟨hK3, hK4⟩ := no_emptyK3K4_of_taut hσ hU hXc hMX hT hS
   theorem4_flag_from_no_emptyK3K4 hσ hU hXc hMX hT hS hK3 hK4
 
+/-- **Public endpoint (mathematically named): a taut filling of a combinatorial 2-sphere is a flag
+complex** — every clique of its 1-skeleton spans a simplex.  Paper-independent name for `theorem4_flag`. -/
+theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsFlagComplex M.support :=
+  theorem4_flag hσ hU hXc hMX hT hS
+
 end Taut

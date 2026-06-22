@@ -3586,9 +3586,10 @@ theorem prime_step_clean (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSpher
       hf₃₄ hFlip
 
 /-- **Theorem 3 (clean route)**: a taut filling of a combinatorial 2-sphere is a *freely
-clean-shellable* sticker ball — the faithful-stickerball upgrade of `theorem3`, assembled from
-the three discharged clean steps (`base_free_clean`, `deg3_step_clean`, `prime_step_clean`) via
-the clean induction skeleton `theorem3_core_clean`. -/
+clean-shellable* sticker ball — the faithful-stickerball (now-removed weak endpoint) upgrade, assembled
+from the three discharged clean steps (`base_free_clean`, `deg3_step_clean`, `prime_step_clean`) via
+the clean induction skeleton `theorem3_core_clean`.  Wrapped by the public endpoint
+`taut_filling_is_anyrootedStickerball`. -/
 theorem theorem3_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
     (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
     (hS : SimplicialChain M) : FreelyCleanShellable M.support σ :=
@@ -3630,5 +3631,42 @@ theorem taut_clean3Complex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSph
     (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
     (hS : SimplicialChain M) : Clean3Complex M.support :=
   (theorem2_clean hσ hU hXc hMX hT hS).clean3Complex
+
+/-! ## Public endpoints (mathematically named)
+
+The primary, paper-independent statements.  A taut filling of a combinatorial 2-sphere is an
+*anyrooted stickerball*; the weaker certificates are corollaries. -/
+
+/-- **Main theorem (Theorems 2+3 unified): a taut filling of a combinatorial 2-sphere is an anyrooted
+stickerball.**  That is, its support is a shellable clean 3-complex with nonempty boundary
+(`IsStickerball` — the combinatorial `B³` certificate) *and* a clean shelling can begin with any
+prescribed tetrahedron (`FreelyCleanShellable`).  Subsumes both the ordinary stickerball certificate
+(paper Theorem 2) and the free choice of starting tet (paper Theorem 3): the minimal-counterexample
+induction proves the anyrooted statement directly (`theorem3_clean`), of which the existence form
+(`theorem2_clean`) is the weakening. -/
+theorem taut_filling_is_anyrootedStickerball {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsAnyrootedStickerball M.support σ :=
+  ⟨⟨theorem2_clean hσ hU hXc hMX hT hS, hσ.nonempty⟩, theorem3_clean hσ hU hXc hMX hT hS⟩
+
+/-- A taut filling of a combinatorial 2-sphere is a *stickerball* (shellable clean ball with nonempty
+boundary — the combinatorial `B³` certificate).  Corollary of `taut_filling_is_anyrootedStickerball`. -/
+theorem taut_filling_is_stickerball {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsStickerball M.support σ :=
+  (taut_filling_is_anyrootedStickerball hσ hU hXc hMX hT hS).toStickerball
+
+/-- A taut filling of a combinatorial 2-sphere is a *clean 3-complex* — pure, every triangle in one or
+two tets, and *both* links connected (`VertexLinkConnected` and `EdgeLinkConnected`). -/
+theorem taut_filling_is_clean3Complex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsClean3Complex M.support :=
+  (taut_filling_is_stickerball hσ hU hXc hMX hT hS).isClean3Complex
+
+/-- A taut filling of a combinatorial 2-sphere is *shellable* (admits a clean shelling). -/
+theorem taut_filling_is_shellable {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsCleanBall M.support σ :=
+  (taut_filling_is_stickerball hσ hU hXc hMX hT hS).1
 
 end Taut

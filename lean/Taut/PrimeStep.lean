@@ -2475,25 +2475,18 @@ theorem prime_step_free (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere
   · exact exists_shelling_prime_case2 hσ hU hXc hMX hT hS IH he hne_es hs hexp hf₃₄ hFlip
   · exact exists_shelling_prime_case1 hσ hU hMX hT hS IH he hne_es hs hexp hf₃₄ hFlip
 
-/-! ## Theorem 3 / Theorem 2 (assembled)
+/-! ## Weak (boundary-only) endpoints — REMOVED
 
-`theorem3_core` (the strong induction) applied to the three discharged reduction
-steps `base_free`, `deg3_step_free`, `prime_step_free`. Theorem 2 (`IsBall`) is the
-corollary via `FreelyShellable.isBall_of_mem` and support-nonemptiness. -/
+The early weak endpoints `theorem3 : FreelyShellable` and `theorem2 : IsBall` (assembled here from the
+weak induction `theorem3_core base_free deg3_step_free prime_step_free`) have been removed: they only
+certified the boundary-trace shelling, which cannot see rogue interior faces and does not entail the
+clean/normal manifold conditions.  The public endpoints are the clean ones:
+`taut_filling_is_anyrootedStickerball` (and its corollaries `taut_filling_is_stickerball`,
+`taut_filling_is_clean3Complex`, `taut_filling_is_shellable`) in `Theorem3Clean.lean`.
 
-/-- **Theorem 3**: a taut filling of a combinatorial 2-sphere is a *free* sticker
-ball. -/
-theorem theorem3 {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
-    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
-    (hS : SimplicialChain M) : FreelyShellable M.support σ :=
-  (theorem3_core base_free deg3_step_free prime_step_free hσ hU hXc hMX hT hS).1
-
-/-- **Theorem 2**: a taut filling of a combinatorial 2-sphere `σ` is a
-shelling-certified ball with boundary `σ` (it arises from a triangulation of `B³`). -/
-theorem theorem2 {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
-    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
-    (hS : SimplicialChain M) : IsBall M.support σ := by
-  obtain ⟨t, ht⟩ := aleph_base_support_nonempty hσ hU hMX
-  exact (theorem3 hσ hU hXc hMX hT hS).isBall_of_mem ht
+The weak *predicates* `IsBall` / `IsShelling` / `FreelyShellable` (Ball.lean) are retained because the
+clean route projects onto them via `IsCleanBall.toBoundaryIsBall` etc.  The weak *induction machinery*
+(`theorem3_core`, `base_free`, `deg3_step_free`, `prime_step_free`) is now unused by any endpoint and is
+a candidate for a later bounded removal pass. -/
 
 end Taut
