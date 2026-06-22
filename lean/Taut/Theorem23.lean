@@ -79,64 +79,12 @@ theorem theorem2_core
         intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
         exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
 
-/-! ## Theorem 3 (core): the free-shelling induction
+/-! ## Weak (boundary-only) Theorem 3 core — REMOVED
 
-Per Peter's "sticker ball" reframe (and codex 019ecbfa): the right inductive
-invariant is `FreelyShellable` (a free sticker ball — buildable one tet at a time,
-startable at ANY tet), not plain `IsBall`. With it the case-2 reassembly is a
-direct concatenation (start the second piece at the bridge-adjacent tet — possible
-exactly because it is *free*), so no separate relative-shelling "topology" lemma is
-needed at the induction level. Theorem 2 (`IsBall`) is then a corollary. -/
-
-/-- A free sticker ball is a ball (forget the freedom). -/
-lemma FreelyShellable.isBall_of_mem {τ B : Finset (Finset V)} {t : Finset V}
-    (h : FreelyShellable τ B) (ht : t ∈ τ) : IsBall τ B := by
-  obtain ⟨l, _, hfin, hnodup, hsh⟩ := h t ht
-  exact ⟨l, hfin, hnodup, hsh⟩
-
-/-- **Theorem 3 (core), the free-shelling strong induction.** Same plumbing as
-`theorem2_core`, carrying `FreelyShellable M.support σ`. Both non-base branches
-consume the induction hypothesis (every strictly smaller taut filling is a free
-sticker ball). Reduces Theorem 3 to three reduction steps. -/
-theorem theorem3_core
-    (base : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ → UnitOn X σ →
-      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
-      FreelyShellable M.support σ ∧ IsPseudomanifold M.support)
-    (deg3_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
-      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
-      SimplicialChain M → HasDegree3Vertex σ →
-      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
-        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
-        FreelyShellable M'.support σ' ∧ IsPseudomanifold M'.support) →
-      FreelyShellable M.support σ ∧ IsPseudomanifold M.support)
-    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
-      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
-      SimplicialChain M → NoDegree3Vertex σ →
-      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
-        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
-        FreelyShellable M'.support σ' ∧ IsPseudomanifold M'.support) →
-      FreelyShellable M.support σ ∧ IsPseudomanifold M.support)
-    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
-    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
-    FreelyShellable M.support σ ∧ IsPseudomanifold M.support := by
-  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
-      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
-      FreelyShellable M.support σ ∧ IsPseudomanifold M.support by
-    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
-  intro N
-  induction N using Nat.strong_induction_on with
-  | _ N IH =>
-    intro σ X M hN hσ hU hXc hMX hT hS
-    by_cases hv : (vertsOf σ).card ≤ 4
-    · exact base σ X M hσ hU hMX hT hS hv
-    · push_neg at hv
-      by_cases hd3 : HasDegree3Vertex σ
-      · refine deg3_step σ X M hσ hv hU hXc hMX hT hS hd3 ?_
-        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
-        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
-      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
-        refine prime_step σ X M hσ hv hU hXc hMX hT hS hno3 ?_
-        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
-        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+`theorem3_core` (the boundary-trace `FreelyShellable` strong induction) and its `FreelyShellable →
+IsBall` adapter `FreelyShellable.isBall_of_mem` have been removed: the boundary-trace shelling does
+not entail the clean/normal manifold conditions, so it was superseded by the clean-shelling induction
+`theorem3_core_clean` (`Theorem3Clean.lean`), which carries `FreelyCleanShellable`.  `theorem2_core`
+(above) is retained — it is the PM/`IsBall` strong-induction skeleton consumed by `Theorem2Aleph.lean`. -/
 
 end Taut
