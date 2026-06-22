@@ -1,14 +1,16 @@
-# Lean cleanup report (clean-anyrooted-stickerballs)
+# Lean cleanup report (clean-anyrooted-stickerball)
 
 ## 1. Branch
-`clean-anyrooted-stickerballs` (forked from `claude/clean-shelling`).
+`clean-anyrooted-stickerball` — created from the completed-and-green cleanup state.  The cleanup
+(Phases 0–3 + 5) was carried out on the sibling branch `clean-anyrooted-stickerballs` and inherited here
+verbatim; this branch is the requested-named home, re-validated below.
 
-## 2. Commit trail
-- `50b7d22` Phase 0: baseline audit + future-projects note
+## 2. Commit trail (inherited; each builds green)
+- `50b7d22` Phase 0: baseline inventory + future-projects note
 - `47cd9a3` Phase 1: clean predicate hierarchy (IsClean3Complex / IsStickerball / IsAnyrootedStickerball)
 - `1d08558` Phase 2/3: mathematically-named public endpoints; remove weak theorem2/theorem3
-- (this commit) Phase 5: validation report
-Each commit builds green.
+- `983f44d` Phase 5: validation report
+- (this commit) Phase 5 refresh: re-validated on `clean-anyrooted-stickerball`.
 
 ## 3. Build status
 `cd lean && lake build` → **Build completed successfully (8274 jobs).**
@@ -75,9 +77,12 @@ actual content of the minimal-counterexample induction (`theorem3_core_clean` ca
 
 ## 11. Remaining non-mathlib-style cruft (deferred, to avoid sprawl)
 - **Orphaned weak induction machinery:** `theorem3_core`, `base_free`, `deg3_step_free`,
-  `prime_step_free` (and their supporting lemmas) are now unused by any endpoint.  Removing them is a
-  large, intertwined change (touches Ball.lean infrastructure shared with the clean projections) — a
-  candidate for a later **bounded** removal pass.  Left in place this pass per the "stop if sprawl" rule.
+  `prime_step_free` (and their supporting weak-route lemmas) are now referenced **only in comments**
+  (confirmed by `git grep`: the sole code consumers were the deleted weak `theorem2`/`theorem3`).  But
+  the web spans **five files** (`Theorem3.lean`, `Theorem23.lean`, `PrimeStep.lean`, `FlipGeom.lean`,
+  `Ball.lean`) and interleaves with the weak *predicates* `IsBall`/`IsShelling`/`FreelyShellable` that
+  the clean route still projects onto.  Removing it cleanly is a dedicated multi-file pass (≈ hundreds of
+  lines) — a **bounded follow-up**, deferred here per the "stop if sprawl" rule.  Needs Peter's go-ahead.
 - **Paper-number underlying lemmas:** `theorem2_clean`/`theorem3_clean`/`taut_clean3Complex`/`theorem4_flag`
   remain as the proof-bearing lemmas under the new public endpoints.  They are no longer the primary
   API; could be renamed (e.g. to `*_aux`/private) in a follow-up, but that is churn with little gain.
