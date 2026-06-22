@@ -86,6 +86,34 @@ def FreelyCleanShellable (τ B : Finset (Finset V)) : Prop :=
   ∀ t ∈ τ, ∃ l : List (Finset V),
     l.head? = some t ∧ l.toFinset = τ ∧ l.Nodup ∧ IsCleanShelling l B
 
+/-! ## Stickerball predicates (the combinatorial B³ certificate) -/
+
+/-- A **stickerball**: a shellable clean 3-complex with nonempty boundary.  Concretely `IsCleanBall`
+(a clean shelling exists — building *up* by sticking tetrahedra on, the reverse of shucking down) with
+a nonempty boundary `B`.  Being an `IsCleanBall` it is in particular an `IsClean3Complex`
+(pure, every triangle in ≤ 2 tets, connected vertex *and* edge links) — see `IsStickerball.isClean3Complex`.
+
+By the standard PL theorem that a shellable normal 3-pseudomanifold with nonempty boundary is a PL
+ball, this is the combinatorial certificate for a triangulation of `B³`.  This project proves the
+combinatorial certificate; it does **not** formalize that external PL-homeomorphism theorem (see
+`notes/future-projects.md`). -/
+def IsStickerball (τ B : Finset (Finset V)) : Prop :=
+  IsCleanBall τ B ∧ B.Nonempty
+
+/-- An **anyrooted stickerball** is a stickerball whose shelling may start with any prescribed
+tetrahedron (`FreelyCleanShellable`).  "Stickerball" by itself is *not* anyrooted — that is the
+strengthened property. -/
+def IsAnyrootedStickerball (τ B : Finset (Finset V)) : Prop :=
+  IsStickerball τ B ∧ FreelyCleanShellable τ B
+
+/-- An anyrooted stickerball is in particular a stickerball. -/
+lemma IsAnyrootedStickerball.toStickerball {τ B : Finset (Finset V)}
+    (h : IsAnyrootedStickerball τ B) : IsStickerball τ B := h.1
+
+/-- An anyrooted stickerball is freely clean shellable (a shelling starts at any prescribed tet). -/
+lemma IsAnyrootedStickerball.freelyCleanShellable {τ B : Finset (Finset V)}
+    (h : IsAnyrootedStickerball τ B) : FreelyCleanShellable τ B := h.2
+
 /-! ## Projection to boundary shelling — keeps the banked reassembly usable -/
 
 /-- A clean glue step is a boundary glue step. -/
@@ -192,6 +220,14 @@ lemma FreelyCleanShellable.clean3Complex {τ B : Finset (Finset V)}
   obtain ⟨t, ht⟩ := hτ
   obtain ⟨l, _, hl, _, hsh⟩ := h t ht
   rw [← hl]; exact hsh.clean3Complex
+
+/-- A stickerball is a clean 3-complex (purity, triangle-bounded, connected vertex & edge links). -/
+lemma IsStickerball.isClean3Complex {τ B : Finset (Finset V)} (h : IsStickerball τ B) :
+    IsClean3Complex τ := h.1.clean3Complex
+
+/-- An anyrooted stickerball is a clean 3-complex. -/
+lemma IsAnyrootedStickerball.isClean3Complex {τ B : Finset (Finset V)}
+    (h : IsAnyrootedStickerball τ B) : IsClean3Complex τ := h.1.isClean3Complex
 
 /-! ## Clean reassembly — the clean analogues of the weak snoc lemmas
 

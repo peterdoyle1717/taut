@@ -234,49 +234,6 @@ lemma edgeLinkConnected_insert {τ : Finset (Finset V)} {t : Finset V} (ht : t.c
   · rw [edgeLinkVerts_insert_of_not_subset hsub] at hx hy
     exact (hτ e he x hx y hy).mono hmono
 
-/-! ## The faithful stickerball -/
-
-/-- **LEGACY / superseded — do not use in new code.**  This early "stickerball" predicate predates the
-clean-shelling migration and is no longer referenced by any endpoint (its only lemmas
-`isStickerball_singleton`/`isStickerball_insert` are unused).  Two reasons it is *not* the right
-vocabulary, both fixed by the clean route:
-
-* it **bundles `FreelyShellable`**, conflating *stickerball* (= a shellable clean ball) with *freely
-  shellable* (= shellable starting at any prescribed tet).  The live split keeps these distinct:
-  `IsCleanBall` is the stickerball notion, `FreelyCleanShellable` is the free-start notion;
-* it **omits `VertexLinkConnected`** — it carries only `EdgeLinkConnected`, so it is weaker than the
-  paper's "normal/clean".  The live normality package is `Clean3Complex = Pure3 ∧ TriangleBounded3 ∧
-  Normal3` with `Normal3 = EdgeLinkConnected ∧ VertexLinkConnected` (see `taut_clean3Complex`).
-
-Kept (unused) only to avoid churning the committed bridge; new work should use `IsCleanBall` /
-`FreelyCleanShellable` / `Clean3Complex`. -/
-def IsStickerball (τ B : Finset (Finset V)) : Prop :=
-  FreelyShellable τ B ∧ IsPseudomanifold τ ∧ EdgeLinkConnected τ
-
-/-- The base of the induction: one tetrahedron is a stickerball with the
-tetrahedron-boundary sphere. -/
-lemma isStickerball_singleton {t : Finset V} (ht : t.card = 4) :
-    IsStickerball ({t} : Finset (Finset V)) (tetFaces t) := by
-  refine ⟨?_, isPseudomanifold_singleton t, edgeLinkConnected_singleton ht⟩
-  intro s hs
-  rw [Finset.mem_singleton] at hs; subst hs
-  exact ⟨[s], rfl, by simp, by simp, ht, rfl⟩
-
-/-- **Preservation: a clean glue onto a stickerball is a stickerball.** Given the
-shelling extends (`hfree`, from the existing reassembly machinery) and the new tet
-meets the simplicial structure cleanly — each triangle of `t` in ≤ 1 old tet
-(`hpmc`), each edge of `t` new or already apex-sharing (`helc`) — the result keeps
-both manifold invariants. -/
-lemma isStickerball_insert {τ : Finset (Finset V)} {t σ : Finset (Finset V)} {tt : Finset V}
-    (ht : tt.card = 4) (httτ : tt ∉ τ)
-    (hpm : IsPseudomanifold τ) (hel : EdgeLinkConnected τ)
-    (hfree : FreelyShellable (insert tt τ) σ)
-    (hpmc : ∀ f, f.card = 3 → f ⊆ tt → faceCount τ f ≤ 1)
-    (helc : ∀ e, e ⊆ tt → e.card = 2 →
-      edgeLinkVerts τ e = ∅ ∨ ((tt \ e) ∩ edgeLinkVerts τ e).Nonempty) :
-    IsStickerball (insert tt τ) σ :=
-  ⟨hfree, isPseudomanifold_insert hpm httτ hpmc, edgeLinkConnected_insert ht hel helc⟩
-
 /-! ## Rule-out engines
 
 The two ways re-gluing the eligible tet can spoil simpliciality each reduce, via
@@ -482,9 +439,19 @@ def Normal3 (τ : Finset (Finset V)) : Prop :=
 
 /-- `Clean3Complex τ`: pure, triangle-bounded, and normal — the honest
 "simplicial triangulation of a 3-ball" invariant the public shelling must carry,
-not the boundary-only trace. -/
+not the boundary-only trace.  Exposed under the `Is`-prefixed names
+`IsClean3Complex` / `IsNormal3Psman` as the preferred public vocabulary. -/
 def Clean3Complex (τ : Finset (Finset V)) : Prop :=
   Pure3 τ ∧ TriangleBounded3 τ ∧ Normal3 τ
+
+/-- **`IsClean3Complex`** — the clean (normal) 3-complex condition: pure, every triangle in one or two
+tets, and *both* links connected (`VertexLinkConnected` and `EdgeLinkConnected`).  This is the local
+combinatorial-manifold condition; preferred public name for `Clean3Complex`. -/
+abbrev IsClean3Complex (τ : Finset (Finset V)) : Prop := Clean3Complex τ
+
+/-- **`IsNormal3Psman`** — synonym for `IsClean3Complex`: a normal 3-pseudomanifold (triangle-bounded
+with both links connected, pure). -/
+abbrev IsNormal3Psman (τ : Finset (Finset V)) : Prop := Clean3Complex τ
 
 lemma pure3_singleton {t : Finset V} (ht : t.card = 4) :
     Pure3 ({t} : Finset (Finset V)) := by
