@@ -75,14 +75,29 @@ actual content of the minimal-counterexample induction (`theorem3_core_clean` ca
 - **Retained (load-bearing):** the weak *predicates* `IsBall`/`IsShelling`/`FreelyShellable`/`GlueStep`
   (Ball.lean) — the clean route projects onto them via `IsCleanBall.toBoundaryIsBall` etc.
 
-## 11. Remaining non-mathlib-style cruft (deferred, to avoid sprawl)
-- **Orphaned weak induction machinery:** `theorem3_core`, `base_free`, `deg3_step_free`,
-  `prime_step_free` (and their supporting weak-route lemmas) are now referenced **only in comments**
-  (confirmed by `git grep`: the sole code consumers were the deleted weak `theorem2`/`theorem3`).  But
-  the web spans **five files** (`Theorem3.lean`, `Theorem23.lean`, `PrimeStep.lean`, `FlipGeom.lean`,
-  `Ball.lean`) and interleaves with the weak *predicates* `IsBall`/`IsShelling`/`FreelyShellable` that
-  the clean route still projects onto.  Removing it cleanly is a dedicated multi-file pass (≈ hundreds of
-  lines) — a **bounded follow-up**, deferred here per the "stop if sprawl" rule.  Needs Peter's go-ahead.
+## 11. Remaining non-mathlib-style cruft
+- **Orphaned weak induction machinery — REMOVED (commit `69705ab`).**  `theorem3_core`,
+  `base_free`, `degree3_star_start_shellFrom`, `deg3_step_free`, `prime_flipEdge_split_free_package`,
+  `exists_shelling_prime_case1`/`2`, `prime_step_free`, and the dead adapter
+  `FreelyShellable.isBall_of_mem` are deleted (≈537 net lines).  Each was verified dead by
+  `git grep -wn` (sole code consumers were each other and the already-removed weak
+  `theorem2`/`theorem3`).  Build green (8274); five public endpoints still std-3 axioms.  Retained:
+  the PM skeletons `base_isPM`/`deg3_isPM`/`theorem2_core` and the weak *predicates*
+  `IsBall`/`IsShelling`/`FreelyShellable`/`GlueStep` (the clean route projects onto them).
+- **Dead weak side-split / relative-shelling cluster — REMOVED (second cleanup commit, follows `69705ab`).**  After the
+  induction removal above, a connected 7-decl cluster was left with no live consumer; measured against
+  the clean route (`git grep -wn`) and deleted: `flipEdgePresent_side_data`, `flipEdgePresent_side_bridge`,
+  the struct `PrimeFlipEdgeSplitFreePackage` (PrimeStep.lean), and `RelShelling`,
+  `relShelling_over_insert_boundary_face`, `IsBall.bridge_of_relShelling`, `RelBoundaryShelling`
+  (Ball.lean).  **Retained because the clean route genuinely consumes them** (it re-derives the case-2
+  split directly, *not* via `flipEdgePresent_side_data`): `flipEdgePresent_side_sets`,
+  `flipEdgePresent_side_algebra`, `flipEdgePresent_side_reconstruct`(`_left`), `glueStep_bridge_left`/`_right`,
+  and the core weak predicates `IsBall`/`IsShelling`/`FreelyShellable`/`GlueStep`/`ShellFrom`.  Build
+  green (8274); five endpoints still std-3.  (Note: my earlier draft of this bullet wrongly flagged
+  `flipEdgePresent_side_sets` as possibly-dead — it is live, used by `Theorem3Clean.lean`.)
+- **Minor residual (not chased):** `freelyShellable_singleton` (Ball.lean) is now dead collateral of the
+  `base_free` removal (only comment refs remain); a few docstrings in `Ball.lean`/`FlipGeom.lean`/
+  `Theorem3Clean.lean`/`CleanShelling.lean` still name removed decls historically.  Harmless.
 - **Paper-number underlying lemmas:** `theorem2_clean`/`theorem3_clean`/`taut_clean3Complex`/`theorem4_flag`
   remain as the proof-bearing lemmas under the new public endpoints.  They are no longer the primary
   API; could be renamed (e.g. to `*_aux`/private) in a follow-up, but that is churn with little gain.
@@ -97,5 +112,6 @@ actual content of the minimal-counterexample induction (`theorem3_core_clean` ca
   result is the combinatorial certificate (shellable clean 3-complex, nonempty boundary), nothing more.
 
 ## Status / next
-Phases 0–3 + 5 complete on this branch; build green, no sorries, std axioms.  Phase 4 (broad restyle)
-and the orphaned-weak-machinery removal are deferred as bounded follow-ups.  Branch not merged to main.
+Phases 0–3 + 5 complete; orphaned-weak-machinery removal done (commit `69705ab`).  Build green, no
+sorries, std axioms.  Deferred bounded follow-ups: the residual dead flip-edge side-split support
+(§ 11), stale comment references (§ 11), and Phase 4 (broad mathlib restyle).  Branch not merged to main.
