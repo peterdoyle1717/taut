@@ -1111,11 +1111,9 @@ theorem aleph_card_gap_two {M : Chain V} {σ : Finset (Finset V)}
   have hnrmM : nrm M = M.support.card := nrm_eq_support_card_of_simplicial hS
   omega
 
-/-- **Per-vertex degree gap.** Strengthening of `aleph_card_gap_two`: for *every* vertex `v`,
-`M.support.card + deg v (bdry M) ≤ σ.card`.  Same proof as `aleph_card_gap_two` but without picking a
-minimum-degree vertex — `Zvol_add_deg_le v` (Prop 2) on the closed chain `bdry M`, rewritten through
-`IsTaut` (`Zvol (bdry M) = nrm M`), `nrm M = |M.support|`, and `nrm (bdry M) = σ.card`.  This supplies
-the `deg v` bound the eligible-tet family count needs. -/
+/-- Per-vertex degree gap `M.support.card + deg v (bdry M) ≤ σ.card`, from `Zvol_add_deg_le v`
+(Prop 2) on the closed chain `bdry M` rewritten through `IsTaut`.  Supplies the `deg v` bound
+consumed by `aleph_disjoint_eligible_family`. -/
 theorem aleph_card_gap_deg {M : Chain V} {σ : Finset (Finset V)}
     (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M) (v : V) :
     M.support.card + deg v (bdry M) ≤ σ.card := by
@@ -1179,10 +1177,6 @@ theorem aleph_two_double_fibers (α β : Type*) [DecidableEq α] [DecidableEq β
   · simpa [g] using hb₂eq
 
 
-/-- **`k`-fold double-fiber pigeonhole.** Generalizes `aleph_two_double_fibers`: with fibers `≤ 2`
-and a degree-`k` gap `t.card + k ≤ s.card`, there is a `k`-element `D ⊆ t` each of whose fibers has
-card exactly `2`.  (The number of card-2 fibers is `≥ s.card - t.card`, since the others contribute
-`≤ 1` each.) -/
 theorem aleph_k_double_fibers (α β : Type*) [DecidableEq α] [DecidableEq β]
     (s : Finset α) (t : Finset β) (f : α → β)
     (hmap : ∀ a ∈ s, f a ∈ t) (k : ℕ) (hcard : t.card + k ≤ s.card)
@@ -1216,7 +1210,7 @@ theorem aleph_k_double_fibers (α β : Type*) [DecidableEq α] [DecidableEq β]
   rw [Finset.mem_filter] at hb
   simpa [g] using hb.2
 
-/-- M25b: a no-degree-3 taut filling has two distinct eligible tets whose shared
+/-- A no-degree-3 taut filling has two distinct eligible tets whose shared
 boundary-face pairs are disjoint (needed by case-1's multiplicity-2 argument). -/
 theorem aleph_disjoint_eligible_pair {M : Chain V} {σ : Finset (Finset V)}
     (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M)
@@ -1264,10 +1258,9 @@ theorem aleph_disjoint_eligible_pair {M : Chain V} {σ : Finset (Finset V)}
     exact aleph_chosenFaceFibers_disjoint f hne
 
 
-/-- **`k`-element disjoint eligible family.** Generalizes `aleph_disjoint_eligible_pair` from `2` to
-`k`: for any `k ≤ deg v (bdry M)`, a no-degree-3 taut filling has `k` eligible tets whose
-`sharedFaces` are pairwise disjoint.  Same `f`-map setup as the pair lemma, but pigeonholed via
-`aleph_k_double_fibers` against the per-vertex degree gap `aleph_card_gap_deg`. -/
+/-- For any `k ≤ deg v (bdry M)`, a no-degree-3 taut filling has `k` eligible tets whose
+`sharedFaces` are pairwise disjoint, pigeonholed against the per-vertex degree gap
+`aleph_card_gap_deg`. -/
 theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
     (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
     (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
@@ -1286,7 +1279,6 @@ theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
   have hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2 := by
     intro t ht
     exact sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht)
-  -- Degree gap: `|M.support| + deg v (bdry M) ≤ |σ|`, hence `|M.support| + k ≤ |σ|`.
   have hgap : M.support.card + deg v (bdry M) ≤ σ.card := aleph_card_gap_deg hU hS hT v
   have hgapk : M.support.card + k ≤ σ.card := by omega
   have hmap : ∀ a ∈ (Finset.univ : Finset {α // α ∈ σ}), f a ∈ (Finset.univ : Finset {t // t ∈ M.support}) := by
@@ -1305,14 +1297,12 @@ theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
   rcases aleph_k_double_fibers {α // α ∈ σ} {t // t ∈ M.support}
       (Finset.univ : Finset {α // α ∈ σ}) (Finset.univ : Finset {t // t ∈ M.support}) f
       hmap k hcard hfiber_le2 with ⟨D, hDsub, hDcard, hDfull⟩
-  -- For each chosen `b ∈ D`: it is an eligible tet, and `sharedFaces M b = alephChosenFaceFiber f b`.
   have helig : ∀ b ∈ D, EligibleTet M (b : Finset V) ∧
       sharedFaces M (b : Finset V) = alephChosenFaceFiber f b := by
     intro b hb
     have hbdbl : (alephChosenFiber f b).card = 2 := by
       simpa only [alephChosenFiber] using hDfull b hb
     exact aleph_double_fiber_eligible hU hPure hShared2 f hfspec b hbdbl
-  -- Assemble the family `E := D.image Subtype.val`.
   refine ⟨D.image (fun b : {t // t ∈ M.support} => (b : Finset V)), ?_, ?_, ?_⟩
   · rw [Finset.card_image_of_injective _ Subtype.val_injective]
     exact hDcard

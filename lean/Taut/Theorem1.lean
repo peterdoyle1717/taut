@@ -100,7 +100,6 @@ theorem dimPart_bdry (k : ℕ) (M : Chain V) :
   | single s c =>
     by_cases hs : s.card = k + 1
     · rw [dimPart_single_of_eq hs, bdry_single]
-      -- all facets have size k, so the filter keeps everything
       ext u
       rw [dimPart_apply]
       split
@@ -117,7 +116,6 @@ theorem dimPart_bdry (k : ℕ) (M : Chain V) :
           omega
         rw [hgen, smul_zero]
     · rw [dimPart_single_of_ne hs, map_zero, bdry_single]
-      -- no facet has size k
       ext u
       rw [dimPart_apply, Finsupp.coe_zero, Pi.zero_apply]
       split
@@ -285,30 +283,25 @@ theorem Kkills_or_Kkills {A B : Finset V} {p q : V} {n : ℕ}
     have h1 := Finset.card_inter_add_card_sdiff t (A ∩ B)
     rw [hsplit, Finset.card_union_of_disjoint hdisj] at h1
     omega
-  -- the inner part sits inside A ∩ B
   have hinter : t ∩ (A ∩ B) ⊆ A ∩ B := Finset.inter_subset_right
   have hintercard := Finset.card_le_card hinter
   rcases hA with hA | ⟨hxa, hpt⟩ <;> rcases hB with hB | ⟨hxb, hqt⟩
-  · -- t ⊆ A and t ⊆ B
-    have : t ⊆ A ∩ B := Finset.subset_inter hA hB
+  · have : t ⊆ A ∩ B := Finset.subset_inter hA hB
     have := Finset.card_le_card this
     omega
-  · -- t ⊆ A, one vertex outside B, q ∉ t
-    have hxa0 : (t \ A).card = 0 :=
+  · have hxa0 : (t \ A).card = 0 :=
       Finset.card_eq_zero.mpr (Finset.sdiff_eq_empty_iff_subset.mpr hA)
     have hc : (t ∩ (A ∩ B)).card = n + 1 := by omega
     have heq : t ∩ (A ∩ B) = A ∩ B :=
       Finset.eq_of_subset_of_card_le hinter (by omega)
     exact hqt (Finset.mem_inter.mp (heq ▸ hq)).1
-  · -- symmetric: t ⊆ B, one vertex outside A, p ∉ t
-    have hxb0 : (t \ B).card = 0 :=
+  · have hxb0 : (t \ B).card = 0 :=
       Finset.card_eq_zero.mpr (Finset.sdiff_eq_empty_iff_subset.mpr hB)
     have hc : (t ∩ (A ∩ B)).card = n + 1 := by omega
     have heq : t ∩ (A ∩ B) = A ∩ B :=
       Finset.eq_of_subset_of_card_le hinter (by omega)
     exact hpt (Finset.mem_inter.mp (heq ▸ hp)).1
-  · -- one vertex outside each, p, q ∉ t: A ∩ B is too big
-    have hc : (t ∩ (A ∩ B)).card = n := by omega
+  · have hc : (t ∩ (A ∩ B)).card = n := by omega
     have hqn : q ∉ t ∩ (A ∩ B) := fun h => hqt (Finset.mem_inter.mp h).1
     have hpn : p ∉ insert q (t ∩ (A ∩ B)) := by
       intro h
@@ -377,13 +370,11 @@ theorem Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n : ℕ}
   obtain ⟨M, hM1, hM2⟩ :=
     exists_fill_eq_Zvol (cone p (X + Y)) (bdry_cone_of_closed hXYc)
   refine le_antisymm ?_ ?_
-  · -- ≤ : concatenate optimal fillings
-    have hbd : bdry (Mx + My) = X + Y := by rw [map_add, hMx, hMy]
+  · have hbd : bdry (Mx + My) = X + Y := by rw [map_add, hMx, hMy]
     calc Zvol (X + Y) ≤ nrm (Mx + My) := Zvol_le hbd
       _ ≤ nrm Mx + nrm My := nrm_add_le _ _
       _ = Zvol X + Zvol Y := by rw [hMxn, hMyn]
-  · -- ≥ : project an optimal filling to both sides
-    have hMt : IsTaut M := by rw [IsTaut, hM1]; exact hM2
+  · have hMt : IsTaut M := by rw [IsTaut, hM1]; exact hM2
     have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
       intro s hs
       rw [hM1] at hs
@@ -405,7 +396,6 @@ theorem Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n : ℕ}
         (vert_subset_of_supp fun s hs => (hY s hs).1)
     have hsuppAB : ∀ t ∈ M.support, t ⊆ A ∪ B :=
       fun t ht => (supp_subset_vert ht).trans hvert
-    -- the two projections fill X and Y
     have hbx : bdry (Kmap A p M) = X := by
       rw [bdry_Kmap A hpA, hM1, map_add,
         Kmap_eq_self (fun s hs => (hX s hs).1),
@@ -415,7 +405,6 @@ theorem Zvol_add_of_almost_disjoint {A B : Finset V} {p q : V} {n : ℕ}
         Kmap_eq_self (fun s hs => (hY s hs).1),
         Kmap_eq_zero_of_closed hn (Finset.inter_comm A B ▸ hq)
           (Finset.inter_comm A B ▸ hC) hX hXc, zero_add]
-    -- norm bookkeeping
     have h1 := nrm_Kmap_add_killed_le A p M
     have h2 := nrm_Kmap_add_killed_le B q M
     have h3 : nrm M ≤ nrm (M.filter (Kkills A p)) + nrm (M.filter (Kkills B q)) :=
@@ -465,7 +454,6 @@ theorem Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V
     set B' := B ∪ F with hB'
     have hFA : Disjoint F A := hFdisj.mono_right Finset.subset_union_left
     have hFB : Disjoint F B := hFdisj.mono_right Finset.subset_union_right
-    -- the new intersection is exactly `(A ∩ B) ∪ F`
     have hinter : A' ∩ B' = (A ∩ B) ∪ F := by
       ext x
       simp only [hA', hB', Finset.mem_inter, Finset.mem_union]

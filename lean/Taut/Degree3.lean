@@ -1,7 +1,7 @@
 import Taut.Eligible
 
 /-!
-# Degree-3 vertices and the connected-sum cut (M24a, architect: codex 019ec44f, Q1)
+# Degree-3 vertices and the connected-sum cut
 
 A degree-3 vertex `v` of a 2-sphere `σ` (its link is a triangle) gives a non-face
 triangle `γ = linkVerts σ v` along which `separates` cuts σ into a tetrahedral cap
@@ -155,7 +155,7 @@ lemma linkVerts_not_mem_of_card_three_of_four_lt_verts {σ : Finset (Finset V)}
   have hcard_le : (vertsOf σ).card ≤ 4 := hTcard ▸ Finset.card_le_card hverts
   omega
 
-/-- **The degree-3 cut datum** (M24a): from a degree-3 vertex of a 2-sphere on more
+/-- **The degree-3 cut datum:** from a degree-3 vertex of a 2-sphere on more
 than four vertices, the link triangle `γ` is a non-face whose edges lie in σ — the
 exact hypotheses `separates` consumes. -/
 lemma degree3_link_triangle_cut_data {σ : Finset (Finset V)} (hσ : IsSphere2 σ)

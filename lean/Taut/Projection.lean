@@ -26,14 +26,12 @@ namespace Taut
 
 variable {V : Type*} [LinearOrder V]
 
-/-- `Kmap A p` kills the generator `s`. -/
 def Kkills (A : Finset V) (p : V) (s : Finset V) : Prop :=
   ¬ s ⊆ A ∧ ¬ ((s \ A).card = 1 ∧ p ∉ s)
 
 instance (A : Finset V) (p : V) : DecidablePred (Kkills A p) := fun s => by
   unfold Kkills; infer_instance
 
-/-- The projection of one generator. -/
 noncomputable def KGen (A : Finset V) (p : V) (s : Finset V) : Chain V :=
   if s ⊆ A then Finsupp.single s 1
   else if (s \ A).card = 1 ∧ p ∉ s then
@@ -65,7 +63,6 @@ lemma mem_of_sdiff_singleton {A s : Finset V} {z : V}
   have : z ∈ s \ A := h ▸ Finset.mem_singleton_self z
   exact Finset.mem_sdiff.mp this
 
-/-- The replacement case. -/
 lemma KGen_of_one {A : Finset V} {p : V} {s : Finset V} {z : V}
     (hz : s \ A = {z}) (hps : p ∉ s) :
     KGen A p s = sgn z s • coneGen p (s.erase z) := by
@@ -89,8 +86,6 @@ lemma KGen_of_kills {A : Finset V} {p : V} {s : Finset V}
     (h : Kkills A p s) : KGen A p s = 0 := by
   rw [KGen, if_neg h.1, if_neg h.2]
 
-/-- A facet of a simplex inside `A` stays inside `A`; in general,
-erasing commutes with the deficiency set. -/
 lemma erase_sdiff (s A : Finset V) (w : V) :
     (s.erase w) \ A = (s \ A).erase w := by
   ext y
@@ -120,8 +115,7 @@ lemma bdry_KGen_two {A : Finset V} {p : V} (hp : p ∈ A) {s : Finset V}
     rw [map_smul, Kmap_single, one_smul]
   rw [Finset.sum_congr rfl hterm]
   rcases Nat.lt_or_ge (s \ A).card 3 with h3 | h3
-  · -- exactly two outside vertices z₁ z₂
-    have hcard : (s \ A).card = 2 := by omega
+  · have hcard : (s \ A).card = 2 := by omega
     obtain ⟨z₁, z₂, hne, hz12⟩ := Finset.card_eq_two.mp hcard
     have hz₁s : z₁ ∈ s ∧ z₁ ∉ A := by
       have : z₁ ∈ s \ A := by rw [hz12]; exact Finset.mem_insert_self _ _
@@ -143,8 +137,7 @@ lemma bdry_KGen_two {A : Finset V} {p : V} (hp : p ∈ A) {s : Finset V}
       · rintro rfl
         exact ⟨hne, Or.inl rfl⟩
     by_cases hps : p ∈ s
-    · -- p inside s: every facet still kills
-      refine (Finset.sum_eq_zero fun w hw => ?_).symm
+    · refine (Finset.sum_eq_zero fun w hw => ?_).symm
       by_cases hw₁ : w = z₁
       · subst hw₁
         rw [KGen_of_mem (not_subset_of_sdiff_singleton herase₁)
@@ -160,8 +153,7 @@ lemma bdry_KGen_two {A : Finset V} {p : V} (hp : p ∈ A) {s : Finset V}
               Finset.erase_eq_of_notMem (by simp [hw₁, hw₂]),
               Finset.card_pair hne]
           rw [KGen_of_two h2', smul_zero]
-    · -- p outside s: the z₁ and z₂ terms cancel
-      have hzero : ∀ w ∈ s, w ∉ ({z₁, z₂} : Finset V) →
+    · have hzero : ∀ w ∈ s, w ∉ ({z₁, z₂} : Finset V) →
           sgn w s • KGen A p (s.erase w) = 0 := by
         intro w hw hwn
         have h2' : 2 ≤ ((s.erase w) \ A).card := by
@@ -176,8 +168,7 @@ lemma bdry_KGen_two {A : Finset V} {p : V} (hp : p ∈ A) {s : Finset V}
         Finset.erase_right_comm (a := z₂) (b := z₁), smul_smul, smul_smul,
         ← add_smul, sgn_erase_cancel hz₁s.1 hz₂s.1 hne, neg_add_cancel,
         zero_smul]
-  · -- three or more outside vertices: every facet still has ≥ 2
-    refine (Finset.sum_eq_zero fun w hw => ?_).symm
+  · refine (Finset.sum_eq_zero fun w hw => ?_).symm
     have h2' : 2 ≤ ((s.erase w) \ A).card := by
       rw [erase_sdiff]
       have h := Finset.pred_card_le_card_erase (a := w) (s := s \ A)
@@ -198,7 +189,6 @@ lemma bdry_KGen_one_mem {A : Finset V} {p : V} (hp : p ∈ A) {s : Finset V}
     rw [map_smul, Kmap_single, one_smul]
   have hzero : ∀ w ∈ s, w ∉ ({z₀, p} : Finset V) →
       sgn w s • KGen A p (s.erase w) = 0 := by
-    -- all other facets are killed: they retain both z₀ and p
     intro w hw hwn
     have hwz : w ≠ z₀ := fun h => hwn (h ▸ Finset.mem_insert_self _ _)
     have hwp : w ≠ p := fun h =>
@@ -212,7 +202,6 @@ lemma bdry_KGen_one_mem {A : Finset V} {p : V} (hp : p ∈ A) {s : Finset V}
       (Finset.insert_subset hz₀s (Finset.singleton_subset_iff.mpr hps))
       hzero,
     Finset.sum_pair (fun h => hpz h.symm)]
-  -- the two surviving terms
   have hsub₀ : s.erase z₀ ⊆ A := by
     rw [← Finset.sdiff_eq_empty_iff_subset, erase_sdiff, hz,
       Finset.erase_singleton]
@@ -245,7 +234,6 @@ lemma bdry_KGen_one_notMem {A : Finset V} {p : V} (hp : p ∈ A) {s : Finset V}
   have hsub₀ : u ⊆ A := by
     rw [hu, ← Finset.sdiff_eq_empty_iff_subset, erase_sdiff, hz,
       Finset.erase_singleton]
-  -- LHS via the homotopy identity
   have hcone : coneGen p u = cone p (Finsupp.single u 1) := by
     rw [cone_single, one_smul]
   have hstep : bdry (cone p (Finsupp.single u (1 : ℤ)))
@@ -265,7 +253,6 @@ lemma bdry_KGen_one_notMem {A : Finset V} {p : V} (hp : p ∈ A) {s : Finset V}
     rw [map_smul, Kmap_single, one_smul]
   rw [Finset.sum_congr rfl hterm, ← Finset.add_sum_erase _ _ hz₀s, ← hu,
     KGen_of_subset hsub₀]
-  -- remaining sum versus the cone of the boundary of u
   have hrest : ∀ w ∈ u, sgn w s • KGen A p (s.erase w)
       = (sgn w s * sgn z₀ (s.erase w)) • coneGen p (u.erase w) := by
     intro w hw
@@ -291,7 +278,6 @@ lemma bdry_KGen_one_notMem {A : Finset V} {p : V} (hp : p ∈ A) {s : Finset V}
   rw [← hu] at hc
   linarith [hc]
 
-/-- The chain-map property on generators. -/
 theorem bdry_KGen (A : Finset V) {p : V} (hp : p ∈ A) (s : Finset V) :
     bdry (KGen A p s) = Kmap A p (bdryGen s) := by
   rcases Nat.lt_or_ge (s \ A).card 2 with h2 | h2
@@ -349,7 +335,6 @@ lemma nrm_KGen_le_one (A : Finset V) (p : V) (s : Finset V) :
       exact nrm_coneGen_le_one p _
     · simp
 
-/-- `Kmap` as a sum over the support. -/
 lemma Kmap_eq_sum (A : Finset V) (p : V) (M : Chain V) :
     Kmap A p M = ∑ s ∈ M.support, M s • KGen A p s := by
   rw [Kmap, Finsupp.lsum_apply, Finsupp.sum]
@@ -394,8 +379,7 @@ theorem nrm_Kmap_add_killed_le (A : Finset V) (p : V) (M : Chain V) :
 
 /-! ## Small-support triviality -/
 
-/-- `C_k(W)` is trivial when `|W| < k+1`: a chain of pure dimension
-supported on simplices of size exceeding its vertex pool is zero. -/
+/-- `C_k(W)` is trivial when `|W| < k+1`. -/
 lemma eq_zero_of_supp_card_lt {W : Finset V} {k : ℕ} {M : Chain V}
     (hsupp : ∀ s ∈ M.support, s ⊆ W ∧ s.card = k) (hk : W.card < k) :
     M = 0 := by
@@ -406,8 +390,7 @@ lemma eq_zero_of_supp_card_lt {W : Finset V} {k : ℕ} {M : Chain V}
   have := Finset.card_le_card h1
   omega
 
-/-- `Z_{k-1}(W)` is trivial when `|W| = k ≥ 1`: a closed chain of pure
-dimension `k−1` supported in a `k`-element vertex set vanishes. -/
+/-- `Z_{k-1}(W)` is trivial when `|W| = k ≥ 1`. -/
 lemma eq_zero_of_closed_supp_card_eq {W : Finset V} {k : ℕ} (hk : 1 ≤ k)
     {M : Chain V} (hsupp : ∀ s ∈ M.support, s ⊆ W ∧ s.card = k)
     (hW : W.card = k) (hM : bdry M = 0) : M = 0 := by

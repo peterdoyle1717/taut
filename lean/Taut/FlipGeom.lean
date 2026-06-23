@@ -2,14 +2,14 @@ import Taut.Theorem2
 import Taut.Ball
 
 /-!
-# Case-1 flip geometry (the missing `prime_step` packages) — AlephProver targets
+# Case-1 flip geometry
 
 The `prime_step` branch removes an eligible tet `e` from a taut filling `M` of the
 2-sphere `σ`.  When the flipped edge is absent (`¬ FlipEdgePresent`, case 1) the new
 boundary `σe := (σ \ sharedFaces M e) ∪ exposedFaces M e` is again a 2-sphere, the
 removed filling `removeTet M e` is again taut, and gluing `e` back is a `GlueStep`.
 These three facts — `IsSphere2 σe`, `IsTaut (removeTet M e)`, `GlueStep e σe σ` — are
-the data the induction (`theorem3_core`) needs to recurse on the smaller filling and
+the data the induction needs to recurse on the smaller filling and
 then snoc `e` back.  The flip API in `Theorem2.lean` already supplies the support and
 unit-chain facts (`support_flipBoundary_of_eligible`, `unitOn_flipBoundary_of_eligible`);
 these are the remaining pieces.

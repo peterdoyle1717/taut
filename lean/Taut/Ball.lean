@@ -24,11 +24,8 @@ Faces of a tetrahedron `t` (a 4-element set) are its card-3 subsets,
 `B`, the faces of `t` already in `B` become interior and the rest are exposed: the
 new boundary is the symmetric difference `(B \ tetFaces t) ∪ (tetFaces t \ B)`.
 
-(The earlier weak shelling family — `ShellFrom`, `IsShelling`, `IsBall`,
-`FreelyShellable`, their reassembly lemmas, and the `Boundary*` aliases — has been
-removed as dead; the sole surviving reassembly lemma is
-`GlueStep.erase_union_disjoint`, which the clean layer lifts to
-`CleanGlueStep.erase_union_disjoint`.  See `notes/weak-predicate-cleanup.md`.)
+The sole surviving reassembly lemma is `GlueStep.erase_union_disjoint`, which the
+clean layer lifts to `CleanGlueStep.erase_union_disjoint`.
 -/
 
 namespace Taut
@@ -38,9 +35,8 @@ variable {V : Type*} [LinearOrder V]
 /-- The four triangular faces of a tetrahedron `t` (the card-3 subsets). -/
 abbrev tetFaces (t : Finset V) : Finset (Finset V) := t.powersetCard 3
 
-/-- **Weak boundary-trace primitive** (boundary bookkeeping only — asserts nothing
-about cleanness, normality, connected links, or ballness; the clean layer wraps it
-as `CleanGlueStep.weak`).  One gluing step of a shelling: tet `t` is glued onto a
+/-- **Weak boundary-trace primitive** (the clean layer wraps it as
+`CleanGlueStep.weak`).  One gluing step of a shelling: tet `t` is glued onto a
 ball whose boundary is `B`, producing the ball with boundary `B'`.
 
 * `card4` — `t` is a tetrahedron (4 vertices);
@@ -49,9 +45,8 @@ ball whose boundary is `B`, producing the ball with boundary `B'`.
 * `newBdry` — the new boundary is the symmetric difference of `B` and the
   faces of `t`: shared faces become interior, the rest are exposed.
 
-A glue step is a **purely combinatorial** stick; it does not assert the new
-boundary is a 2-sphere (that holds, but is the separate, deferred fact
-`glueStep_preserves_isSphere2`, not needed for the main theorem). -/
+It does not assert the new boundary is a 2-sphere (that holds, but is the separate,
+deferred fact `glueStep_preserves_isSphere2`, not needed for the main theorem). -/
 structure GlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop where
   card4 : t.card = 4
   shared : (tetFaces t ∩ B).card = 1 ∨ (tetFaces t ∩ B).card = 2
@@ -94,22 +89,13 @@ lemma GlueStep.erase_union_disjoint {t γ : Finset V} {B B' K : Finset (Finset V
 
 /-! ## `BoundaryGlueStep` — the weak boundary-bookkeeping name
 
-`GlueStep` is the sole surviving weak boundary-trace predicate.  It is **not** a
-ball or shellability claim: it only constrains a new tet against the *current
-boundary* `B` (shared card-3 faces, symmetric-difference update); it never sees
-the accumulated tet-set, so it cannot detect a rogue lower-dimensional
-intersection with an already-built tet, and it asserts **nothing** about
-cleanness, normality, connected vertex/edge links, or actual ballness.  The clean
-public predicates (`CleanGlueStep`, `IsCleanShelling`, `IsCleanBall`,
-`FreelyCleanShellable`, `IsStickerball`, `IsAnyrootedStickerball`) live in
-`Taut.CleanShelling`; a `CleanGlueStep` carries a `BoundaryGlueStep` in its `weak`
-field.  Public ball/stickerball conclusions use `IsStickerball` /
-`IsAnyrootedStickerball`, never this weak predicate. -/
+`GlueStep` constrains a new tet only against the *current boundary* `B`; it never
+sees the accumulated tet-set, so it cannot detect a rogue lower-dimensional
+intersection with an already-built tet.  A `CleanGlueStep` carries a
+`BoundaryGlueStep` in its `weak` field. -/
 
 /-- Boundary (weak) glue step — the explicit weak-layer name for `GlueStep`, the
-thing `CleanGlueStep.weak` carries.  Weak boundary bookkeeping only (see the
-section note above): asserts nothing about cleanness, normality, connected links,
-or ballness. -/
+thing `CleanGlueStep.weak` carries. -/
 abbrev BoundaryGlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop :=
   GlueStep t B B'
 

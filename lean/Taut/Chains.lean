@@ -21,7 +21,7 @@ Main definitions: `bdry` (boundary), `cone`, `lk` (link/strip), `nbhd`
 (restriction to simplices containing a vertex), `vert`, `nrm` (L¹ norm),
 `deg`, `SubChain`.
 
-Main results (the validation invariants of the G1 spec):
+Main results:
 * `bdry_bdry` : ∂∂ = 0;
 * `bdry_cone_add_cone_bdry` : ∂(cone x M) + cone x (∂M) = M;
 * `cone_lk` : cone x (lk x M) = nbhd x M;
@@ -78,7 +78,6 @@ lemma sgn_self_insert (x : V) (t : Finset V) (hx : x ∉ t) :
     sgn x (insert x t) = sgn x t := by
   rw [sgn, sgn, cnt_self_insert x t hx]
 
-/-- Express the sign on `s` via the sign on `s.erase z`. -/
 lemma sgn_eq_erase (x z : V) (s : Finset V) (hz : z ∈ s) :
     sgn x s = (if z < x then -1 else 1) * sgn x (s.erase z) := by
   conv_lhs => rw [← Finset.insert_erase hz]
@@ -119,11 +118,9 @@ lemma sgn_insert_cancel {x z : V} {s : Finset V} (hx : x ∉ s) (hz : z ∈ s) :
 
 /-! ## The operators -/
 
-/-- Boundary of one generator: the alternating sum of its facets. -/
 noncomputable def bdryGen (s : Finset V) : Chain V :=
   ∑ x ∈ s, sgn x s • Finsupp.single (s.erase x) 1
 
-/-- The boundary operator. -/
 noncomputable def bdry : Chain V →ₗ[ℤ] Chain V :=
   Finsupp.lsum ℤ fun s => LinearMap.toSpanSingleton ℤ (Chain V) (bdryGen s)
 
@@ -337,7 +334,6 @@ theorem bdry_cone_add_cone_bdry (x : V) (M : Chain V) :
 lemma sgn_ne_zero (x : V) (s : Finset V) : sgn x s ≠ 0 := by
   simp [sgn]
 
-/-- Coning the link recovers the neighborhood. -/
 theorem cone_lk (x : V) (M : Chain V) : cone x (lk x M) = nbhd x M := by
   induction M using Finsupp.induction_linear with
   | zero => rw [map_zero, map_zero, nbhd, Finsupp.filter_zero]
@@ -377,12 +373,10 @@ theorem nbhd_bdry_nbhd (x : V) (M : Chain V) :
         · rfl
       rw [nbhd_single_of_notMem hxs, map_zero, nbhd_zero, hz]
 
-/-- A chain supported away from `x` has boundary supported away from `x`. -/
 theorem nbhd_bdry_eq_zero {x : V} {N : Chain V} (h : nbhd x N = 0) :
     nbhd x (bdry N) = 0 := by
   rw [← nbhd_bdry_nbhd, h, map_zero, nbhd_zero]
 
-/-- The cone from `x` lands in simplices containing `x`. -/
 theorem nbhd_cone (x : V) (N : Chain V) : nbhd x (cone x N) = cone x N := by
   ext u
   rw [nbhd_apply]
@@ -391,7 +385,6 @@ theorem nbhd_cone (x : V) (N : Chain V) : nbhd x (cone x N) = cone x N := by
   · rename_i hxu
     rw [cone_apply, if_neg hxu]
 
-/-- The link of `x` lives away from `x`. -/
 theorem nbhd_lk (x : V) (M : Chain V) : nbhd x (lk x M) = 0 := by
   induction M using Finsupp.induction_linear with
   | zero => rw [map_zero, nbhd_zero]

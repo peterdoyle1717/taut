@@ -2,22 +2,11 @@ import Taut.Separation
 import Taut.Ball
 
 /-!
-# Theorem 2 + 3: a taut filling of a triangulated S² is a freely shellable B³
+# Theorem 2: a taut filling of a triangulated S² is a stickerball B³
 
-This file builds toward the central theorem (taut filling of `IsSphere2 σ`
-arises from a freely shellable simplicial triangulation of B³) by the
+This file builds toward `taut_filling_is_stickerball` by the
 minimal-counterexample induction of the paper (§"Filling a triangulation of the
-2-sphere"). Per the G1 audit (codex 019ec265) the packet is staged:
-
-* **M20 (here): the chain/facet bridge.** `UnitOn` (a `±1`-chain supported on
-  σ), `SimplicialChain` (coefficients in `{-1,0,1}`), and the bridge
-  `nrm_eq_support_card_of_simplicial` (`|M| = #support` when simplicial). These
-  connect the integral chain `M` (a multiset of oriented tets) to the facet set
-  `M.support` that the `IsBall`/`FreelyShellable` certificates live on.
-
-Later milestones: the tet-removal/flip API (M21), ball reassembly (M22), the
-oriented separation bridge to `IsTaut.splits` (M23), the connected-sum/degree-3
-reduction (M24), eligible-tet existence (M25), and the main induction (M26).
+2-sphere").
 -/
 
 namespace Taut
@@ -69,25 +58,21 @@ lemma UnitOn.nrm_eq {X : Chain V} {σ : Finset (Finset V)} (h : UnitOn X σ) :
     nrm X = σ.card := by
   rw [nrm_eq_support_card_of_simplicial h.simplicialChain, h.1]
 
-/-! ## M21: tet removal and the edge flip (architect: codex 019ec271)
+/-! ## Tet removal and the edge flip
 
 Removing an *eligible* tet `t` from a simplicial filling `M` flips two boundary
 faces to the tet's other two — the paper's `ab → cd` edge flip. We work over ℤ
 with the canonical-orientation signs of `Chains.lean`. -/
 
-/-- The boundary contribution of the single tet `t` (with `M`'s coefficient). -/
 noncomputable def tetContribution (M : Chain V) (t : Finset V) : Chain V :=
   bdry (Finsupp.single t (M t))
 
-/-- Remove the tet `t` from the filling `M`. -/
 noncomputable def removeTet (M : Chain V) (t : Finset V) : Chain V :=
   M - Finsupp.single t (M t)
 
-/-- The tet faces currently on the boundary of `M`. -/
 noncomputable def sharedFaces (M : Chain V) (t : Finset V) : Finset (Finset V) :=
   tetFaces t ∩ (bdry M).support
 
-/-- The tet faces NOT on the boundary of `M` (they become new boundary faces). -/
 noncomputable def exposedFaces (M : Chain V) (t : Finset V) : Finset (Finset V) :=
   tetFaces t \ sharedFaces M t
 
@@ -174,9 +159,8 @@ lemma nrm_removeTet_of_simplicial {M : Chain V} {t : Finset V}
     nrm (removeTet M t) = nrm M - 1 := by
   have := nrm_removeTet_add_one_of_simplicial hS ht; omega
 
-/-! ### M21b: the edge-flip sign bookkeeping (architect: codex 019ec271) -/
+/-! ### The edge-flip sign bookkeeping -/
 
-/-- `∂` of a tet's basis vector, read off at one of its own faces, is the sign. -/
 lemma bdryGen_apply_erase_of_mem {t : Finset V} {x : V} (hx : x ∈ t) :
     bdryGen t (t.erase x) = sgn x t := by
   rw [bdryGen, Finset.sum_apply']
@@ -192,13 +176,11 @@ lemma bdryGen_apply_erase_of_mem {t : Finset V} {x : V} (hx : x ∈ t) :
   rw [Finset.sum_eq_single_of_mem x hx key, Finsupp.smul_apply, Finsupp.single_eq_same,
     smul_eq_mul, mul_one]
 
-/-- The tet's contribution at one of its faces is `M t · sgn`. -/
 lemma tetContribution_apply_erase_of_mem {M : Chain V} {t : Finset V} {x : V} (hx : x ∈ t) :
     tetContribution M t (t.erase x) = M t * sgn x t := by
   rw [tetContribution, bdry_single, Finsupp.smul_apply, bdryGen_apply_erase_of_mem hx,
     smul_eq_mul]
 
-/-- Off the tet's four faces, the tet contributes nothing. -/
 lemma tetContribution_apply_of_not_mem_tetFaces {M : Chain V} {t s : Finset V}
     (ht : t.card = 4) (hs : s ∉ tetFaces t) : tetContribution M t s = 0 := by
   have hz : bdryGen t s = 0 := by
@@ -209,7 +191,6 @@ lemma tetContribution_apply_of_not_mem_tetFaces {M : Chain V} {t s : Finset V}
       (fun hc => (hc ▸ hs) (erase_mem_tetFaces ht hy)), smul_zero]
   rw [tetContribution, bdry_single, Finsupp.smul_apply, hz, smul_zero]
 
-/-- Every tet face is `t.erase y` for a (unique) vertex `y ∈ t`. -/
 lemma exists_erase_eq_of_mem_tetFaces {t s : Finset V} (ht : t.card = 4)
     (hs : s ∈ tetFaces t) : ∃ y, y ∈ t ∧ s = t.erase y := by
   obtain ⟨hsub, hcard⟩ := Finset.mem_powersetCard.mp hs
@@ -222,14 +203,12 @@ lemma exists_erase_eq_of_mem_tetFaces {t s : Finset V} (ht : t.card = 4)
     by_contra hzs
     exact hz.1 (by have := hy ▸ Finset.mem_sdiff.mpr ⟨hz.2, hzs⟩; rwa [Finset.mem_singleton] at this)
 
-/-- On a tet face the contribution is nonzero (the tet is genuinely present). -/
 lemma tetContribution_ne_zero_of_mem_tetFaces {M : Chain V} {t s : Finset V}
     (ht : t.card = 4) (htM : M t ≠ 0) (hs : s ∈ tetFaces t) : tetContribution M t s ≠ 0 := by
   obtain ⟨y, hyt, rfl⟩ := exists_erase_eq_of_mem_tetFaces ht hs
   rw [tetContribution_apply_erase_of_mem hyt]
   exact mul_ne_zero htM (by rw [sgn]; exact pow_ne_zero _ (by norm_num))
 
-/-- An exposed face is absent from the current boundary. -/
 lemma bdry_apply_eq_zero_of_mem_exposedFaces {M : Chain V} {t s : Finset V}
     (hs : s ∈ exposedFaces M t) : (bdry M) s = 0 := by
   rw [exposedFaces, Finset.mem_sdiff, sharedFaces, Finset.mem_inter] at hs
@@ -268,7 +247,6 @@ theorem support_flipBoundary_of_eligible {M : Chain V} {t : Finset V} (h : Eligi
       · exact h
       · exact absurd h hne
 
-/-- An eligible tet of a simplicial filling carries coefficient `±1`. -/
 lemma tet_coeff_eq_pm_one_of_eligible {M : Chain V} {t : Finset V}
     (hS : SimplicialChain M) (h : EligibleTet M t) : M t = 1 ∨ M t = -1 := by
   have htM : M t ≠ 0 := Finsupp.mem_support_iff.mp h.2.1
@@ -277,7 +255,6 @@ lemma tet_coeff_eq_pm_one_of_eligible {M : Chain V} {t : Finset V}
   · exact absurd h0 htM
   · exact Or.inl h1
 
-/-- On a tet face, a `±1`-coefficient tet contributes `±1`. -/
 lemma tetContribution_eq_pm_one_of_mem_tetFaces {M : Chain V} {t s : Finset V}
     (ht : t.card = 4) (hpm : M t = 1 ∨ M t = -1) (hs : s ∈ tetFaces t) :
     tetContribution M t s = 1 ∨ tetContribution M t s = -1 := by
@@ -309,15 +286,13 @@ theorem unitOn_flipBoundary_of_eligible {M : Chain V} {σ : Finset (Finset V)} {
     rcases tetContribution_eq_pm_one_of_mem_tetFaces ht4 hpm
       (exposedFaces_subset_tetFaces M t hs) with h1 | h1 <;> rw [h1] <;> decide
 
-/-! ## M23: the oriented separation bridge (architect: codex 019ec2e0)
+/-! ## The oriented separation bridge
 
 For the *edge-join* case-2 of the induction, the side-filter of a closed unit
 cycle is again closed — because the two sides share a single edge, and a closed
 chain supported on one edge must vanish. This is the orientation/coherence fact
 the paper hides; it is what lets `IsTaut.splits` apply to the integral split. -/
 
-/-- Filtering a chain by `P` does not change a boundary coefficient `u` for which
-no `¬P` generator contributes. -/
 lemma bdry_filter_apply_eq_bdry_of_no_cross {X : Chain V} {P : Finset V → Prop}
     [DecidablePred P] {u : Finset V}
     (hvanish : ∀ s ∈ X.support, ¬ P s → bdryGen s u = 0) :
