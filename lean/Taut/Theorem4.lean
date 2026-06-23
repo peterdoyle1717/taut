@@ -1,25 +1,13 @@
 import Taut.Theorem3Clean
 
 /-!
-# Theorem 4 (the flag-complex theorem) — first bounded target
+# Theorem 4 (the flag-complex theorem)
 
-This file opens the formalization of Theorem 4 of "Taut fillings": a taut filling
-of a triangulated `S²` is a *flag complex* — every clique in its 1-skeleton spans a
-simplex.  In the combinatorial setting (no topology) the relevant notion of "flag"
-is captured by `IsFlagComplex`: every set `s` whose every edge is a simplex of `τ`
-is itself a simplex of `τ`.
+Theorem 4 of "Taut fillings": a taut filling of a triangulated `S²` is a *flag complex*.
+The combinatorial notion of "flag" is `IsFlagComplex`: every set `s` whose every edge is a
+simplex of `τ` is itself a simplex of `τ`.
 
-Two pieces are proved here.
-
-* `NoTaboo.to_flag` — **purely combinatorial.** A complex with no "taboo"
-  configuration (no empty triangle `K₃`, no empty tetrahedron `K₄`, no `5`-clique
-  `K₅` of edges) is a flag complex.  The proof is a case split on `s.card`; cliques of
-  card `0,1,2` span simplices outright, and cards `3,4,≥5` each hit one of the three
-  forbidden configurations.
-
-* `no_k5Clique_of_no_emptyK4_taut` — **the geometric crux.** For a taut, simplicial,
-  pure filling `M` of a sphere `σ`, the absence of an empty `K₄` already forbids any
-  `K₅` of edges.  This replaces the paper's `S³ ⊄ B³` step: a `K₅` of edges in
+* `no_k5Clique_of_no_emptyK4_taut` replaces the paper's `S³ ⊄ B³` step: a `K₅` of edges in
   `M.support` would, via pseudomanifoldness, make every triangle inside it a *cancelled*
   (non-boundary) triangle, so the sub-chain `U := M ↾ s` of the `5` tets is closed;
   tautness (Prop 1) then forces `U = 0`, contradicting that `U` carries `5` tets.
@@ -73,41 +61,31 @@ theorem NoTaboo.to_flag {τ : Finset (Finset V)} (h : NoTaboo τ) :
   obtain ⟨hK3, hK4, hK5⟩ := h
   intro s hs
   obtain ⟨hsub, hedges⟩ := hs
-  -- Reduce to: card ≤ 4 (else extract a 5-clique and contradict hK5).
   by_cases hge5 : 5 ≤ s.card
   · exfalso
     obtain ⟨s', hs'sub, hs'card⟩ := Finset.exists_subset_card_eq hge5
     exact hK5 ⟨s', hs'card, fun e he hec => hedges e (he.trans hs'sub) hec⟩
   have hge5 : s.card ≤ 4 := by omega
-  -- Now s.card ≤ 4; split on the exact card.
   interval_cases hc : s.card
-  · -- card 0
-    exact Or.inl (Finset.card_eq_zero.mp hc)
-  · -- card 1: s = {v}, v a vertex of τ
-    obtain ⟨v, hv⟩ := Finset.card_eq_one.mp hc
+  · exact Or.inl (Finset.card_eq_zero.mp hc)
+  · obtain ⟨v, hv⟩ := Finset.card_eq_one.mp hc
     have hvmem : v ∈ vertsOf τ := hsub (hv ▸ Finset.mem_singleton_self v)
     obtain ⟨t, htτ, hvt⟩ := mem_vertsOf.mp hvmem
     exact Or.inr ⟨t, htτ, by rw [hv]; exact Finset.singleton_subset_iff.mpr hvt⟩
-  · -- card 2: s itself is one of its edges
-    exact hedges s (Finset.Subset.refl s) hc
-  · -- card 3: an empty K₃ unless s is a simplex
-    by_contra hns
+  · exact hedges s (Finset.Subset.refl s) hc
+  · by_contra hns
     exact hK3 ⟨s, hc, hedges, hns⟩
-  · -- card 4: an empty K₄ unless s is a simplex
-    by_contra hns
+  · by_contra hns
     exact hK4 ⟨s, hc, hedges, hns⟩
 
 /-! ## (2) The K₅ obstruction (geometric crux) -/
 
-/-- A `card`-`4` subset of a `5`-clique whose edges are all simplices, in a pure
-support, is itself a tet. -/
 private lemma fourSubset_mem_support {V : Type*} [LinearOrder V]
     {M : Chain V} {s q : Finset V}
     (hPure : ∀ t ∈ M.support, t.card = 4)
     (hK4 : ¬ HasEmptyK4 M.support)
     (hedges : ∀ e, e ⊆ s → e.card = 2 → SimplexOf M.support e)
     (hqs : q ⊆ s) (hq4 : q.card = 4) : q ∈ M.support := by
-  -- every edge of q is an edge of s, hence a simplex; ¬K₄ ⟹ q is a simplex
   have hqedges : ∀ e, e ⊆ q → e.card = 2 → SimplexOf M.support e :=
     fun e he hec => hedges e (he.trans hqs) hec
   have hsimp : SimplexOf M.support q := by
@@ -115,13 +93,9 @@ private lemma fourSubset_mem_support {V : Type*} [LinearOrder V]
     exact hK4 ⟨q, hq4, hqedges, hns⟩
   rcases hsimp with hempty | ⟨t, htM, hqt⟩
   · rw [hempty] at hq4; simp at hq4
-  · -- q ⊆ t, both card 4 ⟹ q = t ∈ support
-    have : q = t := Finset.eq_of_subset_of_card_le hqt (by rw [hPure t htM, hq4])
+  · have : q = t := Finset.eq_of_subset_of_card_le hqt (by rw [hPure t htM, hq4])
     rwa [this]
 
-/-- For a triangle `f` inside the `5`-clique `s`, the two `4`-subsets of `s` that
-contain `f` (`insert a f`, `insert b f`, where `{a,b} = s \ f`) are *distinct tets of
-`M.support` containing `f`*. -/
 private lemma two_tets_of_triangle {V : Type*} [LinearOrder V]
     {M : Chain V} {s f : Finset V}
     (hPure : ∀ t ∈ M.support, t.card = 4)
@@ -140,7 +114,6 @@ private lemma two_tets_of_triangle {V : Type*} [LinearOrder V]
   have hbs : b ∈ s := (Finset.mem_sdiff.mp hbmem).1
   have haf : a ∉ f := (Finset.mem_sdiff.mp hamem).2
   have hbf : b ∉ f := (Finset.mem_sdiff.mp hbmem).2
-  -- the two 4-subsets
   have hca : (insert a f).card = 4 := by rw [Finset.card_insert_of_notMem haf, hf3]
   have hcb : (insert b f).card = 4 := by rw [Finset.card_insert_of_notMem hbf, hf3]
   have hsuba : insert a f ⊆ s := Finset.insert_subset has hfs
@@ -157,11 +130,9 @@ private lemma two_tets_of_triangle {V : Type*} [LinearOrder V]
     · exact haf h
   exact ⟨a, b, has, hbs, haf, hbf, hab, hmemA, hmemB, hneq⟩
 
-/-- **Containment of bounding tets.** For a triangle `f ⊆ s` (card 3) of the
-`5`-clique `s`, every tet of `M.support` that contains `f` is `⊆ s`.  Indeed
-`f` already lies in two tets `insert a f, insert b f` both `⊆ s`, and
-pseudomanifoldness caps the count at two, so the two-element filter is exactly
-those two tets. -/
+/-- For a triangle `f ⊆ s` (card 3) of the `5`-clique `s`, every tet of `M.support`
+that contains `f` is `⊆ s`.  `f` lies in two tets `insert a f, insert b f` both `⊆ s`,
+and pseudomanifoldness (`hPM`) caps the count at two. -/
 private lemma tet_containing_subset {V : Type*} [LinearOrder V]
     {M : Chain V} {s f : Finset V}
     (hPure : ∀ t ∈ M.support, t.card = 4)
@@ -174,7 +145,6 @@ private lemma tet_containing_subset {V : Type*} [LinearOrder V]
     two_tets_of_triangle hPure hK4 hedges hs5 hfs hf3
   have hsuba : insert a f ⊆ s := Finset.insert_subset has hfs
   have hsubb : insert b f ⊆ s := Finset.insert_subset hbs hfs
-  -- the two tets sit in the filter, which has card ≤ 2; so it *equals* the pair
   set F := M.support.filter (fun t => f ⊆ t) with hF
   have hAF : insert a f ∈ F := by
     rw [hF, Finset.mem_filter]; exact ⟨hmemA, Finset.subset_insert a f⟩
@@ -212,7 +182,6 @@ private lemma bdry_eq_zero_of_triangle {V : Type*} [LinearOrder V]
     bdry M f = 0 := by
   obtain ⟨a, b, _, _, _, _, _, hmemA, hmemB, hneq⟩ :=
     two_tets_of_triangle hPure hK4 hedges hs5 hfs hf3
-  -- faceCount = 2 from the two distinct bounding tets and pseudomanifoldness
   have hfc2 : faceCount M.support f = 2 := by
     have hpairsub : ({insert a f, insert b f} : Finset (Finset V)) ⊆
         M.support.filter (fun t => f ⊆ t) := by
@@ -227,7 +196,6 @@ private lemma bdry_eq_zero_of_triangle {V : Type*} [LinearOrder V]
       unfold faceCount; rw [← hpaircard]; exact Finset.card_le_card hpairsub
     have hle : faceCount M.support f ≤ 2 := hPM f hf3
     omega
-  -- ±1 is impossible at f; UnitOn then pins the coefficient to 0
   have hne : bdry M f ≠ 1 ∧ bdry M f ≠ -1 := by
     constructor <;> intro hb
     · exact faceCount_ne_two_of_boundary hS hPure hf3 (Or.inl hb) hfc2
@@ -255,7 +223,6 @@ private lemma bdry_filter_subset_eq_zero {V : Type*} [LinearOrder V]
     bdry (M.filter (fun t => t ⊆ s)) = 0 := by
   classical
   set U := M.filter (fun t => t ⊆ s) with hUdef
-  -- coefficient of U: M t when t ⊆ s, else 0
   have hUapp : ∀ t, U t = if t ⊆ s then M t else 0 := by
     intro t; rw [hUdef, Finsupp.filter_apply]
   have hUsupp : U.support ⊆ M.support := by
@@ -264,15 +231,12 @@ private lemma bdry_filter_subset_eq_zero {V : Type*} [LinearOrder V]
   rw [Finsupp.coe_zero, Pi.zero_apply]
   by_cases hcase : f ⊆ s ∧ f.card = 3
   · obtain ⟨hfs, hf3⟩ := hcase
-    -- every tet of M containing f is ⊆ s
     have hcont : ∀ t ∈ M.support, f ⊆ t → t ⊆ s :=
       tet_containing_subset hPure hPM hK4 hedges hs5 hfs hf3
-    -- bdry U f and bdry M f are sums over the same facet filter, with equal coeffs
     have hsumU : bdry U f = ∑ t ∈ U.support.filter (fun t => f ⊆ t), U t * bdryGen t f :=
       bdry_eq_sum_facets
     have hsumM : bdry M f = ∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f :=
       bdry_eq_sum_facets
-    -- the two filters coincide
     have hfilteq : U.support.filter (fun t => f ⊆ t) =
         M.support.filter (fun t => f ⊆ t) := by
       apply Finset.ext; intro t
@@ -286,7 +250,6 @@ private lemma bdry_filter_subset_eq_zero {V : Type*} [LinearOrder V]
         rw [Finsupp.mem_support_iff, hUt]
         exact Finsupp.mem_support_iff.mp htM
     rw [hsumU, hfilteq]
-    -- on this filter, U = M
     have hterms : ∀ t ∈ M.support.filter (fun t => f ⊆ t),
         U t * bdryGen t f = M t * bdryGen t f := by
       intro t ht
@@ -295,8 +258,7 @@ private lemma bdry_filter_subset_eq_zero {V : Type*} [LinearOrder V]
       rw [hUapp, if_pos htsub]
     rw [Finset.sum_congr rfl hterms, ← hsumM]
     exact bdry_eq_zero_of_triangle hU hMX hS hPure hPM hK4 hedges hs5 hfs hf3
-  · -- f not a triangle of s: the local sum is term-by-term zero
-    rw [show bdry U f = ∑ t ∈ U.support.filter (fun t => f ⊆ t), U t * bdryGen t f from
+  · rw [show bdry U f = ∑ t ∈ U.support.filter (fun t => f ⊆ t), U t * bdryGen t f from
       bdry_eq_sum_facets]
     refine Finset.sum_eq_zero fun t ht => ?_
     rw [Finset.mem_filter] at ht
@@ -308,7 +270,6 @@ private lemma bdry_filter_subset_eq_zero {V : Type*} [LinearOrder V]
       rw [if_neg hns] at this
       exact (Finsupp.mem_support_iff.mp htU) this
     have hfs : f ⊆ s := hft.trans htsub
-    -- f ⊆ s but ¬(f⊆s ∧ card=3) ⟹ f.card ≠ 3 ⟹ bdryGen t f = 0
     have hf3 : f.card ≠ 3 := fun h => hcase ⟨hfs, h⟩
     have hgen : bdryGen t f = 0 := by
       by_contra hg
@@ -331,18 +292,15 @@ theorem no_k5Clique_of_no_emptyK4_taut
   classical
   rintro ⟨s, hs5, hedges⟩
   have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
-  -- the closed sub-chain on s
   set U := M.filter (fun t => t ⊆ s) with hUdef
   have hbU : bdry U = 0 :=
     bdry_filter_subset_eq_zero hU hMX hS hPure hPM hK4 hedges hs5
   have hsub : SubChain U M := subChain_filter _ M
   have hTU : IsTaut U := hT.subChain hsub
-  -- nrm U = Zvol (bdry U) = Zvol 0 = 0
   have hZ0 : Zvol (0 : Chain V) = 0 := Nat.le_zero.mp (by
     simpa using Zvol_le (show bdry (0 : Chain V) = 0 by simp))
   have hnrmU : nrm U = 0 := by rw [IsTaut] at hTU; rw [hTU, hbU, hZ0]
   have hU0 : U = 0 := nrm_eq_zero_iff.mp hnrmU
-  -- but U carries a tet of s: any 4-subset q ⊆ s is a tet, and U q = M q ≠ 0
   obtain ⟨q, hqs, hq4⟩ := Finset.exists_subset_card_eq (show 4 ≤ s.card by omega)
   have hqM : q ∈ M.support := fourSubset_mem_support hPure hK4 hedges hqs hq4
   have hUq : U q = M q := by rw [hUdef, Finsupp.filter_apply, if_pos hqs]
@@ -351,13 +309,10 @@ theorem no_k5Clique_of_no_emptyK4_taut
   simp only [Finsupp.coe_zero, Pi.zero_apply] at hUq
   exact hMq hUq.symm
 
-/-- **Theorem 4, public assembly (interface lock).** Once the two taboo configurations
-`HasEmptyK3` / `HasEmptyK4` are ruled out for a taut filling `M` of a 2-sphere `σ`, the support
-is a flag complex.  This composes the combinatorial bridge `NoTaboo.to_flag` with the config-3
-obstruction `no_k5Clique_of_no_emptyK4_taut` (which supplies `¬ HasK5Clique` from `¬ HasEmptyK4`),
-deriving purity from `aleph_base_taut_support_card4_subset_verts`.  The remaining work for the full
-`theorem4_flag` endpoint is exactly `no_emptyK3K4_of_taut` (the minimal-counterexample / edge-flip
-induction). -/
+/-- Once `HasEmptyK3` / `HasEmptyK4` are ruled out for a taut filling `M` of a 2-sphere `σ`, the
+support is a flag complex.  Composes `NoTaboo.to_flag` with `no_k5Clique_of_no_emptyK4_taut`
+(which supplies `¬ HasK5Clique` from `¬ HasEmptyK4`), deriving purity from
+`aleph_base_taut_support_card4_subset_verts`. -/
 theorem theorem4_flag_from_no_emptyK3K4
     {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
     (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
@@ -372,11 +327,9 @@ theorem theorem4_flag_from_no_emptyK3K4
 
 /-! ### Persistence of the taboo configurations under removing a tet
 
-In the minimal-counterexample induction (`no_emptyK3K4_of_taut`, to come) we remove a tet — a
-degree-3 star or an eligible flip — and need the taboo configuration to SURVIVE in the smaller
-complex.  Removing a tet only *removes* simplices, so `¬ SimplexOf` of the witness is automatic
-(monotonicity); the content is that each witness EDGE keeps a witness tet other than the one removed.
-This is pure `SimplexOf` bookkeeping over `M.support.erase e` (= `(removeTet M e).support`). -/
+In the minimal-counterexample induction (`no_emptyK3K4_of_taut`) we remove a tet — a degree-3
+star or an eligible flip — and need the taboo configuration to survive in the smaller complex
+`M.support.erase e` (= `(removeTet M e).support`). -/
 
 omit [LinearOrder V] in
 /-- `SimplexOf` is monotone in the complex. -/
@@ -410,7 +363,6 @@ lemma hasEmptyK4_erase_of_witness {τ : Finset (Finset V)} {e s : Finset V}
     exact Or.inr ⟨t, Finset.mem_erase.mpr ⟨htne, htτ⟩, hxt⟩
   · exact fun hcon => hno (hcon.mono (Finset.erase_subset _ _))
 
-/-- `removeTet` form of empty-K3 persistence. -/
 lemma hasEmptyK3_removeTet_of_witness {M : Chain V} {e s : Finset V} (he : e ∈ M.support)
     (hs3 : s.card = 3)
     (hedges : ∀ x, x ⊆ s → x.card = 2 → ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t)
@@ -418,7 +370,6 @@ lemma hasEmptyK3_removeTet_of_witness {M : Chain V} {e s : Finset V} (he : e ∈
   rw [support_removeTet_of_mem he]
   exact hasEmptyK3_erase_of_witness hs3 hedges hno
 
-/-- `removeTet` form of empty-K4 persistence. -/
 lemma hasEmptyK4_removeTet_of_witness {M : Chain V} {e s : Finset V} (he : e ∈ M.support)
     (hs4 : s.card = 4)
     (hedges : ∀ x, x ⊆ s → x.card = 2 → ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t)
@@ -426,15 +377,12 @@ lemma hasEmptyK4_removeTet_of_witness {M : Chain V} {e s : Finset V} (he : e ∈
   rw [support_removeTet_of_mem he]
   exact hasEmptyK4_erase_of_witness hs4 hedges hno
 
-/-! ### No-flip persistence (sub-target 3)
+/-! ### No-flip persistence
 
-In the eligible-flip step of the induction we remove an eligible tet `e` whose two
-*shared* (boundary) faces `g₃, g₄` get their common edge `g₃ ∩ g₄ = "ab"` deleted from the
-boundary.  A witness edge `x` of a taboo configuration survives the removal provided `x` is
-not exactly that deleted edge: every other edge of `e` lies in an *exposed* (interior) face,
-and an exposed face is carried by a neighbouring tet `≠ e`.  These three lemmas package that
-into `removeTet`-persistence of the taboo configurations, with the side condition stated as
-`x ≠ g₃ ∩ g₄` (`havoid`). -/
+In the eligible-flip step of the induction we remove an eligible tet `e` whose two *shared*
+(boundary) faces `g₃, g₄` get their common edge `g₃ ∩ g₄` deleted from the boundary.  A witness
+edge `x` of a taboo configuration survives provided `x ≠ g₃ ∩ g₄` (the side condition `havoid`):
+every other edge of `e` lies in an *exposed* (interior) face carried by a neighbouring tet `≠ e`. -/
 
 /-- **An edge `x ⊆ e` that is not the shared diagonal lies in an exposed face.** The two
 facets of `e` containing `x` (there are exactly two — `tetFaces_edge_filter_card_eq_two`)
@@ -448,7 +396,6 @@ private lemma edge_in_exposed_of_ne_sharedInter {M : Chain V} {e g₃ g₄ x : F
   classical
   by_contra hcon
   push_neg at hcon
-  -- no exposed face contains `x`, so the (card-2) filter of tetFaces lands inside sharedFaces
   have hsubsh : (tetFaces e).filter (fun F => x ⊆ F) ⊆ sharedFaces M e := by
     intro F hF
     rw [Finset.mem_filter] at hF
@@ -458,7 +405,6 @@ private lemma edge_in_exposed_of_ne_sharedInter {M : Chain V} {e g₃ g₄ x : F
     tetFaces_edge_filter_card_eq_two he.1 hxe hx2
   have hsheq : (tetFaces e).filter (fun F => x ⊆ F) = sharedFaces M e :=
     Finset.eq_of_subset_of_card_le hsubsh (by rw [he.2.2.1, hfiltcard])
-  -- so both g₃, g₄ contain `x`
   have hg3mem : g₃ ∈ (tetFaces e).filter (fun F => x ⊆ F) := by
     rw [hsheq, hsh]; exact Finset.mem_insert_self g₃ {g₄}
   have hg4mem : g₄ ∈ (tetFaces e).filter (fun F => x ⊆ F) := by
@@ -481,35 +427,29 @@ lemma edge_witness_ne_removed_of_not_sharedEdge {M : Chain V} {e g₃ g₄ x : F
     (hx : SimplexOf M.support x) (hx2 : x.card = 2) (hxne : x ≠ g₃ ∩ g₄) :
     ∃ t ∈ M.support, t ≠ e ∧ x ⊆ t := by
   classical
-  -- `x` is nonempty (card 2), so it has an honest witness tet `t₀`
   have hxne0 : x ≠ ∅ := by
     intro h; rw [h, Finset.card_empty] at hx2; exact absurd hx2 (by decide)
   obtain ⟨t₀, ht₀, hxt₀⟩ := hx.resolve_left hxne0
   by_cases hxe : x ⊆ e
-  · -- `x ⊆ e`: route through an exposed face
-    obtain ⟨f, hf, hxf⟩ := edge_in_exposed_of_ne_sharedInter he hsh hg hx2 hxe hxne
-    -- `f` is a tet-face of `e` off the boundary: `bdry M f = 0`
+  · obtain ⟨f, hf, hxf⟩ := edge_in_exposed_of_ne_sharedInter he hsh hg hx2 hxe hxne
     have hftet : f ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf
     have hf3 : f.card = 3 := (Finset.mem_powersetCard.mp hftet).2
     have hfnsh : f ∉ sharedFaces M e := (Finset.mem_sdiff.mp hf).2
     have hfnb : f ∉ (bdry M).support := fun hb =>
       hfnsh (by rw [sharedFaces]; exact Finset.mem_inter.mpr ⟨hftet, hb⟩)
     have hbf0 : bdry M f = 0 := Finsupp.notMem_support_iff.mp hfnb
-    -- the `e`-term of `bdry M f = ∑_{t ⊇ f} M t · bdryGen t f` is nonzero
     have hfsube : f ⊆ e := (Finset.mem_powersetCard.mp hftet).1
     have heF : e ∈ M.support.filter (fun t => f ⊆ t) :=
       Finset.mem_filter.mpr ⟨he.2.1, hfsube⟩
     have hMe : M e ≠ 0 := Finsupp.mem_support_iff.mp he.2.1
     have hgene : bdryGen e f ≠ 0 := bdryGen_ne_zero_of_subset he.1 hf3 hfsube
     have htermE : M e * bdryGen e f ≠ 0 := mul_ne_zero hMe hgene
-    -- the sum is zero, so some other facet-tet contributes a nonzero term
     have hsum0 : (∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f) = 0 := by
       rw [← bdry_eq_sum_facets]; exact hbf0
     have hexists : ∃ t ∈ M.support.filter (fun t => f ⊆ t),
         t ≠ e ∧ M t * bdryGen t f ≠ 0 := by
       by_contra hcon
       push_neg at hcon
-      -- every facet-tet other than `e` contributes zero, so the sum equals the `e`-term ≠ 0
       have hzero : (∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f) =
           M e * bdryGen e f :=
         Finset.sum_eq_single_of_mem e heF (fun t ht htne => hcon t ht htne)
@@ -520,13 +460,10 @@ lemma edge_witness_ne_removed_of_not_sharedEdge {M : Chain V} {e g₃ g₄ x : F
     obtain ⟨w, _, hfew⟩ := exists_facet_of_bdryGen_ne_zero hgent
     have hft : f ⊆ t := hfew ▸ Finset.erase_subset w t
     exact ⟨t, htM, htne, hxf.trans hft⟩
-  · -- `¬ x ⊆ e`: the honest witness `t₀` cannot be `e`
-    refine ⟨t₀, ht₀, ?_, hxt₀⟩
+  · refine ⟨t₀, ht₀, ?_, hxt₀⟩
     intro hte
     exact hxe (hte ▸ hxt₀)
 
-/-- Empty-K3 persists past an eligible flip whose deleted diagonal `g₃ ∩ g₄` is avoided by all
-edges of the witness triangle. -/
 lemma hasEmptyK3_removeTet_of_avoids_sharedEdge {M : Chain V} {e g₃ g₄ s : Finset V}
     (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
     (hs3 : s.card = 3)
@@ -540,8 +477,6 @@ lemma hasEmptyK3_removeTet_of_avoids_sharedEdge {M : Chain V} {e g₃ g₄ s : F
         (havoid x hxs hx2))
     hno
 
-/-- Empty-K4 persists past an eligible flip whose deleted diagonal `g₃ ∩ g₄` is avoided by all
-edges of the witness `K4`. -/
 lemma hasEmptyK4_removeTet_of_avoids_sharedEdge {M : Chain V} {e g₃ g₄ s : Finset V}
     (he : EligibleTet M e) (hsh : sharedFaces M e = {g₃, g₄}) (hg : g₃ ≠ g₄)
     (hs4 : s.card = 4)
@@ -555,23 +490,18 @@ lemma hasEmptyK4_removeTet_of_avoids_sharedEdge {M : Chain V} {e g₃ g₄ s : F
         (havoid x hxs hx2))
     hno
 
-/-! ### Side localization of empty configurations (sub-target 4)
+/-! ### Side localization of empty configurations
 
-In the eligible-flip / edge-split step of the minimal-counterexample induction the support `τ`
-of a taboo configuration sits across a separating edge `A ∩ B` (card 2): every tet lies in `A`
-or in `B`, the two sides are "bridged" by tets that cap the seam edge, and we must localize a
-whole empty `K₃`/`K₄` witness to a single side's filter.  The geometric content is:
+In the eligible-flip / edge-split step the support `τ` of a taboo configuration sits across a
+separating edge `A ∩ B` (card 2): every tet lies in `A` or `B`, the two sides are bridged by tets
+capping the seam edge, and a whole empty `K₃`/`K₄` witness must localize to a single side's filter.
 
 * a card-`≥ 2` witness whose every edge is a simplex lies entirely in one side (`witness_subset_side`);
-* once on side `P`, each of its edges transfers to the side filter `τ ↾ {t | t ⊆ P}`, seam edges
-  via the bridging tet (`edge_simplexOf_filter_of_subset`); and
-* `¬ SimplexOf` of the witness is monotone, so it survives the (smaller) side filter. -/
+* once on side `P`, each edge transfers to `τ ↾ {t | t ⊆ P}`, seam edges via the bridging tet
+  (`edge_simplexOf_filter_of_subset`). -/
 
 /-- **A clique witness localizes to one side of a separating edge.** If every tet of `τ` lies in
-`A` or `B`, and every `2`-subset of `s` (card `≥ 2`) is a simplex of `τ`, then `s ⊆ A` or `s ⊆ B`.
-Each vertex of `s` lands in `A ∪ B` (an incident edge, being a simplex, sits in a side tet); a
-vertex outside `A` and one outside `B` would force the edge between them into a side tet, putting
-that vertex on the wrong side. -/
+`A` or `B`, and every `2`-subset of `s` (card `≥ 2`) is a simplex of `τ`, then `s ⊆ A` or `s ⊆ B`. -/
 private lemma witness_subset_side {τ : Finset (Finset V)} {A B s : Finset V}
     (hcover : ∀ t ∈ τ, t ⊆ A ∨ t ⊆ B) (hs2 : 2 ≤ s.card)
     (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf τ x) : s ⊆ A ∨ s ⊆ B := by
@@ -581,7 +511,6 @@ private lemma witness_subset_side {τ : Finset (Finset V)} {A B s : Finset V}
   obtain ⟨hnA, hnB⟩ := hcon
   obtain ⟨a, has, hanA⟩ := Finset.not_subset.mp hnA
   obtain ⟨b, hbs, hbnB⟩ := Finset.not_subset.mp hnB
-  -- every vertex of `s` lands in `A ∪ B`
   have hvAB : ∀ v ∈ s, v ∈ A ∨ v ∈ B := by
     intro v hv
     obtain ⟨w, hws, hwv⟩ :=
@@ -600,11 +529,9 @@ private lemma witness_subset_side {τ : Finset (Finset V)} {A B s : Finset V}
     rcases hcover t htτ with htA | htB
     · exact Or.inl (htA hvt)
     · exact Or.inr (htB hvt)
-  -- so `a ∈ B`, `b ∈ A`, and `a ≠ b`
   have haB : a ∈ B := (hvAB a has).resolve_left hanA
   have hbA : b ∈ A := (hvAB b hbs).resolve_right hbnB
   have hab : a ≠ b := by intro h; exact hanA (h ▸ hbA)
-  -- the edge `{a, b}` lands in a side tet, putting `a` in `A` or `b` in `B`
   have hab2 : ({a, b} : Finset V).card = 2 := Finset.card_pair hab
   have habsub : ({a, b} : Finset V) ⊆ s := by
     intro y hy
@@ -623,9 +550,8 @@ private lemma witness_subset_side {τ : Finset (Finset V)} {A B s : Finset V}
 
 /-- **An edge of a one-sided witness transfers to the side filter.** With `s ⊆ P` and every
 `2`-subset of `s` a simplex of `τ`, every `2`-subset `x` of `s` is a simplex of `τ ↾ {t | t ⊆ P}`.
-A witness tet `t ⊇ x` either already lies in `P` (done), or lies in the other side `Q`; then `x`
-sits in `P ∩ Q`, has the same card `2`, hence equals `P ∩ Q`, so the bridging tet of `P`
-(containing `P ∩ Q`) carries it. -/
+A witness tet on the other side `Q` forces `x = P ∩ Q`, so the bridging tet of `P` (hypothesis
+`hbridge`) carries it. -/
 private lemma edge_simplexOf_filter_of_subset {τ : Finset (Finset V)} {P Q s : Finset V}
     (hcover : ∀ t ∈ τ, t ⊆ P ∨ t ⊆ Q) (hPQ2 : (P ∩ Q).card = 2)
     (hbridge : ∃ t ∈ τ, t ⊆ P ∧ P ∩ Q ⊆ t) (hsP : s ⊆ P)
@@ -638,8 +564,7 @@ private lemma edge_simplexOf_filter_of_subset {τ : Finset (Finset V)} {P Q s : 
   obtain ⟨t, htτ, hxt⟩ := (hsedges x hxs hx2).resolve_left hx0
   rcases hcover t htτ with htP | htQ
   · exact Or.inr ⟨t, Finset.mem_filter.mpr ⟨htτ, htP⟩, hxt⟩
-  · -- `x ⊆ P ∩ Q`, card-matched, so `x = P ∩ Q`; the bridge tet carries it
-    have hxPQ : x ⊆ P ∩ Q := Finset.subset_inter (hxs.trans hsP) (hxt.trans htQ)
+  · have hxPQ : x ⊆ P ∩ Q := Finset.subset_inter (hxs.trans hsP) (hxt.trans htQ)
     have hxeq : x = P ∩ Q :=
       Finset.eq_of_subset_of_card_le hxPQ (by rw [hPQ2, hx2])
     obtain ⟨t', ht'τ, ht'P, ht'PQ⟩ := hbridge
@@ -710,9 +635,7 @@ def IsOctahedronSphere (σ : Finset (Finset V)) : Prop :=
     ∀ v ∈ vertsOf σ, (linkVerts σ v).card = 4
 
 /-- **At most two members of a `sharedFaces`-disjoint eligible family hit a given pair of faces.**
-Since the families' shared-face sets are pairwise disjoint, each face `p` (resp. `q`) lies in the
-`sharedFaces` of at most one member; so at most two members hit `{p,q}`.  (This is the config-2
-counting input: `≤ 2` eligible tets can carry a forbidden interior face `ABC`/`BCD`.) -/
+The config-2 counting input: `≤ 2` eligible tets can carry a forbidden interior face `ABC`/`BCD`. -/
 lemma disjoint_eligible_family_hit_two_faces_card_le_two
     {M : Chain V} {E : Finset (Finset V)} {p q : Finset V}
     (hpair : (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e))
@@ -744,19 +667,13 @@ lemma disjoint_eligible_family_hit_two_faces_card_le_two
 /-! ## Octahedron Euler bridge -/
 
 /-- **The faces at `v` biject with the link vertices.**  For a `2`-sphere `σ`, the number
-of faces containing a vertex `v` equals the number of vertices of its link.  (For a closed
-surface each link is a cycle, so faces-at-`v` = link-vertices = link-edges; this is the
-counting form.)  Proved by double-counting the incidence between faces at `v` and link
-vertices: each face at `v` meets the link in exactly `2` vertices (its two non-`v`
-corners), and each link vertex `x` lies on exactly `2` faces at `v` (the edge `{v,x}` is
-in exactly two faces, by closedness). -/
+of faces containing a vertex `v` equals the number of vertices of its link. -/
 lemma incident_faces_card_eq_linkVerts_card {σ : Finset (Finset V)} (hσ : IsSphere2 σ)
     {v : V} (_hv : v ∈ vertsOf σ) :
     (σ.filter (fun f => v ∈ f)).card = (linkVerts σ v).card := by
   classical
   set A := σ.filter (fun f => v ∈ f) with hA
   set B := linkVerts σ v with hB
-  -- Claim1: each face at `v` meets the link in exactly two vertices.
   have claim1 : ∀ f ∈ A, (B.filter (fun x => x ∈ f)).card = 2 := by
     intro f hf
     have hfσ : f ∈ σ := (Finset.mem_filter.mp hf).1
@@ -770,7 +687,6 @@ lemma incident_faces_card_eq_linkVerts_card {σ : Finset (Finset V)} (hσ : IsSp
       · rintro ⟨hxv, hxf⟩
         exact ⟨mem_linkVerts.mpr ⟨hxv, f, hfσ, hvf, hxf⟩, hxf⟩
     rw [hset, Finset.card_erase_of_mem hvf, hσ.pure f hfσ]
-  -- Claim2: each link vertex lies on exactly two faces at `v`.
   have claim2 : ∀ x ∈ B, (A.filter (fun f => x ∈ f)).card = 2 := by
     intro x hx
     have hxv : x ≠ v := (mem_linkVerts.mp hx).1
@@ -789,7 +705,6 @@ lemma incident_faces_card_eq_linkVerts_card {σ : Finset (Finset V)} (hσ : IsSp
     have hdeg := hσ.closed {v, x} hedge
     rw [edgeDeg] at hdeg
     rw [hset, hdeg]
-  -- Double count: swap the order of summation.
   have hswap : ∑ f ∈ A, (B.filter (fun x => x ∈ f)).card
       = ∑ x ∈ B, (A.filter (fun f => x ∈ f)).card := by
     calc ∑ f ∈ A, (B.filter (fun x => x ∈ f)).card
@@ -803,9 +718,8 @@ lemma incident_faces_card_eq_linkVerts_card {σ : Finset (Finset V)} (hσ : IsSp
   have h2 : 2 * A.card = 2 * B.card := by rw [← hleft, hswap, hright]
   omega
 
-/-- **Vertex–face incidence double count: `∑_v (#faces at v) = 3f`.**  Summing the number
-of faces containing each vertex equals `3` times the face count, since every face is a
-triangle (`hσ.pure`) and so is counted once for each of its three vertices. -/
+/-- **Vertex–face incidence double count: `∑_v (#faces at v) = 3f`** (every face is a
+triangle, `hσ.pure`). -/
 lemma sum_incident_faces_eq_three_mul_card {σ : Finset (Finset V)} (hσ : IsSphere2 σ) :
     ∑ v ∈ vertsOf σ, (σ.filter (fun f => v ∈ f)).card = 3 * σ.card := by
   classical
@@ -869,7 +783,6 @@ theorem exists_boundary_vertex_deg_ge_five_of_not_octahedron {M : Chain V} {σ :
     ∃ v ∈ vertsOf σ, 5 ≤ deg v (bdry M) := by
   by_contra hcon
   push_neg at hcon
-  -- every link size is exactly 4
   have hall4 : ∀ v ∈ vertsOf σ, (linkVerts σ v).card = 4 := by
     intro v hv
     have hdeg : deg v (bdry M) = (linkVerts σ v).card := by
@@ -905,10 +818,8 @@ theorem aleph_five_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V
 
 open Classical in
 /-- For a family `E` of eligible tets with **pairwise disjoint** shared-face sets, at
-most one of them can have its flip-edge `g₃ ∩ g₄` equal to a fixed edge `ab`.  Each such
-tet contributes the *two* distinct faces `g₃, g₄ ⊇ ab` to `σ`, and the disjointness of
-shared-face sets makes all those faces distinct across tets; if two tets shared the same
-`ab`, the edge `ab` would lie in ≥ 4 faces of `σ`, contradicting `edgeDeg σ ab = 2`. -/
+most one of them can have its flip-edge `g₃ ∩ g₄` equal to a fixed edge `ab`: two such tets
+would put `ab` in ≥ 4 faces of `σ`, contradicting `edgeDeg σ ab = 2`. -/
 lemma disjoint_eligible_family_flipEdge_card_le_one
     {M : Chain V} {σ E : Finset (Finset V)} {ab : Finset V}
     (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
@@ -919,30 +830,24 @@ lemma disjoint_eligible_family_flipEdge_card_le_one
   rw [Finset.card_le_one]
   intro e₁ he₁ e₂ he₂
   by_contra hne
-  -- Unpack the two filter memberships.
   rw [Finset.mem_filter] at he₁ he₂
   obtain ⟨he₁E, g₃, g₄, hsh₁, hne₁, hab₁⟩ := he₁
   obtain ⟨he₂E, h₃, h₄, hsh₂, hne₂, hab₂⟩ := he₂
-  -- Each face is a shared face of its tet.
   have hg₃sh : g₃ ∈ sharedFaces M e₁ := by rw [hsh₁]; exact Finset.mem_insert_self _ _
   have hg₄sh : g₄ ∈ sharedFaces M e₁ := by
     rw [hsh₁]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self _)
   have hh₃sh : h₃ ∈ sharedFaces M e₂ := by rw [hsh₂]; exact Finset.mem_insert_self _ _
   have hh₄sh : h₄ ∈ sharedFaces M e₂ := by
     rw [hsh₂]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self _)
-  -- Each shared face is a tet face of its tet.
   have hg₃tet : g₃ ∈ tetFaces e₁ := sharedFaces_subset_tetFaces M e₁ hg₃sh
   have hg₄tet : g₄ ∈ tetFaces e₁ := sharedFaces_subset_tetFaces M e₁ hg₄sh
-  -- `ab.card = 2` from the tet-pair intersection formula.
   have he₁card : e₁.card = 4 := (helig e₁ he₁E).1
   have habcard : ab.card = 2 := by
     rw [hab₁]; exact tetFaces_pair_inter_card_eq_two he₁card hg₃tet hg₄tet hne₁
-  -- `ab` sits inside all four faces.
   have hab_g₃ : ab ⊆ g₃ := hab₁ ▸ Finset.inter_subset_left
   have hab_g₄ : ab ⊆ g₄ := hab₁ ▸ Finset.inter_subset_right
   have hab_h₃ : ab ⊆ h₃ := hab₂ ▸ Finset.inter_subset_left
   have hab_h₄ : ab ⊆ h₄ := hab₂ ▸ Finset.inter_subset_right
-  -- Each shared face is in σ (via `bdry M`'s support = σ).
   have hmemσ : ∀ {g : Finset V}, g ∈ sharedFaces M e₁ ∨ g ∈ sharedFaces M e₂ → g ∈ σ := by
     intro g hg
     rcases hg with hg | hg
@@ -952,19 +857,15 @@ lemma disjoint_eligible_family_flipEdge_card_le_one
   have hg₄σ : g₄ ∈ σ := hmemσ (Or.inl hg₄sh)
   have hh₃σ : h₃ ∈ σ := hmemσ (Or.inr hh₃sh)
   have hh₄σ : h₄ ∈ σ := hmemσ (Or.inr hh₄sh)
-  -- The shared-face sets of `e₁, e₂` are disjoint.
   have hdisj : Disjoint (sharedFaces M e₁) (sharedFaces M e₂) :=
     hpair (Finset.mem_coe.mpr he₁E) (Finset.mem_coe.mpr he₂E) hne
   rw [Finset.disjoint_left] at hdisj
-  -- Cross-distinctness between the two pairs.
   have hg₃h₃ : g₃ ≠ h₃ := fun h => hdisj hg₃sh (h ▸ hh₃sh)
   have hg₃h₄ : g₃ ≠ h₄ := fun h => hdisj hg₃sh (h ▸ hh₄sh)
   have hg₄h₃ : g₄ ≠ h₃ := fun h => hdisj hg₄sh (h ▸ hh₃sh)
   have hg₄h₄ : g₄ ≠ h₄ := fun h => hdisj hg₄sh (h ▸ hh₄sh)
-  -- `ab ∈ edgesOf σ`, hence `edgeDeg σ ab = 2`.
   have habedge : ab ∈ edgesOf σ := mem_edgesOf.mpr ⟨g₃, hg₃σ, hab_g₃, habcard⟩
   have habdeg : (σ.filter (fun f => ab ⊆ f)).card = 2 := hσ.closed ab habedge
-  -- The four faces form a 4-element subset of the filter; contradiction with card 2.
   have hsub : ({g₃, g₄, h₃, h₄} : Finset (Finset V)) ⊆ σ.filter (fun f => ab ⊆ f) := by
     intro f hf
     rw [Finset.mem_filter]
@@ -1001,11 +902,9 @@ theorem exists_good_flip_emptyK3
       (∀ x, x ⊆ s → x.card = 2 → x ≠ g₃ ∩ g₄) := by
   obtain ⟨E, hEcard, hElig, hEpair⟩ :=
     aleph_four_disjoint_eligible_family hσ hU hS hT hPure hNo3
-  -- The bad tets: those whose flip edge is a 2-subset of `s`.
   set badE := E.filter (fun e =>
     ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ g₃ ∩ g₄ ∈ s.powersetCard 2)
     with hbadE
-  -- `badE ⊆ ⋃_{ab ∈ powersetCard 2 s} (E.filter "flip edge = ab")`.
   have hbadsub : badE ⊆ (s.powersetCard 2).biUnion (fun ab =>
       E.filter (fun e => ∃ g₃ g₄, sharedFaces M e = {g₃, g₄} ∧ g₃ ≠ g₄ ∧ ab = g₃ ∩ g₄)) := by
     intro e he
@@ -1013,7 +912,6 @@ theorem exists_good_flip_emptyK3
     obtain ⟨heE, g₃, g₄, hsh, hne, hmem⟩ := he
     rw [Finset.mem_biUnion]
     exact ⟨g₃ ∩ g₄, hmem, Finset.mem_filter.mpr ⟨heE, g₃, g₄, hsh, hne, rfl⟩⟩
-  -- Hence `badE.card ≤ 3`.
   have hbadcard : badE.card ≤ 3 := by
     calc badE.card
         ≤ ((s.powersetCard 2).biUnion (fun ab =>
@@ -1027,7 +925,6 @@ theorem exists_good_flip_emptyK3
             disjoint_eligible_family_flipEdge_card_le_one hσ hU hElig hEpair)
       _ = (s.powersetCard 2).card := by rw [Finset.sum_const, smul_eq_mul, mul_one]
       _ = 3 := by rw [Finset.card_powersetCard, hs3]; decide
-  -- Some eligible tet escapes `badE`.
   have hbadsubE : badE ⊆ E := by rw [hbadE]; exact Finset.filter_subset _ _
   have hne : (E \ badE).Nonempty := by
     rw [← Finset.card_pos, Finset.card_sdiff_of_subset hbadsubE, hEcard]
@@ -1035,11 +932,9 @@ theorem exists_good_flip_emptyK3
   obtain ⟨e, he⟩ := hne
   rw [Finset.mem_sdiff] at he
   obtain ⟨heE, hebad⟩ := he
-  -- `e` is eligible with exactly two shared faces.
   have helig : EligibleTet M e := hElig e heE
   have hshcard : (sharedFaces M e).card = 2 := helig.2.2.1
   obtain ⟨g₃, g₄, hg, hsh⟩ := Finset.card_eq_two.mp hshcard
-  -- The flip edge avoids every edge of `s`.
   refine ⟨e, g₃, g₄, helig, hsh, hg, ?_⟩
   intro x hxs hxcard hxeq
   apply hebad
@@ -1059,23 +954,20 @@ lemma emptyK4_face_simplex_of_no_emptyK3 {τ : Finset (Finset V)} {s f : Finset 
   by_contra hns
   exact hNoK3 ⟨f, hf3, fun x hxf hx2 => hsedges x (hxf.trans hf) hx2, hns⟩
 
-/-! ### Theorem 4 config-2 (K₄) corrected persistence route
+/-! ### Theorem 4 config-2 (K₄) persistence route
 
-Under `¬ HasEmptyK3`, removing ANY eligible tet `e` preserves an empty `K₄`.  The insight: a
-`K₄` edge `x ⊆ e` that is the deleted diagonal still survives, because some `K₄` FACE through it
-is a simplex (`emptyK4_face_simplex_of_no_emptyK3`) living in a tet `≠ e` (the face is `¬ ⊆ e`,
-since `s ⊄ e`).  No counting / octahedron / 5-family is needed — only the diagonal edge needs the
-face argument; every other edge already has a witness `≠ e` from
+Under `¬ HasEmptyK3`, removing ANY eligible tet `e` preserves an empty `K₄`.  A `K₄` edge `x ⊆ e`
+that is the deleted diagonal still survives, because some `K₄` face through it is a simplex
+(`emptyK4_face_simplex_of_no_emptyK3`) living in a tet `≠ e`.  No counting / octahedron / 5-family
+is needed; every other edge already has a witness `≠ e` from
 `edge_witness_ne_removed_of_not_sharedEdge`. -/
 
-/-- **A `K₄` face through an edge `x ⊆ e` that escapes `e`.**  Since `s ⊄ e` (else `s` is a
-simplex), some `v ∈ s \ e`; then `f := insert v x` is a card-`3` subset of `s` containing `x`
-with `f ⊄ e` (as `v ∈ f`, `v ∉ e`). -/
+/-- **A `K₄` face through an edge `x ⊆ e` that escapes `e`.**  `s ⊄ e` (else `s` is a simplex),
+so `insert v x` for `v ∈ s \ e` is a card-`3` subset of `s` containing `x` with `f ⊄ e`. -/
 lemma exists_k4_face_through_edge_not_subset_tet {τ : Finset (Finset V)} {e s x : Finset V}
     (hs4 : s.card = 4) (hno : ¬ SimplexOf τ s) (he : e ∈ τ)
     (hx : x ⊆ s) (hx2 : x.card = 2) (hxe : x ⊆ e) :
     ∃ f, f ⊆ s ∧ f.card = 3 ∧ x ⊆ f ∧ ¬ f ⊆ e := by
-  -- `s ⊄ e`, else `s` is a simplex via `e`
   have hse : ¬ s ⊆ e := fun hse => hno (Or.inr ⟨e, he, hse⟩)
   have hne : (s \ e).Nonempty := Finset.sdiff_nonempty.mpr hse
   obtain ⟨v, hv⟩ := hne
@@ -1087,9 +979,8 @@ lemma exists_k4_face_through_edge_not_subset_tet {τ : Finset (Finset V)} {e s x
   · intro hfe
     exact hve (hfe (Finset.mem_insert_self v x))
 
-/-- **A `K₄` edge `x ⊆ e` keeps a witness `≠ e` (no empty `K₃` case).**  Take a `K₄` face `f`
-through `x` escaping `e`; under `¬ HasEmptyK3` it is a simplex of `M.support`, so `f ⊆ t` for some
-tet `t`.  Then `t ≠ e` (else `f ⊆ e`) and `x ⊆ f ⊆ t`. -/
+/-- **A `K₄` edge `x ⊆ e` keeps a witness `≠ e` (no empty `K₃` case).**  Under `¬ HasEmptyK3` a
+`K₄` face through `x` escaping `e` is a simplex, supplying a tet `t ≠ e` with `x ⊆ t`. -/
 lemma k4_edge_has_witness_ne_removed_of_no_emptyK3 {M : Chain V} {e s x : Finset V}
     (hNoK3 : ¬ HasEmptyK3 M.support) (hs4 : s.card = 4)
     (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
@@ -1118,17 +1009,14 @@ lemma emptyK4_edge_witness_ne_removed_of_eligible {M : Chain V} {e s : Finset V}
   intro x hxs hx2
   have hxsimp : SimplexOf M.support x := hsedges x hxs hx2
   by_cases hxflip : x = g₃ ∩ g₄
-  · -- `x` is the flip edge: it lies `⊆ e`, so use the `K₄`-face route
-    have hg₃sh : g₃ ∈ sharedFaces M e := by rw [hsh]; exact Finset.mem_insert_self _ _
+  · have hg₃sh : g₃ ∈ sharedFaces M e := by rw [hsh]; exact Finset.mem_insert_self _ _
     have hg₃e : g₃ ⊆ e :=
       (Finset.mem_powersetCard.mp (sharedFaces_subset_tetFaces M e hg₃sh)).1
     have hxe : x ⊆ e := hxflip ▸ Finset.inter_subset_left.trans hg₃e
     exact k4_edge_has_witness_ne_removed_of_no_emptyK3 hNoK3 hs4 hsedges hno he.2.1 hxs hx2 hxe
   · exact edge_witness_ne_removed_of_not_sharedEdge he hsh hg hxsimp hx2 hxflip
 
-/-- **Empty-`K₄` persists past removing ANY eligible tet, under `¬ HasEmptyK3`.**  Assembles the
-edge-witness lemma into `removeTet`-persistence; the witness card-`4` `s` survives because each of
-its edges keeps a witness tet `≠ e`. -/
+/-- **Empty-`K₄` persists past removing ANY eligible tet, under `¬ HasEmptyK3`.** -/
 lemma hasEmptyK4_removeTet_of_eligible {M : Chain V} {e s : Finset V}
     (hNoK3 : ¬ HasEmptyK3 M.support) (hs4 : s.card = 4)
     (hsedges : ∀ x, x ⊆ s → x.card = 2 → SimplexOf M.support x)
@@ -1141,15 +1029,12 @@ lemma hasEmptyK4_removeTet_of_eligible {M : Chain V} {e s : Finset V}
 
 The minimal-counterexample induction `no_emptyK3K4_of_taut` removes either a degree-3
 star tet `T = insert v γ` (`v` of degree 3, `γ` its link triangle) or an eligible flip.
-This section supplies the SELF-CONTAINED pieces: the base case (support is a single
-tet, so no empty `K₃`/`K₄`), the boundary-facet lemma, and the degree-3 star transfer
-(an empty configuration in the larger complex `insert T τ` already lives in `τ`, because
-its witness avoids `v` — the only new vertex of `T`). -/
+The degree-3 star transfer relies on: an empty configuration in the larger complex
+`insert T τ` already lives in `τ`, because its witness avoids `v` — the only new vertex of `T`. -/
 
 /-- **Base case of the nrm-induction.** For a minimal sphere (`≤ 4` vertices) the taut
-filling's support is a single tet `T = vertsOf σ` (card 4); any witness of an empty
-`K₃`/`K₄` has all its vertices in `T` (each lies in a witness edge, a simplex of `{T}`,
-hence `⊆ T`), so the witness is itself `⊆ T = a simplex`, contradicting `¬ SimplexOf`. -/
+filling's support is the single tet `T = vertsOf σ`, so any empty-`K₃`/`K₄` witness is `⊆ T`,
+hence a simplex, contradicting `¬ SimplexOf`. -/
 lemma base_no_emptyK3K4 {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
     (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M)
     (hv : (vertsOf σ).card ≤ 4) :
@@ -1162,11 +1047,9 @@ lemma base_no_emptyK3K4 {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere
   have hne : M.support.Nonempty := aleph_base_support_nonempty hσ hU hMX
   have hsupp1 : M.support = {T} :=
     aleph_base_support_eq_singleton_of_four_vertices hVc hsuppInfo hne
-  -- helper: a witness of card ≥ 2 whose edges are simplices is itself a simplex
   have helper : ∀ s : Finset V, 2 ≤ s.card →
       (∀ e, e ⊆ s → e.card = 2 → SimplexOf M.support e) → SimplexOf M.support s := by
     intro s hs2 hedges
-    -- every vertex of `s` lies in `T`
     have hsubT : s ⊆ T := by
       intro v hv
       obtain ⟨w, hws, hwv⟩ :=
@@ -1191,13 +1074,11 @@ lemma base_no_emptyK3K4 {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere
   · rintro ⟨s, hcard, hedges, hno⟩
     exact hno (helper s (by omega) hedges)
 
-/-- **A boundary face is a facet of some tet.** If `bdry R γ = ±1`, the boundary sum
-`∑_{t} R t · bdryGen t γ` has a nonzero term, so some tet `t` of `R.support` has
-`bdryGen t γ ≠ 0`, hence `γ = t.erase w ⊆ t`. -/
+/-- **A boundary face is a facet of some tet.** If `bdry R γ = ±1`, some tet `t` of `R.support`
+has `γ ⊆ t`. -/
 lemma exists_tet_of_boundary_face_nonzero {R : Chain V} {γ : Finset V}
     (hγ : bdry R γ = 1 ∨ bdry R γ = -1) : ∃ t ∈ R.support, γ ⊆ t := by
   classical
-  -- some term of the boundary sum is nonzero (else the sum is 0 ≠ ±1)
   have hsum : bdry R γ = ∑ t ∈ R.support, R t * bdryGen t γ := bdry_apply_eq_sum R γ
   have hne0 : bdry R γ ≠ 0 := by rcases hγ with h | h <;> rw [h] <;> decide
   have hsumne : (∑ t ∈ R.support, R t * bdryGen t γ) ≠ 0 := by rw [← hsum]; exact hne0
@@ -1207,22 +1088,18 @@ lemma exists_tet_of_boundary_face_nonzero {R : Chain V} {γ : Finset V}
   exact ⟨t, ht, hγt ▸ Finset.erase_subset w t⟩
 
 /-- **Degree-3 star transfer for empty `K₃`.** Removing the star tet `T = insert v γ`
-(with `v ∉ γ`, `v` absent from every tet of the remainder `τ`, and `γ` bridged by some
-tet of `τ`) preserves an empty `K₃`: a witness in `insert T τ` cannot contain the new
-vertex `v` (else it would lie in `T`, a simplex), so each of its edges avoids `v` and,
-where it meets `T = insert v γ`, lands in `γ`, hence in the bridging tet of `τ`. -/
+(`hRnoV`: `v` absent from every tet of the remainder `τ`; `hγbridge`: `γ` bridged by some tet
+of `τ`) preserves an empty `K₃`: a witness in `insert T τ` cannot contain `v` (else it would lie
+in `T`, a simplex), so each edge avoids `v` and, where it meets `T`, lands in `γ`. -/
 lemma hasEmptyK3_insert_star_to_remainder {τ : Finset (Finset V)} {T γ : Finset V} {v : V}
     (hT : T = insert v γ) (hRnoV : ∀ t ∈ τ, v ∉ t)
     (hγbridge : ∃ t ∈ τ, γ ⊆ t) :
     HasEmptyK3 (insert T τ) → HasEmptyK3 τ := by
   classical
   rintro ⟨s, hs3, hsedges, hsno⟩
-  -- `¬ SimplexOf τ s` is the contrapositive of `¬ SimplexOf (insert T τ) s`
   have hsno' : ¬ SimplexOf τ s := fun h => hsno (h.mono (Finset.subset_insert T τ))
-  -- the witness `s` cannot contain `v`
   have hvs : v ∉ s := by
     intro hvs
-    -- every other vertex of `s` lies in `γ`, so `s ⊆ insert v γ = T`
     have hsubT : s ⊆ T := by
       intro u hu
       by_cases huv : u = v
@@ -1240,7 +1117,6 @@ lemma hasEmptyK3_insert_star_to_remainder {τ : Finset (Finset V)} {T γ : Finse
         obtain ⟨t, htmem, hvut⟩ := hsimp.resolve_left hvu0
         have hvt : v ∈ t := hvut (Finset.mem_insert_self v {u})
         have hut : u ∈ t := hvut (Finset.mem_insert_of_mem (Finset.mem_singleton_self u))
-        -- `v ∈ t` and `hRnoV` force `t = T`
         have htT : t = T := by
           rcases Finset.mem_insert.mp htmem with h | h
           · exact h
@@ -1250,7 +1126,6 @@ lemma hasEmptyK3_insert_star_to_remainder {τ : Finset (Finset V)} {T γ : Finse
         · exact absurd h huv
         · rw [hT]; exact Finset.mem_insert_of_mem h
     exact hsno (Or.inr ⟨T, Finset.mem_insert_self T τ, hsubT⟩)
-  -- transfer the edge condition to `τ`
   have hsedges' : ∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e := by
     intro e hes he2
     have hsimp : SimplexOf (insert T τ) e := hsedges e hes he2
@@ -1258,8 +1133,7 @@ lemma hasEmptyK3_insert_star_to_remainder {τ : Finset (Finset V)} {T γ : Finse
       intro h; rw [h, Finset.card_empty] at he2; exact absurd he2 (by decide)
     obtain ⟨t, htmem, het⟩ := hsimp.resolve_left he0
     rcases Finset.mem_insert.mp htmem with htT | htτ
-    · -- `e ⊆ T = insert v γ`, and `v ∉ e` (since `e ⊆ s`, `v ∉ s`), so `e ⊆ γ`
-      have hve : v ∉ e := fun h => hvs (hes h)
+    · have hve : v ∉ e := fun h => hvs (hes h)
       have heγ : e ⊆ γ := by
         intro x hx
         have hxT : x ∈ insert v γ := hT ▸ htT ▸ het hx
@@ -1353,12 +1227,10 @@ lemma deg3_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere
       hUL hXLc hUR hXRc hXsum hMX hT
   have hsplit := degree3_cut_star_side_glue σ hσ hbig hv hγ3 hW
   have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
-  -- γ lies in both candidate remainder spheres
   have hγL : γ ∈ insert γ (cutSet σ W) := Finset.mem_insert_self _ _
   have hγR : γ ∈ insert γ (cutSet σ (W + fun _ => 1)) := Finset.mem_insert_self _ _
   rcases hsplit with hcase | hcase
-  · -- left side is the star; remainder is MR (the ¬⊆A side, sphere σR)
-    rcases hcase with ⟨hstar, _hglue⟩
+  · rcases hcase with ⟨hstar, _hglue⟩
     have hULtet : UnitOn (cappedCutLeft σ W X γ c) (tetFaces (starTet σ v)) := by
       dsimp [γ]; rw [← hstar]; exact hUL
     have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet σ v := by
@@ -1414,8 +1286,7 @@ lemma deg3_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere
     have hstar_eq : starTet σ v = insert v γ := rfl
     exact ⟨fun h3 => hIH3 (hasEmptyK3_insert_star_to_remainder hstar_eq hvNotMR ⟨tγ, htγ, hγtγ⟩ (hsupport ▸ h3)),
            fun h4 => hIH4 (hasEmptyK4_insert_star_to_remainder hstar_eq hvNotMR ⟨tγ, htγ, hγtγ⟩ (hsupport ▸ h4))⟩
-  · -- right side is the star; remainder is ML (the ⊆A side, sphere σL)
-    rcases hcase with ⟨hstar, _hglue⟩
+  · rcases hcase with ⟨hstar, _hglue⟩
     have hURtet : UnitOn (cappedCutRight σ W X γ c) (tetFaces (starTet σ v)) := by
       dsimp [γ]; rw [← hstar]; exact hUR
     have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet σ v := by
@@ -1504,8 +1375,7 @@ lemma side_edge_bridges_of_flip_present {σ : Finset (Finset V)} {M : Chain V} {
     (∃ t ∈ (removeTet M e).support, t ⊆ B ∧ A ∩ B ⊆ t) := by
   classical
   refine ⟨?_, ?_⟩
-  · -- side A, via f₃
-    have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ {f₄}
+  · have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ {f₄}
     have hf₃flip : f₃ ∈ flipBoundary σ M e := Finset.subset_union_right hf₃exp
     have hf₃σ₁ : f₃ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) :=
       Finset.mem_filter.mpr ⟨hf₃flip, hf₃A⟩
@@ -1516,8 +1386,7 @@ lemma side_edge_bridges_of_flip_present {σ : Finset (Finset V)} {M : Chain V} {
     refine ⟨t, ht.1, ht.2, ?_⟩
     rw [hAB]
     exact Finset.inter_subset_left.trans hf₃t
-  · -- side B, via f₄
-    have hf₄exp : f₄ ∈ exposedFaces M e := by
+  · have hf₄exp : f₄ ∈ exposedFaces M e := by
       rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
     have hf₄flip : f₄ ∈ flipBoundary σ M e := Finset.subset_union_right hf₄exp
     have hf₄σ₁ : f₄ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ B) :=

@@ -28,8 +28,7 @@ open Finset
 variable {V : Type*} [LinearOrder V]
 
 /-- **base_isPM** (PM base case, ≤ 4 vertices): a taut filling of a 2-sphere on
-≤ 4 vertices is a single tetrahedron, hence a pseudomanifold. Mirrors `base_free`,
-but ends in `isPseudomanifold_singleton` instead of `freelyShellable_singleton`. -/
+≤ 4 vertices is a single tetrahedron, hence a pseudomanifold. -/
 lemma base_isPM (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
     (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
     (hv : (vertsOf σ).card ≤ 4) : IsPseudomanifold M.support := by
@@ -95,10 +94,7 @@ star tetrahedron and the other capped side is a freely shellable remainder, the
 remainder has an anchor tetrahedron `t₀` adjacent to the star through the capped
 interface face `γ`. The remaining tetrahedra avoid both `γ` and the exposed star
 faces `K`, and erasing the cap from the capped side while restoring `K` recovers
-the original sphere.
-
-This is intentionally packaged as a single Prop-shaped geometry target for
-AlephProver; `deg3_step_free` uses it for both symmetric cut branches. -/
+the original sphere. -/
 lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
     (M : Chain V) (sideVerts : Finset V) (useInside : Bool)
     (v : V) (W : C2 sigma) (γ : Finset V)
@@ -125,22 +121,16 @@ lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
       (∀ t ∈ MR.support, t ≠ t₀ → Disjoint (tetFaces t) (insert γ K)) ∧
       sigma = sigmaR.erase γ ∪ K := by
   classical
-  -- Abbreviations.
   set T := starTet sigma v with hT
-  -- 1. The remainder support is pure (all tets are card 4).
   have hPureR : ∀ t ∈ MR.support, t.card = 4 := fun t ht =>
     (aleph_base_taut_support_card4_subset_verts hσR hUR rfl hTautR t ht).1
-  -- 2. γ ∈ σR.
   have hγσR : γ ∈ sigmaR := by
     rcases hsigmaR_cut with h | h <;> rw [h] <;> exact Finset.mem_insert_self _ _
-  -- 3. γ has card 3.
   have hγ3' : γ.card = 3 := by rw [hγ]; exact hγ3
-  -- 4. γ is a unit boundary face of MR.
   have hbd : bdry MR γ = 1 ∨ bdry MR γ = -1 := hUR.2 γ hγσR
-  -- 5. faceCount = 1 (PM + pure + unit boundary ⟹ exactly one tet at γ).
+  -- faceCount = 1: PM + pure + unit boundary ⟹ exactly one tet at γ.
   have hfc1 : faceCount MR.support γ = 1 :=
     faceCount_eq_one_of_boundary hSimpR hPureR hPMR hγ3' hbd
-  -- 6. Extract the unique tet t₀ at γ.
   have hfilt : (MR.support.filter (fun t => γ ⊆ t)).card = 1 := hfc1
   obtain ⟨t₀, ht₀set⟩ := Finset.card_eq_one.mp hfilt
   have ht₀mem : t₀ ∈ MR.support := by
@@ -157,12 +147,10 @@ lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
       Finset.mem_filter.mpr ⟨htmem, hγt⟩
     rw [ht₀set] at this
     exact Finset.mem_singleton.mp this
-  -- 7. Cardinalities.
   have ht₀card : t₀.card = 4 := hPureR t₀ ht₀mem
   have hstarcard : T.card = 4 := by rw [hT]; exact starTet_card_of_degree3 sigma hγ3
-  -- The star tet is `insert v γ`.
   have hTeq : T = insert v γ := by rw [hT, starTet, hγ]
-  -- v ∉ γ (it is the apex erased in linkVerts).
+  -- v ∉ γ: the apex is erased in linkVerts.
   have hvγ : v ∉ γ := by rw [hγ]; simp [linkVerts]
   -- γ ∉ σ (a degree-3 link triangle is not itself a face).
   have hγnotσ : γ ∉ sigma := by
@@ -173,7 +161,6 @@ lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
     intro s f; rw [tetFaces, Finset.mem_powersetCard]
   have hγstar : γ ∈ tetFaces T := hmemTet.mpr ⟨by rw [hTeq]; exact Finset.subset_insert _ _, hγ3'⟩
   have hγt₀face : γ ∈ tetFaces t₀ := hmemTet.mpr ⟨hγt₀, hγ3'⟩
-  -- 8. The exposed star faces carried over.
   set K := tetFaces T \ tetFaces t₀ with hK
   -- **hinter**: the two tets share exactly the face γ.
   have hinter : tetFaces t₀ ∩ tetFaces T = {γ} := by
@@ -184,7 +171,6 @@ lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
     obtain ⟨hft₀, hfstar⟩ := hf
     obtain ⟨hfsubt₀, hfc3⟩ := hmemTet.mp hft₀
     obtain ⟨hfsubstar, _⟩ := hmemTet.mp hfstar
-    -- f ⊆ insert v γ.
     rw [hTeq] at hfsubstar
     by_cases hvf : v ∈ f
     · -- v ∈ f ⟹ v ∈ t₀, contradicting hvNotMR.
@@ -196,7 +182,7 @@ lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
         · exact absurd hx hvf
         · exact hxγ
       exact Finset.eq_of_subset_of_card_le hfsubγ (by rw [hγ3', hfc3])
-  -- `tetFaces t₀ \ tetFaces T = (tetFaces t₀).erase γ` (γ is the unique common face).
+  -- γ is the unique common face of t₀ and T.
   have hsdiff_t₀ : tetFaces t₀ \ tetFaces T = (tetFaces t₀).erase γ := by
     ext f
     simp only [Finset.mem_sdiff, Finset.mem_erase]
@@ -211,17 +197,14 @@ lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
       rw [hinter] at this
       exact hfne (Finset.mem_singleton.mp this)
   refine ⟨t₀, K, ht₀mem, ?glue, ?disj, ?recon⟩
-  · -- **glue**: GlueStep t₀ (tetFaces T) ((tetFaces t₀).erase γ ∪ K).
-    refine ⟨ht₀card, ?_, ?_⟩
-    · -- shared: exactly one common face.
-      left
+  · refine ⟨ht₀card, ?_, ?_⟩
+    · left
       have : tetFaces t₀ ∩ tetFaces T = {γ} := hinter
       rw [this]; exact Finset.card_singleton _
     · -- newBdry: B' = (B \ tetFaces t₀) ∪ (tetFaces t₀ \ B), B = tetFaces T.
       -- LHS is (tetFaces t₀).erase γ ∪ K; RHS is K ∪ (tetFaces t₀).erase γ.
       rw [hK, hsdiff_t₀, Finset.union_comm]
-  · -- **disj**: every other remainder tet avoids both γ and K.
-    intro t htmem htne
+  · intro t htmem htne
     rw [Finset.disjoint_left]
     intro f hft hfins
     rcases Finset.mem_insert.mp hfins with hfγ | hfK
@@ -247,10 +230,9 @@ lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
         have hfeqγ : f = γ := Finset.eq_of_subset_of_card_le hfsubγ (by rw [hγ3', hfc3])
         rw [hfeqγ] at hfnt₀
         exact hfnt₀ hγt₀face
-  · -- **recon**: sigma = sigmaR.erase γ ∪ K.
-    -- Determine which cut side is the star, then which is σR (the non-star side).
+  · -- Determine which cut side is the star, then which is σR (the non-star side).
     have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
-    -- γ ∉ both cut sides (γ is a non-face of σ).
+    -- γ ∉ both cut sides: γ is a non-face of σ.
     have hγnotL : γ ∉ cutSet sigma W := fun hc => hγnotσ (cutSet_subset hc)
     have hγnotR : γ ∉ cutSet sigma (W + fun _ => 1) := fun hc => hγnotσ (cutSet_subset hc)
     -- K = (tetFaces T).erase γ (γ is the unique common face of T and t₀).
@@ -268,7 +250,6 @@ lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
         have : f ∈ tetFaces t₀ ∩ tetFaces T := Finset.mem_inter.mpr ⟨hft₀, hfstar⟩
         rw [hinter] at this
         exact hfne (Finset.mem_singleton.mp this)
-    -- Support tets lie in the vertices of σR.
     have hsuppV : ∀ t ∈ MR.support, t ⊆ vertsOf sigmaR := fun t ht =>
       (aleph_base_taut_support_card4_subset_verts hσR hUR rfl hTautR t ht).2
     -- σR is not the star tet's boundary: else t₀ = T ∈ MR.support, contradicting hStarNotMR.
@@ -349,11 +330,10 @@ lemma deg3_clean_glue_of_remainder {σ : Finset (Finset V)} {R : Chain V}
 
 /-- **deg3_isPM** (PM degree-3 step): a taut filling of a 2-sphere with a degree-3
 vertex is a pseudomanifold, given that every strictly smaller single-sphere taut
-filling is one. Mirrors the *setup* of `deg3_step_free` (the cut, the ML/MR
-filters, the star-side dichotomy, `hsupport`/`hTnot`/`hvNotR`), but instead of the
-star-shelling glue it applies the IH to the remainder to get a PM, then re-inserts
-the star tet with `isPseudomanifold_insert`, discharging the clean-glue obligation
-by `deg3_clean_glue_of_remainder`. Does NOT use `degree3_hanchor`. -/
+filling is one. Cuts at the star, splits into the ML/MR filters with the star-side
+dichotomy, applies the IH to the remainder to get a PM, then re-inserts the star
+tet with `isPseudomanifold_insert`, discharging the clean-glue obligation by
+`deg3_clean_glue_of_remainder`. Does NOT use `degree3_hanchor`. -/
 lemma deg3_isPM (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
     (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
     (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex σ)
@@ -375,7 +355,6 @@ lemma deg3_isPM (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
       hUL hXLc hUR hXRc hXsum hMX hT
   have hsplit := degree3_cut_star_side_glue σ hσ hbig hv hγ3 hW
   have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
-  -- γ lies in both candidate remainder spheres
   have hγL : γ ∈ insert γ (cutSet σ W) := Finset.mem_insert_self _ _
   have hγR : γ ∈ insert γ (cutSet σ (W + fun _ => 1)) := Finset.mem_insert_self _ _
   rcases hsplit with hcase | hcase
@@ -523,13 +502,5 @@ lemma deg3_isPM (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
     rw [hsupport]
     refine isPseudomanifold_insert hPML hTnot ?_
     exact deg3_clean_glue_of_remainder rfl hT4 hURγ hPML hSimpL hPureML hvNotML
-
-/-! ## Weak (boundary-only) base / degree-3 endpoints — REMOVED
-
-`base_free`, `degree3_star_start_shellFrom`, and `deg3_step_free` assembled the boundary-trace
-`FreelyShellable` induction (via the removed `theorem3_core`), which does not entail the clean/normal
-manifold conditions.  They have been removed; the clean mirrors live in `Theorem3Clean.lean`
-(`base_clean` / `deg3_step_clean`, concluding `FreelyCleanShellable`).  The PM-only base/degree-3
-lemmas `base_isPM` and `deg3_isPM` (above) are retained — they feed `taut_isPseudomanifold`. -/
 
 end Taut

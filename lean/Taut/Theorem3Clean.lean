@@ -5,13 +5,6 @@ namespace Taut
 
 variable {V : Type*} [LinearOrder V]
 
-/-- **Theorem 3 (core), clean-shelling route — SKELETON.** Mirror of `theorem3_core`,
-carrying `FreelyCleanShellable M.support σ` instead of the boundary
-`FreelyShellable M.support σ` (and without the pseudomanifold conjunct). The three
-reduction steps are taken as explicit hypotheses: the base case is discharged
-(`base_free_clean`), while the degree-3 and prime steps remain the named, unproven
-obligations. The strong-induction plumbing is identical to `theorem3_core`; only the
-conclusion type changed, which the proof body never mentions. -/
 theorem theorem3_core_clean
     (base_clean : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ → UnitOn X σ →
       bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
@@ -55,9 +48,7 @@ theorem theorem3_core_clean
 
 /-- **base_free_clean** (the discharged base hole of `theorem3_core_clean`): a taut
 filling of a 2-sphere on ≤ 4 vertices is a *free clean* sticker ball — it is a single
-tetrahedron (`freelyCleanShellable_singleton`). Reuses the Aleph base lemmas verbatim;
-only the final step changes from `freelyShellable_singleton` to
-`freelyCleanShellable_singleton`. -/
+tetrahedron (`freelyCleanShellable_singleton`). -/
 theorem base_free_clean (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
     (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
     (hv : (vertsOf σ).card ≤ 4) : FreelyCleanShellable M.support σ := by
@@ -67,7 +58,7 @@ theorem base_free_clean (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere
   have hne := aleph_base_support_nonempty hσ hU hMX
   have hsupp : M.support = {vertsOf σ} :=
     aleph_base_support_eq_singleton_of_four_vertices hcard hsuppInfo hne
-  rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+  rw [hσeq, hsupp]
   exact freelyCleanShellable_singleton hcard
 
 /-! ## Degree-3 star glue: one reusable `CleanGlueStep` constructor
@@ -79,8 +70,6 @@ tet `t₀`.  Under those geometric facts every `CleanGlueStep` field is discharg
 mechanically: the only quantitative input is `faceCount τ γ ≤ 1` (carried from the
 PM bound at the call site); the link/clean fields all come from the apex `t₀`. -/
 
-/-- Apex membership for the edge-link: `w` is an apex of `e` in `τ` iff some tet of
-`τ` contains both `e` and `w`, with `w ∉ e`. -/
 private lemma mem_edgeLinkVerts_iff {τ : Finset (Finset V)} {e : Finset V} {w : V} :
     w ∈ edgeLinkVerts τ e ↔ (∃ t ∈ τ, e ⊆ t ∧ w ∈ t) ∧ w ∉ e := by
   simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter]
@@ -88,8 +77,6 @@ private lemma mem_edgeLinkVerts_iff {τ : Finset (Finset V)} {e : Finset V} {w :
   · rintro ⟨⟨t, ⟨ht, hsub⟩, hwt⟩, hwe⟩; exact ⟨⟨t, ht, hsub, hwt⟩, hwe⟩
   · rintro ⟨⟨t, ht, hsub, hwt⟩, hwe⟩; exact ⟨⟨t, ⟨ht, hsub⟩, hwt⟩, hwe⟩
 
-/-- Apex membership for the vertex-link: `w` is an apex of `x` in `τ` iff some tet of
-`τ` contains both `x` and `w`, with `w ≠ x`. -/
 private lemma mem_vertexLinkVerts_iff {τ : Finset (Finset V)} {x w : V} :
     w ∈ vertexLinkVerts τ x ↔ (∃ t ∈ τ, x ∈ t ∧ w ∈ t) ∧ w ≠ x := by
   simp only [vertexLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter,
@@ -117,14 +104,12 @@ lemma cleanGlueStep_star_of_remainder {σ : Finset (Finset V)} {v : V} {γ : Fin
     (hγcount : faceCount τ γ ≤ 1)
     (hγB : γ ∈ tetFaces (starTet σ v) ∩ B) :
     CleanGlueStep (starTet σ v) τ B B' := by
-  -- `starTet σ v = insert v γ`, with `v ∉ γ` and `|γ| = 3`.
   have hstar : starTet σ v = insert v γ := by rw [starTet, hγ]
   have hγcard : γ.card = 3 := hγ ▸ hγ3
   have hvγ : v ∉ γ := by
     intro hv
     rw [hstar, Finset.insert_eq_self.mpr hv] at hstar4
     omega
-  -- A card-3 subset `f ⊆ insert v γ` with `v ∉ f` is exactly `γ`.
   have face_eq_γ : ∀ {f : Finset V}, f ⊆ starTet σ v → f.card = 3 → v ∉ f → f = γ := by
     intro f hf hf3 hvf
     have hfγ : f ⊆ γ := by
@@ -142,8 +127,7 @@ lemma cleanGlueStep_star_of_remainder {σ : Finset (Finset V)} {v : V} {γ : Fin
       hpmc := ?_
       helc := ?_
       hvlc := ?_ }
-  · -- clean: a face of `t` already in some τ-tet has `v ∉ f`, so `f ⊆ γ`; use `γ`.
-    intro f hf ⟨s, hsτ, hfs⟩
+  · intro f hf ⟨s, hsτ, hfs⟩
     have hvf : v ∉ f := fun hvf => hvτ s hsτ (hfs hvf)
     have hfγ : f ⊆ γ := by
       intro x hxf
@@ -152,30 +136,24 @@ lemma cleanGlueStep_star_of_remainder {σ : Finset (Finset V)} {v : V} {γ : Fin
       · exact absurd hxf hvf
       · exact hxγ
     exact ⟨γ, hγB, hfγ⟩
-  · -- hpmc: a card-3 face is either `γ` (count ≤ 1 by hγcount) or contains `v` (count 0).
-    intro f hf3 hf
+  · intro f hf3 hf
     by_cases hvf : v ∈ f
-    · -- no τ-tet contains `f` (else it contains `v`), so the count is 0.
-      have : faceCount τ f = 0 := faceCount_eq_zero (fun s hsτ hfs => hvτ s hsτ (hfs hvf))
+    · have : faceCount τ f = 0 := faceCount_eq_zero (fun s hsτ hfs => hvτ s hsτ (hfs hvf))
       omega
     · rw [face_eq_γ hf hf3 hvf]; exact hγcount
-  · -- helc: edge `e ⊆ t`. If `v ∈ e`, the link is empty; else the third γ-vertex is an apex.
-    intro e he he2
+  · intro e he he2
     by_cases hve : v ∈ e
-    · -- any apex would give a τ-tet containing `e ∋ v`, contra `hvτ`.
-      left
+    · left
       apply edgeLinkVerts_eq_empty
       intro s hsτ hes
       exact hvτ s hsτ (hes hve)
     · right
-      -- `e ⊆ γ` (its two vertices avoid `v`), so `γ = e ∪ {w}` for the third vertex `w`.
       have heγ : e ⊆ γ := by
         intro x hxe
         have : x ∈ insert v γ := hstar ▸ he hxe
         rcases Finset.mem_insert.mp this with rfl | hxγ
         · exact absurd hxe hve
         · exact hxγ
-      -- `γ \ e` is a single vertex `w`, lying in `t₀` together with `e`.
       have hcard : (γ \ e).card = 1 := by
         rw [Finset.card_sdiff_of_subset heγ, hγcard, he2]
       obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hcard
@@ -183,21 +161,16 @@ lemma cleanGlueStep_star_of_remainder {σ : Finset (Finset V)} {v : V} {γ : Fin
       rw [Finset.mem_sdiff] at hwγe
       obtain ⟨hwγ, hwe⟩ := hwγe
       refine ⟨w, Finset.mem_inter.mpr ⟨?_, ?_⟩⟩
-      · -- `w ∈ starTet σ v \ e`.
-        rw [Finset.mem_sdiff, hstar]
+      · rw [Finset.mem_sdiff, hstar]
         exact ⟨Finset.mem_insert_of_mem hwγ, hwe⟩
-      · -- `w` is an apex of `e` in `τ`: `e ⊆ t₀` and `w ∈ t₀`.
-        rw [mem_edgeLinkVerts_iff]
+      · rw [mem_edgeLinkVerts_iff]
         exact ⟨⟨t₀, ht₀τ, heγ.trans hγt₀, hγt₀ hwγ⟩, hwe⟩
-  · -- hvlc: vertex `x ∈ t`. If `x = v`, the link is empty; else another γ-vertex is an apex.
-    intro x hx
+  · intro x hx
     rw [hstar, Finset.mem_insert] at hx
     rcases hx with rfl | hxγ
-    · -- `x = v`: no τ-tet contains `v`.
-      left
+    · left
       exact vertexLinkVerts_eq_empty hvτ
     · right
-      -- `x ∈ γ`; pick another γ-vertex `w ≠ x` (|γ| = 3 ≥ 2), both in `t₀`.
       have hxv : x ≠ v := fun h => hvγ (h ▸ hxγ)
       have hcard : (γ \ {x}).card = 2 := by
         rw [Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.mpr hxγ), hγcard,
@@ -207,11 +180,9 @@ lemma cleanGlueStep_star_of_remainder {σ : Finset (Finset V)} {v : V} {γ : Fin
       rw [Finset.mem_sdiff, Finset.mem_singleton] at hw
       obtain ⟨hwγ, hwx⟩ := hw
       refine ⟨w, Finset.mem_inter.mpr ⟨?_, ?_⟩⟩
-      · -- `w ∈ starTet σ v \ {x}`.
-        rw [Finset.mem_sdiff, Finset.mem_singleton, hstar]
+      · rw [Finset.mem_sdiff, Finset.mem_singleton, hstar]
         exact ⟨Finset.mem_insert_of_mem hwγ, hwx⟩
-      · -- `w` is a vertex-apex of `x` in `τ`: both `x, w ∈ t₀`.
-        rw [mem_vertexLinkVerts_iff]
+      · rw [mem_vertexLinkVerts_iff]
         exact ⟨⟨t₀, ht₀τ, hγt₀ hxγ, hγt₀ hwγ⟩, hwx⟩
 
 /-! ## τ-extension of the link-compat fields (degree-3 star-start glue)
@@ -222,7 +193,6 @@ adjoined to the accumulated set.  Both follow from two structural facts about th
 apex sets: they are monotone in `τ`, and the extra tet `starTet σ v` supplies an
 apex for `e` only when `e ⊆ γ` (resp. for `x` only when `x ∈ γ`). -/
 
-/-- The edge-link apex set is monotone in the tet-set: more tets give more apexes. -/
 private lemma edgeLinkVerts_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (e : Finset V) :
     edgeLinkVerts τ e ⊆ edgeLinkVerts τ' e := by
   intro w hw
@@ -230,7 +200,6 @@ private lemma edgeLinkVerts_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (
   obtain ⟨⟨t, ht, het, hwt⟩, hwe⟩ := hw
   exact ⟨⟨t, h ht, het, hwt⟩, hwe⟩
 
-/-- The vertex-link apex set is monotone in the tet-set. -/
 private lemma vertexLinkVerts_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (x : V) :
     vertexLinkVerts τ x ⊆ vertexLinkVerts τ' x := by
   intro w hw
@@ -261,9 +230,7 @@ lemma helc_insert_star {σ : Finset (Finset V)} {v : V} {γ : Finset V} {t₀ t 
     edgeLinkVerts_mono (Finset.subset_insert _ _) e
   have hve : v ∉ e := fun hv => hvt (he hv)
   by_cases heγ : e ⊆ γ
-  · -- γ-edge: the third γ-vertex `w` is an apex of `e` via `t₀`, so `edgeLinkVerts τ e ≠ ∅`,
-    -- forcing the nonempty branch of `H`, which survives by monotonicity.
-    right
+  · right
     have hcard : (γ \ e).card = 1 := by
       rw [Finset.card_sdiff_of_subset heγ, hγ3, he2]
     obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hcard
@@ -279,9 +246,7 @@ lemma helc_insert_star {σ : Finset (Finset V)} {v : V} {γ : Finset V} {t₀ t 
     · obtain ⟨z, hz⟩ := hH
       rw [Finset.mem_inter] at hz
       exact ⟨z, Finset.mem_inter.mpr ⟨hz.1, hmono hz.2⟩⟩
-  · -- non-γ-edge: `e ⊄ starTet σ v` (else `v ∉ e` forces `e ⊆ γ`), so the star tet
-    -- supplies no apex and the apex set is unchanged; reuse `H` verbatim.
-    have hnotstar : ¬ e ⊆ starTet σ v := by
+  · have hnotstar : ¬ e ⊆ starTet σ v := by
       intro hsub
       apply heγ
       intro x hxe
@@ -310,8 +275,7 @@ lemma hvlc_insert_star {σ : Finset (Finset V)} {v : V} {γ : Finset V} {t₀ t 
     vertexLinkVerts_mono (Finset.subset_insert _ _) x
   have hxv : x ≠ v := fun h => hvt (h ▸ hx)
   by_cases hxγ : x ∈ γ
-  · -- `x ∈ γ`: another γ-vertex `w ≠ x` is an apex of `x` via `t₀`, forcing nonempty.
-    right
+  · right
     have hcard : (γ \ {x}).card = 2 := by
       rw [Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.mpr hxγ), hγ3,
         Finset.card_singleton]
@@ -328,8 +292,7 @@ lemma hvlc_insert_star {σ : Finset (Finset V)} {v : V} {γ : Finset V} {t₀ t 
     · obtain ⟨z, hz⟩ := hH
       rw [Finset.mem_inter] at hz
       exact ⟨z, Finset.mem_inter.mpr ⟨hz.1, hmono hz.2⟩⟩
-  · -- `x ∉ γ`: with `x ≠ v`, `x ∉ starTet σ v`, so the star tet supplies no apex.
-    have hnotstar : x ∉ starTet σ v := by
+  · have hnotstar : x ∉ starTet σ v := by
       rw [hstar, Finset.mem_insert]
       rintro (rfl | hxγ')
       · exact hxv rfl
@@ -393,12 +356,10 @@ lemma cleanGlueStep_insert_star {σ : Finset (Finset V)} {v : V} {γ t₀ t : Fi
       hpmc := ?_
       helc := helc_insert_star hγ hγ3 hvt ht₀τ hγt₀ hg.helc
       hvlc := hvlc_insert_star hγ hγ3 hvt ht₀τ hγt₀ hg.hvlc }
-  · -- clean: a face covered via the star tet is already covered via `t₀ ∈ τ`.
-    intro f hf ⟨s, hsτ, hfs⟩
+  · intro f hf ⟨s, hsτ, hfs⟩
     apply hg.clean f hf
     rcases Finset.mem_insert.mp hsτ with rfl | hsτ'
-    · -- `s = starTet σ v`: `v ∉ f` ⟹ `f ⊆ γ ⊆ t₀`.
-      refine ⟨t₀, ht₀τ, ?_⟩
+    · refine ⟨t₀, ht₀τ, ?_⟩
       have hvf : v ∉ f := fun hvf => hvt (hf hvf)
       have hfγ : f ⊆ γ := by
         intro x hxf
@@ -408,13 +369,11 @@ lemma cleanGlueStep_insert_star {σ : Finset (Finset V)} {v : V} {γ t₀ t : Fi
         · exact hxγ
       exact hfγ.trans hγt₀
     · exact ⟨s, hsτ', hfs⟩
-  · -- freshness: `t ∉ insert (starTet σ v) τ`.
-    rw [Finset.mem_insert]
+  · rw [Finset.mem_insert]
     rintro (h | h)
     · exact htstar h
     · exact hg.newTet h
-  · -- hpmc: the star tet contributes no count to a card-3 face of `t` (else `γ ⊆ t`).
-    intro f hf3 hf
+  · intro f hf3 hf
     rw [faceCount_insert_of_not_mem hstarNotτ]
     have hnotstar : ¬ f ⊆ starTet σ v := by
       intro hsub
@@ -426,7 +385,6 @@ lemma cleanGlueStep_insert_star {σ : Finset (Finset V)} {v : V} {γ t₀ t : Fi
         rcases Finset.mem_insert.mp this with rfl | hxγ
         · exact absurd hxf hvf
         · exact hxγ
-      -- card-3 `f ⊆ γ` (card 3) is `γ`, so `γ = f ⊆ t`.
       have : f = γ := Finset.eq_of_subset_of_card_le hfγ (by rw [hγ3, hf3])
       exact this ▸ hf
     rw [if_neg hnotstar, Nat.add_zero]
@@ -449,7 +407,7 @@ lemma cleanGlueStep_insert_star_erase {σ : Finset (Finset V)} {v : V} {γ t₀ 
   (cleanGlueStep_insert_star hg hγ hγ3 ht₀τ hγt₀ hvt hγnt hstarNotτ htstar).erase_union_disjoint
     hdisj
 
-/-- **The degree-3 star-start transport (the heart).**  Clean analogue of
+/-- **The degree-3 star-start transport.**  Clean analogue of
 `ShellFrom_erase_union_disjoint`, additionally adjoining the star tet `starTet σ v`
 to the accumulated τ-base at every step.  Given a clean relative shelling of `l`
 from `τ₀` with interface tet `t₀ ∈ τ₀` (carrying `γ = linkVerts σ v ⊆ t₀`), in which
@@ -478,14 +436,12 @@ lemma CleanShellFrom_starStart_transport {σ : Finset (Finset V)} {v : V} {γ t�
       intro τ₀ B₀ B h ht₀τ hγt₀ hγ hγ3 hv hγn hstarNot htstar hdisj
       simp only [CleanShellFrom] at h ⊢
       obtain ⟨B₁, hstep, hrest⟩ := h
-      -- per-step upgrade for the head tet `t`
       have hstep' : CleanGlueStep t (insert (starTet σ v) τ₀) (B₀.erase γ ∪ K) (B₁.erase γ ∪ K) :=
         cleanGlueStep_insert_star_erase hstep hγ hγ3 ht₀τ hγt₀
           (hv t (List.mem_cons.mpr (Or.inl rfl))) (hγn t (List.mem_cons.mpr (Or.inl rfl)))
           hstarNot (htstar t (List.mem_cons.mpr (Or.inl rfl)))
           (hdisj t (List.mem_cons.mpr (Or.inl rfl)))
       refine ⟨B₁.erase γ ∪ K, hstep', ?_⟩
-      -- recurse on `insert t τ₀`; the invariant `t₀ ∈ insert t τ₀` is kept.
       have htail : ∀ {P : Finset V → Prop}, (∀ u ∈ t :: l, P u) → ∀ u ∈ l, P u :=
         fun H u hu => H u (List.mem_cons_of_mem t hu)
       have hrec := ih hrest (Finset.mem_insert_of_mem ht₀τ) hγt₀ hγ hγ3
@@ -493,7 +449,6 @@ lemma CleanShellFrom_starStart_transport {σ : Finset (Finset V)} {v : V} {γ t�
         (fun hc => hstarNot ((Finset.mem_insert.mp hc).resolve_left
           (fun h => htstar t (List.mem_cons.mpr (Or.inl rfl)) h.symm)))
         (htail htstar) (htail hdisj)
-      -- align: `insert starTet (insert t τ₀) = insert t (insert starTet τ₀)`.
       rwa [Finset.insert_comm] at hrec
 
 /-- **Degree-3 star-start clean shelling.**  Clean analogue of the weak
@@ -529,9 +484,7 @@ lemma degree3_star_start_cleanShellFrom (σ B τ : Finset (Finset V)) {v : V}
       simp only [List.head?_cons, Option.some.injEq] at hhead
       subst a
       simp only [IsCleanShelling] at hsh
-      -- the remainder relative shelling, rooted at `t₀` with τ-base `{t₀}`.
       obtain ⟨ht₀card, hrest_sh⟩ := hsh
-      -- membership of a `rest`-tet in `τ`, and that it is not `t₀`.
       have hmemτ : ∀ t ∈ rest, t ∈ τ := by
         intro t ht
         exact hlτ ▸ List.mem_toFinset.mpr (List.mem_cons_of_mem t₀ ht)
@@ -539,7 +492,6 @@ lemma degree3_star_start_cleanShellFrom (σ B τ : Finset (Finset V)) {v : V}
         intro t ht hc
         subst t
         exact (List.nodup_cons.mp hnodup).1 ht
-      -- the per-rest-tet hypotheses for the transport.
       have hv_rest : ∀ t ∈ rest, v ∉ t := fun t ht => hvτ t (hmemτ t ht)
       have hγn_rest : ∀ t ∈ rest, ¬ γ ⊆ t := by
         intro t ht hc
@@ -549,8 +501,6 @@ lemma degree3_star_start_cleanShellFrom (σ B τ : Finset (Finset V)) {v : V}
         exact hstarNotτ (hc ▸ hmemτ t ht)
       have hdisj_rest : ∀ t ∈ rest, Disjoint (tetFaces t) (insert γ K) :=
         fun t ht => hrest_disj t (hmemτ t ht) (hne_t₀ t ht)
-      -- transport the remainder shelling onto `insert (starTet σ v) {t₀}`,
-      -- swapping `γ` for `K`.
       have htransport :
           CleanShellFrom (insert (starTet σ v) {t₀}) ((tetFaces t₀).erase γ ∪ K) rest
             (B.erase γ ∪ K) :=
@@ -560,10 +510,8 @@ lemma degree3_star_start_cleanShellFrom (σ B τ : Finset (Finset V)) {v : V}
             rw [Finset.mem_singleton] at hc; rw [hc]; exact ht₀))
           hstarne_rest hdisj_rest
       refine ⟨t₀ :: rest, rfl, hlτ, hnodup, ?_⟩
-      -- assemble: first the star glue, then the transported remainder.
       simp only [CleanShellFrom]
       refine ⟨(tetFaces t₀).erase γ ∪ K, hglue₀, ?_⟩
-      -- `insert t₀ {starTet σ v} = insert (starTet σ v) {t₀}` (`Finset.pair_comm`).
       rw [show insert t₀ ({starTet σ v} : Finset (Finset V)) = insert (starTet σ v) {t₀} from
         Finset.pair_comm t₀ (starTet σ v)]
       exact hfinal ▸ htransport
@@ -600,14 +548,11 @@ lemma cleanGlueStep_firstStar {σ : Finset (Finset V)} {v : V} {γ t₀ : Finset
     intro hv
     rw [hstar, Finset.insert_eq_self.mpr hv] at hstar4
     omega
-  -- the shared face `γ` is in `tetFaces t₀ ∩ tetFaces (starTet σ v)`.
   have hγstar : γ ∈ tetFaces (starTet σ v) :=
     Finset.mem_powersetCard.mpr ⟨by rw [hstar]; exact Finset.subset_insert _ _, hγcard⟩
   have hγt₀face : γ ∈ tetFaces t₀ := Finset.mem_powersetCard.mpr ⟨hγt₀, hγcard⟩
-  -- the star tet is the unique τ-tet, and `v ∈ starTet`.
   have hvstar : v ∈ starTet σ v := by rw [hstar]; exact Finset.mem_insert_self _ _
   have ht₀ne : t₀ ≠ starTet σ v := fun h => hvt₀ (h ▸ hvstar)
-  -- a `v`-free subset of `starTet σ v` lies in `γ`.
   have sub_γ : ∀ {f : Finset V}, f ⊆ starTet σ v → v ∉ f → f ⊆ γ := by
     intro f hf hvf x hxf
     have : x ∈ insert v γ := hstar ▸ hf hxf
@@ -621,18 +566,15 @@ lemma cleanGlueStep_firstStar {σ : Finset (Finset V)} {v : V} {γ t₀ : Finset
       hpmc := ?_
       helc := ?_
       hvlc := ?_ }
-  · -- clean: a face of `t₀` covered by the (single) star tet is `v`-free, so `f ⊆ γ`; use `γ`.
-    intro f hf ⟨s, hsτ, hfs⟩
+  · intro f hf ⟨s, hsτ, hfs⟩
     rw [Finset.mem_singleton] at hsτ
     subst hsτ
     have hvf : v ∉ f := fun hvf => hvt₀ (hf hvf)
     exact ⟨γ, Finset.mem_inter.mpr ⟨hγt₀face, hγstar⟩, sub_γ hfs hvf⟩
-  · -- hpmc: a singleton's `faceCount` is ≤ 1 (`card_filter_le`).
-    intro f _ _
+  · intro f _ _
     unfold faceCount
     simpa using Finset.card_filter_le ({starTet σ v} : Finset (Finset V)) (fun s => f ⊆ s)
-  · -- helc: γ-edge has the third γ-vertex as an apex via the star tet; non-γ edge has empty link.
-    intro e he he2
+  · intro e he he2
     by_cases heγ : e ⊆ γ
     · right
       have hcard : (γ \ e).card = 1 := by
@@ -647,16 +589,14 @@ lemma cleanGlueStep_firstStar {σ : Finset (Finset V)} {v : V} {γ t₀ : Finset
         refine ⟨⟨starTet σ v, Finset.mem_singleton_self _, ?_, ?_⟩, hwe⟩
         · exact (heγ.trans (by rw [hstar]; exact Finset.subset_insert _ _))
         · rw [hstar]; exact Finset.mem_insert_of_mem hwγ
-    · -- `e ⊄ starTet σ v` (a `v`-free `e ⊆ starTet` would lie in `γ`), so the link is empty.
-      left
+    · left
       apply edgeLinkVerts_eq_empty
       intro s hsτ hes
       rw [Finset.mem_singleton] at hsτ
       subst hsτ
       have hve : v ∉ e := fun hv => hvt₀ (he hv)
       exact heγ (sub_γ hes hve)
-  · -- hvlc: a γ-vertex has another γ-vertex as apex via the star tet; non-γ vertex has empty link.
-    intro x hx
+  · intro x hx
     by_cases hxγ : x ∈ γ
     · right
       have hcard : (γ \ {x}).card = 2 := by
@@ -672,8 +612,7 @@ lemma cleanGlueStep_firstStar {σ : Finset (Finset V)} {v : V} {γ t₀ : Finset
         refine ⟨⟨starTet σ v, Finset.mem_singleton_self _, ?_, ?_⟩, hwx⟩
         · rw [hstar]; exact Finset.mem_insert_of_mem hxγ
         · rw [hstar]; exact Finset.mem_insert_of_mem hwγ
-    · -- `x ∉ starTet σ v` (else `x = v` or `x ∈ γ`, both excluded), so the link is empty.
-      left
+    · left
       apply vertexLinkVerts_eq_empty
       intro s hsτ hxs
       rw [Finset.mem_singleton] at hsτ
@@ -760,7 +699,6 @@ theorem deg3_step_clean (sigma : Finset (Finset V)) (X M : Chain V)
         (by dsimp [γ]; exact hσR) (by dsimp [γ]; exact hUR)
         (by dsimp [γ]; exact hXRc) (by dsimp [MR, A, γ]; exact hMR)
         (by dsimp [MR, A, γ]; exact hTR) hSimpR
-    -- weak facts derived from the clean IH result.
     have hsupport : M.support = insert (starTet sigma v) MR.support := by
       simpa only [MR] using
         support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
@@ -805,10 +743,8 @@ theorem deg3_step_clean (sigma : Finset (Finset V)) (X M : Chain V)
         (by simp [MR])
         (Or.inr rfl)
     obtain ⟨t₀, K, ht₀, hglue₀_weak, hrest_disj, hfinal⟩ := hanchor
-    -- quantitative carries for the glue/start lemmas.
     have hPureR : ∀ t ∈ MR.support, t.card = 4 := fun t ht => (hsuppInfo t ht).1
     have hγ3' : γ.card = 3 := hγ ▸ hγ3
-    -- `γ` lies in a unique remainder tet; the anchor's `hrest_disj` pins it to `t₀`.
     have huniqγ : ∀ t ∈ MR.support, γ ⊆ t → t = t₀ := by
       intro t htmem hγt
       by_contra hne
@@ -819,7 +755,6 @@ theorem deg3_step_clean (sigma : Finset (Finset V)) (X M : Chain V)
       rw [hbdMR]; exact hUR.2 γ (Finset.mem_insert_self _ _)
     have hγcount : faceCount MR.support γ = 1 :=
       faceCount_eq_one_of_boundary hSimpR hPureR hPMR hγ3' hbdγ
-    -- recover `γ ⊆ t₀`: the unique γ-containing tet (faceCount = 1) is `t₀` by `huniqγ`.
     have hγt₀ : γ ⊆ t₀ := by
       have hfilt : (MR.support.filter (fun t => γ ⊆ t)).card = 1 := hγcount
       obtain ⟨t₀', ht₀'set⟩ := Finset.card_eq_one.mp hfilt
@@ -898,7 +833,6 @@ theorem deg3_step_clean (sigma : Finset (Finset V)) (X M : Chain V)
         (by dsimp [γ]; exact hσL) (by dsimp [γ]; exact hUL)
         (by dsimp [γ]; exact hXLc) (by dsimp [ML, A, γ]; exact hML)
         (by dsimp [ML, A, γ]; exact hTL) hSimpL
-    -- weak facts derived from the clean IH result.
     have hsupport : M.support = insert (starTet sigma v) ML.support := by
       have hsupport' :
           M.support = insert (starTet sigma v)
@@ -945,7 +879,6 @@ theorem deg3_step_clean (sigma : Finset (Finset V)) (X M : Chain V)
         (by simp [ML])
         (Or.inl rfl)
     obtain ⟨t₀, K, ht₀, hglue₀_weak, hrest_disj, hfinal⟩ := hanchor
-    -- quantitative carries for the glue/start lemmas.
     have hPureL : ∀ t ∈ ML.support, t.card = 4 := fun t ht => (hsuppInfo t ht).1
     have hγ3' : γ.card = 3 := hγ ▸ hγ3
     have huniqγ : ∀ t ∈ ML.support, γ ⊆ t → t = t₀ := by
@@ -1030,7 +963,6 @@ private lemma oppEdge_empty_of_flipEdgePresent {σ : Finset (Finset V)} {X M : C
   classical
   obtain ⟨A, B, hAB, hcd2, _, _, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, _⟩ :=
     flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
-  -- `f₃, f₄` are triangles of `e`; set `z₃ := e \ f₃`, `z₄ := e \ f₄`.
   have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ _
   have hf₄exp : f₄ ∈ exposedFaces M e := by
     rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
@@ -1048,7 +980,6 @@ private lemma oppEdge_empty_of_flipEdgePresent {σ : Finset (Finset V)} {X M : C
   have hz₃mem : z₃ ∈ e \ f₃ := hz₃ ▸ Finset.mem_singleton_self z₃
   have hz₄mem : z₄ ∈ e \ f₄ := hz₄ ▸ Finset.mem_singleton_self z₄
   rw [Finset.mem_sdiff] at hz₃mem hz₄mem
-  -- `f₃ = e.erase z₃`, `f₄ = e.erase z₄`.
   have heq3 : f₃ = e.erase z₃ := by
     apply Finset.eq_of_subset_of_card_le
     · intro a ha; exact Finset.mem_erase.mpr ⟨fun h => hz₃mem.2 (h ▸ ha), hf₃e ha⟩
@@ -1059,7 +990,6 @@ private lemma oppEdge_empty_of_flipEdgePresent {σ : Finset (Finset V)} {X M : C
     · rw [Finset.card_erase_of_mem hz₄mem.1, he4, hf₄3]
   have hz₃₄ : z₃ ≠ z₄ := by
     rintro rfl; exact hf₃₄ (heq3.trans heq4.symm)
-  -- `f₃ ∩ f₄ = e \ {z₃, z₄}`, so the flip-opposite edge is `{z₃, z₄}`.
   have hinter_eq : f₃ ∩ f₄ = e \ ({z₃, z₄} : Finset V) := by
     ext a
     simp only [Finset.mem_inter, heq3, heq4, Finset.mem_erase, Finset.mem_sdiff,
@@ -1074,20 +1004,16 @@ private lemma oppEdge_empty_of_flipEdgePresent {σ : Finset (Finset V)} {X M : C
     · rintro (rfl | rfl)
       · exact ⟨hz₃mem.1, fun h => h.2 (Or.inl rfl)⟩
       · exact ⟨hz₄mem.1, fun h => h.2 (Or.inr rfl)⟩
-  -- `f₃ ∩ f₄ ⊆ A` (since `f₃ ⊆ A`).
   have hcd_subA : f₃ ∩ f₄ ⊆ A := (Finset.inter_subset_left).trans hf₃A
-  -- `z₃ ∉ A`: else `f₄ = insert z₃ (f₃ ∩ f₄) ⊆ A`, contradicting `¬ f₄ ⊆ A`.
   have hz₃notA : z₃ ∉ A := by
     intro hz₃A
     apply hf₄notA
     intro a ha
-    -- `f₄ = e.erase z₄`; its elements are `z₃` or in `f₃ ∩ f₄`.
     have hae : a ∈ e := hf₄e ha
     by_cases haz₃ : a = z₃
     · exact haz₃ ▸ hz₃A
     · exact hcd_subA (Finset.mem_inter.mpr ⟨by
         rw [heq3, Finset.mem_erase]; exact ⟨haz₃, hae⟩, ha⟩)
-  -- `z₄ ∉ B`: symmetric.
   have hcd_subB : f₃ ∩ f₄ ⊆ B := (Finset.inter_subset_right).trans hf₄B
   have hz₄notB : z₄ ∉ B := by
     intro hz₄B
@@ -1098,7 +1024,6 @@ private lemma oppEdge_empty_of_flipEdgePresent {σ : Finset (Finset V)} {X M : C
     · exact haz₄ ▸ hz₄B
     · exact hcd_subB (Finset.mem_inter.mpr ⟨ha, by
         rw [heq4, Finset.mem_erase]; exact ⟨haz₄, hae⟩⟩)
-  -- now no remaining tet contains `{z₃, z₄}`.
   rw [hopp_eq]
   apply edgeLinkVerts_eq_empty
   intro t ht hsub
@@ -1143,8 +1068,8 @@ private lemma exposed_triangle_unique_remaining_tet {σ : Finset (Finset V)}
 
 /-- **`hOppEmpty`, reduction to full edge-link connectedness.** Given
 `EdgeLinkConnected M.support`, the flip-opposite edge `e \ (f₃ ∩ f₄)` lies in no
-remaining tet.  The `EdgeLinkConnected M.support` hypothesis is itself the new
-theorem `taut_edgeLinkConnected`, not yet available. -/
+remaining tet.  The `EdgeLinkConnected M.support` hypothesis is itself the
+theorem `taut_edgeLinkConnected`. -/
 private lemma oppEdge_empty_of_full_edgeLinkConnected {σ : Finset (Finset V)}
     {X M : Chain V} {e f₃ f₄ : Finset V}
     (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
@@ -1154,7 +1079,6 @@ private lemma oppEdge_empty_of_full_edgeLinkConnected {σ : Finset (Finset V)}
     (hELM : EdgeLinkConnected M.support) :
     edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅ := by
   classical
-  -- exposed-pair geometry: `f₃ = e.erase z₃`, `f₄ = e.erase z₄`, `e \ (f₃ ∩ f₄) = {z₃, z₄}`.
   have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ _
   have hf₄exp : f₄ ∈ exposedFaces M e := by
     rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
@@ -1197,7 +1121,6 @@ private lemma oppEdge_empty_of_full_edgeLinkConnected {σ : Finset (Finset V)}
       · exact ⟨hz₃mem.1, fun h => h.2 (Or.inl rfl)⟩
       · exact ⟨hz₄mem.1, fun h => h.2 (Or.inr rfl)⟩
   rw [hopp_eq]
-  -- `O = {z₃, z₄}` (card 2, ⊆ e); `{z₃,z₄}` ⊄ f₃ and ⊄ f₄.
   have hz₃e : z₃ ∈ e := hz₃mem.1
   have hz₄e : z₄ ∈ e := hz₄mem.1
   have hOcard : ({z₃, z₄} : Finset V).card = 2 := Finset.card_pair hz₃₄
@@ -1208,19 +1131,16 @@ private lemma oppEdge_empty_of_full_edgeLinkConnected {σ : Finset (Finset V)}
     · rw [Finset.mem_singleton] at ha; exact ha ▸ hz₄e
   have hz₃notf₃ : z₃ ∉ f₃ := by rw [heq3]; exact Finset.notMem_erase z₃ e
   have hz₄notf₄ : z₄ ∉ f₄ := by rw [heq4]; exact Finset.notMem_erase z₄ e
-  -- `P = e \ {z₃, z₄} = {p₁, p₂}` (the two flip-edge vertices), `e = {z₃,z₄} ∪ {p₁,p₂}`.
   have hPcard : (e \ ({z₃, z₄} : Finset V)).card = 2 := by
     rw [Finset.card_sdiff_of_subset hOsub, he4, hOcard]
   obtain ⟨p₁, p₂, hp₁₂, hPeq⟩ := Finset.card_eq_two.mp hPcard
   have he_eq : e = ({z₃, z₄} : Finset V) ∪ {p₁, p₂} := by
     rw [← hPeq, Finset.union_sdiff_of_subset hOsub]
-  -- `sharedFaces = tetFaces \ exposedFaces`.
   have hsh_eq2 : tetFaces e \ exposedFaces M e = sharedFaces M e := by
     rw [exposedFaces, Finset.sdiff_sdiff_self_left,
       Finset.inter_eq_right.mpr (sharedFaces_subset_tetFaces M e)]
   have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
   have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
-  -- KEY: any tet of `M` containing `insert p {z₃,z₄}` (p a flip-edge vertex) equals `e`.
   have huniq : ∀ p ∈ ({p₁, p₂} : Finset V), ∀ s ∈ M.support,
       insert p ({z₃, z₄} : Finset V) ⊆ s → s = e := by
     intro p hp s hs hsub
@@ -1263,23 +1183,20 @@ private lemma oppEdge_empty_of_full_edgeLinkConnected {σ : Finset (Finset V)}
       Finset.mem_filter.mpr ⟨hs, hsub⟩
     rw [hw0, Finset.mem_singleton] at he_in hs_in
     exact hs_in.trans he_in.symm
-  -- no remaining tet contains the opposite edge `{z₃, z₄}`.
   apply edgeLinkVerts_eq_empty
   intro t ht hsub
   rw [support_removeTet_of_mem he.2.1, Finset.mem_erase] at ht
   obtain ⟨htne, htM⟩ := ht
   have ht4 : t.card = 4 := hPure t htM
   by_cases hcase : (t \ ({z₃, z₄} : Finset V)) ⊆ {p₁, p₂}
-  · -- then `t \ {z₃,z₄} = {p₁,p₂}` and `t = e`, contradicting `t ≠ e`.
-    have htdiff : (t \ ({z₃, z₄} : Finset V)).card = 2 := by
+  · have htdiff : (t \ ({z₃, z₄} : Finset V)).card = 2 := by
       rw [Finset.card_sdiff_of_subset hsub, ht4, hOcard]
     have heqd : t \ ({z₃, z₄} : Finset V) = {p₁, p₂} :=
       Finset.eq_of_subset_of_card_le hcase (by rw [htdiff, Finset.card_pair hp₁₂])
     have hte : t = e := by
       rw [he_eq, ← heqd, Finset.union_sdiff_of_subset hsub]
     exact htne hte
-  · -- otherwise some apex `w ∈ t` avoids both `{z₃,z₄}` and `{p₁,p₂}`.
-    rw [Finset.not_subset] at hcase
+  · rw [Finset.not_subset] at hcase
     obtain ⟨w, hwt, hwp⟩ := hcase
     rw [Finset.mem_sdiff] at hwt
     obtain ⟨hwt, hwO⟩ := hwt
@@ -1292,7 +1209,6 @@ private lemma oppEdge_empty_of_full_edgeLinkConnected {σ : Finset (Finset V)}
       exact (Finset.mem_sdiff.mp hpP).2
     have hp₁_link : p₁ ∈ edgeLinkVerts M.support ({z₃, z₄} : Finset V) := by
       rw [mem_edgeLinkVerts_iff]; exact ⟨⟨e, he.2.1, hOsub, hp₁_e⟩, hp₁_notO⟩
-    -- the flip-edge pair `{p₁,p₂}` is closed under edge-link adjacency.
     have hclosed : ∀ u ∈ ({p₁, p₂} : Finset V), ∀ v,
         (edgeLinkGraph M.support ({z₃, z₄} : Finset V)).Adj u v → v ∈ ({p₁, p₂} : Finset V) := by
       intro u hu v hadj
@@ -1340,7 +1256,6 @@ private lemma oppEdge_empty_of_disjoint_eligible_remainder {σ : Finset (Finset 
       (edgeLinkVerts (removeTet M u).support (e \ (f₃ ∩ f₄)))) :
     edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅ := by
   classical
-  -- exposed-pair geometry: `f₃ = e.erase z₃`, `f₄ = e.erase z₄`, `e \ (f₃ ∩ f₄) = {z₃, z₄}`.
   have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ _
   have hf₄exp : f₄ ∈ exposedFaces M e := by
     rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
@@ -1383,7 +1298,6 @@ private lemma oppEdge_empty_of_disjoint_eligible_remainder {σ : Finset (Finset 
       · exact ⟨hz₃mem.1, fun h => h.2 (Or.inl rfl)⟩
       · exact ⟨hz₄mem.1, fun h => h.2 (Or.inr rfl)⟩
   rw [hopp_eq]
-  -- `O = {z₃, z₄}` (card 2, ⊆ e); `{z₃,z₄}` ⊄ f₃ and ⊄ f₄.
   have hz₃e : z₃ ∈ e := hz₃mem.1
   have hz₄e : z₄ ∈ e := hz₄mem.1
   have hOcard : ({z₃, z₄} : Finset V).card = 2 := Finset.card_pair hz₃₄
@@ -1394,20 +1308,16 @@ private lemma oppEdge_empty_of_disjoint_eligible_remainder {σ : Finset (Finset 
     · rw [Finset.mem_singleton] at ha; exact ha ▸ hz₄e
   have hz₃notf₃ : z₃ ∉ f₃ := by rw [heq3]; exact Finset.notMem_erase z₃ e
   have hz₄notf₄ : z₄ ∉ f₄ := by rw [heq4]; exact Finset.notMem_erase z₄ e
-  -- `P = e \ {z₃, z₄} = {p₁, p₂}` (the two flip-edge vertices), `e = {z₃,z₄} ∪ {p₁,p₂}`.
   have hPcard : (e \ ({z₃, z₄} : Finset V)).card = 2 := by
     rw [Finset.card_sdiff_of_subset hOsub, he4, hOcard]
   obtain ⟨p₁, p₂, hp₁₂, hPeq⟩ := Finset.card_eq_two.mp hPcard
   have he_eq : e = ({z₃, z₄} : Finset V) ∪ {p₁, p₂} := by
     rw [← hPeq, Finset.union_sdiff_of_subset hOsub]
-  -- `sharedFaces = tetFaces \ exposedFaces`.
   have hsh_eq2 : tetFaces e \ exposedFaces M e = sharedFaces M e := by
     rw [exposedFaces, Finset.sdiff_sdiff_self_left,
       Finset.inter_eq_right.mpr (sharedFaces_subset_tetFaces M e)]
   have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
   have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
-  -- KEY: any tet of `M` containing `insert p {z₃,z₄}` (p a flip-edge vertex) equals `e`.
-  -- (M-level, reused because the closure tets live in `removeTet M u ⊆ M.support`.)
   have huniq : ∀ p ∈ ({p₁, p₂} : Finset V), ∀ s ∈ M.support,
       insert p ({z₃, z₄} : Finset V) ⊆ s → s = e := by
     intro p hp s hs hsub
@@ -1450,14 +1360,11 @@ private lemma oppEdge_empty_of_disjoint_eligible_remainder {σ : Finset (Finset 
       Finset.mem_filter.mpr ⟨hs, hsub⟩
     rw [hw0, Finset.mem_singleton] at he_in hs_in
     exact hs_in.trans he_in.symm
-  -- survivor facts: the opposite edge `{z₃,z₄}` is not ⊆ u, so `e` and any remaining `t`
-  -- containing it survive the SECOND removal `removeTet M u`.
   rw [hopp_eq] at hOu
   have hsuppU : (removeTet M u).support = M.support.erase u := support_removeTet_of_mem hu.2.1
   have heu : e ≠ u := fun h => hOu (h ▸ hOsub)
   have heU : e ∈ (removeTet M u).support := by
     rw [hsuppU]; exact Finset.mem_erase.mpr ⟨heu, he.2.1⟩
-  -- no remaining tet contains the opposite edge `{z₃, z₄}`.
   apply edgeLinkVerts_eq_empty
   intro t ht hsub
   rw [support_removeTet_of_mem he.2.1, Finset.mem_erase] at ht
@@ -1467,17 +1374,14 @@ private lemma oppEdge_empty_of_disjoint_eligible_remainder {σ : Finset (Finset 
     rw [hsuppU]; exact Finset.mem_erase.mpr ⟨htu, htM⟩
   have ht4 : t.card = 4 := hPure t htM
   by_cases hcase : (t \ ({z₃, z₄} : Finset V)) ⊆ {p₁, p₂}
-  · -- then `t \ {z₃,z₄} = {p₁,p₂}` and `t = e`, contradicting `t ≠ e`.
-    have htdiff : (t \ ({z₃, z₄} : Finset V)).card = 2 := by
+  · have htdiff : (t \ ({z₃, z₄} : Finset V)).card = 2 := by
       rw [Finset.card_sdiff_of_subset hsub, ht4, hOcard]
     have heqd : t \ ({z₃, z₄} : Finset V) = {p₁, p₂} :=
       Finset.eq_of_subset_of_card_le hcase (by rw [htdiff, Finset.card_pair hp₁₂])
     have hte : t = e := by
       rw [he_eq, ← heqd, Finset.union_sdiff_of_subset hsub]
     exact htne hte
-  · -- otherwise some apex `w ∈ t` avoids both `{z₃,z₄}` and `{p₁,p₂}`; run the
-    -- edge-link contradiction inside `(removeTet M u).support`.
-    rw [Finset.not_subset] at hcase
+  · rw [Finset.not_subset] at hcase
     obtain ⟨w, hwt, hwp⟩ := hcase
     rw [Finset.mem_sdiff] at hwt
     obtain ⟨hwt, hwO⟩ := hwt
@@ -1490,8 +1394,6 @@ private lemma oppEdge_empty_of_disjoint_eligible_remainder {σ : Finset (Finset 
       exact (Finset.mem_sdiff.mp hpP).2
     have hp₁_link : p₁ ∈ edgeLinkVerts (removeTet M u).support ({z₃, z₄} : Finset V) := by
       rw [mem_edgeLinkVerts_iff]; exact ⟨⟨e, heU, hOsub, hp₁_e⟩, hp₁_notO⟩
-    -- the flip-edge pair `{p₁,p₂}` is closed under edge-link adjacency.  An adjacency
-    -- in `removeTet M u` gives a tet in `M.support` (erase ⊆), so M-level `huniq` applies.
     have hclosed : ∀ u' ∈ ({p₁, p₂} : Finset V), ∀ v,
         (edgeLinkGraph (removeTet M u).support ({z₃, z₄} : Finset V)).Adj u' v →
           v ∈ ({p₁, p₂} : Finset V) := by
@@ -1540,7 +1442,6 @@ private lemma eligible_oppEdge_geom {σ : Finset (Finset V)} {M : Chain V}
       (t \ (a ∩ b)) ∈ edgesOf σ ∧
       (∀ T ∈ σ, (t \ (a ∩ b)) ⊆ T → T ∈ sharedFaces M t) := by
   classical
-  -- exposed-pair geometry: `a = t.erase z₃`, `b = t.erase z₄`, `t \ (a ∩ b) = {z₃, z₄}`.
   have haexp : a ∈ exposedFaces M t := by rw [hexp]; exact Finset.mem_insert_self a _
   have hbexp : b ∈ exposedFaces M t := by
     rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self b)
@@ -1591,13 +1492,11 @@ private lemma eligible_oppEdge_geom {σ : Finset (Finset V)} {M : Chain V}
     · exact hz₃e
     · rw [Finset.mem_singleton] at hx; exact hx ▸ hz₄e
   have hOsubt : (t \ (a ∩ b)) ⊆ t := Finset.sdiff_subset
-  -- the flip edge `a ∩ b = {p₁,p₂}` and `t = (a ∩ b) ∪ (t \ (a ∩ b))`.
   have hICsubt : (a ∩ b) ⊆ t := hinter_eq ▸ Finset.sdiff_subset
   have hICcard : (a ∩ b).card = 2 := by
     rw [hinter_eq, Finset.card_sdiff_of_subset hOsub, ht4, Finset.card_pair hz₃₄]
   obtain ⟨p₁, p₂, hp₁₂, hPeq⟩ := Finset.card_eq_two.mp hICcard
   have htunion : (a ∩ b) ∪ (t \ (a ∩ b)) = t := Finset.union_sdiff_of_subset hICsubt
-  -- the two shared faces are `t.erase p₁`, `t.erase p₂`, each ⊇ {z₃,z₄}.
   have hp₁mem : p₁ ∈ a ∩ b := hPeq ▸ Finset.mem_insert_self p₁ _
   have hp₂mem : p₂ ∈ a ∩ b := hPeq ▸ Finset.mem_insert_of_mem (Finset.mem_singleton_self p₂)
   have hp₁t : p₁ ∈ t := hICsubt hp₁mem
@@ -1608,11 +1507,9 @@ private lemma eligible_oppEdge_geom {σ : Finset (Finset V)} {M : Chain V}
   have hp₂notO : p₂ ∉ ({z₃, z₄} : Finset V) := by
     intro hpO
     exact (Finset.mem_sdiff.mp (hinter_eq ▸ hp₂mem)).2 hpO
-  -- `sharedFaces = tetFaces \ exposedFaces`.
   have hsh_eq2 : tetFaces t \ exposedFaces M t = sharedFaces M t := by
     rw [exposedFaces, Finset.sdiff_sdiff_self_left,
       Finset.inter_eq_right.mpr (sharedFaces_subset_tetFaces M t)]
-  -- `t.erase p` is a shared face whenever `p ∈ {p₁,p₂}` (it is ≠ a, b since p ∉ O).
   have herase_shared : ∀ p ∈ ({p₁, p₂} : Finset V), t.erase p ∈ sharedFaces M t ∧
       ({z₃, z₄} : Finset V) ⊆ t.erase p := by
     intro p hp
@@ -1641,7 +1538,6 @@ private lemma eligible_oppEdge_geom {σ : Finset (Finset V)} {M : Chain V}
     push_neg; exact ⟨hne_a, hne_b⟩
   obtain ⟨hS₁sh, hS₁O⟩ := herase_shared p₁ (Finset.mem_insert_self p₁ _)
   obtain ⟨hS₂sh, hS₂O⟩ := herase_shared p₂ (Finset.mem_insert_of_mem (Finset.mem_singleton_self p₂))
-  -- both shared faces sit in `σ` (they are boundary triangles).
   have hsh_subσ : ∀ s ∈ sharedFaces M t, s ∈ σ := by
     intro s hs
     rw [← hUb.1, sharedFaces] at *
@@ -1652,33 +1548,28 @@ private lemma eligible_oppEdge_geom {σ : Finset (Finset V)} {M : Chain V}
     intro h
     have hp₂in : p₂ ∈ t.erase p₁ := Finset.mem_erase.mpr ⟨fun hc => hp₁₂ hc.symm, hp₂t⟩
     exact (Finset.notMem_erase p₂ t) (h ▸ hp₂in)
-  -- the opposite edge is a σ-edge (it lies in the card-3 boundary triangle `t.erase p₁`).
   have hS₁card : (t.erase p₁).card = 3 := by rw [Finset.card_erase_of_mem hp₁t, ht4]
   have hOedge : (t \ (a ∩ b)) ∈ edgesOf σ := by
     rw [hopp_eq]
     exact mem_edgesOf.mpr ⟨t.erase p₁, hS₁σ, hS₁O, Finset.card_pair hz₃₄⟩
-  -- by `exists_two_faces`, the two σ-faces over the opposite edge are exactly the
-  -- two shared faces; any σ-face over it is one of them, hence shared.
   obtain ⟨g₁, hg₁σ, g₂, hg₂σ, hg₁₂, _, _, huniq⟩ :=
     exists_two_faces hσ.toClosedSurface hOedge
   rw [hopp_eq] at huniq
   have hany : ∀ T ∈ σ, (t \ (a ∩ b)) ⊆ T → T ∈ sharedFaces M t := by
     intro T hTσ hTsub
     rw [hopp_eq] at hTsub
-    -- `t.erase p₁`, `t.erase p₂`, and `T` are σ-faces ⊇ O, so each is `g₁` or `g₂`.
     have hd₁ := huniq _ hS₁σ hS₁O
     have hd₂ := huniq _ hS₂σ hS₂O
     have hdT := huniq _ hTσ hTsub
-    -- `{g₁,g₂} = {erase p₁, erase p₂}`, so `T ∈ {erase p₁, erase p₂} ⊆ sharedFaces`.
     have hTcase : T = t.erase p₁ ∨ T = t.erase p₂ := by
       rcases hdT with hT1 | hT2
-      · -- `T = g₁`; whichever of `erase p₁`, `erase p₂` equals `g₁` gives the answer.
+      ·
         rcases hd₁ with h11 | h12
         · exact Or.inl (hT1.trans h11.symm)
         · rcases hd₂ with h21 | h22
           · exact Or.inr (hT1.trans h21.symm)
           · exact absurd (h12.trans h22.symm) hS₁ne₂
-      · -- `T = g₂`.
+      ·
         rcases hd₁ with h11 | h12
         · rcases hd₂ with h21 | h22
           · exact absurd (h11.trans h21.symm) hS₁ne₂
@@ -1702,12 +1593,10 @@ private lemma oppEdge_eq_flip {M : Chain V} {t a b O : Finset V}
     O = a ∩ b := by
   classical
   have ht4 : t.card = 4 := ht.1
-  -- `t \ O = {q₁,q₂}` (card 2); each `t.erase qᵢ` is a face of `t` over `O`.
   have hQcard : (t \ O).card = 2 := by rw [Finset.card_sdiff_of_subset hOt, ht4, hOcard]
   obtain ⟨q₁, q₂, hq₁₂, hQeq⟩ := Finset.card_eq_two.mp hQcard
   have hq₁mem : q₁ ∈ t \ O := hQeq ▸ Finset.mem_insert_self q₁ _
   have hq₂mem : q₂ ∈ t \ O := hQeq ▸ Finset.mem_insert_of_mem (Finset.mem_singleton_self q₂)
-  -- `t.erase q ∈ exposedFaces M t` and `O ⊆ t.erase q` for `q ∈ {q₁,q₂}`.
   have herase_exp : ∀ q ∈ ({q₁, q₂} : Finset V), t.erase q ∈ exposedFaces M t ∧
       O ⊆ t.erase q := by
     intro q hq
@@ -1724,13 +1613,11 @@ private lemma oppEdge_eq_flip {M : Chain V} {t a b O : Finset V}
   obtain ⟨he₁exp, he₁O⟩ := herase_exp q₁ (Finset.mem_insert_self q₁ _)
   obtain ⟨he₂exp, he₂O⟩ := herase_exp q₂ (Finset.mem_insert_of_mem (Finset.mem_singleton_self q₂))
   rw [hexp, Finset.mem_insert, Finset.mem_singleton] at he₁exp he₂exp
-  -- both `t.erase qᵢ ∈ {a,b}`; they are distinct, so `{a,b} = {erase q₁, erase q₂}`.
   have hq₂t : q₂ ∈ t := (Finset.mem_sdiff.mp hq₂mem).1
   have hS₁ne₂ : t.erase q₁ ≠ t.erase q₂ := by
     intro h
     have hq₂in : q₂ ∈ t.erase q₁ := Finset.mem_erase.mpr ⟨fun hc => hq₁₂ hc.symm, hq₂t⟩
     exact (Finset.notMem_erase q₂ t) (h ▸ hq₂in)
-  -- `a` (and `b`) is one of `t.erase q₁`, `t.erase q₂`, both ⊇ `O`.
   have hAcase : a = t.erase q₁ ∨ a = t.erase q₂ := by
     rcases he₁exp with h1a | h1b
     · exact Or.inl h1a.symm
@@ -1768,13 +1655,10 @@ private lemma eligible_pair_oriented_opp_avoidance {σ : Finset (Finset V)} {X M
   by_contra hcon
   push_neg at hcon
   obtain ⟨hOe_u, hOu_e⟩ := hcon
-  -- opposite-edge geometry for both tets.
   obtain ⟨hOe_card, hICe_card, hICe_sub, _, htune, _, hany_e⟩ :=
     eligible_oppEdge_geom hσ hUb he hexpe hf₃₄
   obtain ⟨hOu_card, hICu_card, hICu_sub, _, htunu, _, hany_u⟩ :=
     eligible_oppEdge_geom hσ hUb hu hexpu hg₃₄
-  -- no face of `u` over `e`'s opposite edge is shared (else it is shared by both,
-  -- via `hany_e`, contradicting `hdisj`); symmetrically for `e` over `u`'s edge.
   have hnsh_u : ∀ s ∈ tetFaces u, (e \ (f₃ ∩ f₄)) ⊆ s → s ∉ sharedFaces M u := by
     intro s _ hsub hsu
     have hsσ : s ∈ σ := by
@@ -1787,12 +1671,10 @@ private lemma eligible_pair_oriented_opp_avoidance {σ : Finset (Finset V)} {X M
       have := (Finset.mem_inter.mp (by rw [sharedFaces] at hse; exact hse)).2
       rw [← hUb.1]; exact this
     exact Finset.disjoint_right.mp hdisj (hany_u s hsσ hsub) hse
-  -- `e`'s opposite edge is `u`'s flip edge, and vice versa.
   have hOe_eq : (e \ (f₃ ∩ f₄)) = g₃ ∩ g₄ :=
     oppEdge_eq_flip hu hexpu hg₃₄ hICu_card hOe_u hOe_card hnsh_u
   have hOu_eq : (u \ (g₃ ∩ g₄)) = f₃ ∩ f₄ :=
     oppEdge_eq_flip he hexpe hf₃₄ hICe_card hOu_e hOu_card hnsh_e
-  -- assemble `e = (f₃∩f₄) ∪ (g₃∩g₄) = u`.
   have he_eq : e = (f₃ ∩ f₄) ∪ (g₃ ∩ g₄) := by rw [← hOe_eq, htune]
   have hu_eq : u = (g₃ ∩ g₄) ∪ (f₃ ∩ f₄) := by rw [← hOu_eq, htunu]
   exact hne (by rw [he_eq, hu_eq, Finset.union_comm])
@@ -1872,18 +1754,16 @@ private lemma prime_edgeLinkConnected_case1 {σ : Finset (Finset V)} {X M : Chai
       (edgeLinkVerts (removeTet M u).support (e \ (f₃ ∩ f₄)))) :
     EdgeLinkConnected M.support := by
   classical
-  -- `M = insert e (removeTet M e)`, then glue the new tet onto the connected remainder.
   rw [← support_insert_removeTet_of_mem he.2.1]
   apply edgeLinkConnected_insert he.1 hELMe
   intro e' he'e he'2
   by_cases he'O : e' = e \ (f₃ ∩ f₄)
-  · -- the flip-opposite edge: its link in the remainder is empty (LEFT disjunct).
+  ·
     rw [he'O]
     exact Or.inl (oppEdge_empty_of_disjoint_eligible_remainder hσ hU hXc hMX hT hS hPure
       he hu hexp hf₃₄ hOu hConnOu)
-  · -- any other card-2 face of `e` lies in `f₃` or `f₄`; use the exposed-triangle apex.
+  ·
     refine Or.inr ?_
-    -- exposed-pair geometry: `f₃ = e.erase z₃`, `f₄ = e.erase z₄`, `e \ (f₃ ∩ f₄) = {z₃, z₄}`.
     have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ _
     have hf₄exp : f₄ ∈ exposedFaces M e := by
       rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
@@ -1927,7 +1807,6 @@ private lemma prime_edgeLinkConnected_case1 {σ : Finset (Finset V)} {X M : Chai
         · exact ⟨hz₄mem.1, fun h => h.2 (Or.inr rfl)⟩
     have hz₃notf₃ : z₃ ∉ f₃ := by rw [heq3]; exact Finset.notMem_erase z₃ e
     have hz₄notf₄ : z₄ ∉ f₄ := by rw [heq4]; exact Finset.notMem_erase z₄ e
-    -- `e' ≠ {z₃,z₄}` forces `e' ⊆ f₃` or `e' ⊆ f₄`.
     have he'sub : e' ⊆ f₃ ∨ e' ⊆ f₄ := by
       by_contra hcon
       push_neg at hcon
@@ -1955,7 +1834,6 @@ private lemma prime_edgeLinkConnected_case1 {σ : Finset (Finset V)} {X M : Chai
       have heqe' : e' = ({z₃, z₄} : Finset V) :=
         (Finset.eq_of_subset_of_card_le hsub (by rw [he'2, Finset.card_pair hz₃₄])).symm
       exact he'O (heqe'.trans hopp_eq.symm)
-    -- in either case the exposed-triangle apex lives in the remainder link.
     rcases he'sub with hi | hi
     · exact edgeLinkCompat_nonOpp_of_exposed_face hσ hU hMX hT hS hPure hPMe he hf₃exp hi he'2
     · exact edgeLinkCompat_nonOpp_of_exposed_face hσ hU hMX hT hS hPure hPMe he hf₄exp hi he'2
@@ -1970,7 +1848,6 @@ private lemma connOn_oppEdge_of_subset_local {τ τ' : Finset (Finset V)} {O : F
     (h : ConnOn (edgeLinkGraph τ' O) (edgeLinkVerts τ' O)) :
     ConnOn (edgeLinkGraph τ O) (edgeLinkVerts τ O) := by
   classical
-  -- The two filters by `O ⊆ ·` agree, so both the apex set and the link graph do.
   have hfilter : τ.filter (fun t => O ⊆ t) = τ'.filter (fun t => O ⊆ t) := by
     ext t
     simp only [Finset.mem_filter]
@@ -2011,23 +1888,18 @@ private lemma flipPresent_removeTet_connOn_at_nonflip_edge {σ : Finset (Finset 
       EdgeLinkConnected M'.support) :
     ConnOn (edgeLinkGraph (removeTet M u).support O) (edgeLinkVerts (removeTet M u).support O) := by
   classical
-  -- The flip-present side package: two sides `A, B`, covering and exact-separating.
   obtain ⟨A, B, hAB, hcd, hsphA, hsphB, hcover, hsep, hg₃A, hg₃notB, hg₄B, hg₄notA, _⟩ :=
     flipEdgePresent_side_sets hσ hU hXc hMX hT hS hu hexpu hg₃₄ hFlipu
-  -- Side-filling algebra: each side is a smaller single-sphere taut filling.
   obtain ⟨hUA, hUB, hbA, hbB, hTA, hTB, hSA, hSB, hnrmA, hnrmB, _, _, _, _⟩ :=
     flipEdgePresent_side_algebra hσ hU hXc hMX hT hS hu hexpu hg₃₄ hFlipu hAB hcd hcover hsep
-  -- `g₃ ⊆ u` (it is a face of the tet `u`), so `A ∩ B = g₃ ∩ g₄ ⊆ g₃ ⊆ u`.
   have hg₃exp : g₃ ∈ exposedFaces M u := by rw [hexpu]; exact Finset.mem_insert_self g₃ _
   have hg₃tet : g₃ ∈ tetFaces u := exposedFaces_subset_tetFaces M u hg₃exp
   have hg₃u : g₃ ⊆ u := (Finset.mem_powersetCard.mp hg₃tet).1
   have hABu : A ∩ B ⊆ u := by
     rw [hAB]; exact (Finset.inter_subset_left).trans hg₃u
-  -- A subset `O ⊆ e`, `O ⊄ u`, cannot lie in `A ∩ B`.
   have hOnotAB : ¬ O ⊆ A ∩ B := fun h => hOu (h.trans hABu)
-  -- `e` lies on one side.
   rcases hcover e heU with heA | heB
-  · -- `e ⊆ A`: use side A.
+  ·
     have hloc : ∀ t ∈ (removeTet M u).support, O ⊆ t → t ∈
         ((removeTet M u).filter (fun t => t ⊆ A)).support := by
       intro t ht hOt
@@ -2042,7 +1914,7 @@ private lemma flipPresent_removeTet_connOn_at_nonflip_edge {σ : Finset (Finset 
         ((removeTet M u).filter (fun t => t ⊆ A)) hnrmA hsphA hUA hbA rfl hTA hSA
     refine connOn_oppEdge_of_subset_local ?_ hloc (helcA O hO2)
     rw [Finsupp.support_filter]; exact Finset.filter_subset _ _
-  · -- `e ⊆ B`: use side B.
+  ·
     have hloc : ∀ t ∈ (removeTet M u).support, O ⊆ t → t ∈
         ((removeTet M u).filter (fun t => t ⊆ B)).support := by
       intro t ht hOt
@@ -2111,7 +1983,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
     glueStep_flipBoundary_of_eligible hUb he
   have he_not_old : e ∉ (removeTet M e).support := by
     rw [support_removeTet_of_mem he.2.1]; exact Finset.notMem_erase e M.support
-  -- `tetFaces e ∩ flipBoundary = exposedFaces M e` (shared faces are erased from `σ`).
   have hsh_eq : sharedFaces M e = tetFaces e ∩ σ := by
     simp only [sharedFaces, hUb.1]
   have hexp_mem : ∀ x, x ∈ exposedFaces M e ↔ (x ∈ tetFaces e ∧ x ∉ σ) := by
@@ -2124,15 +1995,12 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
     rw [hexp_mem x, hsh_eq]
     simp only [Finset.mem_inter]
     tauto
-  -- shared triangles vanish on removal.
   have hshared0 : ∀ r ∈ sharedFaces M e, faceCount (removeTet M e).support r = 0 :=
     fun r hr =>
       faceCount_removeTet_sharedFace_eq_zero hσ hU hXc hMX hT hS hPure he hu hdisj hPMu hr
-  -- the exposed faces are exactly `f₃, f₄`.
   have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ _
   have hf₄exp : f₄ ∈ exposedFaces M e := by
     rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
-  -- a face `g ⊆ e` lying in a remaining tet has its containing triangles available.
   refine
     { weak := hweak
       newTet := he_not_old
@@ -2140,10 +2008,7 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       hpmc := ?_
       helc := ?_
       hvlc := ?_ }
-  · -- clean: a face `f ⊆ e` in a remaining tet `s` lies in an exposed triangle.
-    -- Triangles: shared ⟹ in no remaining tet (contra), exposed ⟹ itself; `f = e` ⟹
-    -- `s = e` (contra freshness); vertices/edges sit in `f₃` or `f₄` unless `f ⊇` the
-    -- flip-opposite edge, which would make its edge-link nonempty (contra `hOppEmpty`).
+  ·
     rw [hinterB]
     rintro f hfe ⟨s, hsmem, hfs⟩
     have hf₃tet : f₃ ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf₃exp
@@ -2158,7 +2023,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       rw [support_removeTet_of_mem he.2.1] at ht
       exact hPure t (Finset.mem_of_mem_erase ht)
     have hs4 : s.card = 4 := hPureE s hsmem
-    -- `z₃ := e \ f₃`, `z₄ := e \ f₄` (single vertices); `z₃ ≠ z₄`.
     have hcard3 : (e \ f₃).card = 1 := by rw [Finset.card_sdiff_of_subset hf₃e, he4, hf₃3]
     have hcard4 : (e \ f₄).card = 1 := by rw [Finset.card_sdiff_of_subset hf₄e, he4, hf₄3]
     obtain ⟨z₃, hz₃⟩ := Finset.card_eq_one.mp hcard3
@@ -2166,7 +2030,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
     have hz₃mem : z₃ ∈ e \ f₃ := hz₃ ▸ Finset.mem_singleton_self z₃
     have hz₄mem : z₄ ∈ e \ f₄ := hz₄ ▸ Finset.mem_singleton_self z₄
     rw [Finset.mem_sdiff] at hz₃mem hz₄mem
-    -- a card-3 subset of `e` missing `z₃` is `f₃` (and the analogue for `z₄`/`f₄`).
     have heq3 : f₃ = e.erase z₃ := by
       apply Finset.eq_of_subset_of_card_le
       · intro a ha; exact Finset.mem_erase.mpr ⟨fun h => hz₃mem.2 (h ▸ ha), hf₃e ha⟩
@@ -2177,12 +2040,10 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       · rw [Finset.card_erase_of_mem hz₄mem.1, he4, hf₄3]
     have hz₃₄ : z₃ ≠ z₄ := by
       rintro rfl; exact hf₃₄ (heq3.trans heq4.symm)
-    -- membership in `f₃` / `f₄` reduces to avoiding `z₃` / `z₄`.
     have hmem3 : ∀ {a}, a ∈ e → (a ∈ f₃ ↔ a ≠ z₃) := by
       intro a hae; rw [heq3, Finset.mem_erase]; exact ⟨fun h => h.1, fun h => ⟨h, hae⟩⟩
     have hmem4 : ∀ {a}, a ∈ e → (a ∈ f₄ ↔ a ≠ z₄) := by
       intro a hae; rw [heq4, Finset.mem_erase]; exact ⟨fun h => h.1, fun h => ⟨h, hae⟩⟩
-    -- the flip-opposite edge.
     have hopp_eq : e \ (f₃ ∩ f₄) = ({z₃, z₄} : Finset V) := by
       ext a
       simp only [Finset.mem_sdiff, Finset.mem_inter, heq3, heq4, Finset.mem_erase,
@@ -2193,8 +2054,7 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
         · exact ⟨hz₃mem.1, fun h => h.1.1 rfl⟩
         · exact ⟨hz₄mem.1, fun h => h.2.1 rfl⟩
     by_cases hopp : ({z₃, z₄} : Finset V) ⊆ f
-    · -- `f` contains the flip-opposite edge, which sits in remaining tet `s`: empty-link
-      -- contradiction.  Pick an apex `w ∈ s \ {z₃, z₄}` (s has 4 vertices).
+    ·
       exfalso
       have hsub : ({z₃, z₄} : Finset V) ⊆ s := hopp.trans hfs
       have hpc : ({z₃, z₄} : Finset V).card = 2 := Finset.card_pair hz₃₄
@@ -2208,8 +2068,7 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       rw [hopp_eq] at hOppEmpty
       rw [hOppEmpty] at hwapex
       exact absurd hwapex (Finset.notMem_empty w)
-    · -- `f` does not contain the opposite edge, so `z₃ ∉ f` or `z₄ ∉ f`; the matching
-      -- exposed face then contains `f`.
+    ·
       have hor : z₃ ∉ f ∨ z₄ ∉ f := by
         by_contra hc; push_neg at hc
         exact hopp (by
@@ -2219,7 +2078,7 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       rcases hor with hz₃f | hz₄f
       · exact ⟨f₃, hf₃exp, fun a ha => (hmem3 (hfe ha)).mpr (fun h => hz₃f (h ▸ ha))⟩
       · exact ⟨f₄, hf₄exp, fun a ha => (hmem4 (hfe ha)).mpr (fun h => hz₄f (h ▸ ha))⟩
-  · -- hpmc: identical to the `prime_isPM` clean-glue block.
+  ·
     intro f hf3 hfe
     have hftet : f ∈ tetFaces e := Finset.mem_powersetCard.mpr ⟨hfe, hf3⟩
     by_cases hsh : f ∈ sharedFaces M e
@@ -2239,8 +2098,7 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       have h1 : faceCount (removeTet M e).support f = 1 :=
         faceCount_eq_one_of_boundary hSe hPureE hPMe hf3 hbd
       omega
-  · -- helc: an edge `e' ⊆ e` either has an exposed triangle through it (apex via its
-    -- unique remaining tet) or is the flip-opposite edge `e \ (f₃ ∩ f₄)` (empty link).
+  ·
     intro e' he' he'2
     have he4 : e.card = 4 := he.1
     have hf₃tet : f₃ ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf₃exp
@@ -2250,7 +2108,7 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
     have hf₃3 : f₃.card = 3 := (Finset.mem_powersetCard.mp hf₃tet).2
     have hf₄3 : f₄.card = 3 := (Finset.mem_powersetCard.mp hf₄tet).2
     by_cases hsub : e' ⊆ f₃ ∨ e' ⊆ f₄
-    · -- ≥ 1 exposed triangle through `e'`: apex from its unique remaining tet.
+    ·
       right
       obtain ⟨f, hfexp, he'f, hfe, hf3⟩ :
           ∃ f, f ∈ exposedFaces M e ∧ e' ⊆ f ∧ f ⊆ e ∧ f.card = 3 := by
@@ -2259,7 +2117,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
         · exact ⟨f₄, hf₄exp, h, hf₄e, hf₄3⟩
       obtain ⟨t, htmem, hft⟩ :=
         exposed_triangle_unique_remaining_tet hσ hU hMX hT hS hPure hPMe he hfexp
-      -- `f \ e'` has card 1: the apex `w ∈ e \ e'`, with `e' ⊆ t` and `w ∈ t`.
       have hcard : (f \ e').card = 1 := by
         rw [Finset.card_sdiff_of_subset he'f, hf3, he'2]
       obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hcard
@@ -2270,11 +2127,10 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       · rw [Finset.mem_sdiff]; exact ⟨hfe hwf, hwe'⟩
       · rw [mem_edgeLinkVerts_iff]
         exact ⟨⟨t, htmem, he'f.trans hft, hft hwf⟩, hwe'⟩
-    · -- no exposed triangle through `e'`: then `e' = e \ (f₃ ∩ f₄)`, link empty.
+    ·
       left
       push_neg at hsub
       obtain ⟨hn3, hn4⟩ := hsub
-      -- `z₃ := e \ f₃` is a single vertex of `e' ` (`e' ⊄ f₃`); likewise `z₄`.
       have hcard3 : (e \ f₃).card = 1 := by rw [Finset.card_sdiff_of_subset hf₃e, he4, hf₃3]
       have hcard4 : (e \ f₄).card = 1 := by rw [Finset.card_sdiff_of_subset hf₄e, he4, hf₄3]
       obtain ⟨z₃, hz₃⟩ := Finset.card_eq_one.mp hcard3
@@ -2282,7 +2138,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       have hz₃mem : z₃ ∈ e \ f₃ := hz₃ ▸ Finset.mem_singleton_self z₃
       have hz₄mem : z₄ ∈ e \ f₄ := hz₄ ▸ Finset.mem_singleton_self z₄
       rw [Finset.mem_sdiff] at hz₃mem hz₄mem
-      -- `e' ⊄ f₃` forces `z₃ ∈ e'` (the only `e`-vertex outside `f₃`).
       have hz₃e' : z₃ ∈ e' := by
         by_contra hzn
         apply hn3
@@ -2301,7 +2156,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
         rw [hz₄, Finset.mem_singleton] at this; subst this; exact hzn ha
       have hz₃₄ : z₃ ≠ z₄ := by
         rintro rfl
-        -- `z₃ = z₄` ⟹ `f₃ = e.erase z₃ = f₄`.
         have hfe3 : f₃ = e.erase z₃ := by
           apply Finset.eq_of_subset_of_card_le
           · intro a ha; exact Finset.mem_erase.mpr ⟨fun h => hz₃mem.2 (h ▸ ha), hf₃e ha⟩
@@ -2311,7 +2165,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
           · intro a ha; exact Finset.mem_erase.mpr ⟨fun h => hz₄mem.2 (h ▸ ha), hf₄e ha⟩
           · rw [Finset.card_erase_of_mem hz₄mem.1, he4, hf₄3]
         exact hf₃₄ (hfe3.trans hfe4.symm)
-      -- `{z₃, z₄} ⊆ e'`, both card 2, so `e' = {z₃, z₄} = e \ (f₃ ∩ f₄)`.
       have hpair_sub : ({z₃, z₄} : Finset V) ⊆ e' := by
         intro a ha; rcases Finset.mem_insert.mp ha with rfl | ha
         · exact hz₃e'
@@ -2319,7 +2172,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       have hpair_eq : e' = {z₃, z₄} := by
         refine (Finset.eq_of_subset_of_card_le hpair_sub ?_).symm
         rw [he'2, Finset.card_pair hz₃₄]
-      -- `f₃ ∩ f₄ = e \ {z₃, z₄}`, hence `e \ (f₃ ∩ f₄) = {z₃, z₄} = e'`.
       have hinter_eq : f₃ ∩ f₄ = e \ {z₃, z₄} := by
         have hfe3 : f₃ = e.erase z₃ := by
           apply Finset.eq_of_subset_of_card_le
@@ -2333,7 +2185,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
         simp only [Finset.mem_inter, hfe3, hfe4, Finset.mem_erase, Finset.mem_sdiff,
           Finset.mem_insert, Finset.mem_singleton]
         tauto
-      -- `e \ (f₃ ∩ f₄) = e \ (e \ {z₃,z₄}) = {z₃,z₄} = e'`.
       have hopp : e \ (f₃ ∩ f₄) = e' := by
         rw [hinter_eq, hpair_eq]
         ext a
@@ -2346,11 +2197,9 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
           · exact ⟨hz₃mem.1, fun h => h.2 (Or.inl rfl)⟩
           · exact ⟨hz₄mem.1, fun h => h.2 (Or.inr rfl)⟩
       rw [← hopp]; exact hOppEmpty
-  · -- hvlc: a vertex `x ∈ e` lies on ≥ 1 exposed triangle (only `e.erase x` misses it,
-    -- but two faces are exposed), whose unique remaining tet supplies an apex in `e \ {x}`.
+  ·
     intro x hx
     right
-    -- `x` lies in `f₃` or `f₄` (else both equal `e.erase x`, contra `f₃ ≠ f₄`).
     have he4 : e.card = 4 := he.1
     have hf₃tet : f₃ ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf₃exp
     have hf₄tet : f₄ ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf₄exp
@@ -2362,7 +2211,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       by_contra hc
       push_neg at hc
       obtain ⟨hx3, hx4⟩ := hc
-      -- a card-3 subset of `e` not containing `x` equals `e.erase x`.
       have key : ∀ {g : Finset V}, g ⊆ e → g.card = 3 → x ∉ g → g = e.erase x := by
         intro g hge hg3 hxg
         apply Finset.eq_of_subset_of_card_le
@@ -2370,7 +2218,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
           exact Finset.mem_erase.mpr ⟨fun h => hxg (h ▸ hy), hge hy⟩
         · rw [Finset.card_erase_of_mem hx, he4, hg3]
       exact hf₃₄ ((key hf₃e hf₃3 hx3).trans (key hf₄e hf₄3 hx4).symm)
-    -- pick the exposed face through `x`.
     obtain ⟨f, hfexp, hxf, hfe, hf3⟩ :
         ∃ f, f ∈ exposedFaces M e ∧ x ∈ f ∧ f ⊆ e ∧ f.card = 3 := by
       rcases hxor with h | h
@@ -2378,7 +2225,6 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       · exact ⟨f₄, hf₄exp, h, hf₄e, hf₄3⟩
     obtain ⟨t, htmem, hft⟩ :=
       exposed_triangle_unique_remaining_tet hσ hU hMX hT hS hPure hPMe he hfexp
-    -- `f \ {x}` has card 2; pick `w` there: `w ∈ e`, `w ≠ x`, `w ∈ t`.
     have hcard : (f \ {x}).card = 2 := by
       rw [Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.mpr hxf), hf3,
         Finset.card_singleton]
@@ -2448,7 +2294,7 @@ private lemma flipBridge_compat_side {s₁ s₂ : Finset (Finset V)}
     {ε : Finset V} (hεe : ε ⊆ e) (hε2 : ε.card = 2) :
     edgeLinkVerts s₁ ε = ∅ ∨ ((e \ ε) ∩ edgeLinkVerts s₁ ε).Nonempty := by
   by_cases hεf₃ : ε ⊆ f₃
-  · -- `ε ⊆ f₃`: the third vertex `w := f₃ \ ε` is a common apex via `t₃`.
+  ·
     right
     have hdiff : (f₃ \ ε).card = 1 := by rw [Finset.card_sdiff_of_subset hεf₃, hf₃3, hε2]
     obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hdiff
@@ -2458,24 +2304,22 @@ private lemma flipBridge_compat_side {s₁ s₂ : Finset (Finset V)}
     refine ⟨w, Finset.mem_inter.mpr ⟨Finset.mem_sdiff.mpr ⟨hf₃e hwf₃, hwε⟩, ?_⟩⟩
     rw [mem_edgeLinkVerts_iff]
     exact ⟨⟨t₃, ht₃, hεf₃.trans hf₃t₃, hf₃t₃ hwf₃⟩, hwε⟩
-  · -- `ε ⊄ f₃`: show the apex set is empty.
+  ·
     left
     by_cases hεf₄ : ε ⊆ f₄
-    · -- `ε ⊆ f₄`: an `s₁`-witness would straddle the seam, forcing `ε = cd ⊆ f₃`.
+    ·
       apply edgeLinkVerts_eq_empty
       intro t ht hεt
       have hcontra : ε = cd :=
         flipBridge_edge_eq_seam hAB hcd2 hε2 (hs₁A t ht) (hs₂B t₄ ht₄) hεt (hεf₄.trans hf₄t₄)
       exact hεf₃ (hcontra ▸ hcdf₃)
-    · -- otherwise `ε = e \ cd`: empty in the union, hence empty in `s₁`.
+    ·
       have hεopp : ε = e \ cd := by
         apply Finset.eq_of_subset_of_card_le
-        · -- `ε ⊆ e \ cd`: no endpoint of `ε` is in `cd`.
+        ·
           intro x hxε
           rw [Finset.mem_sdiff]
           refine ⟨hεe hxε, fun hxcd => ?_⟩
-          -- the other endpoint `y` of `ε` lies in neither `f₃` (`ε ⊄ f₃`, `x ∈ f₃`) nor `f₄`,
-          -- yet `y ∈ e = f₃ ∪ f₄` — contradiction.
           have hxf₃ : x ∈ f₃ := hcdf₃ hxcd
           have hxf₄ : x ∈ f₄ := hcdf₄ hxcd
           obtain ⟨y, hyε, hyx⟩ : ∃ y ∈ ε, y ≠ x := by
@@ -2506,7 +2350,7 @@ private lemma flipBridge_compat_side {s₁ s₂ : Finset (Finset V)}
           have hye : y ∈ e := hεe hyε
           rw [he, Finset.mem_union] at hye
           exact hye.elim hyf₃ hyf₄
-        · -- cardinalities: `(e \ cd).card = 2 = ε.card`.
+        ·
           rw [hε2, Finset.card_sdiff_of_subset (hcdf₃.trans hf₃e), he4, hcd2]
       rw [hεopp]
       exact Finset.subset_empty.mp (hOppEmpty ▸ edgeLinkVerts_mono Finset.subset_union_left _)
@@ -2539,7 +2383,6 @@ private lemma edgeLinkConnected_insert_flipBridge {s₁ s₂ : Finset (Finset V)
     (hOppEmpty : edgeLinkVerts (s₁ ∪ s₂) (e \ cd) = ∅) :
     EdgeLinkConnected (insert e (s₁ ∪ s₂)) := by
   classical
-  -- ### Geometry of the seam: `a₃ := f₃ \ cd`, `a₄ := f₄ \ cd`, `e \ cd = {a₃, a₄}`.
   have hcde : cd ⊆ e := hcdf₃.trans hf₃e
   have hcard3 : (f₃ \ cd).card = 1 := by rw [Finset.card_sdiff_of_subset hcdf₃, hf₃3, hcd2]
   have hcard4 : (f₄ \ cd).card = 1 := by rw [Finset.card_sdiff_of_subset hcdf₄, hf₄3, hcd2]
@@ -2550,22 +2393,18 @@ private lemma edgeLinkConnected_insert_flipBridge {s₁ s₂ : Finset (Finset V)
   rw [Finset.mem_sdiff] at ha₃mem ha₄mem
   obtain ⟨ha₃f₃, ha₃cd⟩ := ha₃mem
   obtain ⟨ha₄f₄, ha₄cd⟩ := ha₄mem
-  -- `e \ cd = {a₃, a₄}`.
   have hopp_eq : e \ cd = ({a₃, a₄} : Finset V) := by
     have hdistrib : e \ cd = (f₃ \ cd) ∪ (f₄ \ cd) := by rw [he, Finset.union_sdiff_distrib]
     rw [hdistrib, ha₃, ha₄]; rfl
-  -- `a₃ ≠ a₄` (else `e \ cd` is a singleton, but it has card `4 - 2 = 2`).
   have hopp_card : (e \ cd).card = 2 := by rw [Finset.card_sdiff_of_subset hcde, he4, hcd2]
   have ha₃₄ : a₃ ≠ a₄ := by
     intro h
     rw [hopp_eq, h] at hopp_card
     simp at hopp_card
-  -- `insert a₃ (insert a₄ cd) = e`: it is `{a₃, a₄} ∪ cd = (e \ cd) ∪ cd = e`.
   have hbridge_tet : insert a₃ (insert a₄ cd) = e := by
     have h1 : insert a₃ (insert a₄ cd) = ({a₃, a₄} : Finset V) ∪ cd := by
       simp only [Finset.insert_union, Finset.singleton_union]
     rw [h1, ← hopp_eq, Finset.sdiff_union_of_subset hcde]
-  -- ### Each side, augmented by `e`, is edge-link connected.
   have hsub₁ : s₁ ⊆ insert e (s₁ ∪ s₂) :=
     Finset.subset_union_left.trans (Finset.subset_insert e _)
   have hsub₂ : s₂ ⊆ insert e (s₁ ∪ s₂) :=
@@ -2581,39 +2420,35 @@ private lemma edgeLinkConnected_insert_flipBridge {s₁ s₂ : Finset (Finset V)
         (by rw [Finset.inter_comm]; exact hAB) hcd2 he4 hs₂B hs₁A hcdf₄ hcdf₃ hf₄e hf₄3 hf₃e
         (he.trans (Finset.union_comm f₃ f₄)) ht₄ hf₄t₄ ht₃ hf₃t₃
         (by rw [Finset.union_comm s₂ s₁]; exact hOppEmpty) hεe hε2)
-  -- ### Connectivity at every edge of the union.
   intro ε hε2 x hx y hy
   by_cases hεcd : ε = cd
-  · -- **Seam regime `ε = cd`:** everything reaches the fixed apex `a₃`.
+  ·
     rw [hεcd] at hx hy ⊢
-    -- `a₃` is a `cd`-apex (via `t₃`); `a₄` is too (via `t₄`); both lie in `insert e (s₁∪s₂)`.
     have ha₃link : a₃ ∈ edgeLinkVerts (insert e (s₁ ∪ s₂)) cd :=
       edgeLinkVerts_mono (Finset.subset_insert e _) cd
         (flipBridge_apex_mem_edgeLinkVerts ht₃ hf₃t₃ hcdf₃ ha₃f₃ ha₃cd)
-    -- the bridge adjacency `a₃ ~ a₄` via `e`.
     have hadj : (edgeLinkGraph (insert e (s₁ ∪ s₂)) cd).Adj a₃ a₄ :=
       ⟨ha₃₄, by rw [hbridge_tet]; exact Finset.mem_insert_self e _⟩
-    -- every `cd`-apex `z` reaches `a₃`.
     have key : ∀ z ∈ edgeLinkVerts (insert e (s₁ ∪ s₂)) cd,
         (edgeLinkGraph (insert e (s₁ ∪ s₂)) cd).Reachable z a₃ := by
       intro z hz
       rw [mem_edgeLinkVerts_iff] at hz
       obtain ⟨⟨t, htmem, hcdt, hzt⟩, hzcd⟩ := hz
       rcases Finset.mem_insert.mp htmem with rfl | htU
-      · -- `t = e`: `z ∈ e \ cd = {a₃, a₄}`.
+      ·
         have hzopp : z ∈ ({a₃, a₄} : Finset V) := by
           rw [← hopp_eq, Finset.mem_sdiff]; exact ⟨hzt, hzcd⟩
         rcases Finset.mem_insert.mp hzopp with rfl | hz4
         · exact SimpleGraph.Reachable.refl _
         · rw [Finset.mem_singleton] at hz4; subst hz4; exact hadj.symm.reachable
       · rcases Finset.mem_union.mp htU with hts₁ | hts₂
-        · -- `z` is a side-1 `cd`-apex: reaches `a₃` inside `s₁`'s link, lifted.
+        ·
           have hzs₁ : z ∈ edgeLinkVerts s₁ cd := by
             rw [mem_edgeLinkVerts_iff]; exact ⟨⟨t, hts₁, hcdt, hzt⟩, hzcd⟩
           have ha₃s₁ : a₃ ∈ edgeLinkVerts s₁ cd := by
             rw [mem_edgeLinkVerts_iff]; exact ⟨⟨t₃, ht₃, hcdf₃.trans hf₃t₃, hf₃t₃ ha₃f₃⟩, ha₃cd⟩
           exact (hELC₁ cd hcd2 z hzs₁ a₃ ha₃s₁).mono (edgeLinkGraph_mono hsub₁ cd)
-        · -- `z` is a side-2 `cd`-apex: reaches `a₄` inside `s₂`'s link, then `a₄ ~ a₃`.
+        ·
           have hzs₂ : z ∈ edgeLinkVerts s₂ cd := by
             rw [mem_edgeLinkVerts_iff]; exact ⟨⟨t, hts₂, hcdt, hzt⟩, hzcd⟩
           have ha₄s₂ : a₄ ∈ edgeLinkVerts s₂ cd := by
@@ -2622,12 +2457,12 @@ private lemma edgeLinkConnected_insert_flipBridge {s₁ s₂ : Finset (Finset V)
             (hELC₂ cd hcd2 z hzs₂ a₄ ha₄s₂).mono (edgeLinkGraph_mono hsub₂ cd)
           exact hza₄.trans hadj.symm.reachable
     exact (key x hx).trans (key y hy).symm
-  · -- **Non-seam regime `ε ≠ cd`:** `ε`'s tets sit on one side; transfer up.
+  ·
     have hεcd' : ¬ ε ⊆ cd := by
       intro h
       exact hεcd (Finset.eq_of_subset_of_card_le h (by rw [hcd2, hε2]))
     by_cases hQ : ∃ t ∈ s₂, ε ⊆ t
-    · -- a side-2 witness ⟹ no side-1 witness ⟹ all `ε`-tets in `insert e s₂`.
+    ·
       obtain ⟨w₂, hw₂, hεw₂⟩ := hQ
       have hloc : ∀ t ∈ insert e (s₁ ∪ s₂), ε ⊆ t → t ∈ insert e s₂ := by
         intro t htmem hεt
@@ -2640,7 +2475,7 @@ private lemma edgeLinkConnected_insert_flipBridge {s₁ s₂ : Finset (Finset V)
       refine connOn_oppEdge_of_subset_local
         (Finset.insert_subset_insert e Finset.subset_union_right) hloc ?_ x hx y hy
       exact hEL₂ ε hε2
-    · -- no side-2 witness ⟹ all `ε`-tets in `insert e s₁`.
+    ·
       have hloc : ∀ t ∈ insert e (s₁ ∪ s₂), ε ⊆ t → t ∈ insert e s₁ := by
         intro t htmem hεt
         rcases Finset.mem_insert.mp htmem with rfl | htU
@@ -2655,7 +2490,7 @@ private lemma edgeLinkConnected_insert_flipBridge {s₁ s₂ : Finset (Finset V)
 /-- **Cross-side clean glue of the bridge tet onto one side.**  The flip-present
 companion of `cleanGlueStep_eligible`: re-inserting the eligible tet `e` onto **one
 side's** tet-set `s₁` (boundary `σ₁`, the side-1 piece of the flip boundary) is a
-clean glue step.  This is the cross-side analogue Codex flagged — it certifies `e`
+clean glue step.  It certifies `e`
 against the side-1 accumulator `s₁` (not the full `removeTet M e`), which is what the
 clean case-2 assembly threads when it shells side 1 first, sticks `e`, then continues
 over side 2.
@@ -2687,10 +2522,8 @@ private lemma cleanGlueStep_flipBridge_side {s₁ s₂ σ₁ Bmid : Finset (Fins
     (hpmcFull : ∀ f, f.card = 3 → f ⊆ e → faceCount (s₁ ∪ s₂) f ≤ 1) :
     CleanGlueStep e s₁ σ₁ Bmid := by
   classical
-  -- `e ∩ A = f₃`: `f₃ ⊆ e ∩ A`, and side-A vertices of `e` are exactly `f₃` (`hAnf`).
   have hf₃A : f₃ ⊆ A := fun x hx => by
     have hxe : x ∈ e := hf₃e hx
-    -- `x ∈ f₃ ⊆ e`; need `x ∈ A`.  Use that `t₃ ⊆ A` and `f₃ ⊆ t₃`.
     exact hs₁A t₃ ht₃ (hf₃t₃ hx)
   have heA : e ∩ A = f₃ := by
     apply Finset.Subset.antisymm
@@ -2698,14 +2531,12 @@ private lemma cleanGlueStep_flipBridge_side {s₁ s₂ σ₁ Bmid : Finset (Fins
       rw [Finset.mem_inter] at hx
       exact hAnf x hx.1 hx.2
     · exact Finset.subset_inter hf₃e hf₃A
-  -- The single side-2-only apex `z₃ := e \ f₃`.
   have hcard3 : (e \ f₃).card = 1 := by rw [Finset.card_sdiff_of_subset hf₃e, he4, hf₃3]
   obtain ⟨z₃, hz₃⟩ := Finset.card_eq_one.mp hcard3
   have hz₃mem : z₃ ∈ e \ f₃ := hz₃ ▸ Finset.mem_singleton_self z₃
   rw [Finset.mem_sdiff] at hz₃mem
   obtain ⟨hz₃e, hz₃notf₃⟩ := hz₃mem
   have hz₃notA : z₃ ∉ A := fun hz₃A => hz₃notf₃ (hAnf z₃ hz₃e hz₃A)
-  -- A card-3 subset of `e` missing `z₃` is `f₃`.
   have heq3 : f₃ = e.erase z₃ := by
     apply Finset.eq_of_subset_of_card_le
     · intro a ha; exact Finset.mem_erase.mpr ⟨fun h => hz₃notf₃ (h ▸ ha), hf₃e ha⟩
@@ -2719,20 +2550,19 @@ private lemma cleanGlueStep_flipBridge_side {s₁ s₂ σ₁ Bmid : Finset (Fins
         flipBridge_compat_side hAB hcd2 he4 hs₁A hs₂B hcdf₃ hcdf₄ hf₃e hf₃3 hf₄e he_eq
           ht₃ hf₃t₃ ht₄ hf₄t₄ hOppEmpty hεe hε2
       hvlc := ?_ }
-  · -- clean: `f ⊆ e`, `f ⊆ s` for `s ∈ s₁` (so `s ⊆ A`), hence `f ⊆ e ∩ A = f₃`; use `f₃`.
+  ·
     rintro f hfe ⟨s, hsmem, hfs⟩
     have hfA : f ⊆ A := hfs.trans (hs₁A s hsmem)
     have hff₃ : f ⊆ f₃ := by rw [← heA]; exact Finset.subset_inter hfe hfA
     refine ⟨f₃, ?_, hff₃⟩
     rw [hsharedeq]; exact Finset.mem_singleton_self f₃
-  · -- hpmc: `faceCount s₁ f ≤ faceCount (s₁ ∪ s₂) f ≤ 1`.
+  ·
     intro f hf3 hfe
     exact le_trans (faceCount_le_of_subset Finset.subset_union_left f) (hpmcFull f hf3 hfe)
-  · -- hvlc: `x ∈ e`.  Either `x ∈ f₃` (apex in `t₃`) or `x = z₃` (empty `s₁`-link).
+  ·
     intro x hx
     by_cases hxf₃ : x ∈ f₃
     · right
-      -- third `f₃`-vertex `w ∈ f₃ \ {x}` is an apex of `x` via `t₃ ∈ s₁`.
       have hcard : (f₃ \ {x}).card = 2 := by
         rw [Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.mpr hxf₃), hf₃3,
           Finset.card_singleton]
@@ -2744,7 +2574,7 @@ private lemma cleanGlueStep_flipBridge_side {s₁ s₂ σ₁ Bmid : Finset (Fins
       · rw [Finset.mem_sdiff, Finset.mem_singleton]; exact ⟨hf₃e hwf₃, hwx⟩
       · rw [mem_vertexLinkVerts_iff]
         exact ⟨⟨t₃, ht₃, hf₃t₃ hxf₃, hf₃t₃ hwf₃⟩, hwx⟩
-    · -- `x ∉ f₃` and `x ∈ e` ⟹ `x = z₃` (the unique `e`-vertex outside `f₃`), `z₃ ∉ A`.
+    ·
       left
       have hxz₃ : x = z₃ := by
         have : x ∈ e \ f₃ := Finset.mem_sdiff.mpr ⟨hx, hxf₃⟩
@@ -2777,19 +2607,16 @@ private lemma prime_edgeLinkConnected_case2 {σ : Finset (Finset V)} {X M : Chai
     EdgeLinkConnected M.support := by
   classical
   have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
-  -- ### Side split: two smaller single-sphere taut fillings `M₁, M₂` along the seam.
   obtain ⟨A, B, hAB, hcd2, hsphA, hsphB, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, _⟩ :=
     flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
   obtain ⟨hUA, hUB, hbA, hbB, hTA, hTB, hSA, hSB, hnA, hnB, heA, heB, _, hsupp⟩ :=
     flipEdgePresent_side_algebra hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd2 hcover hsep
   set M₁ := (removeTet M e).filter (fun t => t ⊆ A) with hM₁
   set M₂ := (removeTet M e).filter (fun t => t ⊆ B) with hM₂
-  -- ### Each side, by the IH, is edge-link connected.
   have hELC₁ : EdgeLinkConnected M₁.support :=
     IHelc ((flipBoundary σ M e).filter (fun f => f ⊆ A)) (bdry M₁) M₁ hnA hsphA hUA hbA rfl hTA hSA
   have hELC₂ : EdgeLinkConnected M₂.support :=
     IHelc ((flipBoundary σ M e).filter (fun f => f ⊆ B)) (bdry M₂) M₂ hnB hsphB hUB hbB rfl hTB hSB
-  -- ### Seam geometry from the eligible exposed pair.
   have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ _
   have hf₄exp : f₄ ∈ exposedFaces M e := by
     rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
@@ -2800,32 +2627,26 @@ private lemma prime_edgeLinkConnected_case2 {σ : Finset (Finset V)} {X M : Chai
   have hf₃3 : f₃.card = 3 := (Finset.mem_powersetCard.mp hf₃tet).2
   have hf₄3 : f₄.card = 3 := (Finset.mem_powersetCard.mp hf₄tet).2
   have he4 : e.card = 4 := he.1
-  -- `cd ⊆ f₃`, `cd ⊆ f₄`, `cd.card = 2` (`cd := f₃ ∩ f₄`).
   have hcdf₃ : f₃ ∩ f₄ ⊆ f₃ := Finset.inter_subset_left
   have hcdf₄ : f₃ ∩ f₄ ⊆ f₄ := Finset.inter_subset_right
-  -- `e = f₃ ∪ f₄`: `f₃ ∪ f₄ ⊆ e` with `|f₃ ∪ f₄| = 3 + 3 - 2 = 4 = |e|`.
   have hunioncard : (f₃ ∪ f₄).card + (f₃ ∩ f₄).card = f₃.card + f₄.card :=
     Finset.card_union_add_card_inter f₃ f₄
   have he_eq : e = f₃ ∪ f₄ := by
     refine (Finset.eq_of_subset_of_card_le (Finset.union_subset hf₃e hf₄e) ?_).symm
     rw [he4]; rw [hf₃3, hf₄3, hcd2] at hunioncard; omega
-  -- ### Side-locality of `M₁, M₂` (filters by `⊆ A` / `⊆ B`).
   have hs₁A : ∀ t ∈ M₁.support, t ⊆ A := by
     intro t ht; rw [hM₁, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
   have hs₂B : ∀ t ∈ M₂.support, t ⊆ B := by
     intro t ht; rw [hM₂, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
-  -- ### `(removeTet M e).support = M₁.support ∪ M₂.support` (from `hsupp`, `e ∉` each).
   have hsuppU : (removeTet M e).support = M₁.support ∪ M₂.support := by
     rw [support_removeTet_of_mem he.2.1, hsupp, Finset.erase_insert]
     rw [Finset.mem_union]; rintro (h | h)
     · exact heA h
     · exact heB h
-  -- ### Seam-face witnesses: `f₃` lies in some `M₁`-tet, `f₄` in some `M₂`-tet.
   obtain ⟨t₃, ht₃R, hf₃t₃⟩ :=
     exposed_triangle_unique_remaining_tet hσ hU hMX hT hS hPure hPMe he hf₃exp
   obtain ⟨t₄, ht₄R, hf₄t₄⟩ :=
     exposed_triangle_unique_remaining_tet hσ hU hMX hT hS hPure hPMe he hf₄exp
-  -- `t₃ ⊆ A` (else `t₃ ⊆ B` ⟹ `f₃ ⊆ B`, contradiction).
   have ht₃ : t₃ ∈ M₁.support := by
     rw [hM₁, Finsupp.support_filter, Finset.mem_filter]
     refine ⟨ht₃R, ?_⟩
@@ -2838,11 +2659,9 @@ private lemma prime_edgeLinkConnected_case2 {σ : Finset (Finset V)} {X M : Chai
     rcases hcover t₄ ht₄R with htA | htB
     · exact absurd (hf₄t₄.trans htA) hf₄notA
     · exact htB
-  -- ### Empty link of the bridge edge in the union.
   have hOppEmpty : edgeLinkVerts (M₁.support ∪ M₂.support) (e \ (f₃ ∩ f₄)) = ∅ := by
     rw [← hsuppU]
     exact oppEdge_empty_of_flipEdgePresent hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
-  -- ### Assemble: `M.support = insert e (M₁.support ∪ M₂.support)`, then the bridge.
   rw [hsupp]
   exact edgeLinkConnected_insert_flipBridge hAB hcd2 he4 hs₁A hs₂B hcdf₃ hcdf₄ hf₃e hf₄e
     hf₃3 hf₄3 hf₃₄ he_eq hELC₁ hELC₂ ht₃ hf₃t₃ ht₄ hf₄t₄ hOppEmpty
@@ -2869,12 +2688,10 @@ private lemma prime_edgeLinkConnected {σ : Finset (Finset V)} {X M : Chain V}
   have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
   have hPure : ∀ t ∈ M.support, t.card = 4 :=
     fun t ht => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
-  -- Reusable PM supplier for the smaller fillings (`taut_isPseudomanifold` is standalone).
   have IHpm : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
       UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
       IsPseudomanifold M'.support :=
     fun σ' X' M' _ hσ' hU' hXc' hMX' hT' hS' => taut_isPseudomanifold hσ' hU' hXc' hMX' hT' hS'
-  -- A single oriented step, applied to both disjunct orientations.
   have key : ∀ (r w r₃ r₄ : Finset V), EligibleTet M r → EligibleTet M w → r ≠ w →
       Disjoint (sharedFaces M r) (sharedFaces M w) → exposedFaces M r = {r₃, r₄} → r₃ ≠ r₄ →
       ¬ (r \ (r₃ ∩ r₄)) ⊆ w → EdgeLinkConnected M.support := by
@@ -2899,9 +2716,8 @@ private lemma prime_edgeLinkConnected {σ : Finset (Finset V)} {X M : Chain V}
   · exact key u₀ e₀ g₃ g₄ hu₀ he₀ hne.symm hdisj.symm hexpu hg₃₄ hOu
 
 /-- **base_edgeLinkConnected** (edge-link base case, ≤ 4 vertices): a taut filling
-of a 2-sphere on ≤ 4 vertices is a single tetrahedron, hence edge-link connected.
-Mirrors `base_isPM` verbatim; only the final step changes from
-`isPseudomanifold_singleton` to `edgeLinkConnected_singleton`. -/
+of a 2-sphere on ≤ 4 vertices is a single tetrahedron, hence edge-link connected
+(`edgeLinkConnected_singleton`). -/
 private lemma base_edgeLinkConnected (σ : Finset (Finset V)) (X M : Chain V)
     (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M)
     (hS : SimplicialChain M) (hv : (vertsOf σ).card ≤ 4) :
@@ -2948,11 +2764,10 @@ private lemma deg3_edgeLinkConnected (σ : Finset (Finset V)) (X M : Chain V)
   have hsplit := degree3_cut_star_side_glue σ hσ hbig hv hγ3 hW
   have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ hγ3
   have hγ3' : γ.card = 3 := hγ ▸ hγ3
-  -- γ lies in both candidate remainder spheres
   have hγL : γ ∈ insert γ (cutSet σ W) := Finset.mem_insert_self _ _
   have hγR : γ ∈ insert γ (cutSet σ (W + fun _ => 1)) := Finset.mem_insert_self _ _
   rcases hsplit with hcase | hcase
-  · -- left side is the star; remainder is MR (the ¬⊆A side, sphere σR)
+  ·
     rcases hcase with ⟨hstar, hglue⟩
     have hULtet : UnitOn (cappedCutLeft σ W X γ c) (tetFaces (starTet σ v)) := by
       dsimp [γ]; rw [← hstar]; exact hUL
@@ -3016,7 +2831,6 @@ private lemma deg3_edgeLinkConnected (σ : Finset (Finset V)) (X M : Chain V)
           (by dsimp [γ]; exact hUR) hbdMR hTRMR
       intro t ht; exact (hsuppInfo t ht).1
     have hURγ : bdry MR γ = 1 ∨ bdry MR γ = -1 := hURMR.2 γ hγR
-    -- γ sits in a unique remainder tet (faceCount = 1), giving the apex `t₀`.
     have hγcount1 : faceCount MR.support γ = 1 :=
       faceCount_eq_one_of_boundary hSimpR hPureMR hPMR hγ3' hURγ
     have ht₀ : ∃ t₀ ∈ MR.support, γ ⊆ t₀ := by
@@ -3037,7 +2851,7 @@ private lemma deg3_edgeLinkConnected (σ : Finset (Finset V)) (X M : Chain V)
     refine edgeLinkConnected_insert hT4 hELMR ?_
     exact (cleanGlueStep_star_of_remainder hγ hγ3 hT4 hglue hTnot hvNotMR ht₀
       (by omega) hγB).helc
-  · -- right side is the star; remainder is ML (the ⊆A side, sphere σL)
+  ·
     rcases hcase with ⟨hstar, hglue⟩
     have hURtet : UnitOn (cappedCutRight σ W X γ c) (tetFaces (starTet σ v)) := by
       dsimp [γ]; rw [← hstar]; exact hUR
@@ -3200,7 +3014,6 @@ theorem exists_clean_shelling_prime_case1 {σ : Finset (Finset V)} {X M : Chain 
   have hglue : CleanGlueStep e (removeTet M e).support
       ((σ \ sharedFaces M e) ∪ exposedFaces M e) σ :=
     cleanGlueStep_eligible hσ hU hXc hMX hT hS hPure he hu hdisj hPMu hPMe hexp hf₃₄ hOppEmpty
-  -- `removeTet M e` is a strictly smaller single-sphere taut filling (case 1 has no flip).
   have hσe : IsSphere2 ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
     isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
   have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
@@ -3277,32 +3090,27 @@ private lemma clean_case2_sideA {e f₃ f₄ A B : Finset V}
     ∃ l : List (Finset V), l.head? = some s ∧ l.toFinset = τ ∧ l.Nodup ∧
       IsCleanShelling l σ := by
   classical
-  -- side-1 clean shelling from `s`.
   obtain ⟨l₁, hhead₁, hl₁τ, hnd₁, hsh₁⟩ := hfree₁ s hs₁
-  -- the bridge glue, as a `CleanGlueStep` against the side-1 accumulator `M₁`.
   have hcdf₃ : f₃ ∩ f₄ ⊆ f₃ := Finset.inter_subset_left
   have hcdf₄ : f₃ ∩ f₄ ⊆ f₄ := Finset.inter_subset_right
   have hcg : CleanGlueStep e M₁ σ₁ (insert f₄ K₂) :=
     cleanGlueStep_flipBridge_side hglue₁₂ hAB hcd2 he4 hs₁A hs₂B hcdf₃ hcdf₄ hf₃e hf₄e hf₃3
       he_eq ht₃ hf₃t₃ ht₄ hf₄t₄ hOppEmpty heM₁ hsharedeq hAnf hpmcFull
-  -- side-2 clean relative shelling over the bridge boundary `insert f₄ K₂`.
-  -- `Δ := insert e M₁`; it meets the `B`-side only inside `f₄`.
   have hΔB : ∀ d ∈ insert e M₁, ∀ x ∈ d, x ∈ B → x ∈ f₄ := by
     intro d hd x hxd hxB
     rcases Finset.mem_insert.mp hd with rfl | hdM₁
-    · -- `d = e`: `x ∈ e ∩ B`.  `e = f₃ ∪ f₄`; `x ∈ f₃ → x ∈ f₃ ∩ B ⊆ A ∩ B = cd ⊆ f₄`.
+    ·
       rw [he_eq, Finset.mem_union] at hxd
       rcases hxd with hxf₃ | hxf₄
       · exact hcdf₄ (hAB ▸ Finset.mem_inter.mpr ⟨hf₃A hxf₃, hxB⟩)
       · exact hxf₄
-    · -- `d ∈ M₁ ⊆ A`: `x ∈ A ∩ B = cd ⊆ f₄`.
+    ·
       exact hcdf₄ (hAB ▸ Finset.mem_inter.mpr ⟨hs₁A d hdM₁ hxd, hxB⟩)
   have hΔdisj : Disjoint (insert e M₁) M₂ := by
     rw [Finset.disjoint_insert_left]; exact ⟨heM₂, hdisj12⟩
   have hrel : CleanRelShellingFrom (insert e M₁) M₂ (insert f₄ K₂) σ :=
     freelyCleanShellable_cleanRelShelling_over_bridge hfree₂ huniq₂ hf₄3 hΔdisj hΔB hs₂B
       (Finset.mem_insert_self e _) hf₄e hfaceΔf₄ hKdisj hrecon
-  -- assemble.
   have hgl₁ : CleanGlueStep e l₁.toFinset σ₁ (insert f₄ K₂) := hl₁τ ▸ hcg
   have hrel' : CleanRelShellingFrom (insert e l₁.toFinset) M₂ (insert f₄ K₂) σ :=
     hl₁τ ▸ hrel
@@ -3341,7 +3149,6 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
     fun σ' X' M' _ h1 h2 h3 h4 h5 h6 => taut_isPseudomanifold h1 h2 h3 h4 h5 h6
   have hPMe : IsPseudomanifold (removeTet M e).support :=
     removeTet_isPseudomanifold hσ hU hXc hMX hT hS he IHpm
-  -- ### Side split (vertex sets + algebra bundle), exactly as `flipEdgePresent_side_data`.
   obtain ⟨A, B, hAB, hcd2, hsphA, hsphB, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, hfaceCover⟩ :=
     flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
   obtain ⟨hUA, hUB, hbA, hbB, hTA, hTB, hSA, hSB, hnA, hnB, heA, heB, hdisj12, hsuppM⟩ :=
@@ -3352,12 +3159,10 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
   set σ₂ := (flipBoundary σ M e).filter (fun f => f ⊆ B) with hσ₂
   set K₂ := σ.filter (fun f => ¬ f ⊆ B) with hK₂
   set K₁ := σ.filter (fun f => ¬ f ⊆ A) with hK₁
-  -- ### Side IHs.
   have hfree₁ : FreelyCleanShellable M₁.support σ₁ :=
     IH _ (bdry M₁) M₁ hnA hsphA hUA hbA rfl hTA hSA
   have hfree₂ : FreelyCleanShellable M₂.support σ₂ :=
     IH _ (bdry M₂) M₂ hnB hsphB hUB hbB rfl hTB hSB
-  -- ### Seam triangle geometry (`f₃,f₄` are faces of `e`, `e = f₃ ∪ f₄`).
   have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ _
   have hf₄exp : f₄ ∈ exposedFaces M e := by
     rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
@@ -3380,7 +3185,6 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
   have hf₄flip : f₄ ∈ flipBoundary σ M e := by
     simp only [flipBoundary, Finset.mem_union]; right; rw [hexp]
     exact Finset.mem_insert_of_mem (Finset.mem_singleton_self _)
-  -- ### Side membership & support union.
   have hs₁A : ∀ t ∈ M₁.support, t ⊆ A := by
     intro t ht; rw [hM₁, Finsupp.support_filter, Finset.mem_filter] at ht; exact ht.2
   have hs₂B : ∀ t ∈ M₂.support, t ⊆ B := by
@@ -3388,7 +3192,6 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
   have hsuppU : (removeTet M e).support = M₁.support ∪ M₂.support := by
     rw [support_removeTet_of_mem he.2.1, hsuppM, Finset.erase_insert (by
       rw [Finset.mem_union]; rintro (h | h); exacts [heA h, heB h])]
-  -- ### Witness tets `t₃ ∈ M₁`, `t₄ ∈ M₂`.
   obtain ⟨t₃, ht₃R, hf₃t₃⟩ :=
     exposed_triangle_unique_remaining_tet hσ hU hMX hT hS hPure hPMe he hf₃exp
   obtain ⟨t₄, ht₄R, hf₄t₄⟩ :=
@@ -3403,13 +3206,10 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
     rw [support_removeTet_of_mem he.2.1] at ht₃R; exact Finset.mem_of_mem_erase ht₃R)
   have ht₄card : t₄.card = 4 := hPure t₄ (by
     rw [support_removeTet_of_mem he.2.1] at ht₄R; exact Finset.mem_of_mem_erase ht₄R)
-  -- ### Bridge-edge link emptiness (over the union).
   have hOppEmpty : edgeLinkVerts (M₁.support ∪ M₂.support) (e \ (f₃ ∩ f₄)) = ∅ := by
     rw [← hsuppU]; exact oppEdge_empty_of_flipEdgePresent hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
-  -- ### Freshness & support decomposition.
   have heM₁ : e ∉ M₁.support := heA
   have heM₂ : e ∉ M₂.support := heB
-  -- ### `hAnf`/`hBnf`: side vertices of `e` are `f₃`/`f₄`.
   have hAnf : ∀ x ∈ e, x ∈ A → x ∈ f₃ := by
     intro x hxe hxA
     rw [he_eq, Finset.mem_union] at hxe
@@ -3418,7 +3218,6 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
     intro x hxe hxB
     rw [he_eq, Finset.mem_union] at hxe
     exact hxe.elim (fun hxf₃ => hcdf₄ (hAB ▸ Finset.mem_inter.mpr ⟨hf₃A hxf₃, hxB⟩)) id
-  -- ### faceCount over the union ≤ 1 for triangles of `e` (PM of `M.support` minus `e`).
   have hpmcFull : ∀ f, f.card = 3 → f ⊆ e → faceCount (M₁.support ∪ M₂.support) f ≤ 1 := by
     intro f hf3 hfe
     rw [← hsuppU]
@@ -3427,7 +3226,6 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
     have hcard : faceCount (removeTet M e).support f + 1 = faceCount M.support f := by
       unfold faceCount; rw [hsuppRe, Finset.filter_erase, Finset.card_erase_add_one hemem]
     have := hPM f hf3; omega
-  -- ### Uniqueness of the `f₃`/`f₄` tet on each side (via `faceCount_eq_one_of_boundary`).
   have hpureM₁ : ∀ t ∈ M₁.support, t.card = 4 :=
     fun t ht => (aleph_base_taut_support_card4_subset_verts hsphA hUA rfl hTA t ht).1
   have hpureM₂ : ∀ t ∈ M₂.support, t.card = 4 :=
@@ -3458,7 +3256,6 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
     · intro y hy
       have : y ∈ M₂.support.filter (fun t => f₄ ⊆ t) := Finset.mem_filter.mpr hy
       rw [ht₀, Finset.mem_singleton] at this; exact this
-  -- ### `faceCount (insert e Mᵢ.support) fⱼ ≤ 1` (`e` contributes 1; the side adds 0).
   have hfaceΔf₄ : faceCount (insert e M₁.support) f₄ ≤ 1 := by
     rw [faceCount_insert_of_not_mem heM₁ f₄]
     have h0 : faceCount M₁.support f₄ = 0 := by
@@ -3471,7 +3268,6 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
       apply faceCount_eq_zero; intro t ht hf₃t
       exact hf₃notB ((hf₃t.trans (hs₂B t ht)))
     rw [h0]; split <;> omega
-  -- ### `hKdisj` for each side (tets avoid the carried boundary piece).
   have hKdisj₂ : ∀ t ∈ M₂.support, Disjoint (tetFaces t) K₂ := by
     intro t ht; rw [Finset.disjoint_left]; intro g hgT hgK
     have hgt : g ⊆ t := (Finset.mem_powersetCard.mp hgT).1
@@ -3482,21 +3278,18 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
     have hgt : g ⊆ t := (Finset.mem_powersetCard.mp hgT).1
     have hgA : g ⊆ A := hgt.trans (hs₁A t ht)
     rw [hK₁, Finset.mem_filter] at hgK; exact hgK.2 hgA
-  -- ### Reconstructions of `σ`.
   have hrecon₂ : σ = σ₂.erase f₄ ∪ K₂ :=
     flipEdgePresent_side_reconstruct hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd2 hf₄flip
       hf₄notA hf₄B hf₃A hf₃notB
   have hrecon₁ : σ = σ₁.erase f₃ ∪ K₁ :=
     flipEdgePresent_side_reconstruct_left hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd2 hf₃flip
       hf₃notB hf₃A hf₄notA hf₄B
-  -- ### Bridge glues.
   have hglue₁₂ : GlueStep e σ₁ (insert f₄ K₂) := by
     rw [hσ₁, hK₂]; exact glueStep_bridge_left hσ hU hXc hMX hT hS he hexp hf₃₄ hAB hcd2 hf₃A
       hf₃notB hf₄B hf₄notA hfaceCover
   have hglue₂₁ : GlueStep e σ₂ (insert f₃ K₁) := by
     rw [hσ₂, hK₁]; exact glueStep_bridge_right hσ hU hXc hMX hT hS he hexp hf₃₄ hAB hcd2 hf₃A
       hf₃notB hf₄B hf₄notA hfaceCover
-  -- ### `tetFaces e ∩ σ_i = {f₃ / f₄}`.
   have hsh_eq : sharedFaces M e = tetFaces e ∩ σ := by simp only [sharedFaces, hUb.1]
   have hexp_mem : ∀ x, x ∈ exposedFaces M e ↔ (x ∈ tetFaces e ∧ x ∉ σ) := by
     intro x; simp only [exposedFaces, hsh_eq, Finset.mem_sdiff, Finset.mem_inter]; tauto
@@ -3525,16 +3318,15 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
       · exact absurd (hxf₃ ▸ hxB) hf₃notB
       · exact hxf₄
     · rintro rfl; exact ⟨hf₄tet, hf₄flip, hf₄B⟩
-  -- ### Dispatch on the side containing `s`.
   have hs_old : s ∈ (removeTet M e).support := by
     rw [support_removeTet_of_mem he.2.1]; exact Finset.mem_erase.mpr ⟨Ne.symm hne_es, hs⟩
   rw [hsuppU, Finset.mem_union] at hs_old
   rcases hs_old with hs₁ | hs₂
-  · -- target on the `A`-side.
+  ·
     exact clean_case2_sideA he4 hAB hcd2 hf₃e hf₄e hf₃3 hf₄3 he_eq hf₃A hf₄B hs₁A hs₂B
       ht₃M₁ hf₃t₃ ht₄M₂ hf₄t₄ ht₄card hOppEmpty heM₁ heM₂ hdisj12 hsharedeq₁ hAnf hpmcFull
       hglue₁₂ hfree₁ hfree₂ huniq₂ hfaceΔf₄ hKdisj₂ hrecon₂ hsuppM hs₁
-  · -- target on the `B`-side: swap `A↔B`, `f₃↔f₄`, `M₁↔M₂`, `σ₁↔σ₂`, `K₂↔K₁`.
+  ·
     have hAB' : B ∩ A = f₄ ∩ f₃ := by rw [Finset.inter_comm, hAB, Finset.inter_comm]
     have hcd2' : (f₄ ∩ f₃).card = 2 := by rw [Finset.inter_comm]; exact hcd2
     have he_eq' : e = f₄ ∪ f₃ := by rw [he_eq, Finset.union_comm]
@@ -3567,7 +3359,6 @@ theorem prime_step_clean (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSpher
     fun t ht => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
   obtain ⟨e₁, e₂, hne12, he₁, he₂, hdisjE⟩ :=
     aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
-  -- pick an eligible `e ≠ s` together with a partner `u ≠ e` whose shared faces avoid `e`'s.
   obtain ⟨e, u, he, hu, hdu, hne_es⟩ :
       ∃ e u, EligibleTet M e ∧ EligibleTet M u ∧
         Disjoint (sharedFaces M e) (sharedFaces M u) ∧ e ≠ s := by
@@ -3581,7 +3372,7 @@ theorem prime_step_clean (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSpher
       hf₃₄ hFlip
 
 /-- **Theorem 3 (clean route)**: a taut filling of a combinatorial 2-sphere is a *freely
-clean-shellable* sticker ball — the faithful-stickerball (now-removed weak endpoint) upgrade, assembled
+clean-shellable* sticker ball, assembled
 from the three discharged clean steps (`base_free_clean`, `deg3_step_clean`, `prime_step_clean`) via
 the clean induction skeleton `theorem3_core_clean`.  Wrapped by the public endpoint
 `taut_filling_is_anyrootedStickerball`. -/

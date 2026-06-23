@@ -87,7 +87,6 @@ lemma edge_cut_parity {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
 
 variable {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V}
 
-/-- Edges of a capped side are edges of σ. -/
 lemma edgesOf_cut_subset (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
     edgesOf (insert γ (cutSet σ W)) ⊆ edgesOf σ := by
   intro e he
@@ -96,8 +95,6 @@ lemma edgesOf_cut_subset (hγe : γ.powersetCard 2 ⊆ edgesOf σ) :
   · exact hγe (Finset.mem_powersetCard.mpr ⟨hef, hc⟩)
   · exact mem_edgesOf.mpr ⟨f, cutSet_subset hf, hef, hc⟩
 
-/-- The edge-degree in a capped side splits into the γ-contribution and the
-cut-faces through the edge. -/
 lemma edgeDeg_cut (hγσ : γ ∉ σ) (e : Finset V) :
     edgeDeg (insert γ (cutSet σ W)) e
       = (if e ⊆ γ then 1 else 0) + ((cutSet σ W).filter (fun f => e ⊆ f)).card := by
@@ -117,7 +114,6 @@ lemma closed_cut (h : IsSphere2 σ) (hγ3 : γ.card = 3)
   intro e he
   have heσ : e ∈ edgesOf σ := edgesOf_cut_subset hγe he
   obtain ⟨f₁, h1, f₂, h2, hne, he1, he2, huniq⟩ := exists_two_faces h.toClosedSurface heσ
-  -- the cut-faces through e are exactly those of {f₁,f₂} in the cut set
   have hfilter : (cutSet σ W).filter (fun f => e ⊆ f)
       = ({f₁, f₂} : Finset (Finset V)).filter (fun f => f ∈ cutSet σ W) := by
     ext g
@@ -134,8 +130,7 @@ lemma closed_cut (h : IsSphere2 σ) (hγ3 : γ.card = 3)
   simp only [hmem1, hmem2]
   have hzo : ∀ a : ZMod 2, a = 0 ∨ a = 1 := by decide
   by_cases heγ : e ⊆ γ
-  · -- parity = 1: exactly one face in the cut
-    rw [if_pos heγ] at hpar ⊢
+  · rw [if_pos heγ] at hpar ⊢
     obtain h1' | h1' := hzo (W ⟨f₁, h1⟩) <;> obtain h2' | h2' := hzo (W ⟨f₂, h2⟩) <;>
       rw [h1', h2'] at hpar ⊢ <;> simp_all
   · -- parity = 0: zero or two; `e ∈ edgesOf` of the piece rules out zero
@@ -152,8 +147,6 @@ lemma closed_cut (h : IsSphere2 σ) (hγ3 : γ.card = 3)
 
 /-! ## The pieces are connected -/
 
-/-- `∂₁c` at a vertex `x` lying on exactly the two support-edges `e₁, e₂` equals
-`c e₁ + c e₂`. -/
 lemma bd1_eval_two {σ : Finset (Finset V)} {c : C1 σ} {x : V} (hx : x ∈ vertsOf σ)
     {e₁ e₂ : edgesOf σ} (hne : e₁ ≠ e₂) (hx1 : x ∈ (e₁ : Finset V)) (hx2 : x ∈ (e₂ : Finset V))
     (honly : ∀ e : edgesOf σ, x ∈ (e : Finset V) → c e ≠ 0 → e = e₁ ∨ e = e₂) :
@@ -162,8 +155,7 @@ lemma bd1_eval_two {σ : Finset (Finset V)} {c : C1 σ} {x : V} (hx : x ∈ vert
   rw [bd1_apply]
   rw [← Finset.sum_subset (Finset.subset_univ {e₁, e₂}) (fun e _ hes => ?_)]
   · rw [Finset.sum_pair hne, if_pos hx1, if_pos hx2, one_mul, one_mul]
-  · -- terms off {e₁,e₂} vanish
-    by_cases hxe : x ∈ (e : Finset V)
+  · by_cases hxe : x ∈ (e : Finset V)
     · by_cases hce : c e = 0
       · rw [hce, mul_zero]
       · rcases honly e hxe hce with rfl | rfl <;> simp_all
@@ -189,7 +181,6 @@ lemma gammaCycle_dichotomy {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.c
   set eab : edgesOf σ := ⟨{a, b}, mk hab sab⟩ with heab
   set ead : edgesOf σ := ⟨{a, d}, mk had sad⟩ with head
   set ebd : edgesOf σ := ⟨{b, d}, mk hbd sbd⟩ with hebd
-  -- every γ-edge is one of the three
   have tri : ∀ e : edgesOf σ, (e : Finset V) ⊆ γ → e = eab ∨ e = ead ∨ e = ebd := by
     intro e hsub
     obtain ⟨p, q, hpq, hpqe⟩ := Finset.card_eq_two.mp (card_of_mem_edgesOf e.2)
@@ -227,7 +218,6 @@ lemma gammaCycle_dichotomy {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.c
     rw [head, hebd, ne_eq, Subtype.mk.injEq]; intro h
     have : a ∈ ({b, d} : Finset V) := h ▸ by simp
     simp only [Finset.mem_insert, Finset.mem_singleton] at this; tauto
-  -- the three vertex equations
   have hva : c eab + c ead = 0 := by
     have honly : ∀ e : edgesOf σ, a ∈ (e : Finset V) → c e ≠ 0 → e = eab ∨ e = ead := by
       intro e hxe hce
@@ -244,11 +234,9 @@ lemma gammaCycle_dichotomy {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.c
       · exact absurd (h ▸ hxe) (by rw [head]; simp only [Finset.mem_insert, Finset.mem_singleton]; tauto)
       · exact Or.inr h
     rw [← bd1_eval_two hb ne_ab_bd (by rw [heab]; simp) (by rw [hebd]; simp) honly, hc]; rfl
-  -- so the three coefficients are equal
   have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
   have e1 : c ead = c eab := (c2 _ _ hva).symm
   have e2 : c ebd = c eab := (c2 _ _ hvb).symm
-  -- c = (c eab) • gammaChain
   have hrep : c = (c eab) • gammaChain σ γ := by
     funext e
     simp only [Pi.smul_apply, gammaChain, smul_eq_mul]
@@ -261,12 +249,10 @@ lemma gammaCycle_dichotomy {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.c
     · rw [if_neg hsub, mul_zero]
       by_contra hce
       exact hsub (hsupp e hce)
-  -- conclude on the value c eab ∈ {0,1}
   rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (c eab) with h0 | h1
   · left; rw [hrep, h0, zero_smul]
   · right; rw [hrep, h1, one_smul]
 
-/-- The dual graph restricted to a face-set `S`: dual-adjacent and both in `S`. -/
 def dualOn (σ : Finset (Finset V)) (S : Finset (Finset V)) : SimpleGraph σ where
   Adj f g := (dualGraph σ).Adj f g ∧ (f : Finset V) ∈ S ∧ (g : Finset V) ∈ S
   symm := by rintro f g ⟨hfg, hf, hg⟩; exact ⟨hfg.symm, hg, hf⟩
@@ -277,7 +263,6 @@ def dualOn (σ : Finset (Finset V)) (S : Finset (Finset V)) : SimpleGraph σ whe
       (dualGraph σ).Adj f g ∧ (f : Finset V) ∈ S ∧ (g : Finset V) ∈ S := Iff.rfl
 
 open Classical in
-/-- The indicator 2-chain of the cut-faces dual-reachable from `f₀` inside `S`. -/
 noncomputable def reachChain (σ : Finset (Finset V)) (S : Finset (Finset V)) (f₀ : σ) : C2 σ :=
   fun g => if (dualOn σ S).Reachable f₀ g then 1 else 0
 
@@ -286,8 +271,6 @@ lemma reachChain_self {σ : Finset (Finset V)} {S : Finset (Finset V)} {f₀ : �
   classical
   simp only [reachChain, if_pos (SimpleGraph.Reachable.refl f₀)]
 
-/-- The reach-set is closed under within-`S` dual adjacency: if `f` is reached and
-`g` is dual-adjacent to `f` with both faces in `S`, then `g` is reached. -/
 lemma reachChain_closed {σ : Finset (Finset V)} {S : Finset (Finset V)} {f₀ : σ}
     {f g : σ} (hf : reachChain σ S f₀ f = 1) (hfg : (dualGraph σ).Adj f g)
     (hfS : (f : Finset V) ∈ S) (hgS : (g : Finset V) ∈ S) : reachChain σ S f₀ g = 1 := by
@@ -300,7 +283,6 @@ lemma reachChain_closed {σ : Finset (Finset V)} {S : Finset (Finset V)} {f₀ :
     hrf.trans (SimpleGraph.Adj.reachable (dualOn_adj.mpr ⟨hfg, hfS, hgS⟩))
   simp only [reachChain, if_pos hrg]
 
-/-- Reachability inside `S` stays in `S`. -/
 lemma dualOn_walk_mem {σ S : Finset (Finset V)} :
     ∀ {f₀ g : σ}, (dualOn σ S).Walk f₀ g → (f₀ : Finset V) ∈ S → (g : Finset V) ∈ S := by
   intro f₀ g p
@@ -308,7 +290,6 @@ lemma dualOn_walk_mem {σ S : Finset (Finset V)} :
   | nil => exact fun h => h
   | cons hab _ ih => exact fun _ => ih ((dualOn_adj.mp hab).2.2)
 
-/-- A reached face is in the side (given the base is). -/
 lemma reachChain_mem {σ S : Finset (Finset V)} {f₀ g : σ} (hf₀ : (f₀ : Finset V) ∈ S)
     (hg : reachChain σ S f₀ g = 1) : (g : Finset V) ∈ S := by
   classical
@@ -341,18 +322,15 @@ lemma bd2_reachChain_supp {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ
   have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
   have hWeq : W ⟨f₁, h1⟩ = W ⟨f₂, h2⟩ := c2 _ _ hpar
   rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) (W ⟨f₁, h1⟩) with hv | hv
-  · -- both faces in σ₂: reach-chain is 0 on both
-    have hn1 : (f₁ : Finset V) ∉ cutSet σ W :=
+  · have hn1 : (f₁ : Finset V) ∉ cutSet σ W :=
       fun hc => absurd (hmem1.mp hc) (by rw [hv]; decide)
     have hn2 : (f₂ : Finset V) ∉ cutSet σ W :=
       fun hc => absurd (hmem2.mp hc) (by rw [← hWeq, hv]; decide)
     rw [reachChain_zero hf₀ hn1, reachChain_zero hf₀ hn2, add_zero]
-  · -- both faces in σ₁: dual-adjacent, so reach-chain agrees
-    have hf1S : (f₁ : Finset V) ∈ cutSet σ W := hmem1.mpr hv
+  · have hf1S : (f₁ : Finset V) ∈ cutSet σ W := hmem1.mpr hv
     have hf2S : (f₂ : Finset V) ∈ cutSet σ W := hmem2.mpr (hWeq ▸ hv)
     have hadj : (dualGraph σ).Adj ⟨f₁, h1⟩ ⟨f₂, h2⟩ :=
       dualGraph_adj.mpr ⟨fun heq => hne (congrArg Subtype.val heq), e, he, he1, he2⟩
-    -- equal values
     have heq : reachChain σ (cutSet σ W) f₀ ⟨f₁, h1⟩ = reachChain σ (cutSet σ W) f₀ ⟨f₂, h2⟩ := by
       rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1)
         (reachChain σ (cutSet σ W) f₀ ⟨f₁, h1⟩) with hr | hr
@@ -380,7 +358,6 @@ theorem cutSet_dualConn {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
       rw [← ker_bd2_eq_span h.toClosedSurface h.nonempty]; exact LinearMap.mem_ker.mpr hx
     obtain ⟨cc, hcc⟩ := Submodule.mem_span_singleton.mp hmem
     exact ⟨cc, funext fun g => by have := congrFun hcc g; simpa using this.symm⟩
-  -- gammaChain ≠ 0 (it is 1 on each edge of γ)
   have hWγ : gammaChain σ γ ≠ 0 := by
     obtain ⟨e0, he0⟩ : (γ.powersetCard 2).Nonempty :=
       Finset.card_pos.mp (by rw [Finset.card_powersetCard, hγ3]; decide)
@@ -427,7 +404,6 @@ theorem cutSet_dualConn {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
 
 /-! ## From dual-connectivity to skeleton-connectivity -/
 
-/-- Two vertices of a single face are skeleton-reachable. -/
 lemma skel_reach_within {τ : Finset (Finset V)} {f : τ} {u w : V}
     (hu : u ∈ (f : Finset V)) (hw : w ∈ (f : Finset V)) : (skel τ).Reachable u w := by
   by_cases huw : u = w
@@ -438,8 +414,6 @@ lemma skel_reach_within {τ : Finset (Finset V)} {f : τ} {u w : V}
     · exact hu
     · rw [Finset.mem_singleton] at hy; exact hy ▸ hw
 
-/-- Reverse transport: a dual-graph walk yields a skeleton walk between chosen
-vertices of its endpoint faces. -/
 lemma dualwalk_skel {τ : Finset (Finset V)} :
     ∀ {f g : τ} (_ : (dualGraph τ).Walk f g) {u w : V},
       u ∈ (f : Finset V) → w ∈ (g : Finset V) → (skel τ).Reachable u w := by
@@ -452,8 +426,6 @@ lemma dualwalk_skel {τ : Finset (Finset V)} :
       obtain ⟨z, hz⟩ : e.Nonempty := Finset.card_pos.mp (by rw [card_of_mem_edgesOf he]; omega)
       exact (skel_reach_within hu (hef hz)).trans (ih (hex hz) hw)
 
-/-- **Dual-connectivity ⟹ skeleton-connectivity** for any complex of nonempty
-faces. -/
 lemma skelConn_of_dualPreconn {τ : Finset (Finset V)} (hpre : (dualGraph τ).Preconnected) :
     ConnOn (skel τ) (vertsOf τ) := by
   intro u hu w hw
@@ -462,8 +434,6 @@ lemma skelConn_of_dualPreconn {τ : Finset (Finset V)} (hpre : (dualGraph τ).Pr
   obtain ⟨p⟩ := hpre ⟨f, hf⟩ ⟨g, hg⟩
   exact dualwalk_skel p huf hwg
 
-/-- A `dualOn` walk among cut-faces transports to a skeleton walk in the capped
-complex `insert γ (cutSet σ W)`. -/
 lemma dualOn_skel_insert {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} :
     ∀ {a b : σ} (_ : (dualOn σ (cutSet σ W)).Walk a b) {u w : V},
       u ∈ (a : Finset V) → w ∈ (b : Finset V) → (a : Finset V) ∈ cutSet σ W →
@@ -488,7 +458,6 @@ theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : F
     ConnOn (skel (insert γ (cutSet σ W))) (vertsOf (insert γ (cutSet σ W))) := by
   classical
   have c2 : ∀ x y : ZMod 2, x + y = 1 → x = 1 ∨ y = 1 := by decide
-  -- a base cut-face f₀ (W f₀ = 1), exists since gammaChain ≠ 0
   obtain ⟨f₀, hf₀⟩ : ∃ f₀ : σ, W f₀ = 1 := by
     by_contra hc
     simp only [not_exists] at hc
@@ -506,10 +475,8 @@ theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : F
     rw [← hW] at hv1; simp only [Pi.zero_apply] at hv1; exact one_ne_zero hv1.symm
   have hf₀mem : (f₀ : Finset V) ∈ cutSet σ W := mem_cutSet.mpr ⟨f₀.2, hf₀⟩
   have hdc := cutSet_dualConn h hγ3 hγe hW hf₀
-  -- a base vertex c₀ ∈ f₀
   obtain ⟨c₀, hc₀⟩ : (f₀ : Finset V).Nonempty := by
     rw [← Finset.card_pos, h.pure _ f₀.2]; omega
-  -- every cut-face vertex reaches c₀
   have reachσ1 : ∀ (g : σ) (x : V), W g = 1 → x ∈ (g : Finset V) →
       (skel (insert γ (cutSet σ W))).Reachable x c₀ := by
     intro g x hWg hxg
@@ -519,7 +486,6 @@ theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : F
       by_contra hcon; simp only [reachChain, if_neg hcon] at this; exact one_ne_zero this.symm
     obtain ⟨p⟩ := hr
     exact (dualOn_skel_insert p hc₀ hxg hf₀mem).symm
-  -- a γ-edge and its cut-side face
   obtain ⟨e0, he0⟩ : (γ.powersetCard 2).Nonempty :=
     Finset.card_pos.mp (by rw [Finset.card_powersetCard, hγ3]; decide)
   rw [Finset.mem_powersetCard] at he0
@@ -527,24 +493,20 @@ theorem conn_cut {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : F
   obtain ⟨g1, hg1, g2, hg2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h.toClosedSurface he0e
   have hpar := edge_cut_parity hW he0e hg1 hg2 hne hsub1 hsub2 huniq
   rw [if_pos he0.1] at hpar
-  -- pick the cut-side face f₁ of e0, and a shared vertex v₀ ∈ e0 ⊆ γ ∩ f₁
   obtain ⟨v₀, hv₀⟩ : e0.Nonempty := Finset.card_pos.mp (by rw [he0.2]; omega)
   have hvγ : v₀ ∈ γ := he0.1 hv₀
   have reachγ : (skel (insert γ (cutSet σ W))).Reachable v₀ c₀ := by
     rcases c2 _ _ hpar with hw1 | hw1
     · exact reachσ1 ⟨g1, hg1⟩ v₀ hw1 (hsub1 hv₀)
     · exact reachσ1 ⟨g2, hg2⟩ v₀ hw1 (hsub2 hv₀)
-  -- every vertex reaches c₀
   have reachAll : ∀ x ∈ vertsOf (insert γ (cutSet σ W)),
       (skel (insert γ (cutSet σ W))).Reachable x c₀ := by
     intro x hx
     obtain ⟨fx, hfx, hxfx⟩ := mem_vertsOf.mp hx
     rcases Finset.mem_insert.mp hfx with hfxγ | hfxc
-    · -- x ∈ γ: reach v₀ within γ, then v₀ → c₀
-      have hxγ : x ∈ γ := hfxγ ▸ hxfx
+    · have hxγ : x ∈ γ := hfxγ ▸ hxfx
       exact (skel_reach_within (f := ⟨γ, Finset.mem_insert_self γ _⟩) hxγ hvγ).trans reachγ
-    · -- x in a cut-face
-      obtain ⟨hgσ, hWg⟩ := mem_cutSet.mp hfxc
+    · obtain ⟨hgσ, hWg⟩ := mem_cutSet.mp hfxc
       exact reachσ1 ⟨fx, hgσ⟩ x hWg hxfx
   intro a ha b hb
   exact (reachAll a ha).trans (reachAll b hb).symm
@@ -558,7 +520,6 @@ lemma W_eq_of_share_edge {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ}
   classical
   obtain ⟨f₁, h1, f₂, h2, hne, hsub1, hsub2, huniq⟩ := exists_two_faces h.toClosedSurface he
   have c2 : ∀ x y : ZMod 2, x + y = 0 → x = y := by decide
-  -- both f and g are among the two faces f₁, f₂ of e
   have hfg : ∀ {k : σ}, e ⊆ (k : Finset V) → W k = W ⟨f₁, h1⟩ ∨ W k = W ⟨f₂, h2⟩ := by
     intro k hk
     rcases huniq (k : Finset V) k.2 hk with hh | hh
@@ -576,7 +537,6 @@ lemma W_eq_along_link {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {�
     ∀ {a a' : V} (_ : (linkGraph σ v).Walk a a') {f f' : σ},
       v ∈ (f : Finset V) → a ∈ (f : Finset V) → a ≠ v →
       v ∈ (f' : Finset V) → a' ∈ (f' : Finset V) → a' ≠ v → W f = W f' := by
-  -- faces sharing the edge {v,y} (y ≠ v) have equal W
   have step : ∀ {y : V} {k k' : σ}, y ≠ v → v ∈ (k : Finset V) → y ∈ (k : Finset V) →
       v ∈ (k' : Finset V) → y ∈ (k' : Finset V) → W k = W k' := by
     intro y k k' hyv hvk hyk hvk' hyk'
@@ -637,9 +597,8 @@ lemma W_const_at {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ : F
   obtain ⟨p⟩ := h.linkConn v hvV a haL c hcL
   exact W_eq_along_link h hW hvγ p hvf haf hav hvg hcg hcv
 
-/-! ### linkConn at a γ-vertex (local-closure + reroute, per G1 2026-06-13) -/
+/-! ### linkConn at a γ-vertex -/
 
-/-- A face `{v,x,y}` of a sphere has its non-`v` vertices distinct from `v`. -/
 lemma face_two_ne {σ : Finset (Finset V)} (h : IsSphere2 σ) {v x y : V}
     (hf : ({v, x, y} : Finset V) ∈ σ) : x ≠ v ∧ y ≠ v := by
   refine ⟨?_, ?_⟩ <;> intro hev <;> rw [hev] at hf <;> have h3 := h.pure _ hf
@@ -652,7 +611,6 @@ lemma face_two_ne {σ : Finset (Finset V)} (h : IsSphere2 σ) {v x y : V}
     have hle : ({v, x} : Finset V).card ≤ 2 := le_trans (Finset.card_insert_le _ _) (by simp)
     have := Finset.card_le_card hsub; omega
 
-/-- The two non-`v` vertices of `γ` at a γ-vertex `v`. -/
 lemma gamma_endpoints_at {γ : Finset V} (hγ3 : γ.card = 3) {v : V} (hvγ : v ∈ γ) :
     ∃ a b, a ≠ b ∧ a ≠ v ∧ b ≠ v ∧ γ = {v, a, b} := by
   have he2 : (γ.erase v).card = 2 := by rw [Finset.card_erase_of_mem hvγ, hγ3]
@@ -663,7 +621,6 @@ lemma gamma_endpoints_at {γ : Finset V} (hγ3 : γ.card = 3) {v : V} (hvγ : v 
   have : γ = insert v (γ.erase v) := (Finset.insert_erase hvγ).symm
   rw [hpair] at this; exact this
 
-/-- The γ-chord `a — b` is an edge of the capped link at `v`. -/
 lemma gamma_chord_adj {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} {v a b : V}
     (hab : a ≠ b) (hγeq : γ = {v, a, b}) :
     (linkGraph (insert γ (cutSet σ W)) v).Adj a b :=
@@ -710,7 +667,6 @@ lemma reroute_to_gamma_endpoint {σ : Finset (Finset V)} (h : IsSphere2 σ) {W :
     ∀ {x z : V}, (linkGraph σ v).Walk x z →
       x ∈ linkVerts (insert γ (cutSet σ W)) v → z ∈ γ →
       (linkGraph (insert γ (cutSet σ W)) v).Reachable x a := by
-  -- reaching `a` from a γ-endpoint `w` of the link: refl (w=a) or chord (w=b)
   have endpoint : ∀ {w : V}, w ∈ linkVerts (insert γ (cutSet σ W)) v → w ∈ γ →
       (linkGraph (insert γ (cutSet σ W)) v).Reachable w a := by
     intro w hwτ hwγ
@@ -830,7 +786,6 @@ lemma bd2_W_add_one {σ : Finset (Finset V)} (h : IsSphere2 σ) {W : C2 σ} {γ 
     bd2 σ (W + fun _ => 1) = gammaChain σ γ := by
   rw [map_add, hW, bd2_one σ h.closed, add_zero]
 
-/-- A face is on the `W+𝟙` side iff it is off the `W` side. -/
 lemma mem_cutSet_add_one {σ : Finset (Finset V)} {W : C2 σ} {g : Finset V} (hg : g ∈ σ) :
     g ∈ cutSet σ (W + fun _ => 1) ↔ W ⟨g, hg⟩ = 0 := by
   rw [mem_cutSet]
@@ -881,7 +836,6 @@ lemma card_faces_cut_add {σ : Finset (Finset V)} {W : C2 σ} {γ : Finset V} (h
   rw [hu] at hcard
   omega
 
-/-- A vertex of `γ` is a vertex of `σ` (its γ-edges are edges of σ). -/
 lemma gamma_vert_mem_verts {σ : Finset (Finset V)} {γ : Finset V} (hγ3 : γ.card = 3)
     (hγe : γ.powersetCard 2 ⊆ edgesOf σ) {v : V} (hv : v ∈ γ) : v ∈ vertsOf σ := by
   obtain ⟨w, hw⟩ : (γ.erase v).Nonempty := by

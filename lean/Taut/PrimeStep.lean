@@ -2,32 +2,16 @@ import Taut.FlipGeom
 import Taut.Theorem3
 import Taut.StickerballRuleouts
 
-/-!
-# Prime step, case 1 (no flip edge present)
-
-The `¬FlipEdgePresent` half of `theorem3_core`'s `prime_step`, per target `s`
-(architect: codex assembly pass). With no degree-3 vertex, pick (via M25b's disjoint
-eligible pair) an eligible tet `e ≠ s`, so `s` stays an OLD tet of `removeTet M e`.
-When the flipped edge is absent, `removeTet M e` is a strictly smaller taut filling
-of the flipped sphere `σe = (σ \ sharedFaces M e) ∪ exposedFaces M e` (its data
-assembled from `isSphere2_flipBoundary_of_eligible`, `unitOn_flipBoundary_of_eligible`,
-`isTaut_removeTet`, `simplicialChain_removeTet`, `nrm_removeTet_add_one_of_simplicial`).
-The induction hypothesis makes it a free sticker ball; snoc `e` back onto the shelling
-from `s` (`exists_shelling_insert_of_glueStep_old` + `glueStep_flipBoundary_of_eligible`).
--/
-
 namespace Taut
 
 open Finset
 
 variable {V : Type*} [LinearOrder V]
 
-/-- Re-insert the removed tet: `insert e (removeTet M e).support = M.support`. -/
 lemma support_insert_removeTet_of_mem {M : Chain V} {e : Finset V} (he : e ∈ M.support) :
     insert e (removeTet M e).support = M.support := by
   rw [support_removeTet_of_mem he, Finset.insert_erase he]
 
-/-- An eligible tet's two exposed faces, as an explicit distinct pair. -/
 lemma exposedFaces_eq_pair_of_eligible {M : Chain V} {e : Finset V} (he : EligibleTet M e) :
     ∃ f₃ f₄, f₃ ≠ f₄ ∧ exposedFaces M e = {f₃, f₄} :=
   Finset.card_eq_two.mp (exposedFaces_card_of_eligible he)
@@ -39,14 +23,6 @@ noncomputable def flipBoundary
     (σ : Finset (Finset V)) (M : Chain V) (e : Finset V) :
     Finset (Finset V) :=
   (σ \ sharedFaces M e) ∪ exposedFaces M e
-
-/-! ## Case-2 side decomposition targets
-
-The case-2 proof needs one genuinely topological construction: the already-present
-flip edge cuts the post-removal boundary into two spherical sides.  The following
-three lemmas isolate that construction from the algebraic bookkeeping used by
-`flipEdgePresent_side_data`.
--/
 
 theorem cut_filter_by_vertsOf_eq {σ : Finset (Finset V)} {γ : Finset V} {W : C2 σ}
     (hσ : IsSphere2 σ)
@@ -1083,24 +1059,20 @@ theorem flipEdgePresent_boundary_side_package {σ : Finset (Finset V)} {X M : Ch
     exact isSphere2_cut hσ hf₃card hedges.1 hmiss.1 hW₃
   · rw [hBeq]
     exact isSphere2_cut hσ hf₄card hedges.2 hmiss.2 hW₄
-  · -- f₃ ⊆ A : the A-side filter is `insert f₃ (cutSet σ W₃)`, so `f₃` is in it
-    have hmem : f₃ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) := by
+  · have hmem : f₃ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) := by
       rw [hAeq]; exact Finset.mem_insert_self f₃ _
     exact (Finset.mem_filter.mp hmem).2
-  · -- ¬ f₃ ⊆ B : else f₃ ∈ insert f₄ (cutSet σ W₄), but f₃ ≠ f₄ and f₃ ∉ σ ⊇ cutSet
-    intro hf₃B
+  · intro hf₃B
     have hmem : f₃ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ B) :=
       Finset.mem_filter.mpr ⟨hf₃flip, hf₃B⟩
     rw [hBeq, Finset.mem_insert] at hmem
     rcases hmem with h | h
     · exact hf₃₄ h
     · exact hmiss.1 (cutSet_subset h)
-  · -- f₄ ⊆ B
-    have hmem : f₄ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ B) := by
+  · have hmem : f₄ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ B) := by
       rw [hBeq]; exact Finset.mem_insert_self f₄ _
     exact (Finset.mem_filter.mp hmem).2
-  · -- ¬ f₄ ⊆ A
-    intro hf₄A
+  · intro hf₄A
     have hmem : f₄ ∈ (flipBoundary σ M e).filter (fun f => f ⊆ A) :=
       Finset.mem_filter.mpr ⟨hf₄flip, hf₄A⟩
     rw [hAeq, Finset.mem_insert] at hmem
@@ -1346,11 +1318,7 @@ theorem flipEdgePresent_side_units {V : Type*} [LinearOrder V]
 
 /-- **Case-2 edge split, algebra.** Once the side vertex sets are known with
 coverage and exact-side separation, the filtered side chains are closed, taut,
-simplicial, strictly smaller, disjoint, and decompose the original support.
-Intended proof ingredients:
-`unitOn_flipBoundary_of_eligible`, `bdry_filter_subset_eq_zero_of_inter_card_two`,
-`IsTaut.splits`, `nrm_filter_add_nrm_filter_neg`, `simplicialChain_removeTet`,
-and `support_flipBoundary_of_eligible`. -/
+simplicial, strictly smaller, disjoint, and decompose the original support. -/
 theorem flipEdgePresent_side_algebra {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ A B : Finset V}
     (hσ : IsSphere2 σ)
     (hU : UnitOn X σ)
@@ -1462,23 +1430,19 @@ lemma faceCount_removeTet_sharedFace_eq_zero {σ : Finset (Finset V)} {X M : Cha
     faceCount (removeTet M e).support r = 0 := by
   classical
   have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
-  -- r is a triangle, a face of e, on the boundary
   have hrt : r ∈ tetFaces e := sharedFaces_subset_tetFaces M e hr
   have hr3 : r.card = 3 := (Finset.mem_powersetCard.mp hrt).2
   have hre : r ⊆ e := (Finset.mem_powersetCard.mp hrt).1
   have hrbd : r ∈ (bdry M).support := (Finset.mem_inter.mp hr).2
-  -- r is not a face of u (disjoint shared faces)
   have hrnu : r ∉ sharedFaces M u := fun h => (Finset.disjoint_left.mp hdisj) hr h
   have hru_not : ¬ r ⊆ u := by
     intro hru
     have : r ∈ tetFaces u := Finset.mem_powersetCard.mpr ⟨hru, hr3⟩
     exact hrnu (Finset.mem_inter.mpr ⟨this, hrbd⟩)
-  -- support facts
   have hSu : SimplicialChain (removeTet M u) := simplicialChain_removeTet hS
   have hsuppU : (removeTet M u).support = M.support.erase u := support_removeTet_of_mem hu.2.1
   have hPureU : ∀ t ∈ (removeTet M u).support, t.card = 4 := by
     intro t ht; rw [hsuppU] at ht; exact hPure t (Finset.mem_of_mem_erase ht)
-  -- r is a boundary face of removeTet M u (it's in σ \ sharedFaces M u ⊆ flipBoundary)
   have hUe : UnitOn (bdry (removeTet M u)) ((σ \ sharedFaces M u) ∪ exposedFaces M u) :=
     unitOn_flipBoundary_of_eligible hUb hS hu
   have hrσ : r ∈ σ := hUb.1 ▸ hrbd
@@ -1486,20 +1450,17 @@ lemma faceCount_removeTet_sharedFace_eq_zero {σ : Finset (Finset V)} {X M : Cha
     Finset.mem_union_left _ (Finset.mem_sdiff.mpr ⟨hrσ, hrnu⟩)
   have hrbdU : bdry (removeTet M u) r = 1 ∨ bdry (removeTet M u) r = -1 :=
     hUe.2 r hrflip
-  -- now rule out any w ≠ e with r ⊆ w
   apply faceCount_eq_zero
   intro w hw hrw
   rw [support_removeTet_of_mem he.2.1] at hw
   have hwne : w ≠ e := (Finset.mem_erase.mp hw).1
   have hwM : w ∈ M.support := (Finset.mem_erase.mp hw).2
-  -- e, w are both ≠ u, hence both in removeTet M u
   have heu : e ≠ u := fun h => hru_not (h ▸ hre)
   have hwu : w ≠ u := fun h => hru_not (h ▸ hrw)
   have heU : e ∈ (removeTet M u).support := by
     rw [hsuppU]; exact Finset.mem_erase.mpr ⟨heu, he.2.1⟩
   have hwU : w ∈ (removeTet M u).support := by
     rw [hsuppU]; exact Finset.mem_erase.mpr ⟨hwu, hwM⟩
-  -- faceCount (removeTet M u).support r ≥ 2
   have hpair : ({e, w} : Finset (Finset V)) ⊆ (removeTet M u).support.filter (fun t => r ⊆ t) := by
     intro s hs
     rw [Finset.mem_insert, Finset.mem_singleton] at hs
@@ -1510,24 +1471,14 @@ lemma faceCount_removeTet_sharedFace_eq_zero {σ : Finset (Finset V)} {X M : Cha
     have hcard := Finset.card_le_card hpair
     rw [Finset.card_pair (Ne.symm hwne)] at hcard
     exact hcard
-  -- parity: faceCount ≠ 2
   have hne2 : faceCount (removeTet M u).support r ≠ 2 :=
     faceCount_ne_two_of_boundary hSu hPureU hr3 hrbdU
-  -- so ≥ 3, contradicting PM
   have h3 : 3 ≤ faceCount (removeTet M u).support r := by omega
   exact not_isPseudomanifold_of_faceCount hr3 h3 hPMu
 
-/-! ## PM-carry: a taut filling of a 2-sphere is a pseudomanifold
-
-A standalone strong induction mirroring the free-shelling induction
-(`base_free`/`deg3_step_free`/`prime_step_free` assembled by `theorem3_core`),
-but carrying `IsPseudomanifold M.support` instead of `FreelyShellable`. This
-provides the triangle-incidence half of a faithful stickerball directly to
-downstream proofs. -/
-
 /-- **prime_isPM** (PM no-degree-3 step): a no-degree-3 taut filling of a 2-sphere
 is a pseudomanifold, given that every strictly smaller single-sphere taut filling
-is one. Pick a disjoint eligible pair `e, u` (M25b); each `removeTet` is a PM by
+is one. Pick a disjoint eligible pair `e, u`; each `removeTet` is a PM by
 the recursion (`removeTet_isPseudomanifold`); re-insert `e` via
 `isPseudomanifold_insert`, discharging the clean-glue obligation by the triangle
 rule-out (`faceCount_removeTet_sharedFace_eq_zero`) on shared faces and by the
@@ -1547,24 +1498,20 @@ lemma prime_isPM (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
     aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
   have hPMu : IsPseudomanifold (removeTet M u).support :=
     removeTet_isPseudomanifold hσ hU hXc hMX hT hS hu IHpm
-  -- re-insert e onto the smaller PM (removeTet M e)
   have hPMe : IsPseudomanifold (removeTet M e).support :=
     removeTet_isPseudomanifold hσ hU hXc hMX hT hS he IHpm
   rw [← support_insert_removeTet_of_mem he.2.1]
   refine isPseudomanifold_insert hPMe ?_ ?_
-  · -- e ∉ (removeTet M e).support
-    rw [support_removeTet_of_mem he.2.1]
+  · rw [support_removeTet_of_mem he.2.1]
     exact Finset.notMem_erase e M.support
   · -- clean glue: every triangle of e lies in ≤ 1 tet of removeTet M e
     intro f hf3 hfe
     have hftet : f ∈ tetFaces e := Finset.mem_powersetCard.mpr ⟨hfe, hf3⟩
     by_cases hsh : f ∈ sharedFaces M e
-    · -- shared face: vanishes on removal
-      have h0 : faceCount (removeTet M e).support f = 0 :=
+    · have h0 : faceCount (removeTet M e).support f = 0 :=
         faceCount_removeTet_sharedFace_eq_zero hσ hU hXc hMX hT hS hPure he hu hdisj hPMu hsh
       omega
-    · -- exposed face: it is a unit boundary face of removeTet M e, so exactly one tet
-      have hexpf : f ∈ exposedFaces M e := Finset.mem_sdiff.mpr ⟨hftet, hsh⟩
+    · have hexpf : f ∈ exposedFaces M e := Finset.mem_sdiff.mpr ⟨hftet, hsh⟩
       have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
         unitOn_flipBoundary_of_eligible hUb hS he
       have hfflip : f ∈ (σ \ sharedFaces M e) ∪ exposedFaces M e :=
@@ -1581,12 +1528,11 @@ lemma prime_isPM (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
       omega
 
 /-- **PM-carry: every taut filling of a combinatorial 2-sphere is a
-pseudomanifold.** A standalone strong induction parallel to `theorem3_core`,
+pseudomanifold.** A standalone strong induction
 carrying `IsPseudomanifold M.support` (each triangle in ≤ 2 tets). Base case
 (≤ 4 vertices) by `base_isPM`; degree-3 vertex by `deg3_isPM`; otherwise by
 `prime_isPM`; the strong induction hypothesis is threaded to both non-base
-steps. This exposes the triangle-incidence half of a faithful stickerball to
-downstream proofs without modifying the free-shelling induction. -/
+steps. -/
 theorem taut_isPseudomanifold {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
     (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
     (hS : SimplicialChain M) : IsPseudomanifold M.support := by
@@ -1623,7 +1569,6 @@ theorem sharedFaces_straddle {σ : Finset (Finset V)} {X M : Chain V}
     (hf₃A : f₃ ⊆ A) (hf₄B : f₄ ⊆ B) :
     ∀ s ∈ sharedFaces M e, ¬ s ⊆ A ∧ ¬ s ⊆ B := by
   classical
-  -- f₃, f₄ are faces of e (card 3, ⊆ e).
   have hf₃tet : f₃ ∈ tetFaces e := by
     apply exposedFaces_subset_tetFaces M e; rw [hexp]; exact Finset.mem_insert_self f₃ _
   have hf₄tet : f₄ ∈ tetFaces e := by
@@ -1634,13 +1579,11 @@ theorem sharedFaces_straddle {σ : Finset (Finset V)} {X M : Chain V}
   have hf₃c : f₃.card = 3 := (Finset.mem_powersetCard.mp hf₃tet).2
   have hf₄c : f₄.card = 3 := (Finset.mem_powersetCard.mp hf₄tet).2
   have he4 : e.card = 4 := he.1
-  -- e = f₃ ∪ f₄.
   have hunioncard : (f₃ ∪ f₄).card + (f₃ ∩ f₄).card = f₃.card + f₄.card :=
     Finset.card_union_add_card_inter f₃ f₄
   have hunion : f₃ ∪ f₄ = e := by
     apply Finset.eq_of_subset_of_card_le (Finset.union_subset hf₃e hf₄e)
     rw [he4]; rw [hf₃c, hf₄c, hcd] at hunioncard; omega
-  -- The A-apex `a ∈ f₃ \ f₄` and B-apex `b ∈ f₄ \ f₃`.
   have hf₃sub : ¬ f₃ ⊆ f₄ := by
     intro h
     have : f₃ = f₄ := Finset.eq_of_subset_of_card_le h (hf₄c.trans hf₃c.symm).le
@@ -1654,14 +1597,12 @@ theorem sharedFaces_straddle {σ : Finset (Finset V)} {X M : Chain V}
   obtain ⟨b, hb⟩ : (f₄ \ f₃).Nonempty := by
     rw [Finset.sdiff_nonempty]; exact hf₄sub
   rw [Finset.mem_sdiff] at ha hb
-  -- a ∈ A \ B : a ∈ f₃ ⊆ A; a ∉ B since a ∉ f₃ ∩ f₄ = A ∩ B.
   have haA : a ∈ A := hf₃A ha.1
   have haB : a ∉ B := by
     intro haB'
     have : a ∈ A ∩ B := Finset.mem_inter.mpr ⟨haA, haB'⟩
     rw [hAB, Finset.mem_inter] at this
     exact ha.2 this.2
-  -- b ∈ B \ A : b ∈ f₄ ⊆ B; b ∉ A since b ∉ f₃ ∩ f₄ = A ∩ B.
   have hbB : b ∈ B := hf₄B hb.1
   have hbA : b ∉ A := by
     intro hbA'
@@ -1672,29 +1613,23 @@ theorem sharedFaces_straddle {σ : Finset (Finset V)} {X M : Chain V}
   have hstet : s ∈ tetFaces e := sharedFaces_subset_tetFaces M e hs
   have hse : s ⊆ e := (Finset.mem_powersetCard.mp hstet).1
   have hsc : s.card = 3 := (Finset.mem_powersetCard.mp hstet).2
-  -- s ≠ f₃ and s ≠ f₄ (shared faces are not exposed faces).
   have hsnotexp : s ∉ exposedFaces M e := by
     rw [exposedFaces, Finset.mem_sdiff]; push_neg; intro _; exact hs
   rw [hexp, Finset.mem_insert, Finset.mem_singleton] at hsnotexp
   push_neg at hsnotexp
   obtain ⟨hsf₃, hsf₄⟩ := hsnotexp
-  -- s contains both apexes a and b.
   have has : a ∈ s := by
     by_contra haS
-    -- then s ⊆ e \ {a} = f₄ (since e = f₃ ∪ f₄ and a is the only vertex of f₃ \ f₄).
-    -- Show s = f₄ by s ⊆ f₄ and equal cards.
     have hsf₄sub : s ⊆ f₄ := by
       intro x hx
       have hxe : x ∈ e := hse hx
       rw [← hunion, Finset.mem_union] at hxe
       rcases hxe with hxf₃ | hxf₄
-      · -- x ∈ f₃; if x ∈ f₄ done, else x ∈ f₃\f₄ = {a}, so x = a, contra haS
-        by_cases hxf₄ : x ∈ f₄
+      · by_cases hxf₄ : x ∈ f₄
         · exact hxf₄
         · exfalso
           have hxa : x = a := by
             have hxd : x ∈ f₃ \ f₄ := Finset.mem_sdiff.mpr ⟨hxf₃, hxf₄⟩
-            -- f₃ \ f₄ has card 1, contains a and x.
             have hcard1 : (f₃ \ f₄).card = 1 := by
               have hpart : (f₃ \ f₄).card + (f₃ ∩ f₄).card = f₃.card :=
                 Finset.card_sdiff_add_card_inter f₃ f₄
@@ -1733,7 +1668,6 @@ theorem sharedFaces_straddle {σ : Finset (Finset V)} {X M : Chain V}
             rw [this, hb']
           rw [hxb] at hx; exact hbS hx
     exact hsf₃ (Finset.eq_of_subset_of_card_le hsf₃sub (hf₃c.trans hsc.symm).le)
-  -- s contains b ∉ A, so ¬ s ⊆ A; and a ∉ B, so ¬ s ⊆ B.
   exact ⟨fun hsA => hbA (hsA hbs), fun hsB => haB (hsB has)⟩
 
 /-- **Side reconstruction of `σ` (B-side).** Erasing the exposed face `f₄` from the
@@ -1768,19 +1702,15 @@ theorem flipEdgePresent_side_reconstruct {σ : Finset (Finset V)} {X M : Chain V
   constructor
   · intro hgσ
     by_cases hgB : g ⊆ B
-    · -- g ⊆ B: g ∈ σ₂.erase f₄
-      left
+    · left
       have hgshared : g ∉ sharedFaces M e := fun hc => (hstraddle g hc).2 hgB
       have hgne4 : g ≠ f₄ := fun hc => hf₄notσ (hc ▸ hgσ)
       exact ⟨hgne4, Or.inl ⟨hgσ, hgshared⟩, hgB⟩
-    · -- ¬ g ⊆ B: g ∈ K₂
-      right; exact ⟨hgσ, hgB⟩
+    · right; exact ⟨hgσ, hgB⟩
   · rintro (⟨hgne4, hgflip, hgB⟩ | ⟨hgσ, _⟩)
-    · -- g ∈ σ₂.erase f₄ ⟹ g ∈ σ
-      rcases hgflip with ⟨hgσ, _⟩ | hgexp
+    · rcases hgflip with ⟨hgσ, _⟩ | hgexp
       · exact hgσ
-      · -- g ∈ {f₃, f₄}: f₄ excluded by hgne4; f₃ excluded by g ⊆ B vs ¬ f₃ ⊆ B
-        rw [hexp, Finset.mem_insert, Finset.mem_singleton] at hgexp
+      · rw [hexp, Finset.mem_insert, Finset.mem_singleton] at hgexp
         rcases hgexp with hgf₃ | hgf₄
         · exact absurd (hgf₃ ▸ hgB) hf₃notB
         · exact absurd hgf₄ hgne4
@@ -1860,7 +1790,6 @@ theorem glueStep_bridge_left {σ : Finset (Finset V)} {X M : Chain V}
   have hf₄tet : f₄ ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf₄exp
   have hf₃notσ : f₃ ∉ σ := ((hexp_mem f₃).mp hf₃exp).2
   have hf₄notσ : f₄ ∉ σ := ((hexp_mem f₄).mp hf₄exp).2
-  -- Faces of `e` are the shared faces together with `{f₃, f₄}`.
   have htetFaces : ∀ x ∈ tetFaces e, x ∈ sharedFaces M e ∨ x = f₃ ∨ x = f₄ := by
     intro x hx
     by_cases hxσ : x ∈ σ
@@ -1869,8 +1798,7 @@ theorem glueStep_bridge_left {σ : Finset (Finset V)} {X M : Chain V}
       rw [hexp, Finset.mem_insert, Finset.mem_singleton] at this
       exact Or.inr this
   refine ⟨he.1, ?_, ?_⟩
-  · -- shared: tetFaces e ∩ σ₁ = {f₃}, card 1.
-    left
+  · left
     have heq : tetFaces e ∩ (flipBoundary σ M e).filter (fun f => f ⊆ A) = {f₃} := by
       ext x
       simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_singleton]
@@ -1885,9 +1813,7 @@ theorem glueStep_bridge_left {σ : Finset (Finset V)} {X M : Chain V}
         simp only [flipBoundary, Finset.mem_union]; right; rw [hexp]
         exact Finset.mem_insert_self _ _
     rw [heq, Finset.card_singleton]
-  · -- newBdry: insert f₄ K₂ = (σ₁ \ tetFaces e) ∪ (tetFaces e \ σ₁).
-    -- Membership characterizations (kept folded to avoid fragile simp normal forms).
-    have hmemflip : ∀ g, g ∈ flipBoundary σ M e ↔ (g ∈ σ ∧ g ∉ sharedFaces M e) ∨
+  · have hmemflip : ∀ g, g ∈ flipBoundary σ M e ↔ (g ∈ σ ∧ g ∉ sharedFaces M e) ∨
         g = f₃ ∨ g = f₄ := by
       intro g
       simp only [flipBoundary, Finset.mem_union, Finset.mem_sdiff, hexp, Finset.mem_insert,
@@ -1902,28 +1828,23 @@ theorem glueStep_bridge_left {σ : Finset (Finset V)} {X M : Chain V}
       Finset.mem_sdiff, hmemσ₁ g]
     constructor
     · rintro (rfl | ⟨hgσ, hgnotB⟩)
-      · -- g = f₄: f₄ ∈ tetFaces e, f₄ ∉ σ₁ (¬ f₄ ⊆ A)
-        right
+      · right
         refine ⟨hf₄tet, ?_⟩
         rintro ⟨_, hf₄A⟩; exact hf₄notA hf₄A
-      · -- g ∈ σ, ¬ g ⊆ B
-        by_cases hgtet : g ∈ tetFaces e
-        · -- g a face of e: shared (straddle ⟹ ¬⊆A ⟹ ∉σ₁); f₃,f₄ ∉ σ — but g ∈ σ
-          right
+      · by_cases hgtet : g ∈ tetFaces e
+        · right
           refine ⟨hgtet, ?_⟩
           rcases htetFaces g hgtet with hgsh | hgf₃ | hgf₄
           · rintro ⟨_, hgA⟩; exact (hstraddle g hgsh).1 hgA
           · exact absurd (hgf₃ ▸ hgσ) hf₃notσ
           · exact absurd (hgf₄ ▸ hgσ) hf₄notσ
-        · -- g ∉ tetFaces e: g ∈ σ \ shared, and g ⊆ A (¬⊆B + cover); left branch
-          left
+        · left
           have hgnotsh : g ∉ sharedFaces M e := fun hc => hgtet (sharedFaces_subset_tetFaces M e hc)
           have hgflip : g ∈ flipBoundary σ M e := (hmemflip g).mpr (Or.inl ⟨hgσ, hgnotsh⟩)
           have hgA : g ⊆ A := (hcover g hgflip).resolve_right hgnotB
           exact ⟨⟨Or.inl ⟨hgσ, hgnotsh⟩, hgA⟩, hgtet⟩
     · rintro (⟨⟨hgflip, hgA⟩, hgtet⟩ | ⟨hgtet, hgnotσ₁⟩)
-      · -- g ∈ σ₁ \ tetFaces e: g ∈ σ (flip-disjunct, f₃/f₄ ruled out by ∉ tetFaces), ¬ g ⊆ B
-        right
+      · right
         have hgσ : g ∈ σ := by
           rcases hgflip with ⟨hgσ, _⟩ | hgf₃ | hgf₄
           · exact hgσ
@@ -1937,8 +1858,7 @@ theorem glueStep_bridge_left {σ : Finset (Finset V)} {X M : Chain V}
           have hg3 : g.card = 3 := hσ.pure g hgσ
           omega
         exact ⟨hgσ, hgnotB⟩
-      · -- g ∈ tetFaces e \ σ₁: shared (⟹ g ∈ K₂) or f₃ (∈ σ₁, contra) or f₄ (left).
-        rcases htetFaces g hgtet with hgsh | hgf₃ | hgf₄
+      · rcases htetFaces g hgtet with hgsh | hgf₃ | hgf₄
         · right; exact ⟨hshared_sub hgsh, (hstraddle g hgsh).2⟩
         · exact absurd (hgf₃ ▸ (hmemσ₁ f₃).mp hf₃σ₁) hgnotσ₁
         · left; exact hgf₄
@@ -1962,22 +1882,5 @@ theorem glueStep_bridge_right {σ : Finset (Finset V)} {X M : Chain V}
   · rw [Finset.inter_comm]; exact hcd
   · intro f hf; exact (hcover f hf).symm
 
-
-/-! ## Weak (boundary-only) prime endpoints — REMOVED
-
-The weak prime-step machinery (`prime_flipEdge_split_free_package`, `exists_shelling_prime_case1`,
-`exists_shelling_prime_case2`, `prime_step_free`) assembled the boundary-trace `FreelyShellable`
-endpoint, which cannot see rogue interior faces and does not entail the clean/normal manifold
-conditions.  It has been removed, together with the now-dead side-split bundle it alone consumed:
-`flipEdgePresent_side_data`, `flipEdgePresent_side_bridge`, the struct `PrimeFlipEdgeSplitFreePackage`
-(here) and the relative-shelling apparatus `RelShelling` / `relShelling_over_insert_boundary_face` /
-`IsBall.bridge_of_relShelling` / `RelBoundaryShelling` (Ball.lean).  The public route runs through the
-clean endpoints (`taut_filling_is_anyrootedStickerball` and corollaries in `Theorem3Clean.lean`).
-
-Retained because the clean route *does* consume them (it re-derives the case-2 split directly, not via
-`flipEdgePresent_side_data`): `flipEdgePresent_side_sets`, `flipEdgePresent_side_algebra`,
-`flipEdgePresent_side_reconstruct`(`_left`), `glueStep_bridge_left`/`_right`.  Also retained: the weak
-*predicates* `IsBall` / `IsShelling` / `FreelyShellable` / `GlueStep` (Ball.lean), onto which the clean
-route projects via `IsCleanBall.toBoundaryIsBall` etc. -/
 
 end Taut

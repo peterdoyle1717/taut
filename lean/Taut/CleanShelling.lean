@@ -4,31 +4,19 @@ import Taut.Pseudomanifold
 /-!
 # Clean shellability — the public, by-definition-simplicial shelling
 
-The boundary shelling of `Taut.Ball` is a *boundary trace*: a glue step only
-constrains the new tet against the current boundary, so it cannot see a rogue
-lower-dimensional intersection with the accumulated complex.  This file adds the
-**clean** layer, which threads the accumulated tet-set `τ` and forbids exactly
-those rogues: `CleanGlueStep.clean` says every face of the new tet already
-present in `τ` lies inside one of the shared boundary triangles.
+The **clean** layer threads the accumulated tet-set `τ` and forbids rogue
+lower-dimensional intersections: `CleanGlueStep.clean` says every face of the new
+tet already present in `τ` lies inside one of the shared boundary triangles.
 
-That single condition rules out, uniformly, all four ways a glue can fail to be
-simplicial *as an intersection shape*: doubled tet (`f = t`), rogue old triangle
-(`f` card 3), rogue old edge (card 2), rogue old vertex (card 1).  The clean
-predicates project to the boundary ones (`.toBoundary…`), so the banked reassembly
-lemmas remain usable.
-
-Per the G1 audit (2026-06-18, codex session 019ed979) `CleanGlueStep.clean` is the
-correct no-rogue *shape* but does **not** by itself supply the quantitative
-compatibilities (`faceCount ≤ 1`, link attachment) that `clean3Complex_insert`
-needs — those are chain facts (a boundary face of a unit chain lies in exactly one
-tet).  So `CleanGlueStep` **carries them as extra fields** (`newTet`, `hpmc`,
-`helc`, `hvlc`), produced by the chain geometry where the step is built.  This makes
-the clean shelling **self-certifying**: its prefixes are `Clean3Complex` with no
-further chain input (`CleanShellFrom.clean3Complex`, `IsCleanBall.clean3Complex`),
-and downstream shelling theory never needs to know about chains.
+`CleanGlueStep.clean` is the correct no-rogue *shape* but does **not** by itself
+supply the quantitative compatibilities (`faceCount ≤ 1`, link attachment) that
+`clean3Complex_insert` needs.  So `CleanGlueStep` **carries them as extra fields**
+(`newTet`, `hpmc`, `helc`, `hvlc`).  This makes the clean shelling
+**self-certifying**: its prefixes are `Clean3Complex` with no further input
+(`CleanShellFrom.clean3Complex`, `IsCleanBall.clean3Complex`).
 
 The exported public predicates of Theorem 2/3 are these clean ones
-(`IsCleanBall`, `FreelyCleanShellable`), never the boundary trace.
+(`IsCleanBall`, `FreelyCleanShellable`).
 -/
 
 namespace Taut
@@ -39,12 +27,9 @@ variable {V : Type*} [LinearOrder V]
 
 /-- One **clean** glue step.  Beyond the boundary glue (`weak`) and the no-rogue
 *shape* condition (`clean` — every face of `t` already in `τ` lies in a shared
-boundary triangle, i.e. the old complex meets `t` only in the closure of the shared
-disk), it carries the *quantitative* clean-insert certificates that
-`clean3Complex_insert` consumes.  Per the G1 audit (2026-06-18, session 019ed979)
-these do **not** follow from `clean` alone — they are produced by the chain geometry
-where the step is built — so they are explicit fields, making the clean shelling
-self-certifying. -/
+boundary triangle), it carries the *quantitative* clean-insert certificates that
+`clean3Complex_insert` consumes.  These do **not** follow from `clean` alone, so
+they are explicit fields. -/
 structure CleanGlueStep (t : Finset V) (τ B B' : Finset (Finset V)) : Prop where
   /-- the underlying boundary glue step (one or two shared faces, symmetric difference). -/
   weak : BoundaryGlueStep t B B'
@@ -106,26 +91,21 @@ strengthened property. -/
 def IsAnyrootedStickerball (τ B : Finset (Finset V)) : Prop :=
   IsStickerball τ B ∧ FreelyCleanShellable τ B
 
-/-- An anyrooted stickerball is in particular a stickerball. -/
 lemma IsAnyrootedStickerball.toStickerball {τ B : Finset (Finset V)}
     (h : IsAnyrootedStickerball τ B) : IsStickerball τ B := h.1
 
-/-- An anyrooted stickerball is freely clean shellable (a shelling starts at any prescribed tet). -/
 lemma IsAnyrootedStickerball.freelyCleanShellable {τ B : Finset (Finset V)}
     (h : IsAnyrootedStickerball τ B) : FreelyCleanShellable τ B := h.2
 
 /-! ## A single tetrahedron is a (freely) clean ball -/
 
-/-- A single tetrahedron is a clean shelling with the tetrahedron-boundary sphere. -/
 lemma isCleanShelling_singleton {t : Finset V} (ht : t.card = 4) :
     IsCleanShelling [t] (tetFaces t) := ⟨ht, rfl⟩
 
-/-- A single tetrahedron is a clean ball. -/
 lemma isCleanBall_singleton {t : Finset V} (ht : t.card = 4) :
     IsCleanBall ({t} : Finset (Finset V)) (tetFaces t) :=
   ⟨[t], by simp, by simp, isCleanShelling_singleton ht⟩
 
-/-- A single tetrahedron is freely clean shellable. -/
 lemma freelyCleanShellable_singleton {t : Finset V} (ht : t.card = 4) :
     FreelyCleanShellable ({t} : Finset (Finset V)) (tetFaces t) := by
   intro t' ht'
@@ -136,18 +116,15 @@ lemma freelyCleanShellable_singleton {t : Finset V} (ht : t.card = 4) :
 /-! ## Self-certification: clean prefixes are `Clean3Complex`
 
 The quantitative fields of `CleanGlueStep` feed `clean3Complex_insert`, so a clean
-shelling carries the honest manifold invariant with **no further chain input** —
-the predicate certifies cleanliness by itself. -/
+shelling carries the manifold invariant with **no further chain input**. -/
 
-/-- One clean glue step preserves `Clean3Complex`. -/
 lemma CleanGlueStep.clean3Complex {t : Finset V} {τ B B' : Finset (Finset V)}
     (hstep : CleanGlueStep t τ B B') (hτ : Clean3Complex τ) :
     Clean3Complex (insert t τ) :=
   clean3Complex_insert hstep.weak.card4 hstep.newTet hτ hstep.hpmc hstep.helc hstep.hvlc
 
-/-- **Clean shelling prefixes are `Clean3Complex`.** Fold the per-step preservation
-along the threaded accumulation: starting from a clean `τ`, gluing the tets of `l`
-yields the clean complex `τ ∪ l.toFinset`. -/
+/-- **Clean shelling prefixes are `Clean3Complex`.** Starting from a clean `τ`,
+gluing the tets of `l` yields the clean complex `τ ∪ l.toFinset`. -/
 lemma CleanShellFrom.clean3Complex {τ B₀ : Finset (Finset V)} {l : List (Finset V)}
     {B : Finset (Finset V)} (hτ : Clean3Complex τ) (h : CleanShellFrom τ B₀ l B) :
     Clean3Complex (τ ∪ l.toFinset) := by
@@ -160,7 +137,6 @@ lemma CleanShellFrom.clean3Complex {τ B₀ : Finset (Finset V)} {l : List (Fins
       rw [List.toFinset_cons, Finset.union_insert]
       exact hrec
 
-/-- A clean shelling's tet-set is `Clean3Complex`. -/
 lemma IsCleanShelling.clean3Complex {l : List (Finset V)} {B : Finset (Finset V)}
     (h : IsCleanShelling l B) : Clean3Complex l.toFinset := by
   cases l with
@@ -172,32 +148,27 @@ lemma IsCleanShelling.clean3Complex {l : List (Finset V)} {B : Finset (Finset V)
       rwa [List.toFinset_cons]
 
 /-- **A clean ball is a clean 3-complex** — the public predicate self-certifies the
-honest manifold invariant (no chain hypothesis). -/
+manifold invariant (no chain hypothesis). -/
 lemma IsCleanBall.clean3Complex {τ B : Finset (Finset V)} (h : IsCleanBall τ B) :
     Clean3Complex τ := by
   obtain ⟨l, hl, _, hsh⟩ := h
   rw [← hl]; exact hsh.clean3Complex
 
-/-- **A freely clean shellable set is a clean 3-complex.** -/
 lemma FreelyCleanShellable.clean3Complex {τ B : Finset (Finset V)}
     (h : FreelyCleanShellable τ B) (hτ : τ.Nonempty) : Clean3Complex τ := by
   obtain ⟨t, ht⟩ := hτ
   obtain ⟨l, _, hl, _, hsh⟩ := h t ht
   rw [← hl]; exact hsh.clean3Complex
 
-/-- A stickerball is a clean 3-complex (purity, triangle-bounded, connected vertex & edge links). -/
 lemma IsStickerball.isClean3Complex {τ B : Finset (Finset V)} (h : IsStickerball τ B) :
     IsClean3Complex τ := h.1.clean3Complex
 
-/-- An anyrooted stickerball is a clean 3-complex. -/
 lemma IsAnyrootedStickerball.isClean3Complex {τ B : Finset (Finset V)}
     (h : IsAnyrootedStickerball τ B) : IsClean3Complex τ := h.1.isClean3Complex
 
-/-! ## Clean reassembly — the clean analogues of the weak snoc lemmas
+/-! ## Clean reassembly
 
-These mirror `Ball.ShellFrom_snoc`/`IsShelling_snoc` and the `Theorem3` grafts
-(`FreelyShellable.insert_of_glueStep`, `…exists_shelling_insert_of_glueStep_old`),
-threading the accumulated tet-set `τ` that `CleanShellFrom` carries. -/
+These thread the accumulated tet-set `τ` that `CleanShellFrom` carries. -/
 
 /-- Append one clean glue step to a `CleanShellFrom`. The step must glue onto the
 fully accumulated tet-set `τ₀ ∪ l.toFinset`. -/
@@ -220,9 +191,7 @@ lemma CleanShellFrom_snoc {τ₀ B₀ B B' : Finset (Finset V)} {l : List (Finse
       exact ⟨B₁, hstep, ih hrest hg'⟩
 
 /-- **`CleanShellFrom` composes.** Glue `l₁` (accumulating from `τ₀`) then `l₂`,
-whose accumulator must start at the fully accumulated tet-set `τ₀ ∪ l₁.toFinset`.
-The clean analogue of `Ball.ShellFrom_append`; because `CleanShellFrom` threads the
-accumulated tet-set, the induction generalizes `τ₀` (and the boundary `B₀`). -/
+whose accumulator must start at the fully accumulated tet-set `τ₀ ∪ l₁.toFinset`. -/
 lemma CleanShellFrom_append {τ₀ B₀ B₁ B : Finset (Finset V)} {l₁ l₂ : List (Finset V)}
     (h₁ : CleanShellFrom τ₀ B₀ l₁ B₁)
     (h₂ : CleanShellFrom (τ₀ ∪ l₁.toFinset) B₁ l₂ B) :
@@ -240,8 +209,8 @@ lemma CleanShellFrom_append {τ₀ B₀ B₁ B : Finset (Finset V)} {l₁ l₂ :
       rwa [hset]
 
 /-- A *clean relative shelling*: glue the tets of `τ` onto an ambient boundary `B₀`
-(threading `τ₀` as the accumulated old tet-set), ending at `B`.  The clean analogue
-of `Ball.RelShelling` — the invariant the case-2 clean bridge needs. -/
+(threading `τ₀` as the accumulated old tet-set), ending at `B`.  The invariant the
+case-2 clean bridge needs. -/
 def CleanRelShellingFrom (τ₀ τ B₀ B : Finset (Finset V)) : Prop :=
   ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ CleanShellFrom τ₀ B₀ l B
 
@@ -249,8 +218,7 @@ def CleanRelShellingFrom (τ₀ τ B₀ B : Finset (Finset V)) : Prop :=
 Consume a clean shelling `IsCleanShelling l₁ Bmid` (ending at boundary `Bmid`) and a
 clean `CleanShellFrom l₁.toFinset Bmid l₂ B` (continuing over the second region with
 the first region's tets as the accumulated old set), and produce a single clean
-shelling `IsCleanShelling (l₁ ++ l₂) B`.  The clean analogue of how `Ball`'s
-`IsShelling_append` stitches the two sides of the case-2 bridge. -/
+shelling `IsCleanShelling (l₁ ++ l₂) B`. -/
 lemma IsCleanShelling_append_cleanShellFrom {l₁ l₂ : List (Finset V)}
     {Bmid B : Finset (Finset V)} (h : IsCleanShelling l₁ Bmid)
     (hf : CleanShellFrom l₁.toFinset Bmid l₂ B) :
@@ -265,7 +233,6 @@ lemma IsCleanShelling_append_cleanShellFrom {l₁ l₂ : List (Finset V)}
         rw [List.toFinset_cons, Finset.singleton_union]
       rwa [hset]
 
-/-- Append one clean glue step to a clean shelling. -/
 lemma IsCleanShelling_snoc {l : List (Finset V)} {B B' : Finset (Finset V)}
     {e : Finset V} (h : IsCleanShelling l B)
     (hg : CleanGlueStep e l.toFinset B B') :
@@ -282,8 +249,7 @@ lemma IsCleanShelling_snoc {l : List (Finset V)} {B B' : Finset (Finset V)}
 
 /-- **Old-target clean snoc.** A freely clean shellable `τ` and a fresh clean-glue
 tet `e` give, for any old target `s ∈ τ`, a clean shelling of `insert e τ` starting
-at `s` — namely `(τ's clean shelling from s) ++ [e]`. The clean analogue of
-`FreelyShellable.exists_shelling_insert_of_glueStep_old`. -/
+at `s` — namely `(τ's clean shelling from s) ++ [e]`. -/
 lemma FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old
     {τ B B' : Finset (Finset V)} {e s : Finset V}
     (hfree : FreelyCleanShellable τ B) (hg : CleanGlueStep e τ B B')
@@ -309,9 +275,8 @@ lemma FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old
 /-- **Clean case-1 stick.** A free clean sticker ball `τ` (boundary `B`) plus a
 fresh `CleanGlueStep` tet `t` is a free clean sticker ball with `t` adjoined. For an
 old target the shelling is `(old clean shelling from target) ++ [t]`; for target `t`
-the shelling is `t :: (a clean shelling of τ onto `B'` from `tetFaces t`)` — that
-bridge-start relative clean shelling is the hypothesis `hstart_t`. The clean
-analogue of `FreelyShellable.insert_of_glueStep`. -/
+the shelling is `t :: (a clean shelling of τ onto B' from tetFaces t)` — that
+bridge-start relative clean shelling is the hypothesis `hstart_t`. -/
 lemma FreelyCleanShellable.insert_of_cleanGlueStep {τ B B' : Finset (Finset V)}
     {t : Finset V} (hfree : FreelyCleanShellable τ B) (hg : CleanGlueStep t τ B B')
     (hstart_t : ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
@@ -324,23 +289,19 @@ lemma FreelyCleanShellable.insert_of_cleanGlueStep {τ B B' : Finset (Finset V)}
     refine ⟨s :: l, rfl, ?_, ?_, hg.weak.card4, hsf⟩
     · rw [List.toFinset_cons, hlτ]
     · exact List.nodup_cons.mpr ⟨fun hc => hg.newTet (hlτ ▸ List.mem_toFinset.mpr hc), hnodup⟩
-  · -- target is an old tet `s ∈ τ`
-    exact FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old hfree hg
+  · exact FreelyCleanShellable.exists_shelling_insert_of_cleanGlueStep_old hfree hg
       hg.newTet hsτ
 
-/-! ## Clean boundary-piece transport — the clean analogues of the weak
-`GlueStep.erase_union_disjoint` / `ShellFrom_erase_union_disjoint` (`Ball`).
+/-! ## Clean boundary-piece transport
 
 The `CleanGlueStep` fields `newTet`/`hpmc`/`helc`/`hvlc` depend only on the
 accumulated set `τ`, never on the boundary, so a boundary-only transport leaves
-them untouched.  Only `weak` (a `BoundaryGlueStep`, i.e. a `GlueStep`) and
-`clean` (which reads `tetFaces t ∩ B`) move, and both follow from the same
-tet-avoidance disjointness used in the weak lemmas. -/
+them untouched.  Only `weak` (a `BoundaryGlueStep`) and `clean` (which reads
+`tetFaces t ∩ B`) move, both following from tet-avoidance disjointness. -/
 
 /-- One **clean** glue step, transported by erasing the interface face `γ` and
-adjoining the disjoint piece `K`, when the tet avoids both.  Mirrors
-`GlueStep.erase_union_disjoint` (`Ball`) at the clean level: the `τ`-only fields
-are unchanged, and the `clean` field rides on the same intersection rewrite. -/
+adjoining the disjoint piece `K`, when the tet avoids both.  The `τ`-only fields
+are unchanged; the `clean` field rides on an intersection rewrite. -/
 lemma CleanGlueStep.erase_union_disjoint {t γ : Finset V} {τ B B' K : Finset (Finset V)}
     (hg : CleanGlueStep t τ B B') (hdisj : Disjoint (tetFaces t) (insert γ K)) :
     CleanGlueStep t τ (B.erase γ ∪ K) (B'.erase γ ∪ K) where
@@ -365,10 +326,9 @@ lemma CleanGlueStep.erase_union_disjoint {t γ : Finset V} {τ B B' K : Finset (
 
 /-- **Clean boundary-piece transport.** If none of the tets in a clean relative
 shelling touches `γ` or the ambient piece `K`, the clean shelling is unchanged
-after replacing the carried boundary face `γ` by `K`.  Mirrors
-`ShellFrom_erase_union_disjoint` (`Ball`); because `CleanShellFrom` threads the
-accumulated tet-set, the induction generalizes `τ₀` (along with the boundaries
-`B₀`/`B`) so the `cons` step's IH applies to `insert t τ₀`. -/
+after replacing the carried boundary face `γ` by `K`.  Because `CleanShellFrom`
+threads the accumulated tet-set, the induction generalizes `τ₀` (along with the
+boundaries `B₀`/`B`) so the `cons` step's IH applies to `insert t τ₀`. -/
 lemma CleanShellFrom_erase_union_disjoint {γ : Finset V}
     {K : Finset (Finset V)} {l : List (Finset V)} :
     ∀ {τ₀ B₀ B : Finset (Finset V)}, CleanShellFrom τ₀ B₀ l B →
@@ -430,14 +390,11 @@ lemma CleanGlueStep.prepend_crossSeam {t f₄ Bside : Finset V} {Δ τ B B' : Fi
     (hf₄card : f₄.card = 3) (hf₄nott : ¬ f₄ ⊆ t) :
     CleanGlueStep t (Δ ∪ τ) B B' := by
   classical
-  -- A face of `t` shared with `Δ` lies in `f₄` (each vertex is in `Bside ∩ Δ-tet`).
   have hsharef₄ : ∀ {f : Finset V}, f ⊆ t → (∃ d ∈ Δ, f ⊆ d) → f ⊆ f₄ := by
     rintro f hft ⟨d, hdΔ, hfd⟩ x hxf
     exact hΔB d hdΔ x (hfd hxf) (htB (hft hxf))
-  -- A face of `t` shared with `Δ` is also shared with `τ` (via `t₄ ∈ τ ⊇ f₄`).
   have hshareτ : ∀ {f : Finset V}, f ⊆ t → (∃ d ∈ Δ, f ⊆ d) → ∃ s ∈ τ, f ⊆ s :=
     fun hft hd => ⟨t₄, ht₄τ, (hsharef₄ hft hd).trans hf₄t₄⟩
-  -- A proper-or-equal `f₄`-subface contained in `t` is a proper subface (else `f₄ ⊆ t`).
   -- For the link branches: an `e`/`v` inside `f₄ ⊆ t₄ ∈ τ` already has a nonempty
   -- `τ`-link (`t₄ \ e`, resp. `t₄ \ {v}`, is nonempty), since `t₄` has 4 > |e|,|{v}| verts.
   have hlinkNeτ_edge : ∀ {e : Finset V}, e ⊆ f₄ → e.card = 2 → edgeLinkVerts τ e ≠ ∅ := by
@@ -468,21 +425,17 @@ lemma CleanGlueStep.prepend_crossSeam {t f₄ Bside : Finset V} {Δ τ B B' : Fi
       hpmc := ?_
       helc := ?_
       hvlc := ?_ }
-  · -- clean: a `Δ∪τ`-shared face reduces to a `τ`-shared face, then `hcg.clean`.
-    rintro f hft ⟨s, hs, hfs⟩
+  · rintro f hft ⟨s, hs, hfs⟩
     rw [Finset.mem_union] at hs
     refine hcg.clean f hft ?_
     rcases hs with hsΔ | hsτ
     · exact hshareτ hft ⟨s, hsΔ, hfs⟩
     · exact ⟨s, hsτ, hfs⟩
-  · -- newTet: `t ∉ Δ ∪ τ`.
-    intro h
+  · intro h
     rcases Finset.mem_union.mp h with hd | hτ
     · exact htΔ hd
     · exact hcg.newTet hτ
-  · -- hpmc: faceCount splits; the `Δ`-part is `0` (a triangle of `t` in `Δ` lies in
-    -- `f₄`, but `f₄ ⊄ t`, so a card-3 subface of `t` cannot fill `f₄`).
-    intro f hf3 hft
+  · intro f hf3 hft
     rw [faceCount_union_of_disjoint hdisj]
     have hΔ0 : faceCount Δ f = 0 := by
       apply faceCount_eq_zero
@@ -492,9 +445,7 @@ lemma CleanGlueStep.prepend_crossSeam {t f₄ Bside : Finset V} {Δ τ B B' : Fi
       exact hf₄nott (hfeq ▸ hft)
     rw [hΔ0, zero_add]
     exact hcg.hpmc f hf3 hft
-  · -- helc: union split; empty `τ`-branch kills the `Δ`-branch (a `Δ`-linked edge lies
-    -- in `f₄ ⊆ t₄ ∈ τ`, so its `τ`-link is nonempty); nonempty lifts.
-    intro e he he2
+  · intro e he he2
     rw [edgeLinkVerts_union]
     rcases hcg.helc e he he2 with hempty | ⟨w, hw⟩
     · left
@@ -505,8 +456,7 @@ lemma CleanGlueStep.prepend_crossSeam {t f₄ Bside : Finset V} {Δ τ B B' : Fi
     · right
       rw [Finset.mem_inter] at hw
       exact ⟨w, Finset.mem_inter.mpr ⟨hw.1, Finset.mem_union_right _ hw.2⟩⟩
-  · -- hvlc: vertex analogue.
-    intro v hv
+  · intro v hv
     rw [vertexLinkVerts_union]
     rcases hcg.hvlc v hv with hempty | ⟨w, hw⟩
     · left
@@ -521,8 +471,7 @@ lemma CleanGlueStep.prepend_crossSeam {t f₄ Bside : Finset V} {Δ τ B B' : Fi
 /-- **The cross-seam head glue: the bridge face's tet against the foreign block.**
 The unique `Bside`-tet `t₄` through the bridge face `f₄` is glued onto a boundary
 `B` that still carries `f₄` (`hf₄B`), against the foreign block `Δ` that meets `Bside`
-only inside `f₄` (`hΔB`).  This is the first side-2 step of the case-2 clean bridge
-(`relShelling_over_insert_boundary_face`'s first glue, at the clean level):
+only inside `f₄` (`hΔB`).  This is the first side-2 step of the case-2 clean bridge:
 
 * **clean** — a face of `t₄` shared with `Δ` lies in `f₄`, and `f₄ ∈ tetFaces t₄ ∩ B`;
 * **hpmc** — a card-3 face of `t₄` shared with `Δ` is `f₄` (card), whose `Δ`-count is
@@ -539,7 +488,6 @@ lemma cleanGlueStep_crossSeam_head {t₄ f₄ Bside e : Finset V} {Δ B B' : Fin
   classical
   have hf₄tetT : f₄ ∈ tetFaces t₄ := Finset.mem_powersetCard.mpr ⟨hf₄t₄, hf₄card⟩
   have hf₄interB : f₄ ∈ tetFaces t₄ ∩ B := Finset.mem_inter.mpr ⟨hf₄tetT, hf₄B⟩
-  -- A face of `t₄` shared with `Δ` lies in `f₄`.
   have hsharef₄ : ∀ {f : Finset V}, f ⊆ t₄ → (∃ d ∈ Δ, f ⊆ d) → f ⊆ f₄ := by
     rintro f hft ⟨d, hdΔ, hfd⟩ x hxf
     exact hΔB d hdΔ x (hfd hxf) (ht₄B (hft hxf))
@@ -550,19 +498,15 @@ lemma cleanGlueStep_crossSeam_head {t₄ f₄ Bside e : Finset V} {Δ B B' : Fin
       hpmc := ?_
       helc := ?_
       hvlc := ?_ }
-  · -- clean: shared face ⊆ f₄ ∈ tetFaces t₄ ∩ B.
-    rintro f hft hsh
+  · rintro f hft hsh
     exact ⟨f₄, hf₄interB, hsharef₄ hft hsh⟩
-  · -- hpmc: a shared triangle is `f₄`; its count is `≤ 1`; else `0`.
-    intro f hf3 hft
+  · intro f hf3 hft
     by_cases hsh : ∃ d ∈ Δ, f ⊆ d
     · have hfeq : f = f₄ := Finset.eq_of_subset_of_card_le (hsharef₄ hft hsh) (by rw [hf3, hf₄card])
       rw [hfeq]; exact hf₄countΔ
     · rw [faceCount_eq_zero]; · omega
       · intro d hdΔ hfd; exact hsh ⟨d, hdΔ, hfd⟩
-  · -- helc: edge `ε ⊆ t₄`.  If `ε ⊆ f₄`, apex `f₄ \ ε ⊆ t₄ \ ε` lies in `e ⊇ f₄ ⊇ ε`.
-    --        Else no `Δ`-tet contains `ε` (hΔB), so the link is empty.
-    intro ε hε hε2
+  · intro ε hε hε2
     by_cases hεf₄ : ε ⊆ f₄
     · right
       have hcard : (f₄ \ ε).card = 1 := by rw [Finset.card_sdiff_of_subset hεf₄, hf₄card, hε2]
@@ -572,15 +516,13 @@ lemma cleanGlueStep_crossSeam_head {t₄ f₄ Bside e : Finset V} {Δ B B' : Fin
       obtain ⟨hwf₄, hwε⟩ := hwf₄ε
       refine ⟨w, Finset.mem_inter.mpr ⟨?_, ?_⟩⟩
       · rw [Finset.mem_sdiff]; exact ⟨hf₄t₄ hwf₄, hwε⟩
-      · -- `w` is an apex of `ε` in `Δ` via `e ⊇ f₄ ⊇ ε` and `w ∈ f₄ ⊆ e`.
-        simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter]
+      · simp only [edgeLinkVerts, Finset.mem_sdiff, mem_vertsOf, Finset.mem_filter]
         exact ⟨⟨e, ⟨he_mem, hεf₄.trans hf₄e⟩, hf₄e hwf₄⟩, hwε⟩
     · left
       apply edgeLinkVerts_eq_empty
       intro d hdΔ hεd
       exact hεf₄ (hsharef₄ hε ⟨d, hdΔ, hεd⟩)
-  · -- hvlc: vertex `x ∈ t₄`.  If `x ∈ f₄`, apex `f₄ \ {x}` via `e`; else empty link.
-    intro x hx
+  · intro x hx
     by_cases hxf₄ : x ∈ f₄
     · right
       have hcard : (f₄ \ {x}).card = 2 := by
@@ -624,12 +566,9 @@ lemma CleanShellFrom_prepend_crossSeam {Δ : Finset (Finset V)}
       simp only [CleanShellFrom] at h ⊢
       obtain ⟨B₁, hstep, hrest⟩ := h
       have htΔ : t ∉ Δ := hlΔ t (List.mem_cons_self ..)
-      -- Glue `t` cleanly at the enlarged accumulator `Δ ∪ τ₀`.
       have hstep' : CleanGlueStep t (Δ ∪ τ₀) B₀ B₁ :=
         hstep.prepend_crossSeam hdisj htΔ (hlB t (List.mem_cons_self ..)) hΔB
           ht₄τ hf₄t₄ ht₄card hf₄card (hlf₄ t (List.mem_cons_self ..))
-      -- recurse with the grown accumulator `insert t τ₀` (still disjoint from `Δ`,
-      -- still containing `t₄`).
       refine ⟨B₁, hstep', ?_⟩
       have hdisj' : Disjoint Δ (insert t τ₀) := by
         rw [Finset.disjoint_insert_right]; exact ⟨htΔ, hdisj⟩
@@ -638,11 +577,9 @@ lemma CleanShellFrom_prepend_crossSeam {Δ : Finset (Finset V)}
         ih (fun u hu => hlB u (List.mem_cons_of_mem _ hu))
           (fun u hu => hlΔ u (List.mem_cons_of_mem _ hu))
           (fun u hu => hlf₄ u (List.mem_cons_of_mem _ hu)) hrest hdisj' ht₄τ'
-      -- `Δ ∪ insert t τ₀ = insert t (Δ ∪ τ₀)`.
       rwa [Finset.union_insert] at hrec
 
-/-- **Clean relative shelling over the bridge boundary** — the clean, accumulator-aware
-analogue of `Ball.FreelyShellable.relShelling_over_insert_boundary_face`.  A freely
+/-- **Clean relative shelling over the bridge boundary.**  A freely
 clean-shellable side-2 region `τ₂` (boundary `σ₂'`), with a unique tet `t₄` through the
 bridge face `f₄`, relatively clean-shells onto the ambient bridge boundary `insert f₄ K`
 **with the foreign block `Δ` (the side-1 tets plus the bridge tet) prepended to the
@@ -669,10 +606,8 @@ lemma freelyCleanShellable_cleanRelShelling_over_bridge
     CleanRelShellingFrom Δ τ₂ (insert f₄ K) σ := by
   classical
   obtain ⟨head, ⟨hheadτ, hf₄head⟩, huniq'⟩ := huniq
-  -- `f₄` is a face of `head`.
   have hf₄hd : f₄ ∈ tetFaces head :=
     Finset.mem_powersetCard.mpr ⟨hf₄head, hf₄card⟩
-  -- The clean shelling starting at `head` (= the f₄-tet).
   obtain ⟨l, hlhead, hlτ, hlnodup, hlshell⟩ := hfree head hheadτ
   cases l with
   | nil => simp at hlhead
@@ -681,14 +616,11 @@ lemma freelyCleanShellable_cleanRelShelling_over_bridge
       simpa only [List.head?_cons, Option.some.injEq] using hlhead
     subst hhd
     obtain ⟨hcard4, hshellfrom⟩ := hlshell
-    -- `hd ⊆ Bside`, `hd ∉ Δ` (disjoint from `τ₂ ∋ hd`).
     have hhdB : hd ⊆ Bside := hτ₂B hd hheadτ
     have hhdΔ : hd ∉ Δ := fun hc => (Finset.disjoint_left.mp hΔdisj) hc hheadτ
-    -- The first clean glue: `hd` (= the f₄-tet) onto `insert f₄ K`, against `Δ`.
     have hfirstGlue : CleanGlueStep hd Δ (insert f₄ K) ((tetFaces hd).erase f₄ ∪ K) := by
       refine cleanGlueStep_crossSeam_head ?_ hhdΔ hhdB hcard4 hΔB hf₄head hf₄card
         (Finset.mem_insert_self f₄ K) he_mem hf₄e hf₄countΔ
-      -- the underlying boundary glue `GlueStep hd (insert f₄ K) ((tetFaces hd).erase f₄ ∪ K)`.
       have hdisjHd : Disjoint (tetFaces hd) K := hKdisj hd hheadτ
       have hinter : tetFaces hd ∩ insert f₄ K = {f₄} := by
         ext s
@@ -711,8 +643,6 @@ lemma freelyCleanShellable_cleanRelShelling_over_bridge
             · tauto
           · have hsf : s ≠ f₄ := fun h => hsT (h ▸ hf₄hd)
             tauto
-    -- The tail tets avoid `insert f₄ K`: disjoint from `K` (`hKdisj`) and do not contain
-    -- `f₄` (uniqueness of `head`).
     have htailDisj : ∀ t ∈ tail, Disjoint (tetFaces t) (insert f₄ K) := by
       intro t ht
       have htτ : t ∈ τ₂ := by
@@ -729,7 +659,6 @@ lemma freelyCleanShellable_cleanRelShelling_over_bridge
       rcases Finset.mem_insert.mp hxins with hxf | hxK
       · exact hf₄nT (hxf ▸ hxT)
       · exact (Finset.disjoint_left.mp htK) hxT hxK
-    -- The tail tets are in `Bside`, not in `Δ`, and do not contain `f₄`.
     have htailB : ∀ t ∈ tail, t ⊆ Bside := fun t ht => hτ₂B t (by
       rw [← hlτ]; exact List.mem_toFinset.mpr (List.mem_cons_of_mem _ ht))
     have htailΔ : ∀ t ∈ tail, t ∉ Δ := fun t ht hc =>
@@ -742,7 +671,6 @@ lemma freelyCleanShellable_cleanRelShelling_over_bridge
       have : t = hd := huniq' t ⟨htτ, hf₄t⟩
       subst this
       exact (List.nodup_cons.mp hlnodup).1 ht
-    -- Boundary transport of the tail clean shelling, then accumulator enlargement by `Δ`.
     have htailBdry :
         CleanShellFrom {hd} ((tetFaces hd).erase f₄ ∪ K) tail (σ₂'.erase f₄ ∪ K) :=
       CleanShellFrom_erase_union_disjoint hshellfrom htailDisj
@@ -755,16 +683,14 @@ lemma freelyCleanShellable_cleanRelShelling_over_bridge
     rw [hacc] at htailFull
     refine ⟨hd :: tail, hlτ, hlnodup, ?_⟩
     rw [hσ]
-    -- `CleanShellFrom Δ (insert f₄ K) (hd :: tail) σ`: first glue, then the enlarged tail.
     exact ⟨(tetFaces hd).erase f₄ ∪ K, hfirstGlue, htailFull⟩
 
 /-- **Case-2 clean bridge assembly (one side).** Stitch a clean shelling of side 1
 (from a prescribed old target `s`), the bridge tet `e` (a clean glue onto side 1's
 boundary), and a clean relative shelling of side 2 over the resulting boundary into a
-single clean shelling of `insert e (τ₁ ∪ τ₂)` headed at `s`.  The clean analogue of
-the `IsShelling_append (IsShelling_snoc …) …` step of `exists_shelling_prime_case2`,
-threading the enlarged accumulator `insert e τ₁` that the clean relative shelling
-requires.  (`τ₁ = l₁.toFinset` is side 1's tet-set.) -/
+single clean shelling of `insert e (τ₁ ∪ τ₂)` headed at `s`, threading the enlarged
+accumulator `insert e τ₁` that the clean relative shelling requires.
+(`τ₁ = l₁.toFinset` is side 1's tet-set.) -/
 lemma cleanBridge_assemble {τ₂ σ₁ Bmid σ : Finset (Finset V)} {e s : Finset V}
     {l₁ : List (Finset V)}
     (hsh₁ : IsCleanShelling l₁ σ₁) (hhead₁ : l₁.head? = some s) (hnd₁ : l₁.Nodup)
@@ -775,9 +701,7 @@ lemma cleanBridge_assemble {τ₂ σ₁ Bmid σ : Finset (Finset V)} {e s : Fins
       l.toFinset = insert e (l₁.toFinset ∪ τ₂) ∧ l.Nodup ∧ IsCleanShelling l σ := by
   classical
   obtain ⟨l₂, hl₂τ, hl₂nodup, hsf₂⟩ := hrel
-  -- `l₁ ++ [e]` is a clean shelling onto `Bmid` (snoc the bridge tet).
   have hsh₁e : IsCleanShelling (l₁ ++ [e]) Bmid := IsCleanShelling_snoc hsh₁ hg
-  -- Stitch the side-2 continuation; its accumulator `(l₁ ++ [e]).toFinset = insert e τ₁`.
   have htoFin : (l₁ ++ [e]).toFinset = insert e l₁.toFinset := by
     rw [List.toFinset_append]
     ext x
@@ -786,17 +710,14 @@ lemma cleanBridge_assemble {τ₂ σ₁ Bmid σ : Finset (Finset V)} {e s : Fins
     tauto
   have hsf₂' : CleanShellFrom (l₁ ++ [e]).toFinset Bmid l₂ σ := htoFin ▸ hsf₂
   refine ⟨(l₁ ++ [e]) ++ l₂, ?_, ?_, ?_, IsCleanShelling_append_cleanShellFrom hsh₁e hsf₂'⟩
-  · -- head? = some s.
-    cases l₁ with
+  · cases l₁ with
     | nil => exact absurd hsh₁ (by simp [IsCleanShelling])
     | cons a r => rw [List.append_assoc, List.cons_append]; rwa [List.head?_cons] at hhead₁ ⊢
-  · -- toFinset = insert e (τ₁ ∪ τ₂).
-    rw [List.toFinset_append, htoFin, hl₂τ]
+  · rw [List.toFinset_append, htoFin, hl₂τ]
     ext x
     simp only [Finset.mem_union, Finset.mem_insert]
     tauto
-  · -- Nodup.
-    have hel₁ : e ∉ l₁ := fun hc => heτ₁ (List.mem_toFinset.mpr hc)
+  · have hel₁ : e ∉ l₁ := fun hc => heτ₁ (List.mem_toFinset.mpr hc)
     have hel₂ : e ∉ l₂ := fun hc => heτ₂ (hl₂τ ▸ List.mem_toFinset.mpr hc)
     have hdl : l₁.Disjoint l₂ := by
       intro a ha₁ ha₂

@@ -32,11 +32,8 @@ variable {V : Type*} [LinearOrder V]
 
 /-! ## Chain groups and boundary maps over 𝔽₂ -/
 
-/-- 0-chains: 𝔽₂-functions on the vertices. -/
 abbrev C0 (σ : Finset (Finset V)) := (vertsOf σ) → ZMod 2
-/-- 1-chains: 𝔽₂-functions on the edges. -/
 abbrev C1 (σ : Finset (Finset V)) := (edgesOf σ) → ZMod 2
-/-- 2-chains: 𝔽₂-functions on the faces. -/
 abbrev C2 (σ : Finset (Finset V)) := σ → ZMod 2
 
 /-- The 2-boundary `∂₂ : C₂ → C₁`. Over 𝔽₂ (no signs): a face contributes 1 to
@@ -61,15 +58,12 @@ lemma bd1_apply (σ : Finset (Finset V)) (u : C1 σ) (x : vertsOf σ) :
   simp only [bd1, LinearMap.pi_apply, LinearMap.coe_sum, Finset.sum_apply,
     LinearMap.smul_apply, LinearMap.proj_apply, smul_eq_mul]
 
-/-- The edges of a triangle through a fixed vertex: exactly the two pairs
-`{x, y}` with `y` in the other two vertices. Used for `∂∂ = 0` and the cut.
-Stated for any card-3 set whose 2-subsets are edges of σ (so it also applies to
-a non-face triangle). -/
+/-- Used for `∂∂ = 0` and the cut. Stated for any card-3 set whose 2-subsets are
+edges of σ (so it also applies to a non-face triangle). -/
 lemma card_edges_through_vertex {σ : Finset (Finset V)} {f : Finset V}
     (hf : f.powersetCard 2 ⊆ edgesOf σ) (hf3 : f.card = 3) (x : V) :
     ((edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)).card = if x ∈ f then 2 else 0 := by
   classical
-  -- the filter over edgesOf is the filter of card-2 subsets of `f` through `x`
   have hrw : (edgesOf σ).filter (fun e => x ∈ e ∧ e ⊆ f)
       = (f.powersetCard 2).filter (fun e => x ∈ e) := by
     ext e
@@ -82,7 +76,6 @@ lemma card_edges_through_vertex {σ : Finset (Finset V)} {f : Finset V}
   rw [hrw]
   by_cases hx : x ∈ f
   · simp only [hx, if_true]
-    -- card-2 subsets of `f` through `x`  ↔  `f.erase x`  via  `y ↦ {x, y}`
     have himg : (f.powersetCard 2).filter (fun e => x ∈ e)
         = (f.erase x).image (fun y => {x, y}) := by
       ext e
@@ -127,7 +120,6 @@ theorem bd1_comp_bd2 (σ : Finset (Finset V)) (hpure : ∀ f ∈ σ, f.card = 3)
   funext x
   show bd1 σ (bd2 σ w) x = 0
   rw [bd1_apply]
-  -- expand `∂₂ w` at each edge and swap the order of summation
   have hstep : ∀ e : edgesOf σ,
       (if (x : V) ∈ (e : Finset V) then (1 : ZMod 2) else 0) * bd2 σ w e
         = ∑ f : σ, (if (x : V) ∈ (e : Finset V) ∧ (e : Finset V) ⊆ (f : Finset V)
@@ -170,8 +162,7 @@ theorem bd2_one (σ : Finset (Finset V)) (hclosed : ∀ e ∈ edgesOf σ, edgeDe
 
 /-! ## `ker ∂₂` is the constants (b₂ = 1) -/
 
-/-- In a sphere, `∂₂ w` at an edge equals the sum of `w` over the edge's two
-faces. This turns the cocycle condition into "equal weight across every edge". -/
+/-- Turns the cocycle condition `∂₂ w = 0` into "equal weight across every edge". -/
 lemma bd2_at_edge {σ : Finset (Finset V)} (w : C2 σ) {e : Finset V} (he : e ∈ edgesOf σ)
     {f₁ f₂ : Finset V} (h1 : f₁ ∈ σ) (h2 : f₂ ∈ σ) (hne : f₁ ≠ f₂)
     (he1 : e ⊆ f₁) (he2 : e ⊆ f₂) (huniq : ∀ f ∈ σ, e ⊆ f → f = f₁ ∨ f = f₂) :
@@ -195,7 +186,6 @@ lemma bd2_at_edge {σ : Finset (Finset V)} (w : C2 σ) {e : Finset V} (he : e �
       · exact he2
   rw [hfilter, Finset.sum_pair (by simp only [ne_eq, Subtype.mk.injEq]; exact hne)]
 
-/-- The dual graph: two distinct faces are adjacent iff they share an edge. -/
 def dualGraph (σ : Finset (Finset V)) : SimpleGraph σ where
   Adj f g := f ≠ g ∧ ∃ e ∈ edgesOf σ, e ⊆ (f : Finset V) ∧ e ⊆ (g : Finset V)
   symm := by
@@ -215,7 +205,6 @@ lemma dualGraph_ker_const {σ : Finset (Finset V)} (h : IsClosedSurface σ) {w :
   obtain ⟨hne, e, he, hef, heg⟩ := hadj
   obtain ⟨f₁, h1, f₂, h2, hne12, he1, he2, huniq⟩ := exists_two_faces h he
   have hfg_ne : (f : Finset V) ≠ (g : Finset V) := fun heq => hne (Subtype.ext heq)
-  -- `f` and `g` are exactly the two faces of `e`
   have huniq_fg : ∀ f' ∈ σ, e ⊆ f' → f' = (f : Finset V) ∨ f' = (g : Finset V) := by
     have hfm := huniq (f : Finset V) f.2 hef
     have hgm := huniq (g : Finset V) g.2 heg
@@ -234,7 +223,6 @@ lemma dualGraph_ker_const {σ : Finset (Finset V)} (h : IsClosedSurface σ) {w :
   have hbd : bd2 σ w ⟨e, he⟩ = w f + w g :=
     bd2_at_edge w he f.2 g.2 hfg_ne hef heg huniq_fg
   rw [hw] at hbd
-  -- 0 = w f + w g  in ZMod 2  ⟹  w f = w g
   have : w f + w g = 0 := hbd.symm
   have hwg : w g = - w f := by linear_combination this
   rw [hwg]
@@ -242,7 +230,6 @@ lemma dualGraph_ker_const {σ : Finset (Finset V)} (h : IsClosedSurface σ) {w :
 
 /-! ### Dual-graph connectivity (from `conn` + `linkConn` + `closed`) -/
 
-/-- Two faces that share an edge are dual-reachable. -/
 lemma dualReach_of_common_edge {σ : Finset (Finset V)} {f g : σ} {e : Finset V}
     (he : e ∈ edgesOf σ) (hef : e ⊆ (f : Finset V)) (heg : e ⊆ (g : Finset V)) :
     (dualGraph σ).Reachable f g := by
@@ -250,7 +237,6 @@ lemma dualReach_of_common_edge {σ : Finset (Finset V)} {f g : σ} {e : Finset V
   · exact hfg ▸ SimpleGraph.Reachable.refl f
   · exact SimpleGraph.Adj.reachable (by rw [dualGraph_adj]; exact ⟨hfg, e, he, hef, heg⟩)
 
-/-- Two faces meeting in the edge `{v, a}` (`a ≠ v`) are dual-reachable. -/
 lemma dualReach_of_pair {σ : Finset (Finset V)} {f g : σ} {v a : V} (hav : a ≠ v)
     (hvf : v ∈ (f : Finset V)) (haf : a ∈ (f : Finset V))
     (hvg : v ∈ (g : Finset V)) (hag : a ∈ (g : Finset V)) :
@@ -265,8 +251,6 @@ lemma dualReach_of_pair {σ : Finset (Finset V)} {f g : σ} {v a : V} (hav : a �
     mem_edgesOf.mpr ⟨f, f.2, hsub hvf haf, Finset.card_pair (Ne.symm hav)⟩
   exact dualReach_of_common_edge he (hsub hvf haf) (hsub hvg hag)
 
-/-- Faces along a link-walk at `v` are dual-reachable: induction transporting a
-walk in `linkGraph σ v` to a dual path. -/
 lemma linkwalk_dual {σ : Finset (Finset V)} (h : IsClosedSurface σ) {v : V} :
     ∀ {a a' : V} (_ : (linkGraph σ v).Walk a a') {f f' : σ},
       v ∈ (f : Finset V) → a ∈ (f : Finset V) → a ≠ v →
@@ -307,7 +291,6 @@ lemma linkwalk_dual {σ : Finset (Finset V)} (h : IsClosedSurface σ) {v : V} :
       exact (dualReach_of_pair hav hvf haf hvh hah).trans
         (ih hvh hxh hxv hvf' haf' ha'v)
 
-/-- Two faces sharing a vertex are dual-reachable (uses `linkConn`). -/
 lemma dual_reach_shared_vertex {σ : Finset (Finset V)} (h : IsClosedSurface σ) {f g : σ} {v : V}
     (hvf : v ∈ (f : Finset V)) (hvg : v ∈ (g : Finset V)) :
     (dualGraph σ).Reachable f g := by
@@ -325,8 +308,6 @@ lemma dual_reach_shared_vertex {σ : Finset (Finset V)} (h : IsClosedSurface σ)
   obtain ⟨p⟩ := h.linkConn v hvV a haL c hcL
   exact linkwalk_dual h p hvf haf hav hvg hcg hcv
 
-/-- Faces along a skeleton walk are dual-reachable: induction transporting a
-walk in `skel σ` to a dual path, jumping between vertex-stars. -/
 lemma skelwalk_dual {σ : Finset (Finset V)} (h : IsClosedSurface σ) :
     ∀ {u w : V} (_ : (skel σ).Walk u w) {f f' : σ},
       u ∈ (f : Finset V) → w ∈ (f' : Finset V) → (dualGraph σ).Reachable f f' := by
@@ -339,7 +320,6 @@ lemma skelwalk_dual {σ : Finset (Finset V)} (h : IsClosedSurface σ) :
       intro f f' huf hwf'
       rw [skel] at hadj
       obtain ⟨hux, hedge⟩ := hadj
-      -- a face containing the edge `{u, x}`
       obtain ⟨hf, hhf, hsub, _⟩ := mem_edgesOf.mp hedge
       have huh : u ∈ hf := hsub (Finset.mem_insert_self u _)
       have hxh : x ∈ hf := hsub (Finset.mem_insert_of_mem (Finset.mem_singleton_self x))
@@ -361,7 +341,6 @@ theorem dualGraph_preconnected {σ : Finset (Finset V)} (h : IsClosedSurface σ)
 
 /-! ### `ker ∂₂` is one-dimensional -/
 
-/-- A function constant across every adjacency is constant on reachable vertices. -/
 lemma const_of_adj_of_reachable {W α : Type*} {G : SimpleGraph W} {φ : W → α}
     (hφ : ∀ a b, G.Adj a b → φ a = φ b) {a b : W} (hab : G.Reachable a b) : φ a = φ b := by
   obtain ⟨p⟩ := hab
@@ -369,7 +348,6 @@ lemma const_of_adj_of_reachable {W α : Type*} {G : SimpleGraph W} {φ : W → �
   | nil => rfl
   | cons hadj _ ih => exact (hφ _ _ hadj).trans ih
 
-/-- A sphere is nonempty (its Euler relation fails on the empty complex). -/
 lemma IsSphere2.nonempty {σ : Finset (Finset V)} (h : IsSphere2 σ) : σ.Nonempty := by
   rw [Finset.nonempty_iff_ne_empty]
   rintro rfl
@@ -420,14 +398,12 @@ lemma aug_apply (σ : Finset (Finset V)) (c : C0 σ) :
     aug σ c = ∑ x : vertsOf σ, c x := by
   simp only [aug, LinearMap.coe_sum, Finset.sum_apply, LinearMap.proj_apply]
 
-/-- A sphere has at least one vertex. -/
 lemma IsSphere2.vertsOf_nonempty {σ : Finset (Finset V)} (h : IsSphere2 σ) :
     (vertsOf σ).Nonempty := by
   obtain ⟨f, hf⟩ := h.nonempty
   obtain ⟨x, hx⟩ : f.Nonempty := by rw [← Finset.card_pos, h.pure f hf]; omega
   exact ⟨x, mem_vertsOf.mpr ⟨f, hf, hx⟩⟩
 
-/-- `finrank (ker ε) = V − 1` since `ε` is surjective. -/
 lemma finrank_ker_aug {σ : Finset (Finset V)} (hne0 : (vertsOf σ).Nonempty) :
     finrank (ZMod 2) (LinearMap.ker (aug σ)) = (vertsOf σ).card - 1 := by
   have hne : Nonempty (vertsOf σ) := hne0.to_subtype
@@ -445,13 +421,11 @@ lemma finrank_ker_aug {σ : Finset (Finset V)} (hne0 : (vertsOf σ).Nonempty) :
     rw [Module.finrank_fintype_fun_eq_card, Fintype.card_coe]] at hrn
   omega
 
-/-- A vertex of an edge is a vertex of the complex. -/
 lemma edge_mem_vertsOf {σ : Finset (Finset V)} {e : Finset V} (he : e ∈ edgesOf σ)
     {v : V} (hv : v ∈ e) : v ∈ vertsOf σ := by
   obtain ⟨f, hf, hef, _⟩ := mem_edgesOf.mp he
   exact mem_vertsOf.mpr ⟨f, hf, hef hv⟩
 
-/-- `∂₁` of an edge's basis vector is the indicator of its two endpoints. -/
 lemma bd1_single_pair {σ : Finset (Finset V)} {u w : V} (huw : u ≠ w)
     (he : ({u, w} : Finset V) ∈ edgesOf σ) (hu : u ∈ vertsOf σ) (hw : w ∈ vertsOf σ) :
     bd1 σ (Pi.single ⟨{u, w}, he⟩ 1) = Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨w, hw⟩ 1 := by
@@ -474,8 +448,7 @@ lemma bd1_single_pair {σ : Finset (Finset V)} {u w : V} (huw : u ≠ w)
   · intro e _ hne; rw [Pi.single_eq_of_ne hne, mul_zero]
   · intro hc; exact absurd (Finset.mem_univ _) hc
 
-/-- Skeleton-walk accumulation: `δ_u + δ_w ∈ range ∂₁` whenever `u, w` are joined
-by a skeleton walk (each edge contributes its endpoint-indicator, telescoping). -/
+/-- Each skeleton edge contributes its endpoint-indicator, telescoping. -/
 lemma accumulate {σ : Finset (Finset V)} :
     ∀ {u w : V} (_ : (skel σ).Walk u w) (hu : u ∈ vertsOf σ) (hw : w ∈ vertsOf σ),
       (Pi.single ⟨u, hu⟩ 1 + Pi.single ⟨w, hw⟩ 1 : C0 σ) ∈ LinearMap.range (bd1 σ) := by
