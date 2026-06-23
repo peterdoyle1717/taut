@@ -47,5 +47,18 @@ concludes weak `IsBall`/`FreelyShellable`** (verified by `git grep`).
   `BoundaryFreelyShellable`, both dead, remain) — removed with the Ball.lean weak family in Stage C.
 - Build green (8274); ZERO sorry/admit.
 
-### Stage B — delete weak `IsBall` Theorem-2 route: PENDING
+### Stage B — delete weak `IsBall` Theorem-2 route: DONE
+- Verified (`git grep`) the IsBall assemblers form a closed dead chain with **no** orphan cascade into
+  the shared geometric helpers (`capped_cut_splits_unit`, `taut_splits_for_capped_cut`,
+  `degree3_cut_*`, `star_filter_support_singleton`, `support_eq_insert_of_filter_support_singleton`,
+  `starTet_card_of_degree3`, `vertsOf_tetFaces_eq`, … — all heavily used by the live PM/clean route, kept).
+- Deleted from `Theorem2Aleph.lean`: `aleph_base`, `ball_reassemble_of_filter_support_singleton`,
+  `degree3_reassemble_from_cut_split`, `aleph_deg3_split`, `theorem2_modulo_prime_step` (≈233 lines).
+- Deleted the now-empty module **`Theorem23.lean`** (its only decl, `theorem2_core`, was dead);
+  removed `import Taut.Theorem23` from `Taut.lean` and from `Theorem2Aleph.lean` (replaced with the two
+  imports `Theorem23` provided: `Taut.Eligible`, `Taut.Pseudomanifold`); rewrote the Theorem2Aleph
+  module docstring to describe its actual (shared-helper) content.
+- After this, `IsBall`'s only non-comment refs are inside `Ball.lean` (its def + dead helpers) — removed
+  in Stage C. Build green (8273); ZERO sorry/admit; endpoints std-3.
+
 ### Stage C — delete the Ball.lean weak family (`FreelyShellable`/`IsBall`/`IsShelling`/`ShellFrom` + reassembly + dead aliases); document `GlueStep`: PENDING

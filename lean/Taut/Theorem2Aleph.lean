@@ -1,24 +1,31 @@
-import Taut.Theorem23
+import Taut.Eligible
+import Taut.Pseudomanifold
 import Taut.Degree3
 import Taut.OrientedBridge
 
 /-!
-# Theorem 2 (core): two of three holes closed by Aleph Prover
+# Aleph-found geometric helpers for the degree-3 cut
 
-`theorem2_core` (in `Taut.Theorem23`) reduces "a taut filling of a combinatorial
-2-sphere is a ball" to three reduction steps. This file records machine-found
-proofs (Aleph Prover, alephprover.logicalintelligence.com) of two of them —
-`aleph_base` (minimal-sphere base case) and `aleph_deg3_split` (degree-3 /
-connected-sum reduction) — together with M25b (`aleph_disjoint_eligible_pair`).
+Machine-found proofs (Aleph Prover, alephprover.logicalintelligence.com) of the
+geometric facts behind the degree-3 / connected-sum reduction: the cut machinery
+(`cutChain`, `cappedCutLeft`/`Right`, `capped_cut_splits_unit`,
+`taut_splits_for_capped_cut`, `degree3_cut_setup`, `degree3_cut_star_side_glue`),
+the support-singleton lemmas (`star_filter_support_singleton`,
+`support_eq_insert_of_filter_support_singleton`,
+`norm_lt_filter_neg_of_filter_support_singleton`), and the M25b disjoint-eligible
+machinery (`aleph_disjoint_eligible_pair`/`_family`).  These are consumed by the
+live PM route (`deg3_isPM`, `taut_isPseudomanifold`) and the clean shelling route
+(`deg3_step_clean`, `prime_step_clean`).
 
-Provenance: the proofs and the auxiliary `aleph_*` / `degree3_*` / `cut*` lemma
-names are Aleph Prover's, reproduced verbatim. Each was VERIFIED locally — it
-compiles against the project's own definitions with a complete proof, reducing to
+Provenance: the proofs and the `aleph_*` / `degree3_*` / `cut*` lemma names are
+Aleph Prover's, reproduced verbatim. Each was VERIFIED locally — it compiles
+against the project's own definitions, reducing to
 `[propext, Classical.choice, Quot.sound]`.
 
-`theorem2_modulo_prime_step` discharges these two holes, leaving Theorem 2's core
-dependent on a single remaining step `prime_step` (the no-degree-3 inductive step,
-whose hard core is the M22b relative-shelling reassembly — not closed here).
+The earlier weak boundary-trace Theorem-2 assemblers (`aleph_base`,
+`aleph_deg3_split`, `theorem2_modulo_prime_step`, concluding weak `IsBall`, plus
+`theorem2_core` in the now-removed `Taut.Theorem23`) have been deleted; the public
+route is the clean one in `Theorem3Clean.lean`.
 -/
 
 namespace Taut
@@ -146,19 +153,6 @@ theorem aleph_base_verts_card_eq_four {σ : Finset (Finset V)} (hσ : IsSphere2 
   omega
 
 
-/-- M26 hole `base`: the minimal 2-sphere (≤ 4 vertices, i.e. a tetrahedron
-boundary) has a single-tet taut filling, which is a ball. -/
-theorem aleph_base (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
-    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
-    (hv : (vertsOf σ).card ≤ 4) : IsBall M.support σ := by
-  let T := vertsOf σ
-  have hcard : T.card = 4 := aleph_base_verts_card_eq_four hσ hv
-  have hσeq : σ = T.powersetCard 3 := aleph_base_sphere_eq_powersetCard3 hσ hcard
-  have hsuppInfo : ∀ t ∈ M.support, t.card = 4 ∧ t ⊆ T := aleph_base_taut_support_card4_subset_verts hσ hU hMX hT
-  have hne : M.support.Nonempty := aleph_base_support_nonempty hσ hU hMX
-  have hsupp : M.support = {T} := aleph_base_support_eq_singleton_of_four_vertices hcard hsuppInfo hne
-  rw [hsupp, hσeq]
-  exact isBall_singleton hcard
 
 
 noncomputable def cutChain (σ : Finset (Finset V)) (W : C2 σ) (X : Chain V) : Chain V :=
@@ -748,29 +742,6 @@ theorem support_eq_insert_of_filter_support_singleton (M : Chain V) (P : Finset 
       simpa [hsT] using hTnz
     · simpa using hsfil.1
 
-theorem ball_reassemble_of_filter_support_singleton (M : Chain V) (P : Finset V → Prop) [DecidablePred P] {T : Finset V}
-    {B σ : Finset (Finset V)} (hP : (M.filter P).support = {T})
-    (hglue : GlueStep T B σ) :
-    IsBall (M.filter (fun t => ¬ P t)).support B → IsBall M.support σ := by
-  intro hball
-  have hTmem : T ∈ (M.filter P).support := by
-    rw [hP]
-    simp
-  have hTne : (M.filter P) T ≠ 0 := by
-    exact Finsupp.mem_support_iff.mp hTmem
-  have hPT : P T := by
-    by_contra hnot
-    have hzero : (M.filter P) T = 0 := by
-      simp [Finsupp.filter, hnot]
-    exact hTne hzero
-  have hTnot : T ∉ (M.filter (fun t => ¬ P t)).support := by
-    intro h
-    have hne : (M.filter (fun t => ¬ P t)) T ≠ 0 := Finsupp.mem_support_iff.mp h
-    have hzero : (M.filter (fun t => ¬ P t)) T = 0 := by
-      simp [Finsupp.filter, hPT]
-    exact hne hzero
-  rw [support_eq_insert_of_filter_support_singleton M P hP]
-  exact IsBall.insert_of_glueStep hball hglue hTnot
 
 theorem taut_splits_for_capped_cut (σ : Finset (Finset V)) (X M : Chain V) {γ : Finset V} {W : C2 σ} {c : ℤ}
     (hσ : IsSphere2 σ)
@@ -906,187 +877,6 @@ theorem vertsOf_tetFaces_eq (T : Finset V) (hT4 : T.card = 4) : vertsOf (tetFace
       · rw [Finset.card_erase_of_mem hyT, hT4]
     · exact Finset.mem_erase.mpr ⟨Ne.symm hyne, hx⟩
 
-theorem degree3_reassemble_from_cut_split (σ : Finset (Finset V)) (X M : Chain V) {v : V} {W : C2 σ} {c : ℤ}
-    (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card) (hv : v ∈ vertsOf σ)
-    (h3 : (linkVerts σ v).card = 3)
-    (hW : bd2 σ W = gammaChain σ (linkVerts σ v))
-    (hσL : IsSphere2 (insert (linkVerts σ v) (cutSet σ W)))
-    (hσR : IsSphere2 (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))))
-    (hUL : UnitOn (cappedCutLeft σ W X (linkVerts σ v) c) (insert (linkVerts σ v) (cutSet σ W)))
-    (hXLc : bdry (cappedCutLeft σ W X (linkVerts σ v) c) = 0)
-    (hUR : UnitOn (cappedCutRight σ W X (linkVerts σ v) c) (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))))
-    (hXRc : bdry (cappedCutRight σ W X (linkVerts σ v) c) = 0)
-    (hML : bdry (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))) =
-      cappedCutLeft σ W X (linkVerts σ v) c)
-    (hMR : bdry (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))) =
-      cappedCutRight σ W X (linkVerts σ v) c)
-    (hTL : IsTaut (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
-    (hTR : IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
-    (hSuppL : ∀ t ∈ (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))).support,
-      t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))
-    (hSuppR : ∀ t ∈ (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))).support,
-      t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))))
-    (hMsum : M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))) +
-      M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))) = M)
-    (hS : SimplicialChain M) :
-    ∃ (σ' : Finset (Finset V)) (X' M' : Chain V),
-      IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
-      SimplicialChain M' ∧ nrm M' < nrm M ∧
-      (IsBall M'.support σ' → IsBall M.support σ) := by
-  classical
-  let γ : Finset V := linkVerts σ v
-  let A : Finset V := vertsOf (insert γ (cutSet σ W))
-  let ML : Chain V := M.filter (fun t => t ⊆ A)
-  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
-  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv h3 hW
-  rcases hsplit with hcase | hcase
-  · rcases hcase with ⟨hstar, hglue⟩
-    refine ⟨insert γ (cutSet σ (W + fun _ => 1)), cappedCutRight σ W X γ c, MR, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · dsimp [γ]
-      exact hσR
-    · dsimp [γ]
-      exact hUR
-    · dsimp [γ]
-      exact hXRc
-    · dsimp [MR, A, γ]
-      exact hMR
-    · dsimp [MR, A, γ]
-      exact hTR
-    · intro t
-      dsimp [MR, A, γ]
-      rw [Finsupp.filter_apply]
-      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))
-      · rw [if_pos ht]
-        exact hS t
-      · rw [if_neg ht]
-        exact Or.inr (Or.inl rfl)
-    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
-      have hULtet : UnitOn (cappedCutLeft σ W X γ c) (tetFaces (starTet σ v)) := by
-        dsimp [γ]
-        rw [← hstar]
-        exact hUL
-      have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet σ v := by
-        intro t ht
-        have htA : t ⊆ vertsOf (insert γ (cutSet σ W)) := hSuppL t (by simpa only [ML, A] using ht)
-        dsimp [γ] at htA
-        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
-        exact htA
-      have hMLsupp : ML.support = {starTet σ v} := by
-        exact star_filter_support_singleton ML (cappedCutLeft σ W X γ c) (starTet σ v) hT4 hULtet (by simpa only [ML, A, γ] using hML) (by simpa only [ML, A, γ] using hTL) hSuppLT
-      have hlt : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
-        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
-      simpa only [MR] using hlt
-    · intro hball
-      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
-      have hULtet : UnitOn (cappedCutLeft σ W X γ c) (tetFaces (starTet σ v)) := by
-        dsimp [γ]
-        rw [← hstar]
-        exact hUL
-      have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet σ v := by
-        intro t ht
-        have htA : t ⊆ vertsOf (insert γ (cutSet σ W)) := hSuppL t (by simpa only [ML, A] using ht)
-        dsimp [γ] at htA
-        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
-        exact htA
-      have hMLsupp : ML.support = {starTet σ v} := by
-        exact star_filter_support_singleton ML (cappedCutLeft σ W X γ c) (starTet σ v) hT4 hULtet (by simpa only [ML, A, γ] using hML) (by simpa only [ML, A, γ] using hTL) hSuppLT
-      have hreasm : IsBall (M.filter (fun t => ¬ t ⊆ A)).support (insert γ (cutSet σ (W + fun _ => 1))) → IsBall M.support σ :=
-        ball_reassemble_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp hglue
-      exact hreasm (by simpa only [MR] using hball)
-  · rcases hcase with ⟨hstar, hglue⟩
-    refine ⟨insert γ (cutSet σ W), cappedCutLeft σ W X γ c, ML, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · dsimp [γ]
-      exact hσL
-    · dsimp [γ]
-      exact hUL
-    · dsimp [γ]
-      exact hXLc
-    · dsimp [ML, A, γ]
-      exact hML
-    · dsimp [ML, A, γ]
-      exact hTL
-    · intro t
-      dsimp [ML, A, γ]
-      rw [Finsupp.filter_apply]
-      by_cases ht : t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))
-      · rw [if_pos ht]
-        exact hS t
-      · rw [if_neg ht]
-        exact Or.inr (Or.inl rfl)
-    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
-      have hURtet : UnitOn (cappedCutRight σ W X γ c) (tetFaces (starTet σ v)) := by
-        dsimp [γ]
-        rw [← hstar]
-        exact hUR
-      have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet σ v := by
-        intro t ht
-        have htA : t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) := hSuppR t (by simpa only [MR, A] using ht)
-        dsimp [γ] at htA
-        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
-        exact htA
-      have hMRsupp : MR.support = {starTet σ v} := by
-        exact star_filter_support_singleton MR (cappedCutRight σ W X γ c) (starTet σ v) hT4 hURtet (by simpa only [MR, A, γ] using hMR) (by simpa only [MR, A, γ] using hTR) hSuppRT
-      have hlt : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
-        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
-      have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
-        dsimp [ML]
-        ext t
-        rw [Finsupp.filter_apply, Finsupp.filter_apply]
-        by_cases ht : t ⊆ A
-        · rw [if_pos ht, if_pos]
-          intro hneg
-          exact hneg ht
-        · rw [if_neg ht, if_neg]
-          intro hnn
-          exact hnn ht
-      rw [hML_eq]
-      exact hlt
-    · intro hball
-      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
-      have hURtet : UnitOn (cappedCutRight σ W X γ c) (tetFaces (starTet σ v)) := by
-        dsimp [γ]
-        rw [← hstar]
-        exact hUR
-      have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet σ v := by
-        intro t ht
-        have htA : t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) := hSuppR t (by simpa only [MR, A] using ht)
-        dsimp [γ] at htA
-        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
-        exact htA
-      have hMRsupp : MR.support = {starTet σ v} := by
-        exact star_filter_support_singleton MR (cappedCutRight σ W X γ c) (starTet σ v) hT4 hURtet (by simpa only [MR, A, γ] using hMR) (by simpa only [MR, A, γ] using hTR) hSuppRT
-      have hreasm : IsBall (M.filter (fun t => ¬ (¬ t ⊆ A))).support (insert γ (cutSet σ W)) → IsBall M.support σ :=
-        ball_reassemble_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp hglue
-      apply hreasm
-      have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
-        dsimp [ML]
-        ext t
-        rw [Finsupp.filter_apply, Finsupp.filter_apply]
-        by_cases ht : t ⊆ A
-        · rw [if_pos ht, if_pos]
-          intro hneg
-          exact hneg ht
-        · rw [if_neg ht, if_neg]
-          intro hnn
-          exact hnn ht
-      rw [← hML_eq]
-      exact hball
-
-
-/-- M26 hole `deg3_split`: a 2-sphere with a degree-3 vertex (> 4 vertices) splits,
-along the link triangle, into a strictly smaller taut filling whose ball reassembles
-to the original (connected-sum reduction). -/
-theorem aleph_deg3_split (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
-    (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
-    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex σ) :
-    ∃ (σ' : Finset (Finset V)) (X' M' : Chain V),
-      IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
-      SimplicialChain M' ∧ nrm M' < nrm M ∧
-      (IsBall M'.support σ' → IsBall M.support σ) := by
-  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ := degree3_cut_setup σ hσ hbig hd3
-  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ := capped_cut_splits_unit σ X hσ hγ3 hγe hγσ hW hU hXc
-  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ := taut_splits_for_capped_cut σ X M hσ hσL hσR hγ3 hγe hW hUL hXLc hUR hXRc hXsum hMX hT
-  exact degree3_reassemble_from_cut_split σ X M hσ hbig hv hγ3 hW hσL hσR hUL hXLc hUR hXRc hML hMR hTL hTR hSuppL hSuppR hMsum hS
 
 
 noncomputable def alephChosenFiber {V : Type*} [LinearOrder V] {M : Chain V} {σ : Finset (Finset V)}
@@ -1539,21 +1329,5 @@ theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
     rw [(helig b₁ hb₁D).2, (helig b₂ hb₂D).2]
     exact aleph_chosenFaceFibers_disjoint f hbne
 
-
-/-- **Theorem 2's core, reduced to the prime step.** With `aleph_base` and
-`aleph_deg3_split` discharging two of `theorem2_core`'s three hypotheses, a taut
-filling of a 2-sphere is a ball provided the no-degree-3 step `prime_step` holds. -/
-theorem theorem2_modulo_prime_step
-    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
-      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
-      SimplicialChain M → NoDegree3Vertex σ →
-      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
-        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
-        IsBall M'.support σ') →
-      IsBall M.support σ)
-    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
-    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
-    IsBall M.support σ :=
-  theorem2_core aleph_base aleph_deg3_split prime_step hσ hU hXc hMX hT hS
 
 end Taut
