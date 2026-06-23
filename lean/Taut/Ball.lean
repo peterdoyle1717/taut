@@ -1,44 +1,34 @@
 import Taut.Complex2
 
 /-!
-# Shelling-certified combinatorial 3-balls
+# `GlueStep`: the weak boundary glue primitive
 
-The combinatorial replacement for "simplicial triangulation of `B³`",
-following the paper's *Shelling* section.  A *shelling* of a ball is an
-ordering `(t₁, …, t_k)` of its tetrahedra such that gluing them on one at a
-time always maintains a ball; the type of a glued tet is the number of its
-faces shared with what is already built (type 1 or 2; type 3 — which would
-create an interior vertex — never occurs here).
+This file holds the single weak boundary-trace primitive on which the clean
+shelling layer (`Taut.CleanShelling`) is built: `GlueStep`, one combinatorial
+gluing step recorded purely as a boundary update, plus the face abbreviation
+`tetFaces`.
 
-Following the G1 audit (Q2/Q3 APPROVED, `notes/codex-consults/
-2026-06-12-g1-sphere-ball-*`), a ball is encoded as an **explicit shelling
-certificate** (a `List` of tets), not an inductive `Prop`: the Theorem 2
-reassembly grafts shellings by list concatenation, and free shellability
-quantifies over the first element.  A glue step is a purely combinatorial
-stick (tet glued by one or two faces); intermediate boundaries are **not**
-required to be spheres — that the boundary of a sticker ball is a 2-sphere is
-a separate, deferred fact (`glueStep_preserves_isSphere2`), not needed for the
-main theorem (whose boundary `σ` is given as a sphere).
-
-`IsBall τ B` is, by design, a *shelling-certified* ball — not a general
-combinatorial-ball definition.  It is exactly the object the merged
-Theorem 2+3 induction constructs.
+**Weak by design.** A `GlueStep` constrains a new tet only against the *current
+boundary* `B` (its shared card-3 faces and the symmetric-difference update of the
+boundary); it never sees the accumulated tet-set, so on its own it certifies
+**nothing** about cleanness, normality, connected vertex/edge links, or actual
+ballness.  It is boundary bookkeeping, not a ball certificate.  The clean
+predicates that carry the manifold content — `CleanGlueStep` (which wraps a
+`GlueStep` in its `weak` field), `IsCleanShelling`, `IsCleanBall`,
+`FreelyCleanShellable`, `IsStickerball`, `IsAnyrootedStickerball` — live in
+`Taut.CleanShelling`, and the public Theorem 2/3 endpoints conclude those, never
+the weak predicate here.
 
 Faces of a tetrahedron `t` (a 4-element set) are its card-3 subsets,
-`t.powersetCard 3`.  When tet `t` is glued onto a ball whose boundary is the
-2-sphere `B`, the faces of `t` already present in `B` become interior and the
-new faces are exposed: the new boundary is the symmetric difference
-`(B \ t.powersetCard 3) ∪ (t.powersetCard 3 \ B)`.
+`t.powersetCard 3` (`tetFaces`).  When `t` is glued onto a ball whose boundary is
+`B`, the faces of `t` already in `B` become interior and the rest are exposed: the
+new boundary is the symmetric difference `(B \ tetFaces t) ∪ (tetFaces t \ B)`.
 
-Validation (build-checked):
-* a single tet is a (freely shellable) ball with the tetrahedron-boundary
-  sphere as its boundary (`isBall_singleton`, `freelyShellable_singleton`).
-
-That the boundary of a sticker ball is a 2-sphere
-(`glueStep_preserves_isSphere2` / `ShellFrom.isSphere2_of_seed`) is true but
-**deferred**: it is the classification-of-surfaces fact (closed + connected +
-orientable + χ = 2), provable fieldwise, and is *not* on the path of the main
-theorem.
+(The earlier weak shelling family — `ShellFrom`, `IsShelling`, `IsBall`,
+`FreelyShellable`, their reassembly lemmas, and the `Boundary*` aliases — has been
+removed as dead; the sole surviving reassembly lemma is
+`GlueStep.erase_union_disjoint`, which the clean layer lifts to
+`CleanGlueStep.erase_union_disjoint`.  See `notes/weak-predicate-cleanup.md`.)
 -/
 
 namespace Taut
@@ -48,8 +38,10 @@ variable {V : Type*} [LinearOrder V]
 /-- The four triangular faces of a tetrahedron `t` (the card-3 subsets). -/
 abbrev tetFaces (t : Finset V) : Finset (Finset V) := t.powersetCard 3
 
-/-- One gluing step of a shelling: tet `t` is glued onto a ball whose
-boundary is `B`, producing the ball with boundary `B'`.
+/-- **Weak boundary-trace primitive** (boundary bookkeeping only — asserts nothing
+about cleanness, normality, connected links, or ballness; the clean layer wraps it
+as `CleanGlueStep.weak`).  One gluing step of a shelling: tet `t` is glued onto a
+ball whose boundary is `B`, producing the ball with boundary `B'`.
 
 * `card4` — `t` is a tetrahedron (4 vertices);
 * `shared` — `t` meets the current boundary in **one or two** of its faces
@@ -65,120 +57,10 @@ structure GlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop where
   shared : (tetFaces t ∩ B).card = 1 ∨ (tetFaces t ∩ B).card = 2
   newBdry : B' = (B \ tetFaces t) ∪ (tetFaces t \ B)
 
-/-- Starting from a ball with boundary `B₀`, gluing on the tets of `l` in
-order yields a ball with boundary `B`. -/
-def ShellFrom : Finset (Finset V) → List (Finset V) → Finset (Finset V) → Prop
-  | B₀, [],     B => B = B₀
-  | B₀, t :: l, B => ∃ B₁, GlueStep t B₀ B₁ ∧ ShellFrom B₁ l B
-
-/-- `l` is a shelling with final boundary `B`: the head tet is the initial
-tetrahedron (its boundary is the tetrahedron-boundary sphere) and the
-remaining tets are glued on in order. -/
-def IsShelling : List (Finset V) → Finset (Finset V) → Prop
-  | [],     _ => False
-  | t :: l, B => t.card = 4 ∧ ShellFrom (tetFaces t) l B
-
-/-- A *shelling-certified ball*: a facet set `τ` admitting a shelling (a
-nodup ordering of its tets gluing up to boundary `B`). -/
-def IsBall (τ B : Finset (Finset V)) : Prop :=
-  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
-
-/-- `τ` is *freely shellable* with boundary `B` if **any** of its tets can
-serve as the initial tet of a shelling (the paper's "freely shellable":
-shucking in reverse can remove any prescribed tet last). -/
-def FreelyShellable (τ B : Finset (Finset V)) : Prop :=
-  ∀ t ∈ τ, ∃ l : List (Finset V),
-    l.head? = some t ∧ l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
-
-/-! ## The boundary of a sticker ball is a sphere — DEFERRED
-
-That every intermediate (hence the final) boundary of a sticker ball is a
-combinatorial 2-sphere is true but **off the critical path**, so deferred.
-Mathematically it is the classification of surfaces — a sphere glued to a tet
-along one or two faces stays closed, connected, orientable, with χ = 2, all
-preserved by the surgery — but Mathlib has no usable classification theorem,
-so the Lean route is fieldwise preservation (the only nontrivial field being
-`linkConn`, the manifold/no-pinch condition: an edge subdivision of the vertex
-links for type 1, a contraction-at-2 + subdivision-at-2 for type 2).  Targets
-(to be proved later by a genuine fieldwise argument — never assumed):
-
-* `glueStep_preserves_isSphere2 (hg : GlueStep t B B') : IsSphere2 B → IsSphere2 B'`
-* `ShellFrom.isSphere2_of_seed (h : ShellFrom B₀ l B) : IsSphere2 B₀ → IsSphere2 B`
-
-The clean public route does not use these: the boundary of `M.support` is `σ`,
-which is given as a sphere. -/
-
-/-! ## Reassembly (M22a): appending tets and bridging two balls
-
-Architect: codex 019ec2cc. `ShellFrom`/`IsShelling` are closed under appending
-tets at the end; a ball with a `GlueStep` tet on its boundary grows by that tet
-(case-1 of the Theorem-2 induction).  (The weak relative-shelling bridge for
-case 2 — `RelShelling` / `IsBall.bridge_of_relShelling`, the "M22b" hidden-topology
-fact — has been removed; the clean route re-derives the case-2 split directly.) -/
-
-/-- `ShellFrom` composes: glue `l₁` then `l₂`. -/
-lemma ShellFrom_append {B₀ B₁ B₂ : Finset (Finset V)} {l₁ l₂ : List (Finset V)}
-    (h₁ : ShellFrom B₀ l₁ B₁) (h₂ : ShellFrom B₁ l₂ B₂) :
-    ShellFrom B₀ (l₁ ++ l₂) B₂ := by
-  induction l₁ generalizing B₀ with
-  | nil => simp only [ShellFrom, List.nil_append] at h₁ ⊢; exact h₁ ▸ h₂
-  | cons t l ih =>
-      simp only [ShellFrom, List.cons_append] at h₁ ⊢
-      obtain ⟨B', hg, hrest⟩ := h₁
-      exact ⟨B', hg, ih hrest⟩
-
-/-- Append one `GlueStep` tet to a `ShellFrom`. -/
-lemma ShellFrom_snoc {B₀ B B' : Finset (Finset V)} {l : List (Finset V)} {t : Finset V}
-    (h : ShellFrom B₀ l B) (hg : GlueStep t B B') : ShellFrom B₀ (l ++ [t]) B' :=
-  ShellFrom_append h ⟨B', hg, rfl⟩
-
-/-- **Ambient transport of one glue step.** A glue step commutes with adjoining a
-piece `K` of boundary disjoint from the tet's faces: the shared count is unchanged
-(the tet's faces avoid `K`) and the new boundary just carries `K` along.  This is
-the combinatorial core of the case-2 bridge — sticking the second ball's tets while
-the first ball + bridge sit in the ambient `K`. -/
-lemma GlueStep.union_disjoint {t : Finset V} {B B' K : Finset (Finset V)}
-    (hg : GlueStep t B B') (hdisj : Disjoint (tetFaces t) K) :
-    GlueStep t (B ∪ K) (B' ∪ K) where
-  card4 := hg.card4
-  shared := by
-    have heq : tetFaces t ∩ (B ∪ K) = tetFaces t ∩ B := by
-      ext s
-      simp only [Finset.mem_inter, Finset.mem_union]
-      constructor
-      · rintro ⟨hsT, hsB | hsK⟩
-        · exact ⟨hsT, hsB⟩
-        · exact absurd hsK (fun h => (Finset.disjoint_left.mp hdisj) hsT h)
-      · rintro ⟨hsT, hsB⟩; exact ⟨hsT, Or.inl hsB⟩
-    rw [heq]; exact hg.shared
-  newBdry := by
-    rw [hg.newBdry]
-    ext s
-    simp only [Finset.mem_union, Finset.mem_sdiff]
-    by_cases hsK : s ∈ K
-    · have hsT : s ∉ tetFaces t := fun h => (Finset.disjoint_left.mp hdisj) h hsK
-      tauto
-    · tauto
-
-/-- **Ambient transport of a whole relative shelling.** Gluing the tets of `l` onto
-`B₀` transports to gluing them onto `B₀ ∪ K`, provided every tet's faces avoid `K`. -/
-lemma ShellFrom_union_disjoint {K : Finset (Finset V)} {l : List (Finset V)} :
-    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B →
-      (∀ t ∈ l, Disjoint (tetFaces t) K) → ShellFrom (B₀ ∪ K) l (B ∪ K) := by
-  induction l with
-  | nil =>
-      intro B₀ B h _
-      simp only [ShellFrom] at h ⊢
-      rw [h]
-  | cons t l ih =>
-      intro B₀ B h hd
-      simp only [ShellFrom] at h ⊢
-      obtain ⟨B₁, hg, hrest⟩ := h
-      exact ⟨B₁ ∪ K, hg.union_disjoint (hd t (List.mem_cons.mpr (Or.inl rfl))),
-        ih hrest (fun u hu => hd u (List.mem_cons.mpr (Or.inr hu)))⟩
-
 /-- One glue step, transported by erasing the interface face `γ` and adjoining the
-disjoint piece `K`, when the tet avoids both. -/
+disjoint piece `K`, when the tet avoids both.  The one reassembly lemma still in
+use: `CleanGlueStep.erase_union_disjoint` lifts it to the clean layer (the degree-3
+star-start boundary transport). -/
 lemma GlueStep.erase_union_disjoint {t γ : Finset V} {B B' K : Finset (Finset V)}
     (hg : GlueStep t B B') (hdisj : Disjoint (tetFaces t) (insert γ K)) :
     GlueStep t (B.erase γ ∪ K) (B'.erase γ ∪ K) where
@@ -210,101 +92,25 @@ lemma GlueStep.erase_union_disjoint {t γ : Finset V} {B B' K : Finset (Finset V
       tauto
     · tauto
 
-/-- **Boundary-piece transport.** If none of the tets in a relative shelling touches
-`γ` or the ambient piece `K`, then the shelling is unchanged after replacing the
-carried boundary face `γ` by `K`.
+/-! ## `BoundaryGlueStep` — the weak boundary-bookkeeping name
 
-This is the degree-3 star-start transport target: after the first remainder tet
-uses the interface triangle `γ`, the rest of the remainder shelling carries the
-three exposed star faces `K` instead, while `γ` is final on the remainder side and
-is therefore absent from all later glue steps. -/
-lemma ShellFrom_erase_union_disjoint {γ : Finset V} {K : Finset (Finset V)}
-    {l : List (Finset V)} :
-    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B →
-      (∀ t ∈ l, Disjoint (tetFaces t) (insert γ K)) →
-      ShellFrom (B₀.erase γ ∪ K) l (B.erase γ ∪ K) := by
-  induction l with
-  | nil =>
-      intro B₀ B h _
-      simp only [ShellFrom] at h ⊢
-      rw [h]
-  | cons t l ih =>
-      intro B₀ B h hd
-      simp only [ShellFrom] at h ⊢
-      obtain ⟨B₁, hg, hrest⟩ := h
-      exact ⟨B₁.erase γ ∪ K, hg.erase_union_disjoint (hd t (List.mem_cons.mpr (Or.inl rfl))),
-        ih hrest (fun u hu => hd u (List.mem_cons.mpr (Or.inr hu)))⟩
+`GlueStep` is the sole surviving weak boundary-trace predicate.  It is **not** a
+ball or shellability claim: it only constrains a new tet against the *current
+boundary* `B` (shared card-3 faces, symmetric-difference update); it never sees
+the accumulated tet-set, so it cannot detect a rogue lower-dimensional
+intersection with an already-built tet, and it asserts **nothing** about
+cleanness, normality, connected vertex/edge links, or actual ballness.  The clean
+public predicates (`CleanGlueStep`, `IsCleanShelling`, `IsCleanBall`,
+`FreelyCleanShellable`, `IsStickerball`, `IsAnyrootedStickerball`) live in
+`Taut.CleanShelling`; a `CleanGlueStep` carries a `BoundaryGlueStep` in its `weak`
+field.  Public ball/stickerball conclusions use `IsStickerball` /
+`IsAnyrootedStickerball`, never this weak predicate. -/
 
-/-- Glue a `ShellFrom` of `l₂` onto the end of a shelling `l`. -/
-lemma IsShelling_append {l l₂ : List (Finset V)} {B₁ B : Finset (Finset V)}
-    (h : IsShelling l B₁) (hf : ShellFrom B₁ l₂ B) : IsShelling (l ++ l₂) B := by
-  cases l with
-  | nil => simp only [IsShelling] at h
-  | cons t r => simp only [IsShelling, List.cons_append] at h ⊢; exact ⟨h.1, ShellFrom_append h.2 hf⟩
-
-/-- Append one `GlueStep` tet to a shelling. -/
-lemma IsShelling_snoc {B B' : Finset (Finset V)} {l : List (Finset V)} {t : Finset V}
-    (h : IsShelling l B) (hg : GlueStep t B B') : IsShelling (l ++ [t]) B' :=
-  IsShelling_append h ⟨B', hg, rfl⟩
-
-/-- **Case-1 reassembly.** A ball whose boundary admits a `GlueStep` for a fresh
-tet `t` grows to the ball with `t` adjoined. -/
-theorem IsBall.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Finset V}
-    (h : IsBall τ B) (hg : GlueStep t B B') (ht : t ∉ τ) : IsBall (insert t τ) B' := by
-  obtain ⟨l, hlτ, hnodup, hsh⟩ := h
-  have htl : t ∉ l := fun hc => ht (hlτ ▸ List.mem_toFinset.mpr hc)
-  refine ⟨l ++ [t], ?_, ?_, IsShelling_snoc hsh hg⟩
-  · rw [List.toFinset_append, hlτ]
-    ext s
-    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
-    tauto
-  · refine hnodup.append (List.nodup_singleton t) ?_
-    rw [List.disjoint_left]; intro a ha
-    simp only [List.mem_singleton]; rintro rfl; exact htl ha
-
-/-! ## A single tetrahedron is a ball -/
-
-/-- A single tetrahedron `t` is a shelling-certified ball whose boundary is
-the tetrahedron-boundary sphere. -/
-theorem isBall_singleton {t : Finset V} (ht : t.card = 4) :
-    IsBall {t} (tetFaces t) := by
-  refine ⟨[t], by simp, by simp, ?_⟩
-  simp only [IsShelling, ShellFrom]
-  exact ⟨ht, trivial⟩
-
-/-- A single tetrahedron is freely shellable. -/
-theorem freelyShellable_singleton {t : Finset V} (ht : t.card = 4) :
-    FreelyShellable {t} (tetFaces t) := by
-  intro t' ht'
-  rw [Finset.mem_singleton] at ht'
-  subst t'
-  refine ⟨[t], by simp, by simp, by simp, ?_⟩
-  simp only [IsShelling, ShellFrom]
-  exact ⟨ht, trivial⟩
-
-/-! ## Boundary (weak) shelling — demoted names
-
-The predicates above are *boundary traces*: a `GlueStep` only constrains the new
-tet against the current boundary `B` (its shared card-3 faces, symmetric-
-difference update); it never sees the accumulated tet-set, so it cannot detect a
-rogue lower-dimensional intersection with an already-built tet.  The clean,
-public predicates (`CleanGlueStep`, `IsCleanShelling`, `FreelyCleanShellable`, …)
-live in `Taut.CleanShelling` and project down to these via `.toBoundary…`, so the
-banked reassembly lemmas keep firing on the projected boundary trace.  These
-aliases mark the weak layer; avoid the bare names in final theorem statements. -/
-
-/-- Boundary (weak) glue step — alias for `GlueStep`. -/
+/-- Boundary (weak) glue step — the explicit weak-layer name for `GlueStep`, the
+thing `CleanGlueStep.weak` carries.  Weak boundary bookkeeping only (see the
+section note above): asserts nothing about cleanness, normality, connected links,
+or ballness. -/
 abbrev BoundaryGlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop :=
   GlueStep t B B'
-/-- Boundary (weak) shelling-from — alias for `ShellFrom`. -/
-abbrev BoundaryShellFrom (B₀ : Finset (Finset V)) (l : List (Finset V))
-    (B : Finset (Finset V)) : Prop := ShellFrom B₀ l B
-/-- Boundary (weak) shelling — alias for `IsShelling`. -/
-abbrev BoundaryIsShelling (l : List (Finset V)) (B : Finset (Finset V)) : Prop :=
-  IsShelling l B
-/-- Boundary (weak) ball — alias for `IsBall`. -/
-abbrev BoundaryIsBall (τ B : Finset (Finset V)) : Prop := IsBall τ B
-/-- Boundary (weak) free shellability — alias for `FreelyShellable`. -/
-abbrev BoundaryFreelyShellable (τ B : Finset (Finset V)) : Prop := FreelyShellable τ B
 
 end Taut

@@ -2,18 +2,23 @@ import Taut.Theorem2Aleph
 import Taut.Stickerball
 
 /-!
-# Theorem 3: free sticker balls (the `FreelyShellable` reassembly)
+# Degree-3 geometry and the pseudomanifold base/step
 
-Per Peter's "sticker ball" reframe (codex 019ecbfa): the induction carries
-`FreelyShellable` (a free sticker ball — startable at any tet), and the case-2
-reassembly is a direct concatenation rather than a topological obstruction. This
-file builds the free-shelling reassembly tools and discharges the branch holes of
-`theorem3_core`.
+The non-shelling half of the degree-3 reduction, shared by the clean shelling
+route (`Theorem3Clean.lean`) and the pseudomanifold route (`taut_isPseudomanifold`):
 
-This installment: **L1** — the free case-1 stick (a free sticker ball plus a
-`GlueStep` tet is a free sticker ball, given the bridge-start relative shelling) —
-and **base_free** — the minimal-sphere base case as a free sticker ball (reusing
-the Aleph base lemmas, finishing with `freelyShellable_singleton`).
+* `base_isPM` / `deg3_isPM` — the `≤ 4`-vertex base case and the degree-3 step for
+  `IsPseudomanifold M.support` (the PM strong induction is assembled in `PrimeStep`);
+* `degree3_hanchor` — the degree-3 star-anchor existence target (a remainder tet
+  exposing the link triangle `γ` lets the star tet glue back), consumed by the clean
+  degree-3 step in `Theorem3Clean.lean`;
+* `degree3_apex_notMem_*`, `deg3_clean_glue_of_remainder` — the apex / clean-glue
+  side lemmas the degree-3 cut needs.
+
+(The earlier weak free-shelling reassembly that lived here — `base_free`, the L1
+free case-1 stick, `degree3_star_start_shellFrom`, and the `FreelyShellable`
+helpers — has been removed; the public route is the clean one in
+`Theorem3Clean.lean`.)
 -/
 
 namespace Taut

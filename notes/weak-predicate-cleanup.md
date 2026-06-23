@@ -61,4 +61,74 @@ concludes weak `IsBall`/`FreelyShellable`** (verified by `git grep`).
 - After this, `IsBall`'s only non-comment refs are inside `Ball.lean` (its def + dead helpers) — removed
   in Stage C. Build green (8273); ZERO sorry/admit; endpoints std-3.
 
-### Stage C — delete the Ball.lean weak family (`FreelyShellable`/`IsBall`/`IsShelling`/`ShellFrom` + reassembly + dead aliases); document `GlueStep`: PENDING
+### Stage C — delete the Ball.lean weak family; document `GlueStep`: DONE
+- Deleted from `Ball.lean`: `ShellFrom`, `IsShelling`, `IsBall`, `FreelyShellable`; the reassembly
+  lemmas `ShellFrom_append`/`_snoc`/`_union_disjoint`/`_erase_union_disjoint`,
+  `GlueStep.union_disjoint`, `IsShelling_append`/`_snoc`; `IsBall.insert_of_glueStep`,
+  `isBall_singleton`, `freelyShellable_singleton`; and the dead aliases `BoundaryShellFrom`,
+  `BoundaryIsShelling`, `BoundaryIsBall`, `BoundaryFreelyShellable`.
+- **Kept** `GlueStep` (structure), `GlueStep.erase_union_disjoint` (lemma), `BoundaryGlueStep` (alias),
+  `tetFaces` (utility). Rewrote the module docstring and added explicit weak-boundary-trace docstrings
+  (Task 4) to `GlueStep` and `BoundaryGlueStep`.
+- **Correction caught by the build:** `GlueStep.erase_union_disjoint` is live via *dot-notation*
+  (`hg.weak.erase_union_disjoint` at CleanShelling:347, lifted to `CleanGlueStep.erase_union_disjoint`);
+  my full-name `git grep` had missed it. Restored it; rebuilt green. (`GlueStep.union_disjoint` and the
+  `ShellFrom_*`/`IsShelling_*` lemmas are genuinely dead — full-name, comment-only refs.)
+- Also rewrote the now-stale `Theorem3.lean` module header (it no longer does "FreelyShellable reassembly").
+- Build green (8273); ZERO sorry/admit; five endpoints std-3.
+
+---
+
+## Final disposition (Task 5.2)
+
+| Predicate | disposition | where |
+|---|---|---|
+| `GlueStep` (structure) | **KEPT** + weak docstring (Task 4) | Ball.lean |
+| `GlueStep.erase_union_disjoint` | **KEPT** (live via `CleanGlueStep.erase_union_disjoint`) | Ball.lean |
+| `BoundaryGlueStep` (alias) | **KEPT** (the weak-layer name `CleanGlueStep.weak` carries) | Ball.lean |
+| `ShellFrom` | **DELETED** | (was Ball.lean) |
+| `IsShelling` | **DELETED** | (was Ball.lean) |
+| `IsBall` | **DELETED** | (was Ball.lean) |
+| `FreelyShellable` | **DELETED** | (was Ball.lean) |
+
+### Deleted weak predicates / lemmas (Task 5.3)
+Predicates: `ShellFrom`, `IsShelling`, `IsBall`, `FreelyShellable`.
+Reassembly: `ShellFrom_append`, `ShellFrom_snoc`, `ShellFrom_union_disjoint`,
+`ShellFrom_erase_union_disjoint`, `GlueStep.union_disjoint`, `IsShelling_append`, `IsShelling_snoc`.
+Helpers: `IsBall.insert_of_glueStep`, `isBall_singleton`, `freelyShellable_singleton`,
+`FreelyShellable.insert_of_glueStep`, `FreelyShellable.exists_shelling_insert_of_glueStep_old`.
+Aliases: `BoundaryShellFrom`, `BoundaryIsShelling`, `BoundaryIsBall`, `BoundaryFreelyShellable`.
+Boundary-projection layer: `CleanGlueStep.toBoundary`, `CleanShellFrom.toBoundaryShellFrom`,
+`IsCleanShelling.toBoundaryIsShelling`, `IsCleanBall.toBoundaryIsBall`,
+`FreelyCleanShellable.toBoundaryFreelyShellable`.
+Weak `IsBall` Theorem-2 route: `theorem2_core` (+ module `Theorem23.lean`), `aleph_base`,
+`aleph_deg3_split`, `degree3_reassemble_from_cut_split`, `ball_reassemble_of_filter_support_singleton`,
+`theorem2_modulo_prime_step`.
+
+### Renamed weak predicates (Task 5.4)
+None. `GlueStep` already had the explicit weak alias `BoundaryGlueStep`; the strong-sounding names
+(`IsBall`, `FreelyShellable`) were **deleted**, not renamed, since they were dead — so no `Weak`-prefix
+rename was needed. (Decision tree branch A "unused → delete" applied; B "rename" not needed.)
+`FreelyCleanShellable` was left as-is (it is the clean, non-misleading anyrooted predicate; the public
+"anyrooted" vocabulary is already surfaced by `IsAnyrootedStickerball`, so the optional
+`IsAnyrootedCleanShellable` alias was declined to avoid redundant churn).
+
+### Retained weak predicates and why (Task 5.5)
+- `GlueStep` + `BoundaryGlueStep` + `GlueStep.erase_union_disjoint`: the **boundary-bookkeeping
+  primitive** the clean layer is built on — `CleanGlueStep.weak : BoundaryGlueStep`, the clean route
+  constructs `GlueStep` witnesses (`hweak`) and lifts `erase_union_disjoint` to the clean level. Now
+  carry explicit weak-boundary-trace docstrings (Task 4): they assert nothing about cleanness,
+  normality, connected links, or ballness.
+
+### No public endpoint concludes a weak predicate (Task 5.6) — CONFIRMED
+`git grep "taut_filling_is" | grep -iE "IsBall|FreelyShellable"` → none. The five public endpoints
+conclude `IsAnyrootedStickerball` / `IsStickerball` / `IsClean3Complex` / `IsCleanBall` /
+`IsFlagComplex`, each `#print axioms = [propext, Classical.choice, Quot.sound]`.
+
+### Residual (cosmetic, not chased)
+Historical docstrings in several files still name the deleted weak predicates in prose (e.g. CleanShelling
+"mirror" comments, Pseudomanifold/Theorem2 headers). Harmless; a light comment-refresh for a later pass.
+
+### Build status / commits (Task 5.7)
+- Stage A `877d79b`, Stage B `fa532a7`, Stage C `<this commit>`.
+- Final: `lake build` → **8273 jobs, success**; `grep sorry/admit` → ZERO; endpoints std-3 axioms.
