@@ -778,9 +778,6 @@ theorem deg3_step_clean (sigma : Finset (Finset V)) (X M : Chain V)
     have hMRne : MR.support.Nonempty := aleph_base_support_nonempty hσR hUR hbdMR
     have hPMR : IsPseudomanifold MR.support :=
       (hfreeMR.clean3Complex hMRne).2.1
-    have hfreeR_weak : FreelyShellable MR.support
-        (insert γ (cutSet sigma (W + fun _ => 1))) :=
-      hfreeMR.toBoundaryFreelyShellable
     have hTRMR : IsTaut MR := by dsimp [MR, A, γ]; exact hTR
     have hsuppInfo :
         ∀ t ∈ MR.support,
@@ -804,7 +801,7 @@ theorem deg3_step_clean (sigma : Finset (Finset V)) (X M : Chain V)
           dsimp [MR, A, γ]
           rw [hMR]
           exact hUR)
-        hfreeR_weak hSimpR (by dsimp only [MR, A, γ]; exact hTR) hPMR hTnot hvNotMR rfl
+        hSimpR (by dsimp only [MR, A, γ]; exact hTR) hPMR hTnot hvNotMR rfl
         (by simp [MR])
         (Or.inr rfl)
     obtain ⟨t₀, K, ht₀, hglue₀_weak, hrest_disj, hfinal⟩ := hanchor
@@ -922,8 +919,6 @@ theorem deg3_step_clean (sigma : Finset (Finset V)) (X M : Chain V)
     have hMLne : ML.support.Nonempty := aleph_base_support_nonempty hσL hUL hbdML
     have hPML : IsPseudomanifold ML.support :=
       (hfreeML.clean3Complex hMLne).2.1
-    have hfreeL_weak : FreelyShellable ML.support (insert γ (cutSet sigma W)) :=
-      hfreeML.toBoundaryFreelyShellable
     have hTLML : IsTaut ML := by dsimp [ML, A, γ]; exact hTL
     have hsuppInfo :
         ∀ t ∈ ML.support, t.card = 4 ∧ t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
@@ -946,7 +941,7 @@ theorem deg3_step_clean (sigma : Finset (Finset V)) (X M : Chain V)
           dsimp [ML, A, γ]
           rw [hML]
           exact hUL)
-        hfreeL_weak hSimpL (by dsimp only [ML, A, γ]; exact hTL) hPML hTnot hvNotML rfl
+        hSimpL (by dsimp only [ML, A, γ]; exact hTL) hPML hTnot hvNotML rfl
         (by simp [ML])
         (Or.inl rfl)
     obtain ⟨t₀, K, ht₀, hglue₀_weak, hrest_disj, hfinal⟩ := hanchor

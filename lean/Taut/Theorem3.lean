@@ -22,69 +22,6 @@ open Finset
 
 variable {V : Type*} [LinearOrder V]
 
-/-- **L1 (free case-1 stick).** A free sticker ball `τ` (boundary `B`) plus a fresh
-`GlueStep` tet `t` is a free sticker ball with `t` adjoined. For an old target the
-shelling is `(old shelling from target) ++ [t]`; for target `t` the shelling is
-`t :: (a shelling of τ onto the post-glue boundary `B'` starting from `tetFaces t`)`
-— that bridge-start relative shelling is the hypothesis `hstart_t` (supplied by the
-geometry at the call site). -/
-lemma FreelyShellable.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Finset V}
-    (hfree : FreelyShellable τ B) (hg : GlueStep t B B') (ht : t ∉ τ)
-    (hstart_t : ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
-      ShellFrom (tetFaces t) l B') :
-    FreelyShellable (insert t τ) B' := by
-  intro s hs
-  rw [Finset.mem_insert] at hs
-  rcases hs with rfl | hsτ
-  · -- target is the new tet (`rcases rfl` substituted the binder `t := s`)
-    obtain ⟨l, hlτ, hnodup, hsf⟩ := hstart_t
-    refine ⟨s :: l, rfl, ?_, ?_, hg.card4, hsf⟩
-    · rw [List.toFinset_cons, hlτ]
-    · exact List.nodup_cons.mpr ⟨fun hc => ht (hlτ ▸ List.mem_toFinset.mpr hc), hnodup⟩
-  · -- target is an old tet `s ∈ τ`
-    obtain ⟨l, hhead, hlτ, hnodup, hsh⟩ := hfree s hsτ
-    refine ⟨l ++ [t], ?_, ?_, ?_, IsShelling_snoc hsh hg⟩
-    · cases l with
-      | nil => exact absurd hsh (by simp [IsShelling])
-      | cons a r => rw [List.cons_append]; exact hhead
-    · rw [List.toFinset_append, hlτ]
-      ext x
-      simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
-      tauto
-    · refine hnodup.append (List.nodup_singleton t) ?_
-      rw [List.disjoint_left]
-      intro a ha
-      simp only [List.mem_singleton]
-      rintro rfl
-      exact ht (hlτ ▸ List.mem_toFinset.mpr ha)
-
-/-- **Old-target snoc** (L1's old-target half, extracted, with no `hstart_t`): if `τ`
-is a free sticker ball and a fresh tet `e` glues onto its boundary, then for any OLD
-target `s ∈ τ` there is a shelling of `insert e τ` starting at `s` — namely `(τ's
-shelling from s) ++ [e]`.  This is the only half `prime_step`/`deg3_step` need: by
-the M25b disjoint-eligible-pair, the removed tet is always chosen `≠ s`, so the
-target is always old and the removed tet always glues last. -/
-lemma FreelyShellable.exists_shelling_insert_of_glueStep_old
-    {τ B B' : Finset (Finset V)} {e s : Finset V}
-    (hfree : FreelyShellable τ B) (hg : GlueStep e B B') (heτ : e ∉ τ) (hsτ : s ∈ τ) :
-    ∃ l : List (Finset V), l.head? = some s ∧ l.toFinset = insert e τ ∧ l.Nodup ∧
-      IsShelling l B' := by
-  obtain ⟨l, hhead, hlτ, hnodup, hsh⟩ := hfree s hsτ
-  refine ⟨l ++ [e], ?_, ?_, ?_, IsShelling_snoc hsh hg⟩
-  · cases l with
-    | nil => exact absurd hsh (by simp [IsShelling])
-    | cons a r => rw [List.cons_append]; exact hhead
-  · rw [List.toFinset_append, hlτ]
-    ext x
-    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
-    tauto
-  · refine hnodup.append (List.nodup_singleton e) ?_
-    rw [List.disjoint_left]
-    intro a ha
-    simp only [List.mem_singleton]
-    rintro rfl
-    exact heτ (hlτ ▸ List.mem_toFinset.mpr ha)
-
 /-- **base_isPM** (PM base case, ≤ 4 vertices): a taut filling of a 2-sphere on
 ≤ 4 vertices is a single tetrahedron, hence a pseudomanifold. Mirrors `base_free`,
 but ends in `isPseudomanifold_singleton` instead of `freelyShellable_singleton`. -/
@@ -166,7 +103,6 @@ lemma degree3_hanchor (sigma sigmaR : Finset (Finset V)) (MR : Chain V)
     (hW : bd2 sigma W = gammaChain sigma (linkVerts sigma v))
     (hσR : IsSphere2 sigmaR)
     (hUR : UnitOn (bdry MR) sigmaR)
-    (hfreeR : FreelyShellable MR.support sigmaR)
     (hSimpR : SimplicialChain MR)
     (hTautR : IsTaut MR)
     (hPMR : IsPseudomanifold MR.support)

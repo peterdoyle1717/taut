@@ -114,42 +114,6 @@ lemma IsAnyrootedStickerball.toStickerball {τ B : Finset (Finset V)}
 lemma IsAnyrootedStickerball.freelyCleanShellable {τ B : Finset (Finset V)}
     (h : IsAnyrootedStickerball τ B) : FreelyCleanShellable τ B := h.2
 
-/-! ## Projection to boundary shelling — keeps the banked reassembly usable -/
-
-/-- A clean glue step is a boundary glue step. -/
-lemma CleanGlueStep.toBoundary {t : Finset V} {τ B B' : Finset (Finset V)}
-    (h : CleanGlueStep t τ B B') : BoundaryGlueStep t B B' := h.weak
-
-/-- A clean shelling-from is a boundary shelling-from (forget the cleanliness). -/
-lemma CleanShellFrom.toBoundaryShellFrom {τ B₀ : Finset (Finset V)}
-    {l : List (Finset V)} {B : Finset (Finset V)}
-    (h : CleanShellFrom τ B₀ l B) : BoundaryShellFrom B₀ l B := by
-  induction l generalizing τ B₀ with
-  | nil => exact h
-  | cons t l ih =>
-      obtain ⟨B₁, hg, hrest⟩ := h
-      exact ⟨B₁, hg.weak, ih hrest⟩
-
-/-- A clean shelling is a boundary shelling. -/
-lemma IsCleanShelling.toBoundaryIsShelling {l : List (Finset V)} {B : Finset (Finset V)}
-    (h : IsCleanShelling l B) : BoundaryIsShelling l B := by
-  cases l with
-  | nil => exact h.elim
-  | cons t l => obtain ⟨h1, h2⟩ := h; exact ⟨h1, h2.toBoundaryShellFrom⟩
-
-/-- A clean ball is a boundary ball. -/
-lemma IsCleanBall.toBoundaryIsBall {τ B : Finset (Finset V)}
-    (h : IsCleanBall τ B) : BoundaryIsBall τ B := by
-  obtain ⟨l, hl, hn, hsh⟩ := h
-  exact ⟨l, hl, hn, hsh.toBoundaryIsShelling⟩
-
-/-- A freely clean shellable set is freely (boundary) shellable. -/
-lemma FreelyCleanShellable.toBoundaryFreelyShellable {τ B : Finset (Finset V)}
-    (h : FreelyCleanShellable τ B) : BoundaryFreelyShellable τ B := by
-  intro t ht
-  obtain ⟨l, hhead, hl, hn, hsh⟩ := h t ht
-  exact ⟨l, hhead, hl, hn, hsh.toBoundaryIsShelling⟩
-
 /-! ## A single tetrahedron is a (freely) clean ball -/
 
 /-- A single tetrahedron is a clean shelling with the tetrahedron-boundary sphere. -/
