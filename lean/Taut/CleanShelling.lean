@@ -74,7 +74,9 @@ def FreelyCleanShellable (τ B : Finset (Finset V)) : Prop :=
 /-! ## Stickerball predicates (the combinatorial B³ certificate) -/
 
 /-- A **stickerball**: a shellable clean 3-complex with nonempty boundary.  Concretely `IsCleanBall`
-(a clean shelling exists — building *up* by sticking tetrahedra on, the reverse of shucking down) with
+(a clean shelling exists — building *up* by sticking tetrahedra on, the reverse of shucking down,
+each tetrahedron after the first glued on along **one or two boundary triangles** via `CleanGlueStep`,
+whose `weak` field is a `GlueStep` sharing a 1- or 2-triangle face with the running boundary) with
 a nonempty boundary `B`.  Being an `IsCleanBall` it is in particular an `IsClean3Complex`
 (pure, every triangle in ≤ 2 tets, connected vertex *and* edge links) — see `IsStickerball.isClean3Complex`.
 
@@ -96,6 +98,35 @@ lemma IsAnyrootedStickerball.toStickerball {τ B : Finset (Finset V)}
 
 lemma IsAnyrootedStickerball.freelyCleanShellable {τ B : Finset (Finset V)}
     (h : IsAnyrootedStickerball τ B) : FreelyCleanShellable τ B := h.2
+
+/-- A **rooted stickerball** at `t`: a stickerball (`IsStickerball`) that, in addition, admits a
+*monotone* clean shelling whose first tetrahedron is `t` — every later tetrahedron is glued on along
+one or two boundary triangles (`CleanGlueStep`).  This is the per-root slice of `FreelyCleanShellable`
+(the round-3 writeup audit noted "rooted at `t`" was not yet a standalone predicate; this names it). -/
+def IsRootedStickerball (τ B : Finset (Finset V)) (t : Finset V) : Prop :=
+  IsStickerball τ B ∧
+    ∃ l : List (Finset V), l.head? = some t ∧ l.toFinset = τ ∧ l.Nodup ∧ IsCleanShelling l B
+
+lemma IsRootedStickerball.toStickerball {τ B : Finset (Finset V)} {t : Finset V}
+    (h : IsRootedStickerball τ B t) : IsStickerball τ B := h.1
+
+/-- An **anyroot stickerball** (public name for `IsAnyrootedStickerball`): a stickerball that is
+rooted at *every* one of its tetrahedra.  It is a **ball** certificate, not a sphere-shelling
+certificate — each shelling is a *monotone* clean shelling (every tetrahedron after the first is glued
+on along one or two boundary triangles) and the result carries a nonempty boundary `B`.  This is the
+public face Theorem 3 exports for a taut filling. -/
+abbrev IsAnyrootStickerball (τ B : Finset (Finset V)) : Prop := IsAnyrootedStickerball τ B
+
+/-- An anyroot stickerball is rooted at every tetrahedron of `τ`. -/
+lemma IsAnyrootStickerball.rooted {τ B : Finset (Finset V)}
+    (h : IsAnyrootStickerball τ B) : ∀ t ∈ τ, IsRootedStickerball τ B t :=
+  fun t ht => ⟨h.1, h.2 t ht⟩
+
+/-- Conversely, a stickerball rooted at every tetrahedron is an anyroot stickerball. -/
+lemma IsAnyrootStickerball.of_forall_rooted {τ B : Finset (Finset V)}
+    (hB : IsStickerball τ B) (h : ∀ t ∈ τ, IsRootedStickerball τ B t) :
+    IsAnyrootStickerball τ B :=
+  ⟨hB, fun t ht => (h t ht).2⟩
 
 /-! ## A single tetrahedron is a (freely) clean ball -/
 
