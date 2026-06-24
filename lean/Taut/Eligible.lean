@@ -435,4 +435,18 @@ theorem exists_disjoint_geomEligible_family {M : Chain V} {σ : Finset (Finset V
       omega
     omega
 
+/-- **Avoidance step** (route-Y steps 1–2): given a forbidden Finset `F` of supports strictly smaller
+than `deg x (∂M)`, the counting family supplies a geometrically-eligible support `u ∉ F`. The caller
+sets `F` to the supports touched by the local cut/flip/removal and chooses `x` of large enough degree.
+This is the source of the backup tet `u` in the minimal-counterexample assembly. -/
+theorem exists_geomEligible_not_mem {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2)
+    (x : V) (F : Finset (Finset V)) (hF : F.card < deg x (bdry M)) :
+    ∃ u, u ∈ M.support ∧ GeomEligible M u ∧ u ∉ F := by
+  obtain ⟨E, hEsub, hElig, _, hcard⟩ := exists_disjoint_geomEligible_family hU hT hPure hShared2 x
+  obtain ⟨u, huE, huF⟩ := exists_mem_not_mem_of_card_lt (lt_of_lt_of_le hF hcard)
+  exact ⟨u, hEsub huE, hElig u huE, huF⟩
+
 end Taut
