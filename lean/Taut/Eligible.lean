@@ -290,4 +290,52 @@ theorem exists_eligibleTet_of_noDegree3 {M : Chain V} {σ : Finset (Finset V)}
   exists_eligibleTet hσ hU hS hT hPure
     (fun t ht => sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht))
 
+/-! ## Route-Y bridge scaffolding: coefficient-free geometric eligibility
+
+For removing `SimplicialChain` from the Theorem-2 endpoint via the paper's minimal-counterexample
+argument (`text/tautxy/tautxy_formalizable.tex`, `th2`), the eligibility used for *counting* must be
+coefficient-free: the count is on support tetrahedra, and a high-multiplicity tet must still be
+counted. The Lean `EligibleTet` bakes in an orientation conjunct that, under `UnitOn`, already forces
+`M t = ±1` (verified), so it is the wrong notion for the counting step. `GeomEligible` drops that
+conjunct. See `notes/taut-to-simplicial-strategy.md`. -/
+
+/-- **Geometric eligibility** (coefficient-free): a support tetrahedron `t` of `M` sharing exactly two
+faces with the boundary `∂M` (under `UnitOn`, exactly two faces with `σ`). No coefficient conclusion
+is part of this predicate — `t` may have any multiplicity. This is the paper's "shares two faces with
+`σ`"; `EligibleTet` is this *plus* an orientation condition. -/
+def GeomEligible (M : Chain V) (t : Finset V) : Prop :=
+  t.card = 4 ∧ t ∈ M.support ∧ (sharedFaces M t).card = 2
+
+/-- The Lean `EligibleTet` is strictly stronger than geometric eligibility. -/
+lemma EligibleTet.geomEligible {M : Chain V} {t : Finset V} (h : EligibleTet M t) :
+    GeomEligible M t :=
+  ⟨h.1, h.2.1, h.2.2.1⟩
+
+/-- A geometrically-eligible tet has exactly two exposed (interior) faces. -/
+lemma GeomEligible.exposedFaces_card {M : Chain V} {t : Finset V} (h : GeomEligible M t) :
+    (exposedFaces M t).card = 2 := by
+  rw [exposedFaces, Finset.card_sdiff_of_subset (sharedFaces_subset_tetFaces M t),
+    card_tetFaces h.1, h.2.2]
+
+/-- **Avoidance / pigeonhole** (route-neutral): a Finset `E` strictly larger than a forbidden Finset
+`F` has a member outside `F`. Applied with `E` an eligible family of supports and `F` the bounded set
+of supports touched by a local move/cut, this picks an available `u ∈ E \ F`. -/
+lemma exists_mem_not_mem_of_card_lt {α : Type*} [DecidableEq α] {E F : Finset α}
+    (h : F.card < E.card) : ∃ u ∈ E, u ∉ F :=
+  Finset.not_subset.mp (fun hsub => not_le.mpr h (Finset.card_le_card hsub))
+
+/-- **Same-boundary minimality** (route-Y step 5, the strict-norm contradiction shape): a taut filling
+`M` is optimal for its own boundary — no chain `N` with the same boundary has smaller norm. The
+Case-1/Case-2 contradictions are instances (a same-boundary chain of strictly smaller norm cannot
+exist). Immediate from `IsTaut M : nrm M = Zvol (bdry M)` and `Zvol_le`. -/
+lemma IsTaut.le_nrm_of_bdry_eq {M N : Chain V} (hM : IsTaut M) (hbd : bdry N = bdry M) :
+    nrm M ≤ nrm N :=
+  calc nrm M = Zvol (bdry M) := hM
+    _ ≤ nrm N := Zvol_le hbd
+
+/-- Contrapositive packaging of `IsTaut.le_nrm_of_bdry_eq`: no strictly-smaller same-boundary fill. -/
+lemma IsTaut.not_nrm_lt_of_bdry_eq {M N : Chain V} (hM : IsTaut M) (hbd : bdry N = bdry M) :
+    ¬ nrm N < nrm M :=
+  fun h => absurd (hM.le_nrm_of_bdry_eq hbd) (not_le.mpr h)
+
 end Taut
