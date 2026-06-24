@@ -449,4 +449,21 @@ theorem exists_geomEligible_not_mem {M : Chain V} {σ : Finset (Finset V)}
   obtain ⟨u, huE, huF⟩ := exists_mem_not_mem_of_card_lt (lt_of_lt_of_le hF hcard)
   exact ⟨u, hEsub huE, hElig u huE, huF⟩
 
+/-- **Bad-coefficient escape / active-tet switch** — the `SimplicialChain`-free abstraction of the
+disjoint-pair switch used in `prime_edgeLinkConnected` (`Theorem3Clean.lean:2710`, the
+`rcases … ; key e₀ u₀ … | key u₀ e₀ …` block): to prove any goal `C`, it suffices to prove it from
+*some* geometrically-eligible active support `u` avoiding a forbidden local Finset `F`
+(`F.card < deg x (∂M)`). The active `u` is supplied by counting/avoidance. The per-tet contradiction
+`key` is the parameter — the caller plugs in whatever contradiction the active-tet branch produces.
+Unlike the existing pattern this uses `GeomEligible` (not oriented `EligibleTet`) and assumes no `hS`;
+the orientation/`hS` needed to *remove* `u` cleanly is the caller's obligation inside `key`. -/
+theorem bad_coeff_switch_to_disjoint_eligible {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2)
+    (x : V) (F : Finset (Finset V)) (hF : F.card < deg x (bdry M))
+    {C : Prop} (key : ∀ u, u ∈ M.support → GeomEligible M u → u ∉ F → C) : C := by
+  obtain ⟨u, hu_supp, hu_elig, hu_notF⟩ := exists_geomEligible_not_mem hU hT hPure hShared2 x F hF
+  exact key u hu_supp hu_elig hu_notF
+
 end Taut
