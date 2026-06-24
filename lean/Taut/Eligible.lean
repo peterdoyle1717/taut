@@ -338,4 +338,101 @@ lemma IsTaut.not_nrm_lt_of_bdry_eq {M N : Chain V} (hM : IsTaut M) (hbd : bdry N
     ¬ nrm N < nrm M :=
   fun h => absurd (hM.le_nrm_of_bdry_eq hbd) (not_le.mpr h)
 
+omit [LinearOrder V] in
+/-- The number of distinct support tetrahedra is at most the norm (each contributes `≥ 1`).
+Replaces the `SimplicialChain`-only `nrm = support.card` in the counting argument. -/
+lemma card_support_le_nrm (M : Chain V) : M.support.card ≤ nrm M := by
+  show M.support.card ≤ ∑ s ∈ M.support, (M s).natAbs
+  rw [Finset.card_eq_sum_ones]
+  exact Finset.sum_le_sum fun s hs => Int.natAbs_pos.mpr (Finsupp.mem_support_iff.mp hs)
+
+/-- **The counting lemma** (route-Y, `SimplicialChain`-free): a taut filling of a 2-sphere with no
+degree-3 vertex contains a family `E` of pairwise-disjoint (in shared faces) geometrically-eligible
+support tetrahedra, of cardinality at least `deg x (∂M)` for every vertex `x`.
+
+Construction: each boundary face is covered by some support tet (`bdry M α ≠ 0` forces a contributing
+tet — no orientation/`SimplicialChain` needed); choosing one such tet per face gives `c : σ →
+M.support` with fibres `⊆ sharedFaces`, hence `≤ 2`. The fibre-2 tets are exactly the eligible family:
+their fibre equals their shared faces (so `GeomEligible`, and pairwise-disjoint shared faces since
+fibres of a function are disjoint), and the fibre count `σ.card ≤ E.card + support.card` combines with
+`support.card ≤ nrm M = Zvol(∂M) ≤ σ.card − deg x (∂M)` (Prop 2) to give `deg x (∂M) ≤ E.card`. -/
+theorem exists_disjoint_geomEligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2) (x : V) :
+    ∃ E : Finset (Finset V), E ⊆ M.support ∧ (∀ t ∈ E, GeomEligible M t) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e) ∧
+      deg x (bdry M) ≤ E.card := by
+  classical
+  -- (1) weak covering: every boundary face is a face of some support tet (no orientation needed)
+  have hcov : ∀ α, α ∈ σ → ∃ t, t ∈ M.support ∧ α ∈ tetFaces t := by
+    intro α hα
+    have hαsupp : α ∈ (bdry M).support := by rw [hU.1]; exact hα
+    have hne : (bdry M) α ≠ 0 := Finsupp.mem_support_iff.mp hαsupp
+    rw [bdry_apply_eq_sum] at hne
+    obtain ⟨t, ht, hterm⟩ := Finset.exists_ne_zero_of_sum_ne_zero hne
+    have hbg : bdryGen t α ≠ 0 := fun h => hterm (by rw [h, mul_zero])
+    obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero hbg
+    exact ⟨t, ht, hαe ▸ erase_mem_tetFaces (hPure t ht) hw⟩
+  -- (2) the covering map (total, junk off σ)
+  let f : Finset V → Finset V := fun α => if h : α ∈ σ then (hcov α h).choose else ∅
+  have hf_mem : ∀ α ∈ σ, f α ∈ M.support := fun α hα => by
+    simp only [f, dif_pos hα]; exact (hcov α hα).choose_spec.1
+  have hf_face : ∀ α ∈ σ, α ∈ sharedFaces M (f α) := fun α hα =>
+    Finset.mem_inter.mpr ⟨by simp only [f, dif_pos hα]; exact (hcov α hα).choose_spec.2,
+      by rw [hU.1]; exact hα⟩
+  -- (3) the eligible family = fibre-2 tets
+  set E : Finset (Finset V) :=
+    M.support.filter (fun t => (σ.filter (fun a => f a = t)).card = 2) with hE_def
+  -- fibre ⊆ sharedFaces
+  have hfib_sub : ∀ t, σ.filter (fun a => f a = t) ⊆ sharedFaces M t := by
+    intro t α hα
+    rw [Finset.mem_filter] at hα
+    rw [← hα.2]; exact hf_face α hα.1
+  -- each E-tet: sharedFaces = fibre, and GeomEligible
+  have hElig : ∀ t ∈ E, sharedFaces M t = σ.filter (fun a => f a = t) ∧ GeomEligible M t := by
+    intro t ht
+    rw [hE_def, Finset.mem_filter] at ht
+    obtain ⟨htsupp, htfib2⟩ := ht
+    have hsub := hfib_sub t
+    have hcard2 : (sharedFaces M t).card = 2 := by
+      have h := hShared2 t htsupp
+      have hge : 2 ≤ (sharedFaces M t).card := htfib2 ▸ Finset.card_le_card hsub
+      omega
+    exact ⟨(Finset.eq_of_subset_of_card_le hsub (by rw [hcard2, htfib2])).symm,
+      hPure t htsupp, htsupp, hcard2⟩
+  refine ⟨E, Finset.filter_subset _ _, fun t ht => (hElig t ht).2, ?_, ?_⟩
+  · -- pairwise-disjoint shared faces (fibres of a function are disjoint)
+    intro t₁ h₁ t₂ h₂ hne
+    simp only [Finset.mem_coe] at h₁ h₂
+    show Disjoint (sharedFaces M t₁) (sharedFaces M t₂)
+    rw [(hElig t₁ h₁).1, (hElig t₂ h₂).1, Finset.disjoint_left]
+    intro α hα₁ hα₂
+    rw [Finset.mem_filter] at hα₁ hα₂
+    exact hne (hα₁.2.symm.trans hα₂.2)
+  · -- cardinality: deg x (∂M) ≤ E.card
+    have hsum : σ.card = ∑ t ∈ M.support, (σ.filter (fun a => f a = t)).card :=
+      Finset.card_eq_sum_card_fiberwise hf_mem
+    have hbound : σ.card ≤ E.card + M.support.card := by
+      rw [hsum]
+      have hle : ∑ t ∈ M.support, (σ.filter (fun a => f a = t)).card
+          ≤ ∑ t ∈ M.support, (1 + if (σ.filter (fun a => f a = t)).card = 2 then 1 else 0) := by
+        refine Finset.sum_le_sum fun t ht => ?_
+        have h2 : (σ.filter (fun a => f a = t)).card ≤ 2 :=
+          (Finset.card_le_card (hfib_sub t)).trans (hShared2 t ht)
+        by_cases hc : (σ.filter (fun a => f a = t)).card = 2
+        · simp [hc]
+        · simp only [hc, if_false, add_zero]; omega
+      have heq : ∑ t ∈ M.support, (1 + if (σ.filter (fun a => f a = t)).card = 2 then 1 else 0)
+          = M.support.card + E.card := by
+        rw [Finset.sum_add_distrib, ← Finset.card_eq_sum_ones, ← Finset.card_filter, ← hE_def]
+      omega
+    have hdeg : M.support.card + deg x (bdry M) ≤ σ.card := by
+      have h2 := Zvol_add_deg_le x (bdry_bdry M)
+      rw [UnitOn.nrm_eq hU] at h2
+      have hTeq : nrm M = Zvol (bdry M) := hT
+      have h3 := card_support_le_nrm M
+      omega
+    omega
+
 end Taut
