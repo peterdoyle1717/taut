@@ -1423,7 +1423,7 @@ lemma prime_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSpher
       hasEmptyK3_removeTet_of_avoids_sharedEdge he hsh hg hs3 hsedges havoid hno
     by_cases hFlip : FlipEdgePresent σ f₃ f₄
     · obtain ⟨A, B, hAB, hcd, hsphA, hsphB, hcover, hsep, hf₃A, hf₃nB, hf₄B, hf₄nA, hfc⟩ :=
-        flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+        flipEdgePresent_side_sets hσ hU hXc hMX hT he hexp hf₃₄ hFlip
       obtain ⟨hUA, hUB, hXAc, hXBc, hTA, hTB, hSA, hSB, hnA, hnB, _, _, _, _⟩ :=
         flipEdgePresent_side_algebra hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd hcover hsep
       obtain ⟨hbridgeA, hbridgeB⟩ :=
@@ -1449,7 +1449,7 @@ lemma prime_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSpher
       hasEmptyK4_removeTet_of_eligible hNoK3 hs4 hsedges hno he
     by_cases hFlip : FlipEdgePresent σ f₃ f₄
     · obtain ⟨A, B, hAB, hcd, hsphA, hsphB, hcover, hsep, hf₃A, hf₃nB, hf₄B, hf₄nA, hfc⟩ :=
-        flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+        flipEdgePresent_side_sets hσ hU hXc hMX hT he hexp hf₃₄ hFlip
       obtain ⟨hUA, hUB, hXAc, hXBc, hTA, hTB, hSA, hSB, hnA, hnB, _, _, _, _⟩ :=
         flipEdgePresent_side_algebra hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd hcover hsep
       obtain ⟨hbridgeA, hbridgeB⟩ :=

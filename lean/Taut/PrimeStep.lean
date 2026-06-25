@@ -206,7 +206,6 @@ theorem flipEdgePresent_removeTet_support_partition {σ : Finset (Finset V)} {X 
     (hXc : bdry X = 0)
     (hMX : bdry M = X)
     (hT : IsTaut M)
-    (hS : SimplicialChain M)
     (he : EligibleTet M e)
     (hexp : exposedFaces M e = {f₃, f₄})
     (hf₃₄ : f₃ ≠ f₄)
@@ -552,7 +551,6 @@ theorem flipBoundary_coverage_of_compatible_cut_chains {σ : Finset (Finset V)} 
     (hXc : bdry X = 0)
     (hMX : bdry M = X)
     (hT : IsTaut M)
-    (hS : SimplicialChain M)
     (he : EligibleTet M e)
     (hexp : exposedFaces M e = {f₃, f₄})
     (hf₃₄ : f₃ ≠ f₄)
@@ -599,7 +597,6 @@ theorem flipEdgePresent_exists_compatible_cut_chains {σ : Finset (Finset V)} {X
     (hXc : bdry X = 0)
     (hMX : bdry M = X)
     (hT : IsTaut M)
-    (hS : SimplicialChain M)
     (he : EligibleTet M e)
     (hexp : exposedFaces M e = {f₃, f₄})
     (hf₃₄ : f₃ ≠ f₄)
@@ -815,7 +812,6 @@ theorem flipEdgePresent_compatible_triangle_cuts {σ : Finset (Finset V)} {X M :
     (hXc : bdry X = 0)
     (hMX : bdry M = X)
     (hT : IsTaut M)
-    (hS : SimplicialChain M)
     (he : EligibleTet M e)
     (hexp : exposedFaces M e = {f₃, f₄})
     (hf₃₄ : f₃ ≠ f₄)
@@ -846,7 +842,7 @@ theorem flipEdgePresent_compatible_triangle_cuts {σ : Finset (Finset V)} {X M :
     flipEdgePresent_exposed_edges_in_sigma (σ := σ) (X := X) (M := M) (e := e) (f₃ := f₃) (f₄ := f₄) hU hMX he hexp hf₃₄ hFlip
   obtain ⟨W₃, W₄, hW₃, hW₄, hABraw, hdisj₃, hdisj₄⟩ :=
     flipEdgePresent_exists_compatible_cut_chains (σ := σ) (X := X) (M := M) (e := e)
-      (f₃ := f₃) (f₄ := f₄) hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+      (f₃ := f₃) (f₄ := f₄) hσ hU hXc hMX hT he hexp hf₃₄ hFlip
   let A : Finset V := vertsOf (insert f₃ (cutSet σ W₃))
   let B : Finset V := vertsOf (insert f₄ (cutSet σ W₄))
   have hAB : A ∩ B = f₃ ∩ f₄ := by
@@ -854,7 +850,7 @@ theorem flipEdgePresent_compatible_triangle_cuts {σ : Finset (Finset V)} {X M :
   have hcover : ∀ f ∈ flipBoundary σ M e, f ⊆ A ∨ f ⊆ B := by
     simpa [A, B] using
       flipBoundary_coverage_of_compatible_cut_chains (σ := σ) (X := X) (M := M) (e := e)
-        (f₃ := f₃) (f₄ := f₄) hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+        (f₃ := f₃) (f₄ := f₄) hσ hU hXc hMX hT he hexp hf₃₄ hFlip
         hW₃ hW₄ hdisj₃ hdisj₄ hABraw
   have hcut₃ : σ.filter (fun f => f ⊆ A) = cutSet σ W₃ := by
     ext f
@@ -1018,7 +1014,6 @@ theorem flipEdgePresent_boundary_side_package {σ : Finset (Finset V)} {X M : Ch
     (hXc : bdry X = 0)
     (hMX : bdry M = X)
     (hT : IsTaut M)
-    (hS : SimplicialChain M)
     (he : EligibleTet M e)
     (hexp : exposedFaces M e = {f₃, f₄})
     (hf₃₄ : f₃ ≠ f₄)
@@ -1047,7 +1042,7 @@ theorem flipEdgePresent_boundary_side_package {σ : Finset (Finset V)} {X M : Ch
     have hf₄tet : f₄ ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf₄mem
     exact (Finset.mem_powersetCard.mp hf₄tet).2
   obtain ⟨A, B, W₃, W₄, hW₃, hW₄, hAB, hcover, hAeq, hBeq⟩ :=
-    flipEdgePresent_compatible_triangle_cuts hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+    flipEdgePresent_compatible_triangle_cuts hσ hU hXc hMX hT he hexp hf₃₄ hFlip
   have hf₃flip : f₃ ∈ flipBoundary σ M e := by
     simp only [flipBoundary, Finset.mem_union]; right; rw [hexp]
     exact Finset.mem_insert_self f₃ _
@@ -1092,7 +1087,6 @@ theorem flipEdgePresent_side_sets {σ : Finset (Finset V)} {X M : Chain V} {e f�
     (hXc : bdry X = 0)
     (hMX : bdry M = X)
     (hT : IsTaut M)
-    (hS : SimplicialChain M)
     (he : EligibleTet M e)
     (hexp : exposedFaces M e = {f₃, f₄})
     (hf₃₄ : f₃ ≠ f₄)
@@ -1107,9 +1101,9 @@ theorem flipEdgePresent_side_sets {σ : Finset (Finset V)} {X M : Chain V} {e f�
         (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A)) ∧
       f₃ ⊆ A ∧ ¬ f₃ ⊆ B ∧ f₄ ⊆ B ∧ ¬ f₄ ⊆ A ∧
       (∀ f ∈ flipBoundary σ M e, f ⊆ A ∨ f ⊆ B) := by
-  rcases flipEdgePresent_boundary_side_package hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip with
+  rcases flipEdgePresent_boundary_side_package hσ hU hXc hMX hT he hexp hf₃₄ hFlip with
     ⟨A, B, hAB, hcd, hsphereA, hsphereB, hfaceCover, hf₃A, hf₃notB, hf₄B, hf₄notA⟩
-  rcases flipEdgePresent_removeTet_support_partition hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd hfaceCover with ⟨hcover, hsep⟩
+  rcases flipEdgePresent_removeTet_support_partition hσ hU hXc hMX hT he hexp hf₃₄ hFlip hAB hcd hfaceCover with ⟨hcover, hsep⟩
   exact ⟨A, B, hAB, hcd, hsphereA, hsphereB, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, hfaceCover⟩
 
 theorem bdry_filter_eq_filter_bdry_of_side_sep {V : Type*} [LinearOrder V] {M : Chain V} {A B : Finset V}
@@ -1259,7 +1253,6 @@ theorem flipEdgePresent_side_units {V : Type*} [LinearOrder V]
     (hU : UnitOn X σ)
     (hMX : bdry M = X)
     (hT : IsTaut M)
-    (hS : SimplicialChain M)
     (he : EligibleTet M e)
     (hAB : A ∩ B = f₃ ∩ f₄)
     (hcd : (f₃ ∩ f₄).card = 2)
@@ -1355,10 +1348,127 @@ theorem flipEdgePresent_side_algebra {σ : Finset (Finset V)} {X M : Chain V} {e
         insert e
           (((removeTet M e).filter (fun t => t ⊆ A)).support ∪
             ((removeTet M e).filter (fun t => t ⊆ B)).support) := by
-  obtain ⟨hUA, hUB⟩ := flipEdgePresent_side_units hσ hU hMX hT hS he hAB hcd hsep
+  obtain ⟨hUA, hUB⟩ := flipEdgePresent_side_units hσ hU hMX hT he hAB hcd hsep
   obtain ⟨hTA, hTB, hSA, hSB, hnA, hnB, heA, heB⟩ := flipEdgePresent_side_taut_simp_norm (M := M) (e := e) (A := A) (B := B) hT hS he
   obtain ⟨hdisj, hsupp⟩ := flipEdgePresent_side_supports (M := M) (e := e) (A := A) (B := B) he hcover hsep
   refine ⟨hUA, hUB, ?_, ?_, hTA, hTB, hSA, hSB, hnA, hnB, heA, heB, hdisj, hsupp⟩
+  · exact bdry_bdry _
+  · exact bdry_bdry _
+
+/-- **`SimplicialChain`-free Case-2 sphere split.**  Identical conclusion to
+`flipEdgePresent_side_sets`, but hypothesizing only `IsTaut M` (not
+`SimplicialChain M`).  The whole Case-2 boundary-side / partition chain is
+`hS`-free, so this is a thin re-export under the weaker hypothesis. -/
+theorem flipEdgePresent_side_sets_noS {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ : Finset V}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ)
+    (hXc : bdry X = 0)
+    (hMX : bdry M = X)
+    (hT : IsTaut M)
+    (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄})
+    (hf₃₄ : f₃ ≠ f₄)
+    (hFlip : FlipEdgePresent σ f₃ f₄) :
+    ∃ A B : Finset V,
+      A ∩ B = f₃ ∩ f₄ ∧
+      (f₃ ∩ f₄).card = 2 ∧
+      IsSphere2 ((flipBoundary σ M e).filter (fun f => f ⊆ A)) ∧
+      IsSphere2 ((flipBoundary σ M e).filter (fun f => f ⊆ B)) ∧
+      (∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B) ∧
+      (∀ t ∈ (removeTet M e).support,
+        (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A)) ∧
+      f₃ ⊆ A ∧ ¬ f₃ ⊆ B ∧ f₄ ⊆ B ∧ ¬ f₄ ⊆ A ∧
+      (∀ f ∈ flipBoundary σ M e, f ⊆ A ∨ f ⊆ B) :=
+  flipEdgePresent_side_sets hσ hU hXc hMX hT he hexp hf₃₄ hFlip
+
+/-- **`SimplicialChain`-free Case-2 side taut/norm.**  Both filtered sides of the
+remainder are taut and strictly smaller in norm, and `e` is absent from each.
+The norm drop uses the `±1` coefficient of an eligible tet under `UnitOn`
+(`nrm_removeTet_add_one_of_coeff_pm_one`) in place of the simplicial counting
+(`nrm_removeTet_add_one_of_simplicial`); no `SimplicialChain` hypothesis is needed
+and the simplicial side-conclusions are dropped. -/
+theorem flipEdgePresent_side_taut_norm_noS {σ : Finset (Finset V)} {M : Chain V} {e A B : Finset V}
+    (hUb : UnitOn (bdry M) σ) (hT : IsTaut M) (he : EligibleTet M e) :
+    IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+      e ∉ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧
+      e ∉ ((removeTet M e).filter (fun t => t ⊆ B)).support := by
+  let R := removeTet M e
+  have hTR : IsTaut R := isTaut_removeTet hT
+  have hTA : IsTaut (R.filter (fun t => t ⊆ A)) := hTR.subChain (subChain_filter _ R)
+  have hTB : IsTaut (R.filter (fun t => t ⊆ B)) := hTR.subChain (subChain_filter _ R)
+  have hpm : M e = 1 ∨ M e = -1 := tet_coeff_eq_pm_one_of_eligible_unitOn hUb he
+  have hdropR : nrm R < nrm M := by
+    have hEq : nrm R + 1 = nrm M := nrm_removeTet_add_one_of_coeff_pm_one he.2.1 hpm
+    omega
+  have hleA : nrm (R.filter (fun t => t ⊆ A)) ≤ nrm R := by
+    have hsum := nrm_filter_add_nrm_filter_neg (fun t => t ⊆ A) R
+    omega
+  have hleB : nrm (R.filter (fun t => t ⊆ B)) ≤ nrm R := by
+    have hsum := nrm_filter_add_nrm_filter_neg (fun t => t ⊆ B) R
+    omega
+  have hdropA : nrm (R.filter (fun t => t ⊆ A)) < nrm M := lt_of_le_of_lt hleA hdropR
+  have hdropB : nrm (R.filter (fun t => t ⊆ B)) < nrm M := lt_of_le_of_lt hleB hdropR
+  have hsuppR : R.support = M.support.erase e := support_removeTet_of_mem he.2.1
+  have hnotR : e ∉ R.support := by rw [hsuppR]; simp
+  have hnotA : e ∉ (R.filter (fun t => t ⊆ A)).support := by
+    intro heA
+    rw [Finsupp.support_filter] at heA
+    exact hnotR ((Finset.mem_filter.mp heA).1)
+  have hnotB : e ∉ (R.filter (fun t => t ⊆ B)).support := by
+    intro heB
+    rw [Finsupp.support_filter] at heB
+    exact hnotR ((Finset.mem_filter.mp heB).1)
+  exact ⟨hTA, hTB, hdropA, hdropB, hnotA, hnotB⟩
+
+/-- **`SimplicialChain`-free Case-2 algebra.**  The two filtered sides of the
+remainder are unit-bounded on their (sphere) side-boundaries, closed, taut,
+strictly smaller in norm, with `e` absent; their supports are disjoint and
+decompose `M.support` (with `e` adjoined).  This is the deletion bridge's Case-2
+package: it is exactly `flipEdgePresent_side_algebra` with the `SimplicialChain`
+hypothesis and the two simplicial side-conclusions dropped, the norm drop coming
+from the `±1` coefficient instead. -/
+theorem flipEdgePresent_side_algebra_noS {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ A B : Finset V}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ)
+    (hXc : bdry X = 0)
+    (hMX : bdry M = X)
+    (hT : IsTaut M)
+    (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄})
+    (hf₃₄ : f₃ ≠ f₄)
+    (hFlip : FlipEdgePresent σ f₃ f₄)
+    (hAB : A ∩ B = f₃ ∩ f₄)
+    (hcd : (f₃ ∩ f₄).card = 2)
+    (hcover : ∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B)
+    (hsep : ∀ t ∈ (removeTet M e).support,
+      (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A)) :
+    UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ A)))
+        ((flipBoundary σ M e).filter (fun f => f ⊆ A)) ∧
+      UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ B)))
+        ((flipBoundary σ M e).filter (fun f => f ⊆ B)) ∧
+      bdry (bdry ((removeTet M e).filter (fun t => t ⊆ A))) = 0 ∧
+      bdry (bdry ((removeTet M e).filter (fun t => t ⊆ B))) = 0 ∧
+      IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+      e ∉ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧
+      e ∉ ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+      Disjoint ((removeTet M e).filter (fun t => t ⊆ A)).support
+        ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+      M.support =
+        insert e
+          (((removeTet M e).filter (fun t => t ⊆ A)).support ∪
+            ((removeTet M e).filter (fun t => t ⊆ B)).support) := by
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  obtain ⟨hUA, hUB⟩ := flipEdgePresent_side_units hσ hU hMX hT he hAB hcd hsep
+  obtain ⟨hTA, hTB, hnA, hnB, heA, heB⟩ :=
+    flipEdgePresent_side_taut_norm_noS (σ := σ) (M := M) (e := e) (A := A) (B := B) hUb hT he
+  obtain ⟨hdisj, hsupp⟩ := flipEdgePresent_side_supports (M := M) (e := e) (A := A) (B := B) he hcover hsep
+  refine ⟨hUA, hUB, ?_, ?_, hTA, hTB, hnA, hnB, heA, heB, hdisj, hsupp⟩
   · exact bdry_bdry _
   · exact bdry_bdry _
 
@@ -1391,7 +1501,7 @@ lemma removeTet_isPseudomanifold {σ : Finset (Finset V)} {X M : Chain V} {u : F
   by_cases hFlip : FlipEdgePresent σ f₃ f₄
   · -- case 2: removeTet M u splits into two smaller single-sphere taut fillings
     obtain ⟨A, B, hAB, hcd, hsph₁, hsph₂, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, _⟩ :=
-      flipEdgePresent_side_sets hσ hU hXc hMX hT hS hu hexp hf₃₄ hFlip
+      flipEdgePresent_side_sets hσ hU hXc hMX hT hu hexp hf₃₄ hFlip
     obtain ⟨hu₁, hu₂, hc₁, hc₂, hT₁, hT₂, hS₁, hS₂, hsm₁, hsm₂, hen₁, hen₂, hdisj, hsupp⟩ :=
       flipEdgePresent_side_algebra hσ hU hXc hMX hT hS hu hexp hf₃₄ hFlip hAB hcd hcover hsep
     have hPM₁ : IsPseudomanifold ((removeTet M u).filter (fun t => t ⊆ A)).support :=

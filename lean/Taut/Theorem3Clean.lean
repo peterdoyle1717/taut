@@ -962,7 +962,7 @@ private lemma oppEdge_empty_of_flipEdgePresent {σ : Finset (Finset V)} {X M : C
     edgeLinkVerts (removeTet M e).support (e \ (f₃ ∩ f₄)) = ∅ := by
   classical
   obtain ⟨A, B, hAB, hcd2, _, _, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, _⟩ :=
-    flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+    flipEdgePresent_side_sets hσ hU hXc hMX hT he hexp hf₃₄ hFlip
   have hf₃exp : f₃ ∈ exposedFaces M e := by rw [hexp]; exact Finset.mem_insert_self f₃ _
   have hf₄exp : f₄ ∈ exposedFaces M e := by
     rw [hexp]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self f₄)
@@ -1889,7 +1889,7 @@ private lemma flipPresent_removeTet_connOn_at_nonflip_edge {σ : Finset (Finset 
     ConnOn (edgeLinkGraph (removeTet M u).support O) (edgeLinkVerts (removeTet M u).support O) := by
   classical
   obtain ⟨A, B, hAB, hcd, hsphA, hsphB, hcover, hsep, hg₃A, hg₃notB, hg₄B, hg₄notA, _⟩ :=
-    flipEdgePresent_side_sets hσ hU hXc hMX hT hS hu hexpu hg₃₄ hFlipu
+    flipEdgePresent_side_sets hσ hU hXc hMX hT hu hexpu hg₃₄ hFlipu
   obtain ⟨hUA, hUB, hbA, hbB, hTA, hTB, hSA, hSB, hnrmA, hnrmB, _, _, _, _⟩ :=
     flipEdgePresent_side_algebra hσ hU hXc hMX hT hS hu hexpu hg₃₄ hFlipu hAB hcd hcover hsep
   have hg₃exp : g₃ ∈ exposedFaces M u := by rw [hexpu]; exact Finset.mem_insert_self g₃ _
@@ -2608,7 +2608,7 @@ private lemma prime_edgeLinkConnected_case2 {σ : Finset (Finset V)} {X M : Chai
   classical
   have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
   obtain ⟨A, B, hAB, hcd2, hsphA, hsphB, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, _⟩ :=
-    flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+    flipEdgePresent_side_sets hσ hU hXc hMX hT he hexp hf₃₄ hFlip
   obtain ⟨hUA, hUB, hbA, hbB, hTA, hTB, hSA, hSB, hnA, hnB, heA, heB, _, hsupp⟩ :=
     flipEdgePresent_side_algebra hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd2 hcover hsep
   set M₁ := (removeTet M e).filter (fun t => t ⊆ A) with hM₁
@@ -3150,7 +3150,7 @@ theorem exists_clean_shelling_prime_case2 {σ : Finset (Finset V)} {X M : Chain 
   have hPMe : IsPseudomanifold (removeTet M e).support :=
     removeTet_isPseudomanifold hσ hU hXc hMX hT hS he IHpm
   obtain ⟨A, B, hAB, hcd2, hsphA, hsphB, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, hfaceCover⟩ :=
-    flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+    flipEdgePresent_side_sets hσ hU hXc hMX hT he hexp hf₃₄ hFlip
   obtain ⟨hUA, hUB, hbA, hbB, hTA, hTB, hSA, hSB, hnA, hnB, heA, heB, hdisj12, hsuppM⟩ :=
     flipEdgePresent_side_algebra hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd2 hcover hsep
   set M₁ := (removeTet M e).filter (fun t => t ⊆ A) with hM₁
@@ -3381,6 +3381,209 @@ theorem theorem3_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2
     (hS : SimplicialChain M) : FreelyCleanShellable M.support σ :=
   theorem3_core_clean base_free_clean deg3_step_clean prime_step_clean hσ hU hXc hMX hT hS
 
+/-! ## The simpliciality bridge (deletion argument)
+
+The public endpoints below carried a spurious `SimplicialChain M` hypothesis.  It
+is in fact *automatic*: a taut filling of a combinatorial 2-sphere is necessarily
+a `±1`-coefficient chain.  This is the content of `taut_filling_is_simplicialChain`,
+proved by a minimal-counterexample **deletion** argument (strong induction on
+`nrm M`): if some tet `t` had `|M t| ≥ 2`, remove a *different* eligible tet `u`
+(or perform the degree-3 / flip-present split); `t` survives in the strictly
+smaller taut filling, which is simplicial by the induction hypothesis — but `t`
+still has coefficient `≥ 2` there, a contradiction.  None of this needs the
+shelling machinery; it reuses only the `hS`-free eligible-tet, flip, and cut
+infrastructure. -/
+
+/-- `¬ SimplicialChain M` is witnessed by a coordinate of absolute value `≥ 2`,
+which then lies in the support. -/
+lemma not_simplicialChain_iff_exists_natAbs_ge_two {M : Chain V} :
+    ¬ SimplicialChain M ↔ ∃ t, 2 ≤ (M t).natAbs := by
+  constructor
+  · intro h
+    by_contra hno
+    push_neg at hno
+    exact h fun t => by
+      have h1 : (M t).natAbs ≤ 1 := by have := hno t; omega
+      interval_cases hMt : (M t).natAbs
+      · exact Or.inr (Or.inl (Int.natAbs_eq_zero.mp hMt))
+      · rcases Int.natAbs_eq_iff.mp hMt with h | h
+        · exact Or.inr (Or.inr (by simpa using h))
+        · exact Or.inl (by simpa using h)
+  · rintro ⟨t, ht⟩ hS
+    rcases hS t with h | h | h <;> rw [h] at ht <;> simp at ht
+
+/-- **Base case of the bridge.**  A taut filling of a 2-sphere on `≤ 4` vertices is
+a single tetrahedron `T = vertsOf σ`, and its coefficient is `±1` because every
+boundary face `T.erase x` of that tet is a unit face of `σ`. Hence `M` is
+simplicial. -/
+lemma base_simplicialChain {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M)
+    (hv : (vertsOf σ).card ≤ 4) : SimplicialChain M := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+  have hσeq : σ = (vertsOf σ).powersetCard 3 := aleph_base_sphere_eq_powersetCard3 hσ hcard
+  have hsuppInfo := aleph_base_taut_support_card4_subset_verts hσ hU hMX hT
+  have hne := aleph_base_support_nonempty hσ hU hMX
+  set T : Finset V := vertsOf σ with hTdef
+  have hsupp : M.support = {T} := aleph_base_support_eq_singleton_of_four_vertices hcard hsuppInfo hne
+  -- `M = single T c` with `c = M T`
+  set c : ℤ := M T with hcdef
+  have hMsingle : M = Finsupp.single T c :=
+    (Finsupp.support_eq_singleton.mp hsupp).2
+  -- pick a vertex `x ∈ T`; the face `T.erase x` is a boundary unit face
+  obtain ⟨x, hxT⟩ : T.Nonempty := by rw [← Finset.card_pos, hcard]; omega
+  have hfaceσ : T.erase x ∈ σ := by
+    rw [hσeq]
+    exact Finset.mem_powersetCard.mpr ⟨Finset.erase_subset _ _, by
+      rw [Finset.card_erase_of_mem hxT, hcard]⟩
+  have hbval : bdry M (T.erase x) = c * sgn x T := by
+    rw [hMsingle, bdry_single, Finsupp.smul_apply, bdryGen_apply_erase_of_mem hxT, smul_eq_mul]
+  have hbpm : bdry M (T.erase x) = 1 ∨ bdry M (T.erase x) = -1 := hUb.2 (T.erase x) hfaceσ
+  -- `c * sgn x T = ±1` with `sgn x T = ±1` forces `c = ±1`
+  have hsgn : sgn x T = 1 ∨ sgn x T = -1 := mul_self_eq_one_iff.mp (sgn_mul_self x T)
+  have hMTpm : c = 1 ∨ c = -1 := by
+    rw [hbval] at hbpm
+    rcases hsgn with hs | hs <;> rw [hs] at hbpm <;>
+      rcases hbpm with hb | hb <;> [left; right; right; left] <;> omega
+  intro s
+  by_cases hs : s = T
+  · subst hs; rcases hMTpm with h | h
+    · exact Or.inr (Or.inr h)
+    · exact Or.inl h
+  · refine Or.inr (Or.inl ?_)
+    have : s ∉ M.support := by rw [hsupp]; simpa using hs
+    exact Finsupp.notMem_support_iff.mp this
+
+/-- **The simpliciality bridge.**  Every taut filling `M` of a combinatorial
+2-sphere `σ` is a `SimplicialChain` (all coefficients in `{-1,0,1}`).  Strong
+induction on `nrm M`; the inductive deletion is governed by the `hS`-free
+eligible-tet / flip / degree-3 machinery. -/
+theorem taut_filling_is_simplicialChain {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) : SimplicialChain M := by
+  classical
+  -- strong induction on `nrm M`, generalised over `σ, X, M`
+  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M by
+    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N IH =>
+    intro σ X M hN hσ hU hXc hMX hT
+    by_contra hnotS
+    obtain ⟨t, ht2⟩ := not_simplicialChain_iff_exists_natAbs_ge_two.mp hnotS
+    have htsupp : t ∈ M.support := Finsupp.mem_support_iff.mpr (by
+      intro h0; rw [h0] at ht2; simp at ht2)
+    have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+    have hPure : ∀ s ∈ M.support, s.card = 4 :=
+      fun s hs => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT s hs).1
+    -- base case impossible: a single-tet filling is simplicial
+    by_cases hsmall : (vertsOf σ).card ≤ 4
+    · exact hnotS (base_simplicialChain hσ hU hMX hT hsmall)
+    push_neg at hsmall
+    -- IH packaged for strictly smaller taut fillings of any sphere
+    have IH' : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' := by
+      intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT'
+      exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT'
+    by_cases hd3 : HasDegree3Vertex σ
+    · -- degree-3 cut: split `M = ML + MR`, both smaller taut fillings of cut spheres
+      obtain ⟨v, W, hvv, hγ3, hγe, hγσ, hWbd, hσL, hσR⟩ := degree3_cut_setup σ hσ hsmall hd3
+      set γ : Finset V := linkVerts σ v with hγdef
+      set A : Finset V := vertsOf (insert γ (cutSet σ W)) with hAdef
+      set ML : Chain V := M.filter (fun s => s ⊆ A) with hMLdef
+      set MR : Chain V := M.filter (fun s => ¬ s ⊆ A) with hMRdef
+      obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
+        capped_cut_splits_unit σ X hσ hγ3 hγe hγσ hWbd hU hXc
+      obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
+        taut_splits_for_capped_cut σ X M hσ hσL hσR hγ3 hγe hWbd
+          hUL hXLc hUR hXRc hXsum hMX hT
+      -- both sides nonempty ⇒ each has strictly smaller norm
+      have hbdML : bdry ML = cappedCutLeft σ W X γ c := by rw [hMLdef]; exact hML
+      have hbdMR : bdry MR = cappedCutRight σ W X γ c := by rw [hMRdef]; exact hMR
+      have hMLne : ML.support.Nonempty := by
+        rw [hMLdef]; exact aleph_base_support_nonempty hσL hUL (by rw [← hMLdef]; exact hbdML)
+      have hMRne : MR.support.Nonempty := by
+        rw [hMRdef]; exact aleph_base_support_nonempty hσR hUR (by rw [← hMRdef]; exact hbdMR)
+      have hsumnrm : nrm ML + nrm MR = nrm M := by
+        rw [hMLdef, hMRdef]; exact nrm_filter_add_nrm_filter_neg (fun s => s ⊆ A) M
+      have hMLpos : 0 < nrm ML :=
+        lt_of_lt_of_le (Finset.card_pos.mpr hMLne) (card_support_le_nrm ML)
+      have hMRpos : 0 < nrm MR :=
+        lt_of_lt_of_le (Finset.card_pos.mpr hMRne) (card_support_le_nrm MR)
+      have hltL : nrm ML < nrm M := by omega
+      have hltR : nrm MR < nrm M := by omega
+      -- `t` lands on exactly one side, with the same coefficient
+      have htval : M t = ML t + MR t := by
+        rw [hMLdef, hMRdef, Finsupp.filter_apply, Finsupp.filter_apply]
+        by_cases hA : t ⊆ A <;> simp [hA]
+      by_cases hA : t ⊆ A
+      · -- left side keeps `t`
+        have hMLt : ML t = M t := by rw [hMLdef, Finsupp.filter_apply, if_pos hA]
+        have hSL : SimplicialChain ML :=
+          IH' (insert γ (cutSet σ W)) (cappedCutLeft σ W X γ c) ML hltL hσL hUL hXLc hbdML hTL
+        rcases hSL t with h | h | h <;> rw [hMLt] at h <;> rw [h] at ht2 <;> simp at ht2
+      · -- right side keeps `t`
+        have hMRt : MR t = M t := by rw [hMRdef, Finsupp.filter_apply, if_pos hA]
+        have hSR : SimplicialChain MR :=
+          IH' (insert γ (cutSet σ (W + fun _ => 1))) (cappedCutRight σ W X γ c) MR hltR hσR hUR hXRc hbdMR hTR
+        rcases hSR t with h | h | h <;> rw [hMRt] at h <;> rw [h] at ht2 <;> simp at ht2
+    · -- prime case: no degree-3 vertex ⇒ disjoint eligible family of size ≥ 3
+      have hNo3 : NoDegree3Vertex σ := fun w hw hc => hd3 ⟨w, hw, hc⟩
+      obtain ⟨w, hw⟩ := hσ.vertsOf_nonempty
+      have hdeg3 : 3 ≤ deg w (bdry M) := by
+        rw [aleph_deg_eq_card_filter_of_unitOn hUb w]
+        exact aleph_incident_faces_card_ge_three hσ hw
+      obtain ⟨E, hEsub, hEcard, hEelig, _hEdisj⟩ :=
+        exists_disjoint_eligible_family_noS hσ hUb hT hPure hNo3 w
+      have hEge2 : 2 ≤ E.card := le_trans (by omega) hEcard
+      -- pick an eligible `u ≠ t` (`|E| ≥ 2`, so two distinct members, one ≠ t)
+      obtain ⟨u, hu, hut⟩ : ∃ u ∈ E, u ≠ t := by
+        obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp (by omega : 1 < E.card)
+        by_cases hat : a = t
+        · exact ⟨b, hb, fun hbt => hab (hat.trans hbt.symm)⟩
+        · exact ⟨a, ha, hat⟩
+      have hue : EligibleTet M u := hEelig u hu
+      have htR : t ∈ (removeTet M u).support := by
+        rw [support_removeTet_of_mem (hue.2.1)]
+        exact Finset.mem_erase.mpr ⟨hut.symm, htsupp⟩
+      have htRval : (removeTet M u) t = M t := removeTet_apply_ne hut.symm
+      obtain ⟨f₃, f₄, hf₃₄, hexp⟩ := exposedFaces_eq_pair_of_eligible hue
+      by_cases hFlip : FlipEdgePresent σ f₃ f₄
+      · -- flip present: split `removeTet M u` into two smaller sphere taut fillings
+        obtain ⟨A, B, hAB, hcd2, hsphA, hsphB, hcover, hsep, _, _, _, _, _⟩ :=
+          flipEdgePresent_side_sets_noS hσ hU hXc hMX hT hue hexp hf₃₄ hFlip
+        obtain ⟨hUA, hUB, hbAc, hbBc, hTA, hTB, hnA, hnB, _, _, _, _⟩ :=
+          flipEdgePresent_side_algebra_noS hσ hU hXc hMX hT hue hexp hf₃₄ hFlip hAB hcd2 hcover hsep
+        -- `t` lands on one side with coefficient `M t`
+        rcases hcover t htR with hA | hB
+        · set MA : Chain V := (removeTet M u).filter (fun s => s ⊆ A) with hMAdef
+          have hMAt : MA t = M t := by
+            rw [hMAdef, Finsupp.filter_apply, if_pos hA, htRval]
+          have hSA : SimplicialChain MA :=
+            IH' ((flipBoundary σ M u).filter (fun f => f ⊆ A)) _ MA hnA hsphA hUA hbAc rfl hTA
+          rcases hSA t with h | h | h <;> rw [hMAt] at h <;> rw [h] at ht2 <;> simp at ht2
+        · set MB : Chain V := (removeTet M u).filter (fun s => s ⊆ B) with hMBdef
+          have hMBt : MB t = M t := by
+            rw [hMBdef, Finsupp.filter_apply, if_pos hB, htRval]
+          have hSB : SimplicialChain MB :=
+            IH' ((flipBoundary σ M u).filter (fun f => f ⊆ B)) _ MB hnB hsphB hUB hbBc rfl hTB
+          rcases hSB t with h | h | h <;> rw [hMBt] at h <;> rw [h] at ht2 <;> simp at ht2
+      · -- no flip: `removeTet M u` is a single smaller sphere taut filling
+        have hσu : IsSphere2 ((σ \ sharedFaces M u) ∪ exposedFaces M u) :=
+          isSphere2_flipBoundary_of_eligible hσ hUb hue hexp hf₃₄ hFlip
+        have hUu : UnitOn (bdry (removeTet M u)) ((σ \ sharedFaces M u) ∪ exposedFaces M u) :=
+          unitOn_flipBoundary_of_eligible hUb hue
+        have hTu : IsTaut (removeTet M u) := isTaut_removeTet hT
+        have hpm : M u = 1 ∨ M u = -1 := tet_coeff_eq_pm_one_of_eligible_unitOn hUb hue
+        have hltu : nrm (removeTet M u) < nrm M := by
+          have := nrm_removeTet_add_one_of_coeff_pm_one hue.2.1 hpm; omega
+        have hSu : SimplicialChain (removeTet M u) :=
+          IH' ((σ \ sharedFaces M u) ∪ exposedFaces M u) (bdry (removeTet M u)) (removeTet M u)
+            hltu hσu hUu (bdry_bdry _) rfl hTu
+        rcases hSu t with h | h | h <;> rw [htRval] at h <;> rw [h] at ht2 <;> simp at ht2
+
 /-- **Theorem 2 (clean route)**: a taut filling of a combinatorial 2-sphere `σ` is a *clean ball*
 (`IsCleanBall` = the paper's *stickerball* = a shellable clean ball: it admits a clean shelling).
 
@@ -3431,28 +3634,29 @@ prescribed tetrahedron (`FreelyCleanShellable`).  Subsumes both the ordinary sti
 induction proves the anyrooted statement directly (`theorem3_clean`), of which the existence form
 (`theorem2_clean`) is the weakening. -/
 theorem taut_filling_is_anyrootedStickerball {σ : Finset (Finset V)} {X M : Chain V}
-    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
-    (hS : SimplicialChain M) : IsAnyrootedStickerball M.support σ :=
-  ⟨⟨theorem2_clean hσ hU hXc hMX hT hS, hσ.nonempty⟩, theorem3_clean hσ hU hXc hMX hT hS⟩
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsAnyrootedStickerball M.support σ := by
+  have hS : SimplicialChain M := taut_filling_is_simplicialChain hσ hU hXc hMX hT
+  exact ⟨⟨theorem2_clean hσ hU hXc hMX hT hS, hσ.nonempty⟩, theorem3_clean hσ hU hXc hMX hT hS⟩
 
 /-- A taut filling of a combinatorial 2-sphere is a *stickerball* (shellable clean ball with nonempty
 boundary — the combinatorial `B³` certificate).  Corollary of `taut_filling_is_anyrootedStickerball`. -/
 theorem taut_filling_is_stickerball {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
-    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
-    (hS : SimplicialChain M) : IsStickerball M.support σ :=
-  (taut_filling_is_anyrootedStickerball hσ hU hXc hMX hT hS).toStickerball
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsStickerball M.support σ :=
+  (taut_filling_is_anyrootedStickerball hσ hU hXc hMX hT).toStickerball
 
 /-- A taut filling of a combinatorial 2-sphere is a *clean 3-complex* — pure, every triangle in one or
 two tets, and *both* links connected (`VertexLinkConnected` and `EdgeLinkConnected`). -/
 theorem taut_filling_is_clean3Complex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
-    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
-    (hS : SimplicialChain M) : IsClean3Complex M.support :=
-  (taut_filling_is_stickerball hσ hU hXc hMX hT hS).isClean3Complex
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsClean3Complex M.support :=
+  (taut_filling_is_stickerball hσ hU hXc hMX hT).isClean3Complex
 
 /-- A taut filling of a combinatorial 2-sphere is *shellable* (admits a clean shelling). -/
 theorem taut_filling_is_shellable {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
-    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
-    (hS : SimplicialChain M) : IsCleanBall M.support σ :=
-  (taut_filling_is_stickerball hσ hU hXc hMX hT hS).1
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsCleanBall M.support σ :=
+  (taut_filling_is_stickerball hσ hU hXc hMX hT).1
 
 end Taut
