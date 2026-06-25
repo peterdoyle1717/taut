@@ -1,0 +1,152 @@
+CODEX CONSULT — design the Lean route for the "hens-and-baskets" twofer-counting bridge.
+
+ROLE: You (Codex) are the proof designer. Decide the exact Lean implementation route. Claude
+coordinates and will dispatch a prover subagent to implement YOUR design. Return concrete Lean
+statements/names, not prose generalities.
+
+REPO: /Users/doyle/Dropbox/taut, Lean 4 + Mathlib, branch clean-anyrooted-stickerball, HEAD 6cb9218.
+Build: `cd lean && lake build` (8273 jobs green). Namespace `Taut`, `variable {V : Type*} [LinearOrder V]`,
+`Chain V := V-indexed Finsupp over ℤ on Finset V`. NO `sorry/admit/axiom/native_decide` allowed.
+
+GOAL: remove the spurious global hypothesis `SimplicialChain M` from the public taut-filling endpoint
+`taut_filling_is_anyrootedStickerball` (Theorem3Clean.lean:3433). The clean route needs the bridge
+  taut_filling_is_simplicialChain :
+    IsSphere2 σ → UnitOn (bdry M) σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M
+where `SimplicialChain M := ∀ t, M t = -1 ∨ M t = 0 ∨ M t = 1` (Theorem2.lean:27).
+
+============================================================================================
+THE MATHEMATICAL ARGUMENT (user-supplied correction; this is the intended proof — do not redesign it,
+design its Lean implementation).
+
+(A) PURE COMBINATORIAL "hens-and-baskets" lemma.
+  - B = finite set of baskets, |B| = n. L = finite list of hens. Each hen h has A(h) ⊆ B with |A(h)| ≤ 2.
+  - Coverage: B ⊆ ⋃_{h ∈ L} A(h). Let m = L.length.
+  - If m ≤ n − k, then ≥ k hens are "twofers": processing hens in list order, ≥ k hens lay eggs in two
+    baskets that were previously empty. For such h, new(h) = A(h) \ (baskets covered by earlier hens)
+    are pairwise-disjoint 2-element subsets of B.
+  - Proof: new(h) pairwise disjoint, union = B. a_h = |new(h)| ≤ 2, Σ a_h = n. r = #{h : a_h = 2}.
+    n = Σ a_h ≤ 2r + 1·(m−r) = m + r, so r ≥ n − m ≥ k.
+
+(B) INSTANTIATION.
+  - B = the boundary triangles of σ that must be hit.
+  - Hens = SUPPORT tetrahedra of M, counted ONCE each (NOT with coefficient multiplicity).
+  - A(u) = boundary triangles of σ that are actual FACES of the support tetrahedron u AND have the
+    required proper orientation "at the support-face level."
+  - |A(u)| ≤ 2 is the local no-degree-3 fact (a tet shares ≤ 2 faces with σ).
+  - Coverage B ⊆ ⋃ A(u) is the ONLY geometric/chain input: every boundary triangle is hit by ≥ 1
+    properly-oriented support face. This is WEAKER than faceCount-one and does NOT say a prescribed
+    pair is realized by one tet.
+  - n − m ≥ maxdeg comes from the existing degree-volume inequality `Zvol_add_deg_le`
+    (support.card + deg v (bdry M) ≤ σ.card).
+  - Conclusion: ≥ maxdeg twofer support tetrahedra whose two newly-covered boundary triangles are
+    mutually disjoint — the disjoint eligible tets for the deletion argument.
+
+  CRITICAL user clarification: coefficients affect the algebraic boundary contribution but do NOT
+  create multiple support faces of one tetrahedron. A tet with coefficient 2 still has each face ONCE
+  as a support face. The coefficient is irrelevant to A(u); A(u) counts actual faces of the support tet.
+
+(C) MINIMAL-COUNTEREXAMPLE DELETION (the bridge proof).
+  - Strong induction on nrm M. Suppose M minimal taut filling of a 2-sphere that is NOT simplicial:
+    some t has |M t| ≥ 2.
+  - Choose a twofer u (from (B)) whose boundary pair is disjoint from t and the local obstruction, so u≠t.
+  - Remove u via the existing removal machinery: M − u is a taut filling of a smaller sphere (or splits),
+    nrm (M − u) < nrm M.
+  - Persistence: coeff (M − u) t = coeff M t ≥ 2 (removing u ≠ t doesn't touch t). So M − u is still
+    NON-simplicial — a smaller counterexample. Contradiction. Hence no t has multiplicity ≥ 2.
+
+DO NOT: prove `taut_boundary_faceCount_one` (taut ⇒ every boundary face singly covered) — user says it
+is false / not the proof. DO NOT count coefficient copies. DO NOT use a vector-sum lemma.
+
+============================================================================================
+EXISTING LEAN INVENTORY (verify exact signatures at the cited file:line; these are Claude's reading).
+
+Predicates / defs:
+  EligibleTet M t        (Theorem2.lean:84) := t.card=4 ∧ t∈M.support ∧ (sharedFaces M t).card=2 ∧
+                            ∀ s∈sharedFaces M t, (bdry M) s = tetContribution M t s   -- "oriented" eligible
+  GeomEligible M t        (Eligible.lean:355) := t.card=4 ∧ t∈M.support ∧ (sharedFaces M t).card=2   -- no orientation
+  ProperBoundaryFaceTet M α t (Eligible.lean:44) := t∈M.support ∧ α∈tetFaces t ∧ (bdry M) α = tetContribution M t α
+  sharedFaces M t := tetFaces t ∩ (bdry M).support ;  exposedFaces M t := tetFaces t \ sharedFaces M t
+  tetFaces t = powersetCard 3 t (the 4 triangular faces) ; tetContribution M t = (M t) • bdryGen t
+  UnitOn X σ := X.support = σ ∧ ∀ s∈σ, X s = 1 ∨ X s = -1 ;  SimplicialChain M := ∀ t, M t ∈ {-1,0,1}
+
+Counting / covering (already built, hS-FREE unless noted):
+  exists_disjoint_geomEligible_family (Eligible.lean:408):
+     UnitOn (bdry M) σ → IsTaut M → (∀ t∈supp, t.card=4) → (∀ t∈supp,(sharedFaces M t).card≤2) → ∀ x,
+       ∃ E ⊆ M.support, (∀ t∈E, GeomEligible M t) ∧ (↑E).PairwiseDisjoint (fun e=>sharedFaces M e)
+         ∧ deg x (bdry M) ≤ E.card
+     -- this IS the twofer-count for the GEOMETRIC covering (B=σ, "some contributing tet"); proof uses
+     -- Finset.card_eq_sum_card_fiberwise + a pointwise fibre≤2 bound + card_support_le_nrm + Zvol_add_deg_le.
+  exists_properBoundaryFaceTet (Eligible.lean:49): SimplicialChain M → hPure → (∂M α=±1) →
+       ∃ t, ProperBoundaryFaceTet M α t                              -- the ORIENTED covering, needs hS
+  exists_properBoundaryFaceTet_of_local_unit (Eligible.lean, UNCOMMITTED in working tree): hPure →
+       (∀ t∈supp, α∈tetFaces t → (M t).natAbs ≤ 1) → (∂M α=±1) → ∃ t, ProperBoundaryFaceTet M α t  -- hS-free
+  aleph_disjoint_eligible_family (Theorem2Aleph.lean:1264): IsSphere2 σ → UnitOn → SimplicialChain M →
+       IsTaut → hPure → NoDegree3Vertex σ → (hv: v∈vertsOf σ) → (hk: k ≤ deg v (bdry M)) →
+       ∃ E, E.card = k ∧ (∀ e∈E, EligibleTet M e) ∧ (↑E).PairwiseDisjoint (sharedFaces M ·)
+     -- the ORIENTED disjoint family, but assumes hS (via exists_properBoundaryFaceTet + aleph_card_gap_deg).
+  card_support_le_nrm (Eligible.lean): M.support.card ≤ nrm M    -- hS-free
+  Zvol_add_deg_le (Zvol.lean:113): bdry X = 0 → Zvol X + deg x X ≤ nrm X
+  UnitOn.nrm_eq (Theorem2.lean:57): UnitOn X σ → nrm X = σ.card   -- (uses only simpliciality of the boundary X)
+  exists_geomEligible_not_mem (Eligible.lean:491), bad_coeff_switch_to_disjoint_eligible (Eligible.lean:509):
+       avoidance — from a forbidden Finset F with F.card < deg x, pick a GeomEligible u ∉ F.
+
+Removal of an ORIENTED eligible tet (Task-1 machinery; takes EligibleTet):
+  removeTet M t := M - single t (M t) ;  removeTet_apply_ne (Theorem2.lean:129): s≠t → removeTet M t s = M s
+  isTaut_removeTet (FlipGeom.lean:56): IsTaut M → IsTaut (removeTet M e)        -- hS-free
+  unitOn_flipBoundary_of_eligible (Theorem2.lean:269): UnitOn (bdry M) σ → SimplicialChain M →
+       EligibleTet M t → UnitOn (bdry (removeTet M t)) ((σ\sharedFaces M t)∪exposedFaces M t)
+       -- its hS is used ONLY via tet_coeff_eq_pm_one_of_eligible (coeff ±1), which EligibleTet+UnitOn give hS-free.
+  isSphere2_flipBoundary_of_eligible (FlipGeom.lean:1546): IsSphere2 σ → UnitOn → SimplicialChain M →
+       EligibleTet M e → exposedFaces M e={f₃,f₄} → f₃≠f₄ → ¬FlipEdgePresent σ f₃ f₄ →
+       IsSphere2 ((σ\sharedFaces M e)∪exposedFaces M e)
+       -- Claude found this hS is VESTIGIAL: 15 uses, all threaded to other flipBoundary_* lemmas, no leaf
+       -- consumer; the flipped boundary depends only on σ and e. So hS here is strippable bookkeeping.
+  Case-2 split: flipEdgePresent_removeTet_support_partition (PrimeStep.lean:203) — partitions the support
+       into two sides; IsTaut.subChain (Zvol.lean:98) gives side-tautness; SubChain.nrm_add_nrm_sub the
+       norm additivity. (These carry hS too.)
+
+Known relationship facts Claude verified (build-checked):
+  - EligibleTet M t + UnitOn (bdry M) σ ⇒ M t = 1 ∨ M t = -1 (the orientation conjunct + unit boundary force ±1).
+  - exists_properBoundaryFaceTet's hS is essential via a {-1,0,1}-sum step that FAILS for non-simplicial M
+    (a face with contributions {+2,-1} sums to +1 but has no properly-oriented contributor). This is why
+    the user's A(u) must be defined at the SUPPORT-FACE level (orientation as a property of the (tet,face)
+    pair), not via "∃ tet whose chain-contribution equals ∂M α".
+
+============================================================================================
+QUESTIONS FOR YOU (CODEX) — return concrete answers:
+
+Q1. The pure Finset/List "hens-and-baskets" lemma: give the exact Lean statement (signature) and the
+    proof skeleton (key Mathlib lemmas: List.foldl/scanl, running-union, card_eq_sum_card_fiberwise or a
+    direct induction). State it so it is reusable and instantiation-agnostic.
+
+Q2. The instantiation A(u): give the exact Lean definition of "the properly-oriented boundary faces of
+    support tet u" at the SUPPORT-FACE level (NOT via chain-contribution = ∂M α, which is the spoiled-face
+    trap). What predicate on (u, face α) is both (i) ≤ 2 per tet, (ii) coverage-true (every boundary
+    triangle is such a face of some support tet), and (iii) strong enough that a twofer u is an
+    `EligibleTet M u` (so the existing removal applies)? If "properly oriented at support-face level" must
+    be a NEW predicate, define it precisely in terms of bdryGen/sgn/tetFaces and ∂M's sign.
+
+Q3. Coverage `B ⊆ ⋃ A(u)`: what is the exact Lean statement, and is it provable hS-free from
+    UnitOn + IsTaut + purity + no-degree-3? Identify the precise lemma. (Claude's worry: a {+2,-1} face
+    has no equal contributor; clarify why support-face-level orientation avoids this — e.g. does "some
+    support face of some tet is properly oriented over α" hold because ∂M α ≠ 0 forces a same-sign
+    contributing tet, and same-sign-at-support-face is the right notion?) THIS is the load-bearing input;
+    be explicit about whether it is true and why.
+
+Q4. The conclusion lemma `exists_disjoint_proper_boundary_pair_tets`: exact statement (E ⊆ support,
+    maxdeg ≤ E.card, each u∈E has two properly-oriented boundary faces, pairs mutually disjoint, and each
+    u∈E is `EligibleTet M u`). Does it reuse `exists_disjoint_geomEligible_family`'s fibre machinery with
+    B=proper-faces instead of σ, or the new hens-and-baskets lemma, or `aleph_disjoint_eligible_family`
+    with hS stripped?
+
+Q5. The removal lemma to reuse/minimally generalize for the deletion: confirm the package (isTaut_removeTet
+    + unitOn_flipBoundary_of_eligible + isSphere2_flipBoundary_of_eligible with hS stripped, + Case-2
+    split) and exactly which hS hypotheses must be removed/replaced (Claude: isSphere2's hS is vestigial;
+    unitOn's hS is coeff-±1, derivable from EligibleTet+UnitOn). Give the target hS-free signatures.
+
+Q6. Packaging the minimal-counterexample contradiction: the bridge statement, the induction measure
+    (nrm), how persistence (removeTet_apply_ne) feeds "M−u still non-simplicial", and how Case-2 (split)
+    is handled (apply IH to the side containing t). Does any current lemma already prove part of this?
+
+Output: for each Q, the exact Lean lemma name(s) + signature(s) + proof route, and a dependency-ordered
+build plan (which lemma to implement first). Flag anything in Claude's reading above that is wrong.

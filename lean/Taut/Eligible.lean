@@ -466,4 +466,315 @@ theorem bad_coeff_switch_to_disjoint_eligible {M : Chain V} {σ : Finset (Finset
   obtain ⟨u, hu_supp, hu_elig, hu_notF⟩ := exists_geomEligible_not_mem hU hT hPure hShared2 x F hF
   exact key u hu_supp hu_elig hu_notF
 
+/-! ## Route-Y, step 1: sign-orientation coverage (`SimplicialChain`-free)
+
+For the hard count we need a covering map `σ → M.support` whose fibres lie in `sharedFaces`
+*and* — on UNIT tets — recover an oriented `ProperBoundaryFaceTet`. Asking for a same-sign
+contributor (rather than a full match) is `hS`-free: `∂M α = ∑ M t · bdryGen t α` is `±1`, so
+some summand has the *same sign* as `∂M α`. On a unit tet that same-sign summand is forced to
+equal `∂M α` exactly. -/
+
+/-- A support tet `t` whose contribution at `α` has the *same sign* as `∂M α`. Weaker than
+`ProperBoundaryFaceTet` (no exact-match requirement), hence available without `SimplicialChain`. -/
+def SameSignSupportFaceTet (M : Chain V) (α t : Finset V) : Prop :=
+  t ∈ M.support ∧ α ∈ tetFaces t ∧ 0 < (bdry M α) * (M t * bdryGen t α)
+
+/-- The σ-faces of `t` that are same-sign contributors for `t`. (Classical `filter`.) -/
+noncomputable def sameSignFaces (M : Chain V) (σ : Finset (Finset V)) (t : Finset V) :
+    Finset (Finset V) :=
+  haveI := Classical.decPred (fun α => SameSignSupportFaceTet M α t)
+  σ.filter fun α => SameSignSupportFaceTet M α t
+
+lemma mem_sameSignFaces {M : Chain V} {σ : Finset (Finset V)} {t α : Finset V} :
+    α ∈ sameSignFaces M σ t ↔ α ∈ σ ∧ SameSignSupportFaceTet M α t := by
+  classical
+  rw [sameSignFaces, Finset.mem_filter]
+
+/-- A same-sign σ-face of `t` is a shared face of `t`. -/
+lemma sameSignFaces_subset_sharedFaces {M : Chain V} {σ : Finset (Finset V)} {t : Finset V}
+    (hU : UnitOn (bdry M) σ) : sameSignFaces M σ t ⊆ sharedFaces M t := by
+  intro α hα
+  rw [mem_sameSignFaces] at hα
+  obtain ⟨hασ, _, hαt, _⟩ := hα
+  exact Finset.mem_inter.mpr ⟨hαt, hU.1 ▸ hασ⟩
+
+/-- **Every boundary face has a same-sign contributing tet** (`SimplicialChain`-free). From
+`∂M α = ∑_{t} M t · bdryGen t α = ±1`, some summand shares the sign of `∂M α`; its product with
+`∂M α` is then `> 0`. The witnessing tet is on `α` (nonzero `bdryGen`). -/
+lemma exists_sameSignSupportFaceTet {M : Chain V}
+    (hPure : ∀ t ∈ M.support, t.card = 4) {α : Finset V}
+    (hαpm : bdry M α = 1 ∨ bdry M α = -1) : ∃ t, SameSignSupportFaceTet M α t := by
+  have hsum : bdry M α = ∑ t ∈ M.support, M t * bdryGen t α := bdry_apply_eq_sum M α
+  -- find a summand sharing the sign of `∂M α` (mirror `exists_properBoundaryFaceTet`'s by_contra)
+  have hkey : ∃ t ∈ M.support, 0 < (bdry M α) * (M t * bdryGen t α) := by
+    by_contra hcon
+    push_neg at hcon
+    rcases hαpm with hp | hp
+    · -- ∂M α = 1: every summand `M t · bdryGen t α ≤ 0`, so the sum ≤ 0, contradicting = 1
+      have hle : (∑ t ∈ M.support, M t * bdryGen t α) ≤ 0 := by
+        refine Finset.sum_nonpos fun t ht => ?_
+        have := hcon t ht; rw [hp, one_mul] at this; exact this
+      rw [← hsum, hp] at hle; exact absurd hle (by decide)
+    · -- ∂M α = -1: every summand ≥ 0, so the sum ≥ 0, contradicting = -1
+      have hge : (0 : ℤ) ≤ ∑ t ∈ M.support, M t * bdryGen t α := by
+        refine Finset.sum_nonneg fun t ht => ?_
+        have := hcon t ht; rw [hp] at this; nlinarith [this]
+      rw [← hsum, hp] at hge; exact absurd hge (by decide)
+  obtain ⟨t, ht, hsign⟩ := hkey
+  refine ⟨t, ht, ?_, hsign⟩
+  have hgne : bdryGen t α ≠ 0 := by
+    intro h0; rw [h0, mul_zero, mul_zero] at hsign; exact absurd hsign (by decide)
+  obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero hgne
+  exact hαe ▸ erase_mem_tetFaces (hPure t ht) hw
+
+/-- **Same-sign covering of `σ`** (the `hS`-free covering for the count). -/
+lemma sameSignSupportFace_cover {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ) (hPure : ∀ t ∈ M.support, t.card = 4) :
+    ∀ α ∈ σ, ∃ t, SameSignSupportFaceTet M α t := fun α hα =>
+  exists_sameSignSupportFaceTet hPure (hU.2 α hα)
+
+/-- **On a unit tet, a same-sign face is a proper boundary face.** If `(M t).natAbs = 1` and the
+contribution at `α` shares the sign of `∂M α = ±1`, the contribution *equals* `∂M α` — so `α` is a
+properly oriented boundary face of `t`. -/
+lemma sameSignFace_to_proper_of_unit {M : Chain V} {α t : Finset V}
+    (hUα : bdry M α = 1 ∨ bdry M α = -1) (h : SameSignSupportFaceTet M α t)
+    (hunit : (M t).natAbs = 1) : ProperBoundaryFaceTet M α t := by
+  obtain ⟨ht, hαt, hsign⟩ := h
+  refine ⟨ht, hαt, ?_⟩
+  rw [tetContribution_apply]
+  -- `M t = ±1`, `bdryGen t α ∈ {-1,0,1}`, product positive against `∂M α = ±1` ⇒ equality
+  have hMt : M t = -1 ∨ M t = 1 := by omega
+  rcases bdryGen_apply_mem_pm t α with hg | hg | hg <;>
+    rcases hMt with hm | hm <;> rcases hUα with hb | hb <;>
+      rw [hb, hm, hg] at hsign ⊢ <;> first | rfl | (exfalso; revert hsign; decide)
+
+/-! ## Route-Y, step 2: a pure Finset twofer/fibre lemma
+
+A reusable counting lemma: given `f : B → H` with all fibres of size `≤ 2`, and a gap
+`H.card + k ≤ B.card`, at least `k` elements of `H` have a *full* (size-2) fibre, and those
+full fibres are pairwise disjoint. This is the abstract content of the eligible-family count. -/
+
+/-- **Twofer fibres.** If `f` maps `B` into `H` with every fibre `≤ 2`, and `H.card + k ≤ B.card`,
+then `≥ k` elements of `H` have a size-2 fibre, and the corresponding fibres are pairwise disjoint. -/
+theorem finset_twofer_fibers {β η : Type*} [DecidableEq β] [DecidableEq η]
+    (B : Finset β) (H : Finset η) (f : β → η)
+    (hmap : ∀ b ∈ B, f b ∈ H)
+    (hfiber_le2 : ∀ h ∈ H, (B.filter fun b => f b = h).card ≤ 2)
+    {k : ℕ} (hgap : H.card + k ≤ B.card) :
+    ∃ E : Finset η, E ⊆ H ∧ k ≤ E.card ∧
+      (∀ h ∈ E, (B.filter fun b => f b = h).card = 2) ∧
+      (↑E : Set η).PairwiseDisjoint (fun h => B.filter fun b => f b = h) := by
+  classical
+  set E : Finset η := H.filter fun h => (B.filter fun b => f b = h).card = 2 with hE_def
+  have hEsub : E ⊆ H := Finset.filter_subset _ _
+  -- the fibre count: B.card = ∑_{h∈H} fibre.card
+  have hsum : B.card = ∑ h ∈ H, (B.filter fun b => f b = h).card :=
+    Finset.card_eq_sum_card_fiberwise hmap
+  -- pointwise: fibre.card ≤ 1 + indicator(fibre = 2)
+  have hbound : B.card ≤ H.card + E.card := by
+    rw [hsum]
+    have hle : ∑ h ∈ H, (B.filter fun b => f b = h).card
+        ≤ ∑ h ∈ H, (1 + if (B.filter fun b => f b = h).card = 2 then 1 else 0) := by
+      refine Finset.sum_le_sum fun h hh => ?_
+      have h2 := hfiber_le2 h hh
+      by_cases hc : (B.filter fun b => f b = h).card = 2
+      · simp [hc]
+      · simp only [hc, if_false, add_zero]; omega
+    have heq : ∑ h ∈ H, (1 + if (B.filter fun b => f b = h).card = 2 then 1 else 0)
+        = H.card + E.card := by
+      rw [Finset.sum_add_distrib, ← Finset.card_eq_sum_ones, ← Finset.card_filter, ← hE_def]
+    omega
+  refine ⟨E, hEsub, by omega, ?_, ?_⟩
+  · intro h hh; exact (Finset.mem_filter.mp hh).2
+  · intro h₁ hh₁ h₂ hh₂ hne
+    simp only [Finset.mem_coe] at hh₁ hh₂
+    show Disjoint (B.filter fun b => f b = h₁) (B.filter fun b => f b = h₂)
+    rw [Finset.disjoint_left]
+    intro b hb₁ hb₂
+    rw [Finset.mem_filter] at hb₁ hb₂
+    exact hne (hb₁.2.symm.trans hb₂.2)
+
+/-! ## Route-Y, step 3: non-unit support and the budget inequality
+
+The count is run against `nrm M`, but `nrm M` overcounts repeated tets. The slack is exactly the
+non-unit support: each support tet contributes `≥ 1` to `nrm M`, and each non-unit one (coefficient
+`≠ ±1`, so `|·| ≥ 2`) contributes `≥ 2`. Hence `support.card + |nonUnitSupport| ≤ nrm M`. -/
+
+/-- The support tets whose coefficient is *not* `±1` (`|M t| ≥ 2`). -/
+noncomputable def nonUnitSupport (M : Chain V) : Finset (Finset V) :=
+  M.support.filter fun t => (M t).natAbs ≠ 1
+
+omit [LinearOrder V] in
+lemma mem_nonUnitSupport {M : Chain V} {t : Finset V} :
+    t ∈ nonUnitSupport M ↔ t ∈ M.support ∧ (M t).natAbs ≠ 1 := Finset.mem_filter
+
+omit [LinearOrder V] in
+/-- **The budget inequality.** `support.card + |nonUnitSupport| ≤ nrm M`: each support tet is worth
+`≥ 1`, each non-unit one `≥ 2`. (Generalises `card_support_le_nrm`.) -/
+lemma support_card_add_nonUnitSupport_card_le_nrm (M : Chain V) :
+    M.support.card + (nonUnitSupport M).card ≤ nrm M := by
+  show M.support.card + (nonUnitSupport M).card ≤ ∑ s ∈ M.support, (M s).natAbs
+  -- write the LHS as a single sum over support: `if t ∈ nonUnit then 2 else 1`
+  have hweight : M.support.card + (nonUnitSupport M).card
+      = ∑ t ∈ M.support, (if (M t).natAbs ≠ 1 then 2 else 1) := by
+    rw [nonUnitSupport, Finset.card_filter, Finset.card_eq_sum_ones, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun t _ => ?_
+    by_cases hc : (M t).natAbs ≠ 1
+    · rw [if_pos hc, if_pos hc]
+    · rw [if_neg hc, if_neg hc]
+  rw [hweight]
+  refine Finset.sum_le_sum fun t ht => ?_
+  have hne0 : M t ≠ 0 := Finsupp.mem_support_iff.mp ht
+  have h1 : 1 ≤ (M t).natAbs := Int.natAbs_pos.mpr hne0
+  by_cases hc : (M t).natAbs ≠ 1
+  · rw [if_pos hc]; omega
+  · rw [if_neg hc]; omega
+
+/-! ## Route-Y, step 4: the main `hS`-free disjoint *oriented* eligible family
+
+Assembling steps 1–3: the same-sign covering map has fibres in `sharedFaces` (≤ 2), the twofer
+lemma extracts `≥ deg v + |nonUnitSupport|` full fibres, and deleting the non-unit tets leaves
+`≥ deg v` *unit* tets. On a unit tet a full same-sign fibre upgrades to two proper boundary faces,
+i.e. `EligibleTet`. The budget gap is `support + |nonUnit| ≤ nrm M = Zvol(∂M) ≤ σ.card − deg v`. -/
+
+/-- **The disjoint oriented eligible family, `SimplicialChain`-free.** A no-degree-3 taut filling of a
+2-sphere has `≥ deg v (∂M)` pairwise-`sharedFaces`-disjoint *eligible* (oriented) support tets, with
+no `SimplicialChain` hypothesis. -/
+theorem exists_disjoint_eligible_family_noS
+    {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) (v : V) :
+    ∃ E : Finset (Finset V), E ⊆ M.support ∧ deg v (bdry M) ≤ E.card ∧
+      (∀ e ∈ E, EligibleTet M e) ∧ (↑E : Set (Finset V)).PairwiseDisjoint fun e => sharedFaces M e := by
+  classical
+  have hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2 := fun t ht =>
+    sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht)
+  -- (a) the same-sign covering map `c : {α // α ∈ σ} → {t // t ∈ M.support}`
+  have hcov : ∀ α ∈ σ, ∃ t, SameSignSupportFaceTet M α t :=
+    sameSignSupportFace_cover hU hPure
+  let c : {α // α ∈ σ} → {t // t ∈ M.support} := fun α =>
+    ⟨Classical.choose (hcov α.1 α.2), (Classical.choose_spec (hcov α.1 α.2)).1⟩
+  have hcspec : ∀ α : {α // α ∈ σ}, SameSignSupportFaceTet M α.1 (c α).1 := fun α =>
+    Classical.choose_spec (hcov α.1 α.2)
+  -- (b) apply the twofer lemma with B = σ-subtype, H = support-subtype, k = deg v + |nonUnit|
+  set B : Finset {α // α ∈ σ} := Finset.univ with hB_def
+  set H : Finset {t // t ∈ M.support} := Finset.univ with hH_def
+  set k : ℕ := deg v (bdry M) + (nonUnitSupport M).card with hk_def
+  have hmap : ∀ b ∈ B, c b ∈ H := fun _ _ => Finset.mem_univ _
+  -- fibre ≤ 2: each fibre ⊆ sameSignFaces (via subtype value), and sameSignFaces ⊆ sharedFaces ≤ 2
+  have hfib_val : ∀ (b : {t // t ∈ M.support}) (a : {α // α ∈ σ}),
+      a ∈ B.filter (fun a => c a = b) → (a : Finset V) ∈ sameSignFaces M σ (b : Finset V) := by
+    intro b a ha
+    rw [Finset.mem_filter] at ha
+    have hss : SameSignSupportFaceTet M a.1 (c a).1 := hcspec a
+    rw [ha.2] at hss
+    exact mem_sameSignFaces.mpr ⟨a.2, hss⟩
+  have hfiber_le2 : ∀ b ∈ H, (B.filter fun a => c a = b).card ≤ 2 := by
+    intro b _
+    -- map the fibre injectively into `sameSignFaces M σ b` via subtype value
+    have hinj : (B.filter fun a => c a = b).card
+        ≤ (sameSignFaces M σ (b : Finset V)).card := by
+      refine Finset.card_le_card_of_injOn (fun a => (a : Finset V)) ?_ ?_
+      · intro a ha; exact hfib_val b a ha
+      · intro a₁ _ a₂ _ h; exact Subtype.ext h
+    have hle : (sameSignFaces M σ (b : Finset V)).card ≤ (sharedFaces M (b : Finset V)).card :=
+      Finset.card_le_card (sameSignFaces_subset_sharedFaces hU)
+    have := hShared2 (b : Finset V) b.2
+    omega
+  -- the gap H.card + k ≤ B.card
+  have hgap_card : H.card + k ≤ B.card := by
+    rw [hB_def, hH_def, Finset.card_univ, Finset.card_univ, Fintype.card_coe, Fintype.card_coe,
+      hk_def]
+    -- support + |nonUnit| ≤ nrm M  and  nrm M + deg v ≤ σ.card
+    have hbudget := support_card_add_nonUnitSupport_card_le_nrm M
+    have h2 := Zvol_add_deg_le v (bdry_bdry M)
+    rw [UnitOn.nrm_eq hU] at h2
+    have hTeq : nrm M = Zvol (bdry M) := hT
+    omega
+  obtain ⟨E₀, hE₀sub, hE₀card, hE₀full, hE₀disj⟩ :=
+    finset_twofer_fibers B H c hmap hfiber_le2 hgap_card
+  -- named value-coercions (avoids `do`/`pure` ambiguity from inline coercion lambdas)
+  let σval : {α // α ∈ σ} → Finset V := Subtype.val
+  let supval : {t // t ∈ M.support} → Finset V := Subtype.val
+  -- the key fact: for a full-fibre b, `sharedFaces M b` equals the σ-value image of its fibre
+  have hshared_eq : ∀ b ∈ E₀, sharedFaces M (supval b)
+      = (B.filter fun a => c a = b).image σval := by
+    intro b hbE₀
+    have hfull : (B.filter fun a => c a = b).card = 2 := hE₀full b hbE₀
+    have hFb_card : ((B.filter fun a => c a = b).image σval).card = 2 := by
+      rw [Finset.card_image_of_injective _ Subtype.val_injective, hfull]
+    have hFb_sub : (B.filter fun a => c a = b).image σval ⊆ sharedFaces M (supval b) := by
+      intro s hs
+      rcases Finset.mem_image.mp hs with ⟨a, ha, rfl⟩
+      exact sameSignFaces_subset_sharedFaces hU (hfib_val b a ha)
+    have hSc : (sharedFaces M (supval b)).card = 2 := by
+      have hge : 2 ≤ (sharedFaces M (supval b)).card := hFb_card ▸ Finset.card_le_card hFb_sub
+      have := hShared2 (supval b) b.2; omega
+    exact (Finset.eq_of_subset_of_card_le hFb_sub (by rw [hFb_card, hSc])).symm
+  -- (c) delete the non-unit tets; survivors are unit, and ≥ deg v many
+  set Enu : Finset {t // t ∈ M.support} :=
+    H.filter (fun b => supval b ∈ nonUnitSupport M) with hEnu_def
+  have hEnu_card : Enu.card ≤ (nonUnitSupport M).card := by
+    refine Finset.card_le_card_of_injOn supval ?_ ?_
+    · intro b hb
+      simp only [hEnu_def, Finset.mem_coe, Finset.mem_filter] at hb
+      exact hb.2
+    · intro b₁ _ b₂ _ h; exact Subtype.ext h
+  set E₁ : Finset {t // t ∈ M.support} := E₀ \ Enu with hE₁_def
+  have hE₁card : deg v (bdry M) ≤ E₁.card := by
+    have hdiff : E₀.card ≤ E₁.card + Enu.card := by
+      have hsubU : E₀ ⊆ E₁ ∪ Enu := by
+        intro b hb
+        by_cases hbE : b ∈ Enu
+        · exact Finset.mem_union_right _ hbE
+        · exact Finset.mem_union_left _ (Finset.mem_sdiff.mpr ⟨hb, hbE⟩)
+      calc E₀.card ≤ (E₁ ∪ Enu).card := Finset.card_le_card hsubU
+        _ ≤ E₁.card + Enu.card := Finset.card_union_le _ _
+    omega
+  -- every b ∈ E₁ is a UNIT tet
+  have hE₁unit : ∀ b ∈ E₁, (M (supval b)).natAbs = 1 := by
+    intro b hb
+    rw [hE₁_def, Finset.mem_sdiff] at hb
+    by_contra hne
+    exact hb.2 (by rw [hEnu_def, Finset.mem_filter]
+                   exact ⟨Finset.mem_univ _, mem_nonUnitSupport.mpr ⟨b.2, hne⟩⟩)
+  -- (d) the final family E : Finset (Finset V) = subtype-values of E₁
+  refine ⟨E₁.image supval, ?_, ?_, ?_, ?_⟩
+  · intro e he; rcases Finset.mem_image.mp he with ⟨b, _, rfl⟩; exact b.2
+  · -- cardinality
+    rw [Finset.card_image_of_injective _ Subtype.val_injective]; exact hE₁card
+  · -- each value is an EligibleTet
+    intro e he
+    rcases Finset.mem_image.mp he with ⟨b, hbE₁, rfl⟩
+    have hbE₀ : b ∈ E₀ := (Finset.mem_sdiff.mp (hE₁_def ▸ hbE₁)).1
+    have hbunit : (M (supval b)).natAbs = 1 := hE₁unit b hbE₁
+    have hShared_card : (sharedFaces M (supval b)).card = 2 := by
+      rw [hshared_eq b hbE₀, Finset.card_image_of_injective _ Subtype.val_injective,
+        hE₀full b hbE₀]
+    refine ⟨hPure (supval b) b.2, b.2, hShared_card, ?_⟩
+    -- orientation: every shared face of b is properly oriented (b is unit ⇒ same-sign ⇒ proper)
+    intro s hs
+    rw [hshared_eq b hbE₀, Finset.mem_image] at hs
+    rcases hs with ⟨a, ha, rfl⟩
+    rw [Finset.mem_filter] at ha
+    have hss : SameSignSupportFaceTet M a.1 (c a).1 := hcspec a
+    rw [ha.2] at hss
+    have hUa : bdry M a.1 = 1 ∨ bdry M a.1 = -1 := hU.2 a.1 a.2
+    exact (sameSignFace_to_proper_of_unit hUa hss hbunit).2.2
+  · -- pairwise disjoint sharedFaces: for b ∈ E₁, sharedFaces M b = fibre image, fibres disjoint
+    intro e₁ he₁ e₂ he₂ hne
+    rcases Finset.mem_image.mp (Finset.mem_coe.mp he₁) with ⟨b₁, hb₁E₁, rfl⟩
+    rcases Finset.mem_image.mp (Finset.mem_coe.mp he₂) with ⟨b₂, hb₂E₁, rfl⟩
+    have hbne : b₁ ≠ b₂ := fun h => hne (by rw [h])
+    have hb₁E₀ : b₁ ∈ E₀ := (Finset.mem_sdiff.mp (hE₁_def ▸ hb₁E₁)).1
+    have hb₂E₀ : b₂ ∈ E₀ := (Finset.mem_sdiff.mp (hE₁_def ▸ hb₂E₁)).1
+    show Disjoint (sharedFaces M (supval b₁)) (sharedFaces M (supval b₂))
+    rw [hshared_eq b₁ hb₁E₀, hshared_eq b₂ hb₂E₀, Finset.disjoint_left]
+    intro s hs₁ hs₂
+    rcases Finset.mem_image.mp hs₁ with ⟨a₁, ha₁, rfl⟩
+    rcases Finset.mem_image.mp hs₂ with ⟨a₂, ha₂, ha₂eq⟩
+    have ha12 : a₁ = a₂ := Subtype.ext ha₂eq.symm
+    rw [Finset.mem_filter] at ha₁ ha₂
+    exact hbne (by rw [← ha₁.2, ha12, ha₂.2])
+
 end Taut
