@@ -159,6 +159,22 @@ lemma nrm_removeTet_of_simplicial {M : Chain V} {t : Finset V}
     nrm (removeTet M t) = nrm M - 1 := by
   have := nrm_removeTet_add_one_of_simplicial hS ht; omega
 
+/-- **Norm drop on removal, `SimplicialChain`-free.** Removing a tet `t` whose
+coefficient is `±1` drops `nrm` by exactly one — only the `t` coordinate changes,
+and its absolute value is one. This is the simplicial-free analogue of
+`nrm_removeTet_add_one_of_simplicial`, hypothesizing only `M t = ±1`. -/
+lemma nrm_removeTet_add_one_of_coeff_pm_one {M : Chain V} {t : Finset V}
+    (ht : t ∈ M.support) (hpm : M t = 1 ∨ M t = -1) :
+    nrm (removeTet M t) + 1 = nrm M := by
+  have hsplit : nrm M = (M t).natAbs + ∑ s ∈ M.support.erase t, (M s).natAbs := by
+    rw [nrm, ← Finset.add_sum_erase _ _ ht]
+  have hrm : nrm (removeTet M t) = ∑ s ∈ M.support.erase t, (M s).natAbs := by
+    rw [nrm, support_removeTet_of_mem ht]
+    refine Finset.sum_congr rfl fun s hs => ?_
+    rw [removeTet_apply_ne (Finset.ne_of_mem_erase hs)]
+  have htabs : (M t).natAbs = 1 := by rcases hpm with h | h <;> rw [h] <;> decide
+  rw [hrm, hsplit, htabs]; ring
+
 /-! ### The edge-flip sign bookkeeping -/
 
 lemma bdryGen_apply_erase_of_mem {t : Finset V} {x : V} (hx : x ∈ t) :
@@ -255,6 +271,42 @@ lemma tet_coeff_eq_pm_one_of_eligible {M : Chain V} {t : Finset V}
   · exact absurd h0 htM
   · exact Or.inl h1
 
+/-- **Eligible tet ⇒ `±1` coefficient, `SimplicialChain`-free.** From only the
+hypothesis that `bdry M` is a unit chain on `σ`, an eligible tet's coefficient is
+`±1`. A shared face `s` lies in `σ` (so `bdry M s = ±1` by `hU`), and eligibility
+gives `bdry M s = M t * bdryGen t s` with `bdryGen t s ∈ {-1,0,1}`; the product
+being `±1` forces `M t = ±1`. This replaces `tet_coeff_eq_pm_one_of_eligible`'s
+`SimplicialChain` hypothesis with `UnitOn (bdry M) σ`. -/
+lemma tet_coeff_eq_pm_one_of_eligible_unitOn {M : Chain V} {σ : Finset (Finset V)}
+    {t : Finset V} (hU : UnitOn (bdry M) σ) (h : EligibleTet M t) : M t = 1 ∨ M t = -1 := by
+  obtain ⟨ht4, htM, hcard, horient⟩ := h
+  -- A shared face exists (there are two).
+  obtain ⟨s, hs⟩ := Finset.card_pos.mp (by rw [hcard]; decide : 0 < (sharedFaces M t).card)
+  -- `s ∈ (bdry M).support = σ`, so `bdry M s = ±1`.
+  have hssupp : s ∈ (bdry M).support := (Finset.mem_inter.mp hs).2
+  have hbpm : (bdry M) s = 1 ∨ (bdry M) s = -1 := hU.2 s (hU.1 ▸ hssupp)
+  -- Eligibility: `bdry M s = M t * bdryGen t s`.
+  have heq : (bdry M) s = M t * bdryGen t s := by
+    rw [horient s hs, tetContribution, bdry_single, Finsupp.smul_apply, smul_eq_mul]
+  -- `bdryGen t s ∈ {-1,0,1}`.
+  have hgpm : bdryGen t s = -1 ∨ bdryGen t s = 0 ∨ bdryGen t s = 1 := by
+    by_cases hx : ∃ x ∈ t, s = t.erase x
+    · obtain ⟨x, hx, rfl⟩ := hx
+      rw [bdryGen_apply_erase_of_mem hx]
+      rcases mul_self_eq_one_iff.mp (sgn_mul_self x t) with h1 | h1
+      · exact Or.inr (Or.inr h1)
+      · exact Or.inl h1
+    · push_neg at hx
+      refine Or.inr (Or.inl ?_)
+      rw [bdryGen, Finset.sum_apply']
+      refine Finset.sum_eq_zero fun x hxt => ?_
+      rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne (hx x hxt), smul_zero]
+  -- The product `M t * bdryGen t s = ±1` forces `M t = ±1`.
+  rcases hgpm with hg | hg | hg <;> rw [hg] at heq
+  · rcases hbpm with hb | hb <;> rw [hb] at heq <;> omega
+  · rw [mul_zero] at heq; rcases hbpm with hb | hb <;> rw [hb] at heq <;> exact absurd heq (by decide)
+  · rcases hbpm with hb | hb <;> rw [hb] at heq <;> omega
+
 lemma tetContribution_eq_pm_one_of_mem_tetFaces {M : Chain V} {t s : Finset V}
     (ht : t.card = 4) (hpm : M t = 1 ∨ M t = -1) (hs : s ∈ tetFaces t) :
     tetContribution M t s = 1 ∨ tetContribution M t s = -1 := by
@@ -267,10 +319,10 @@ lemma tetContribution_eq_pm_one_of_mem_tetFaces {M : Chain V} {t s : Finset V}
 removing an eligible tet the new boundary is a unit chain on the flipped sphere
 `(σ \ sharedFaces) ∪ exposedFaces`. -/
 theorem unitOn_flipBoundary_of_eligible {M : Chain V} {σ : Finset (Finset V)} {t : Finset V}
-    (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (h : EligibleTet M t) :
+    (hU : UnitOn (bdry M) σ) (h : EligibleTet M t) :
     UnitOn (bdry (removeTet M t)) ((σ \ sharedFaces M t) ∪ exposedFaces M t) := by
   have ht4 := h.1
-  have hpm := tet_coeff_eq_pm_one_of_eligible hS h
+  have hpm := tet_coeff_eq_pm_one_of_eligible_unitOn hU h
   refine ⟨by rw [support_flipBoundary_of_eligible h, hU.1], ?_⟩
   intro s hs
   rw [Finset.mem_union] at hs

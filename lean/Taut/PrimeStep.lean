@@ -225,7 +225,7 @@ theorem flipEdgePresent_removeTet_support_partition {σ : Finset (Finset V)} {X 
     exact hU
   have hUτ : UnitOn (bdry M') τ := by
     dsimp [M', τ, flipBoundary]
-    exact unitOn_flipBoundary_of_eligible hUb hS he
+    exact unitOn_flipBoundary_of_eligible hUb he
   have hτ_faces : ∀ f ∈ τ, f.card = 3 := by
     intro f hf
     dsimp [τ, flipBoundary] at hf
@@ -1272,7 +1272,7 @@ theorem flipEdgePresent_side_units {V : Type*} [LinearOrder V]
   have hUb : UnitOn (bdry M) σ := by
     simpa only [hMX] using hU
   have hUflip : UnitOn (bdry (removeTet M e)) (flipBoundary σ M e) := by
-    simpa only [flipBoundary] using unitOn_flipBoundary_of_eligible hUb hS he
+    simpa only [flipBoundary] using unitOn_flipBoundary_of_eligible hUb he
   have hpure : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
     intro t ht
     have hMinfo : ∀ t ∈ M.support, t.card = 4 ∧ t ⊆ vertsOf σ :=
@@ -1404,8 +1404,8 @@ lemma removeTet_isPseudomanifold {σ : Finset (Finset V)} {X M : Chain V} {u : F
     refine isPseudomanifold_union_of_sideSep hcover ?_ hPM₁ hPM₂
     rw [hAB]; exact hcd.le
   · -- case 1: removeTet M u is itself a smaller single-sphere taut filling
-    have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS hu hexp hf₃₄ hFlip
-    have hUe := unitOn_flipBoundary_of_eligible hUb hS hu
+    have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hu hexp hf₃₄ hFlip
+    have hUe := unitOn_flipBoundary_of_eligible hUb hu
     have hTe : IsTaut (removeTet M u) := isTaut_removeTet hT
     have hSe : SimplicialChain (removeTet M u) := simplicialChain_removeTet hS
     have hlt : nrm (removeTet M u) < nrm M := by
@@ -1444,7 +1444,7 @@ lemma faceCount_removeTet_sharedFace_eq_zero {σ : Finset (Finset V)} {X M : Cha
   have hPureU : ∀ t ∈ (removeTet M u).support, t.card = 4 := by
     intro t ht; rw [hsuppU] at ht; exact hPure t (Finset.mem_of_mem_erase ht)
   have hUe : UnitOn (bdry (removeTet M u)) ((σ \ sharedFaces M u) ∪ exposedFaces M u) :=
-    unitOn_flipBoundary_of_eligible hUb hS hu
+    unitOn_flipBoundary_of_eligible hUb hu
   have hrσ : r ∈ σ := hUb.1 ▸ hrbd
   have hrflip : r ∈ (σ \ sharedFaces M u) ∪ exposedFaces M u :=
     Finset.mem_union_left _ (Finset.mem_sdiff.mpr ⟨hrσ, hrnu⟩)
@@ -1513,7 +1513,7 @@ lemma prime_isPM (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
       omega
     · have hexpf : f ∈ exposedFaces M e := Finset.mem_sdiff.mpr ⟨hftet, hsh⟩
       have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
-        unitOn_flipBoundary_of_eligible hUb hS he
+        unitOn_flipBoundary_of_eligible hUb he
       have hfflip : f ∈ (σ \ sharedFaces M e) ∪ exposedFaces M e :=
         Finset.mem_union_right _ hexpf
       have hbd : bdry (removeTet M e) f = 1 ∨ bdry (removeTet M e) f = -1 :=

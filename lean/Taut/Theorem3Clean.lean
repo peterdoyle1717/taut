@@ -1049,7 +1049,7 @@ private lemma exposed_triangle_unique_remaining_tet {σ : Finset (Finset V)}
   have hftet : f ∈ tetFaces e := exposedFaces_subset_tetFaces M e hf
   have hf3 : f.card = 3 := (Finset.mem_powersetCard.mp hftet).2
   have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
-    unitOn_flipBoundary_of_eligible hUb hS he
+    unitOn_flipBoundary_of_eligible hUb he
   have hfflip : f ∈ (σ \ sharedFaces M e) ∪ exposedFaces M e := Finset.mem_union_right _ hf
   have hbd : bdry (removeTet M e) f = 1 ∨ bdry (removeTet M e) f = -1 := hUe.2 f hfflip
   have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
@@ -1725,8 +1725,8 @@ private lemma removeTet_edgeLinkConnected_noFlip {σ : Finset (Finset V)} {X M :
     EdgeLinkConnected (removeTet M e).support := by
   classical
   have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
-  have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hNoFlip
-  have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+  have hσe := isSphere2_flipBoundary_of_eligible hσ hUb he hexp hf₃₄ hNoFlip
+  have hUe := unitOn_flipBoundary_of_eligible hUb he
   have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
   have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
   have hlt : nrm (removeTet M e) < nrm M := by
@@ -2086,7 +2086,7 @@ lemma cleanGlueStep_eligible {σ : Finset (Finset V)} {X M : Chain V}
       omega
     · have hexpf : f ∈ exposedFaces M e := Finset.mem_sdiff.mpr ⟨hftet, hsh⟩
       have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
-        unitOn_flipBoundary_of_eligible hUb hS he
+        unitOn_flipBoundary_of_eligible hUb he
       have hfflip : f ∈ (σ \ sharedFaces M e) ∪ exposedFaces M e :=
         Finset.mem_union_right _ hexpf
       have hbd : bdry (removeTet M e) f = 1 ∨ bdry (removeTet M e) f = -1 := hUe.2 f hfflip
@@ -3015,9 +3015,9 @@ theorem exists_clean_shelling_prime_case1 {σ : Finset (Finset V)} {X M : Chain 
       ((σ \ sharedFaces M e) ∪ exposedFaces M e) σ :=
     cleanGlueStep_eligible hσ hU hXc hMX hT hS hPure he hu hdisj hPMu hPMe hexp hf₃₄ hOppEmpty
   have hσe : IsSphere2 ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
-    isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
+    isSphere2_flipBoundary_of_eligible hσ hUb he hexp hf₃₄ hFlip
   have hUe : UnitOn (bdry (removeTet M e)) ((σ \ sharedFaces M e) ∪ exposedFaces M e) :=
-    unitOn_flipBoundary_of_eligible hUb hS he
+    unitOn_flipBoundary_of_eligible hUb he
   have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
   have hSe : SimplicialChain (removeTet M e) := simplicialChain_removeTet hS
   have hlt : nrm (removeTet M e) < nrm M := by

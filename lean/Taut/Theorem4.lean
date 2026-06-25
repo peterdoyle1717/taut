@@ -1434,8 +1434,8 @@ lemma prime_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSpher
           (by rw [Finsupp.support_filter]; exact hA)
       · exact (IH _ _ _ hnB hsphB hUB hXBc rfl hTB hSB).1
           (by rw [Finsupp.support_filter]; exact hB)
-    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
-      have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb he hexp hf₃₄ hFlip
+      have hUe := unitOn_flipBoundary_of_eligible hUb he
       have hnR : nrm (removeTet M e) < nrm M := by
         have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
       exact (IH _ _ _ hnR hσe hUe (bdry_bdry _) rfl (isTaut_removeTet hT)
@@ -1460,8 +1460,8 @@ lemma prime_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSpher
           (by rw [Finsupp.support_filter]; exact hA)
       · exact (IH _ _ _ hnB hsphB hUB hXBc rfl hTB hSB).2
           (by rw [Finsupp.support_filter]; exact hB)
-    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
-      have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb he hexp hf₃₄ hFlip
+      have hUe := unitOn_flipBoundary_of_eligible hUb he
       have hnR : nrm (removeTet M e) < nrm M := by
         have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
       exact (IH _ _ _ hnR hσe hUe (bdry_bdry _) rfl (isTaut_removeTet hT)
