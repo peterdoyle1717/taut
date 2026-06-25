@@ -1507,10 +1507,13 @@ theorem theorem4_flag {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 
   theorem4_flag_from_no_emptyK3K4 hσ hU hXc hMX hT hS hK3 hK4
 
 /-- **Public endpoint (mathematically named): a taut filling of a combinatorial 2-sphere is a flag
-complex** — every clique of its 1-skeleton spans a simplex.  Paper-independent name for `theorem4_flag`. -/
+complex** — every clique of its 1-skeleton spans a simplex.  *No `SimplicialChain` hypothesis*: like
+the stickerball endpoint `taut_filling_is_anyrootedStickerball`, simpliciality is **derived** from
+tautness via the bridge `taut_filling_is_simplicialChain` and fed to the internal hS-taking
+`theorem4_flag`. -/
 theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
-    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
-    (hS : SimplicialChain M) : IsFlagComplex M.support :=
-  theorem4_flag hσ hU hXc hMX hT hS
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsFlagComplex M.support :=
+  theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)
 
 end Taut
