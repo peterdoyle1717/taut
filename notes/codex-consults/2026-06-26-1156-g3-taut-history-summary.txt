@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-1156-g3-taut-history-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-1156-g3-taut-history-summary.txt
+
+=== raw size ===
+    2104  111883 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-1156-g3-taut-history-raw.txt
+
+=== extracted markers ===
+2029:WARN
+2031:Verdict: facts mostly support the report, but the recommendation overstates “do not start from tautx.” Lower-risk patch is probably tautx as base plus targeted restoration, not tauty plus wholesale forward-port.
+2065:Blockers: none factual. Main decision is strategic: tautx-base targeted repair vs tauty-base re-merge.
+2068:WARN
+2070:Verdict: facts mostly support the report, but the recommendation overstates “do not start from tautx.” Lower-risk patch is probably tautx as base plus targeted restoration, not tauty plus wholesale forward-port.
+2104:Blockers: none factual. Main decision is strategic: tautx-base targeted repair vs tauty-base re-merge.
+
+=== final tail ===
+drafts_by_date/taut_2026-02-25_1d2af40.tex:726:(except for $\link(\emptyset,\sigma)=\sigma$)
+drafts_by_date/taut_2026-02-25_1d2af40.tex:732:called normal pseudomanifolds, or as we will prefer to say,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:733:\emph{clean $n$-complexes}.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:738:a clean complex must be \emph{pure},
+drafts_by_date/taut_2026-02-25_1d2af40.tex:745:A clean complex is a \emph{pseudomanifold}:
+drafts_by_date/taut_2026-02-25_1d2af40.tex:749:the link $\link(s,\sigma)$ of any $n-1$-simplex $s$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:756:A clean complex is \emph{normal}:
+drafts_by_date/taut_2026-02-25_1d2af40.tex:758:$\link(s,\sigma)$ is connected.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:768:If $\sigma$ is clean, 
+drafts_by_date/taut_2026-02-25_1d2af40.tex:769:$\link(s,\sigma)$ is clean.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:770:The boundary $\del \sigma$ of $\sigma$ is clean,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:776:is a \emph{simplicial triangulation} of $M$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:778:In this case $\sigma$ is necessarily a clean complex.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:787:The double cover of a triangle is not a simplicial triangulation
+drafts_by_date/taut_2026-02-25_1d2af40.tex:810:Let $\sigma$ be a simplicial triangulation of $S^2$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:811:Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:882:the taut fillings $M_1,M_2$ arise from clean complexes,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:883:so $M$ arises from the clean complex obtained by attaching these
+drafts_by_date/taut_2026-02-25_1d2af40.tex:888:$M-t$ arises from a clean 3-complex with boundary $\sigma^\prime$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:889:The only thing that can prevent $M$ from arising from a clean complex
+drafts_by_date/taut_2026-02-25_1d2af40.tex:899:$M$ is a pseudomanifold.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:914:$M$ has no edge $\{a,b\}$ whose link
+drafts_by_date/taut_2026-02-25_1d2af40.tex:916:For the link is a 1-dimensional complex whose edges correspond to
+drafts_by_date/taut_2026-02-25_1d2af40.tex:918:The only way a component of the link can have fewer than three
+drafts_by_date/taut_2026-02-25_1d2af40.tex:925:so no other component of the link can reduce to a single edge.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:926:If the link is disconnected, removing any eligible tet
+drafts_by_date/taut_2026-02-25_1d2af40.tex:931:$M$ has no vertex whose link is disconnected:
+drafts_by_date/taut_2026-02-25_1d2af40.tex:932:For if $\link(\{a\},M)$ is not connected,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:934:can render the link connected
+drafts_by_date/taut_2026-02-25_1d2af40.tex:935:is if one component of the link has a single $2$-simplex
+drafts_by_date/taut_2026-02-25_1d2af40.tex:941:\item Hence $M$ is clean.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:947:a taut filling of $\sigma$ `is' a simplicial triangulation
+drafts_by_date/taut_2026-02-25_1d2af40.tex:952:A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:959:by $\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B_3$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:963:Call the shelling \emph{monotone}
+drafts_by_date/taut_2026-02-25_1d2af40.tex:965:Call $\tau$ \emph{freely monotone shellable} if any $t \in \tau$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:966:can serve as the initial tet of a monotone shelling.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:969:If $\sigma$ is a simplicial triangulation of $S^2$,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:971:is a freely monotone shellable
+drafts_by_date/taut_2026-02-25_1d2af40.tex:972:simplicial triangulation of $B^3$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:986:A simplicial triangulation $\sigma$ of $S^2$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:1003:If $\sigma$ is a simplicial triangulation of $S^2$,
+
+codex
+WARN
+
+Verdict: facts mostly support the report, but the recommendation overstates “do not start from tautx.” Lower-risk patch is probably tautx as base plus targeted restoration, not tauty plus wholesale forward-port.
+
+Q1: md5 identification is sound locally: `save_taut1100.tex` = `text/tautxy/tauty.tex` md5 `41534feb...`; `taut_2026-WORKINGTREE_uncommitted.tex` = `text/tautxy/tautx.tex` md5 `42d2a51f...`. The report’s uncommitted-working-tree claim is stated at `drafts_by_date/taut-history-report.md:13-17`; tautx also differs from HEAD `c658823` (`taut_2026-03-15_c658823.tex` md5 `51f357...`), with post-HEAD date/content changes visible in the diff. It is correct to emphasize “later than HEAD,” assuming the gauss extraction log is trusted.
+
+Q2: headline loss is fair. In tautx the Triangulations section is inside `comment`: `taut_2026-WORKINGTREE_uncommitted.tex:689-788`. Live tautx does not define `clean`, `pseudomanifold`, `link`, or `simplicial triangulation`; it only uses them. The only live nearby definition is flag complex at `:943-948`. `\link` is merely a macro at `:134`, not a definition.
+
+Q3: call this a presentation/proof loss, not necessarily a mathematical de-scoping. If “simplicial triangulation of B^3” is restored as in `:757-761`, then cleanness is entailed. So “dropped clean is harmless mathematically once definitions are live” is a defensible reading. The real loss is that tautx suppresses the definitions and deletes the explicit chain-to-clean verification from tauty `save_taut1100.tex:864-909`.
+
+Q4: I would revise the recommendation. Do not start from tauty unless you want a broad re-merge. Start from tautx and reinsert the missing scaffolding: tautx already has Ω/M notation, abstract, shucking proof, conjoined flip split, and flag repair integrated. The patch surface is smaller: uncomment/repair Triangulations, add the clean-chain convention, fix Theorem 2 phrasing/proof bridge, and fix tautx typos.
+
+Q5: overclaims/missed items:
+- “Theorem 2 de-scoped” is too strong; say “cleanness conclusion/proof made implicit and definitions hidden.”
+- “Monotone shelling loss” is probably not a major loss. tautx keeps the substantive type-3 exclusion at `:896-899`; the named “freely monotone” property from `taut_2026-02-25_1d2af40.tex:960-972` is mostly packaging unless you need that exact stronger theorem statement.
+- Flag repair is real, but note tautx only partially fixes post-HEAD wording: HEAD has K5/AE errors at `taut_2026-03-15_c658823.tex:1025-1032`; tautx changes them to K4/AD at `taut_2026-WORKINGTREE_uncommitted.tex:1025-1032`.
+
+Recommended patch shape:
+1. Use `drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex` / `text/tautxy/tautx.tex` as base.
+2. Remove `\begin{comment}` / `\end{comment}` around `:689-788`.
+3. Fix Triangulations typo: `:759-760` should say carrier homeomorphic to `M`, not `S^2`.
+4. Add after `:783-787`: chain `M` is clean iff simplicial and associated complex is clean.
+5. Restore Theorem 2 wording to “Any taut filling `M` ... is clean and arises ...”, or explicitly state cleanness follows from the restored definition.
+6. Fix tautx defects: `:802` `X`→`M`; `:817` that→than; `:870-871` restore `(\sigma_2,M_2)`; `:998` tet→tets; `:205-206` comma.
+7. Optionally rename theorem 3 to “freely monotone shellable” only if the proof explicitly records no type-3 steps.
+
+Files to edit:
+- `text/tautxy/tautx.tex` or the chosen version-A `.tex`.
+- Optionally update `drafts_by_date/taut-history-report.md` to soften the recommendation and Theorem 2 wording.
+
+Local lemmas needed:
+- Simplicial triangulation of a manifold is clean.
+- A chain arising from a simplicial triangulation is simplicial/clean.
+- Gluing the two case-(2) triangulated balls to `t` gives a simplicial triangulation of `B^3`.
+- Shucking removes only type-1/type-2 tets, hence gives monotone shelling if that term is restored.
+
+Blockers: none factual. Main decision is strategic: tautx-base targeted repair vs tauty-base re-merge.
+tokens used
+60,128
+WARN
+
+Verdict: facts mostly support the report, but the recommendation overstates “do not start from tautx.” Lower-risk patch is probably tautx as base plus targeted restoration, not tauty plus wholesale forward-port.
+
+Q1: md5 identification is sound locally: `save_taut1100.tex` = `text/tautxy/tauty.tex` md5 `41534feb...`; `taut_2026-WORKINGTREE_uncommitted.tex` = `text/tautxy/tautx.tex` md5 `42d2a51f...`. The report’s uncommitted-working-tree claim is stated at `drafts_by_date/taut-history-report.md:13-17`; tautx also differs from HEAD `c658823` (`taut_2026-03-15_c658823.tex` md5 `51f357...`), with post-HEAD date/content changes visible in the diff. It is correct to emphasize “later than HEAD,” assuming the gauss extraction log is trusted.
+
+Q2: headline loss is fair. In tautx the Triangulations section is inside `comment`: `taut_2026-WORKINGTREE_uncommitted.tex:689-788`. Live tautx does not define `clean`, `pseudomanifold`, `link`, or `simplicial triangulation`; it only uses them. The only live nearby definition is flag complex at `:943-948`. `\link` is merely a macro at `:134`, not a definition.
+
+Q3: call this a presentation/proof loss, not necessarily a mathematical de-scoping. If “simplicial triangulation of B^3” is restored as in `:757-761`, then cleanness is entailed. So “dropped clean is harmless mathematically once definitions are live” is a defensible reading. The real loss is that tautx suppresses the definitions and deletes the explicit chain-to-clean verification from tauty `save_taut1100.tex:864-909`.
+
+Q4: I would revise the recommendation. Do not start from tauty unless you want a broad re-merge. Start from tautx and reinsert the missing scaffolding: tautx already has Ω/M notation, abstract, shucking proof, conjoined flip split, and flag repair integrated. The patch surface is smaller: uncomment/repair Triangulations, add the clean-chain convention, fix Theorem 2 phrasing/proof bridge, and fix tautx typos.
+
+Q5: overclaims/missed items:
+- “Theorem 2 de-scoped” is too strong; say “cleanness conclusion/proof made implicit and definitions hidden.”
+- “Monotone shelling loss” is probably not a major loss. tautx keeps the substantive type-3 exclusion at `:896-899`; the named “freely monotone” property from `taut_2026-02-25_1d2af40.tex:960-972` is mostly packaging unless you need that exact stronger theorem statement.
+- Flag repair is real, but note tautx only partially fixes post-HEAD wording: HEAD has K5/AE errors at `taut_2026-03-15_c658823.tex:1025-1032`; tautx changes them to K4/AD at `taut_2026-WORKINGTREE_uncommitted.tex:1025-1032`.
+
+Recommended patch shape:
+1. Use `drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex` / `text/tautxy/tautx.tex` as base.
+2. Remove `\begin{comment}` / `\end{comment}` around `:689-788`.
+3. Fix Triangulations typo: `:759-760` should say carrier homeomorphic to `M`, not `S^2`.
+4. Add after `:783-787`: chain `M` is clean iff simplicial and associated complex is clean.
+5. Restore Theorem 2 wording to “Any taut filling `M` ... is clean and arises ...”, or explicitly state cleanness follows from the restored definition.
+6. Fix tautx defects: `:802` `X`→`M`; `:817` that→than; `:870-871` restore `(\sigma_2,M_2)`; `:998` tet→tets; `:205-206` comma.
+7. Optionally rename theorem 3 to “freely monotone shellable” only if the proof explicitly records no type-3 steps.
+
+Files to edit:
+- `text/tautxy/tautx.tex` or the chosen version-A `.tex`.
+- Optionally update `drafts_by_date/taut-history-report.md` to soften the recommendation and Theorem 2 wording.
+
+Local lemmas needed:
+- Simplicial triangulation of a manifold is clean.
+- A chain arising from a simplicial triangulation is simplicial/clean.
+- Gluing the two case-(2) triangulated balls to `t` gives a simplicial triangulation of `B^3`.
+- Shucking removes only type-1/type-2 tets, hence gives monotone shelling if that term is restored.
+
+Blockers: none factual. Main decision is strategic: tautx-base targeted repair vs tauty-base re-merge.

@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-27-1527-g3-tautA06-signoff-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-27-1527-g3-tautA06-signoff-summary.txt
+
+=== raw size ===
+     509   26525 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-27-1527-g3-tautA06-signoff-raw.txt
+
+=== extracted markers ===
+486:PASS
+488:Verdict: tautA-06 is safe as the current final Version A candidate.
+496:Blockers: none.
+499:PASS
+501:Verdict: tautA-06 is safe as the current final Version A candidate.
+509:Blockers: none.
+
+=== final tail ===
+   790	
+   791	Suppose not, and choose a bad filling pair $(\sigma,M)$ with $|M|$
+   792	minimal.  Let $v,e,f$ count the vertices, edges, and faces of $\sigma$.
+   793	Then $e=3v-6$ and $f=2v-4$.
+   794	The tetrahedral boundary is good, so $v>4$.
+   795	Because taut fillings split under connected sum, we may assume that
+
+ succeeded in 0ms:
+   850	By minimality each $(\sigma_i,M_i)$ is good.
+   851	The complex $K(M-t)$ need not be clean as a single complex, because the
+   852	link of the shared edge $cd$ can be disconnected; nevertheless it is the
+   853	union of the two clean pieces $K(M_1)$ and $K(M_2)$.
+   854	Gluing these two triangulated balls to the two sides of $t$ gives a
+   855	triangulated ball, unless $t$ already occurred in $M-t$.
+   856	The same disjoint eligible-tet argument rules out that multiplicity-$2$
+   857	obstruction.
+   858	
+   859	The preceding paragraph shows that, for an eligible tet $t$, the intended
+   860	reassembly is legitimate unless a local obstruction was already present in
+   861	$M$ away from $t$.  Such obstructions are also excluded by the same
+   862	minimality argument, using the supply of disjoint eligible tets.  The point
+   863	is that an obstruction to cleanness is local: it is witnessed by one repeated
+   864	tet, by one triangle with too many incident tets, or by one disconnected
+   865	link.  If we choose an eligible tet whose two boundary faces are disjoint from
+   866	the finitely many boundary faces needed to change that local witness, then
+   867	the witness persists after the flip; for a repeated tetrahedron, avoid the
+   868	boundary faces of that tetrahedron; for an over-incident triangle, avoid the
+   869	boundary faces through which the incidence could change; and for a
+   870	disconnected link, avoid the unique tetrahedron whose removal would bridge the
+   871	exceptional component.  In the one-sphere case it persists in the smaller filling
+   872	$M-u$; in the conjoined case it persists in one of the two split summands,
+   873	unless it is exactly the artificial disconnected link of the new common edge.
+   874	That exceptional disconnected link is the reason we split $M-u$ into two
+   875	pieces before applying induction.
+   876	
+   877	We now spell this out for the clean-complex conditions.
+   878	
+   879	\begin{enumerate}
+   880	\item
+   881	$M$ has no repeated tetrahedron.
+   882	If the same unoriented tet occurred twice in $M$, then removing an eligible
+   883	tet $u$ not equal to one of these copies and not using any of the relevant
+   884	boundary faces would leave the repeated tet in the smaller filling, or in one
+   885	of the two smaller fillings after a conjoined split.  This would contradict
+   886	minimality, since the smaller filling could not be clean.
+   887	
+   888	\item
+   889	$K(M)$ is a pseudomanifold.
+   890	Suppose a $2$-simplex $s$ occurs as a face of more than two support
+   891	tetrahedra of $M$.  If $s\notin \sigma$, the excess is an interior incidence;
+   892	removing an eligible tet avoiding the tets accounting for this incidence
+   893	leaves the same excess in the smaller one-sphere filling or in one of the two
+   894	split pieces.  If $s\in\sigma$, choose the eligible tet so that $s$ is not one
+   895	of its two boundary faces; the boundary excess again persists.  Either way
+   896	we get a smaller bad filling pair, contradicting minimality.
+   897	
+   898	\item
+   899	No edge $\{a,b\}$ has disconnected link in $K(M)$.
+   900	The link is a $1$-dimensional complex whose edges correspond to support
+   901	tetrahedra of $M$ containing $\{a,b\}$.  If a component of such a link has
+   902	fewer than three vertices, then it is a single edge $\{c,d\}$, corresponding
+   903	to a tet $\{a,b,c,d\}$.  In that case $\{a,b\}$ is a boundary edge of
+   904	$\sigma$, and $\{a,b,c\}$ and $\{a,b,d\}$ are the two boundary faces adjacent
+   905	along it.  There can be at most one such isolated-edge component.  If the
+   906	link were disconnected, remove an eligible tet away from this exceptional
+   907	component.  The disconnected link remains in the one-sphere case or in one
+   908	of the split summands in the conjoined case, contradicting minimality.
+   909	
+   910	\item
+   911	No vertex has disconnected link in $K(M)$.
+   912	If $\link(\{a\},K(M))$ were disconnected, the only way a single removal
+   913	could connect it would be for one component of the link to be a single
+   914	$2$-simplex $\{b,c,d\}$ and for the removed tet to be $\{a,b,c,d\}$.  Then
+   915	$\{a,b,c\}$, $\{a,b,d\}$, and $\{a,c,d\}$ would all be boundary faces of
+   916	$\sigma$, so $a$ would have degree $3$ in $\sigma$, contrary to primality.
+   917	Thus a disconnected vertex link would persist under a suitable smaller
+   918	removal and again contradict minimality.
+   919	\end{enumerate}
+   920	
+   921	Thus $M$ is simplicial, $K(M)$ is clean, and $K(M)$ is a simplicial
+   922	triangulation of $B^3$, contradicting that $(\sigma,M)$ was bad.
+   923	\proofend
+   924	
+   925	After Theorem \ref{th2} we will often identify a taut filling $M$ of
+   926	$X(\sigma)$ with the triangulated ball $K(M)$.
+   927	
+   928	\section{Shelling}
+   929	
+   930	A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+
+exec
+/bin/zsh -lc 'rg -n "finite check|octahedron case remains|to be checked|TODO|sorry|Lean|formal endpoint|octahedr" text/tautxy/tautA-06.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+1061:smaller counterexample.  No maximum-degree bound and no octahedral special
+
+codex
+PASS
+
+Verdict: tautA-06 is safe as the current final Version A candidate.
+
+Recommended patch shape: none.
+
+Files to edit: none.
+
+Local lemmas needed: none.
+
+Blockers: none.
+tokens used
+18,112
+PASS
+
+Verdict: tautA-06 is safe as the current final Version A candidate.
+
+Recommended patch shape: none.
+
+Files to edit: none.
+
+Local lemmas needed: none.
+
+Blockers: none.

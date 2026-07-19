@@ -1,0 +1,51 @@
+CODEX CONSULT (G3) — verify a math writeup faithfully describes the Lean endpoint after the
+SimplicialChain-removal. You may read any repo file directly. Be adversarial: find misdescriptions.
+
+REPO: /Users/doyle/Dropbox/taut, branch clean-anyrooted-stickerball, HEAD a8f4566.
+BUILD EVIDENCE (already verified this session, do NOT rebuild unless you doubt it):
+  `cd lean && lake build` => green, 8273 jobs; grep over lean/Taut for sorry/admit/axiom/native_decide
+  => ZERO; `#print axioms taut_filling_is_simplicialChain` and `... taut_filling_is_anyrootedStickerball`
+  => [propext, Classical.choice, Quot.sound].
+
+WHAT CHANGED. The public Lean endpoint no longer assumes `SimplicialChain M`; simpliciality is derived
+by the new bridge `taut_filling_is_simplicialChain`. The Lean-companion writeup
+`notes/taut-lean-proof.tex` was edited THIS SESSION to match:
+  - dropped "simplicial" from the main theorem `thm:anyrooted` and from `thm:pm` / `thm:freely`;
+  - added a new subsection "Simpliciality is automatic" (search `\label{thm:simpl}`, approx lines
+    283-372): Theorem `thm:simpl` + Lemma `lem:family` (the hens-and-baskets twofer count) + a remark
+    + the minimal-counterexample deletion proof;
+  - updated the §status table (added `taut_filling_is_simplicialChain`) and the "Hypotheses to carry"
+    paragraph (approx line 578) to say simpliciality is derived, not assumed.
+The PDF recompiled clean (9 pages).
+
+GROUND TRUTH to check the writeup against (read these):
+  - bridge proof body: lean/Taut/Theorem3Clean.lean lines 3462-3589 (`taut_filling_is_simplicialChain`);
+    its four branches: base (`base_simplicialChain`), degree-3 capped cut (`taut_splits_for_capped_cut`),
+    prime flip-present (`flipEdgePresent_side_sets_noS`/`_algebra_noS`), prime flip-absent
+    (`isSphere2_flipBoundary_of_eligible`+`isTaut_removeTet`); `t_0` persistence via `removeTet_apply_ne`.
+  - the count: lean/Taut/Eligible.lean `exists_disjoint_eligible_family_noS` (~line 643), built from
+    `SameSignSupportFaceTet`, `sameSignSupportFace_cover`, `finset_twofer_fibers`,
+    `support_card_add_nonUnitSupport_card_le_nrm`, `Zvol_add_deg_le`, `UnitOn.nrm_eq`,
+    `sameSignFace_to_proper_of_unit`, `sharedFaces_card_le_two_of_noDegree3`.
+  - endpoint + corollaries: lean/Taut/Theorem3Clean.lean 3636-3663.
+
+A prior INDEPENDENT (non-Codex) subagent audit already ran and found NO major discrepancies, plus two
+minor phrasing issues that were FIXED: (1) `u != t_0` is justified by cardinality (E.card>=2 distinct
+members), not by face-disjointness (the writeup now says so); (2) `lem:family`'s conclusion is
+`EligibleTet`+disjoint, with unit-ness (`|M t|=1`) DERIVED under UnitOn via
+`tet_coeff_eq_pm_one_of_eligible_unitOn`, not part of EligibleTet (writeup now states this).
+
+REVIEW QUESTIONS (answer concretely; cite .tex line and .lean file:line for any problem):
+Q1. Does the writeup's hens-and-baskets count (coverage by same-sign support faces; fibre <= 2 with no
+    degree-3 vertex; the gap s + z + deg_v <= |sigma| from norm-budget + tautness + Zvol_add_deg_le;
+    twofer extraction; non-unit discard) faithfully match `exists_disjoint_eligible_family_noS`? Any
+    overstated or misattributed step?
+Q2. Do the four deletion branches and the `t_0`-persistence justification match the actual proof body?
+Q3. Is the no-circularity framing correct — i.e. does the bridge proof (3462-3589) avoid
+    `taut_isPseudomanifold` / stickerball / clean-shelling machinery, so it legitimately precedes them?
+Q4. Are the two minor fixes from the prior audit now correct as written in the .tex, or did they
+    introduce a new error?
+Q5. Anything else in the new section that misstates the Lean (identifier names, signatures, the
+    derived-not-assumed claim, the status table row)?
+
+Output per the contract: PASS / WARN / BLOCK first, then specific findings with citations.

@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-summary.txt
+
+=== raw size ===
+    1133   81819 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt
+
+=== extracted markers ===
+1110:PASS
+1112:Verdict: I sign off on `text/tautxy/tautA-02.tex` as joint Claude+Codex version A.
+1120:Blockers: none. I rebuilt with `pdflatex -> bibtex -> pdflatex -> pdflatex`; final PDF is 14 pages, with no undefined references/citations or TeX errors in the final log scan.
+1123:PASS
+1125:Verdict: I sign off on `text/tautxy/tautA-02.tex` as joint Claude+Codex version A.
+1133:Blockers: none. I rebuilt with `pdflatex -> bibtex -> pdflatex -> pdflatex`; final PDF is 14 pages, with no undefined references/citations or TeX errors in the final log scan.
+
+=== final tail ===
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/intcalc.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/hyperref.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/kvoptions.sty)
+Implicit mode ON; LaTeX internals redefined
+(/usr/local/texlive/2010/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bitset.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bigintcalc.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/atbegshi.sty))
+* hyperref using default driver hpdftex *
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/atveryend.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/rerunfilecheck.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/uniquecounter.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/tools/verbatim.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption3.sty))
+(./tautA-02.aux)
+(/usr/local/texlive/2010/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/grfext.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/refcount.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/gettitlestring.sty))
+(./tautA-02.out) (./tautA-02.out)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsb.fd) [1{/usr/local/t
+exlive/2010/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+[]\OT1/cmr/m/n/12 Now let $\OML/cmm/m/it/12 ^^[$ \OT1/cmr/m/n/12 be a sim-pli-c
+ial tri-an-gu-la-tion of $\OML/cmm/m/it/12 S[]$\OT1/cmr/m/n/12 ; let $\OML/cmm/
+m/it/12 X\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/1
+2 2 \OML/cmm/m/it/12 Z[]\OT1/cmr/m/n/12 (^^A([](\OML/cmm/m/it/12 ^^[\OT1/cmr/m/
+n/12 ))\OML/cmm/m/it/12 ; \OT1/cmr/bx/n/12 Z\OT1/cmr/m/n/12 )$
+[2] [3]
+Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+\OT1/cmr/m/n/12 consisting of all the non-trivial ori-ented $(\OML/cmm/m/it/12 
+n \OT1/cmr/m/n/12 + 1)$-simplices $[](\OML/cmm/m/it/12 x; t\OT1/cmr/m/n/12 ) = 
+[\OML/cmm/m/it/12 xx[] [] x[]\OT1/cmr/m/n/12 ]$
+[4] [5]
+Overfull \hbox (6.74567pt too wide) detected at line 572
+\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 @[]M[]; @[]M[]\OT1/cmr/m/n/12 ) = \OML/cmm/m/
+it/12 @[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12
+ p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )) = \OML/cmm/m/it/12 
+g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 @[]
+M\OT1/cmr/m/n/12 ) = \OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q
+\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 X \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 Y\OT1/c
+mr/m/n/12 ) = (\OML/cmm/m/it/12 X; Y\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 :
+[6] [7] [8] [9] [10]
+Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/12 No edge $\OMS/cmsy/m/n/12 f\OML/cmm/m/it/12 a; b\OMS/cmsy/m/n
+/12 g$ \OT1/cmr/m/n/12 has dis-con-nected link in $\OML/cmm/m/it/12 K\OT1/cmr/m
+/n/12 (\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )$. The link is a $1$-dimensional
+[11] [12] [13] (./tautA-02.bbl) [14] (./tautA-02.aux) )
+(see the transcript file for additional information)</usr/local/texlive/2010/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2010/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2010/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2010/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2010/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2010/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2010/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2010/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2010/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2010/texmf-dist/font
+s/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2010/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2010/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmti12.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmtt12.pfb>
+Output written on tautA-02.pdf (14 pages, 221496 bytes).
+Transcript written on tautA-02.log.
+
+codex
+The final pass succeeded and produced a 14-page PDF. I’m doing one last targeted log scan for undefined refs/citations and TeX errors before I close this out.
+exec
+/bin/zsh -lc 'git status --short text/tautxy/tautA-02.tex text/tautxy/tautA-02.pdf text/tautxy/tautA-02.aux text/tautxy/tautA-02.bbl text/tautxy/tautA-02.blg text/tautxy/tautA-02.log text/tautxy/tautA-02.out' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? text/tautxy/tautA-02.aux
+?? text/tautxy/tautA-02.bbl
+?? text/tautxy/tautA-02.blg
+?? text/tautxy/tautA-02.log
+?? text/tautxy/tautA-02.out
+?? text/tautxy/tautA-02.pdf
+?? text/tautxy/tautA-02.tex
+
+exec
+/bin/zsh -lc "rg -n 'LaTeX Warning: There were undefined references|Citation .* undefined|Reference .* undefined|Undefined control sequence|Emergency stop|"'^!|Error'"' tautA-02.log" in /Users/doyle/Dropbox/taut/text/tautxy
+ exited 1 in 0ms:
+exec
+/bin/zsh -lc "pdfinfo tautA-02.pdf | rg '"'^Pages:'"'" in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 0ms:
+Pages:           14
+
+codex
+PASS
+
+Verdict: I sign off on `text/tautxy/tautA-02.tex` as joint Claude+Codex version A.
+
+Exact recommended patch shape: no further source patches. The three requested line fixes are present verbatim at lines 595, 645-648, and 663.
+
+Files to edit: none.
+
+Local lemmas needed: none beyond the current text; the cone/no-cone step and mixed-face boundary multiplicity explanation are now stated cleanly enough for this version.
+
+Blockers: none. I rebuilt with `pdflatex -> bibtex -> pdflatex -> pdflatex`; final PDF is 14 pages, with no undefined references/citations or TeX errors in the final log scan.
+tokens used
+77,675
+PASS
+
+Verdict: I sign off on `text/tautxy/tautA-02.tex` as joint Claude+Codex version A.
+
+Exact recommended patch shape: no further source patches. The three requested line fixes are present verbatim at lines 595, 645-648, and 663.
+
+Files to edit: none.
+
+Local lemmas needed: none beyond the current text; the cone/no-cone step and mixed-face boundary multiplicity explanation are now stated cleanly enough for this version.
+
+Blockers: none. I rebuilt with `pdflatex -> bibtex -> pdflatex -> pdflatex`; final PDF is 14 pages, with no undefined references/citations or TeX errors in the final log scan.

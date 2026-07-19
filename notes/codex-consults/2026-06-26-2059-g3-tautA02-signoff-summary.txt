@@ -1,0 +1,131 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt
+
+=== raw size ===
+    1794   82248 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt
+
+=== extracted markers ===
+1751:BLOCK
+1774:BLOCK
+
+=== final tail ===
+613:We can get a different pair $(M_X,M_Y)$ if we switch
+615:(Think about the connected sum of two cycle graphs.)
+620:$M = M_X + M_Y$ with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+626:because that would make $|M| > \Zvol(X) + \Zvol(Y)$.
+639:We claim that $y_0 \notin \vertices(\del U)$.
+649:So $y_0 \notin \vertices(\del U)$,
+663:because $[x_0x_1y_0)$ can continue across $[x_1 y_0]$ to $-[p x_1 y_0]$,
+694:\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+698:(except for $\link(\emptyset,\sigma)=\sigma$)
+704:which we will call \emph{clean $n$-complexes}.
+705:A simplicial complex $\sigma$ is clean of dimension $n$ if:
+714:the link $\link(s,\sigma)$ of any $(n-1)$-simplex $s$
+716:(so $s$ is a boundary simplex)
+718:(so $s$ is an interior simplex).
+723:the link $\link(s,\sigma)$ is connected.
+729:If $\sigma$ is clean, then each link $\link(s,\sigma)$ is clean.
+730:The boundary $\del \sigma$ of a clean complex is clean and closed:
+736:In this case $\sigma$ is necessarily clean.
+738:two associated cycles $X(\sigma) \in C_n$; our arguments do not depend
+756:For a chain $M \in C_n$, define $K(M)$ to be the pure simplicial
+761:We call $M$ \emph{clean} if $M$ is simplicial and $K(M)$ is a clean
+768:filling of $X(\sigma)$, then $M$ is clean and $K(M)$ is a simplicial
+773:Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial
+774:triangulation of $S^2$ and $M$ is a taut filling of $X(\sigma)$.
+775:Call a filling pair \emph{good} if $M$ is clean and $K(M)$ is a
+779:Suppose not, and choose a bad filling pair $(\sigma,M)$ with $|M|$
+788:oriented boundary faces are faces of $X(\sigma)$ with the correct signs.
+793:|M|=\Zvol(\sigma) \leq f-\maxdeg(\sigma).
+795:For each support tetrahedron $u$ of $M$, let $A(u)$ be the set of faces
+797:Each $A(u)$ has size at most $2$.
+798:Every face of $\sigma$ occurs in at least one $A(u)$, because its
+799:coefficient in $\partial M=X(\sigma)$ is nonzero with the prescribed sign.
+800:List the support tetrahedra of $M$ and reveal the sets $A(u)$ one at a
+806:Thus $r\geq \maxdeg(\sigma)$.
+807:Consequently there are at least $\maxdeg(\sigma)$ eligible support
+816:from $X(\sigma)$ by replacing $s_1,s_2$ with
+823:By minimality, $(\sigma_t,M-t)$ is good.
+830:could not be simplicial, so $(\sigma_u,M-u)$ would be a smaller bad
+837:filling of $X(\sigma_i)$.
+838:By minimality each $(\sigma_i,M_i)$ is good.
+839:The complex $K(M-t)$ need not be clean as a single complex, because the
+841:union of the two clean pieces $K(M_1)$ and $K(M_2)$.
+848:We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+849:triangulation of $B^3$ unless one of the clean-complex conditions fails.
+854:$K(M)$ is a pseudomanifold.
+866:No edge $\{a,b\}$ has disconnected link in $K(M)$.
+880:No vertex has disconnected link in $K(M)$.
+881:If $\link(\{a\},K(M))$ were disconnected, the only way removing one tet
+890:Thus $M$ is clean and $K(M)$ is a simplicial triangulation of $B^3$,
+891:contradicting that $(\sigma,M)$ was bad.
+895:$X(\sigma)$ with the triangulated ball $K(M)$.
+901:$(t_1,\ldots,t_{|\tau|})$
+915:any taut filling of $X(\sigma)$ is a freely shellable
+935:$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+954:(or clique complex) if every clique in its $1$-skeleton occurs as a
+958:(not the connected sum of smaller complexes)
+964:any taut filling of $X(\sigma)$ is the union of taut fillings of the
+965:$X(\sigma_i)$.
+971:any taut filling of $X(\sigma)$ is a flag complex.
+1000:$\maxdeg(\sigma)\geq 4$ eligible tets with pairwise disjoint pairs of
+1019:If $\maxdeg(\sigma)\geq 5$, the disjoint eligible-tet family gives at
+1026:It remains to consider $\maxdeg(\sigma)=4$.
+1030:the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
+
+exec
+/bin/zsh -lc 'git status --short text/tautxy/tautA-02.tex text/tautxy/tautA-02.pdf text/tautxy/tautA-02.aux text/tautxy/tautA-02.bbl text/tautxy/tautA-02.blg text/tautxy/tautA-02.log text/tautxy/tautA-02.out' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? text/tautxy/tautA-02.aux
+?? text/tautxy/tautA-02.bbl
+?? text/tautxy/tautA-02.blg
+?? text/tautxy/tautA-02.log
+?? text/tautxy/tautA-02.out
+?? text/tautxy/tautA-02.pdf
+?? text/tautxy/tautA-02.tex
+
+codex
+BLOCK
+
+- Verdict: not happy signing off as final yet. It builds, and the main grafts look structurally integrated, but I would patch three source lines first.
+
+- Exact recommended patch shape:
+  - [text/tautxy/tautA-02.tex:645](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:645): replace “Because `\del M = 0`” with “Because `s` is not a face of `X+Y`, its signed multiplicity in `\del M=X+Y` vanishes”.
+  - [text/tautxy/tautA-02.tex:595](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:595): remove duplicated “are”: “The remaining cases to check are the pure cases...”.
+  - [text/tautxy/tautA-02.tex:663](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:663): fix bracket typo `[x_0x_1y_0)` to `[x_0x_1y_0]`.
+
+- Files to edit: only `text/tautxy/tautA-02.tex`.
+
+- Checks:
+  - Shucking/monotone graft: cleanly integrated at [897](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:897)-[949](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:949); no broken cross-refs found.
+  - Theorem 2 has explicit cleanness verification: pseudomanifold [854](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:854), edge-link [866](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:866), vertex-link [880](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:880).
+  - Octahedral `maxdeg=4` argument is not overclaimed: [1026](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1026)-[1032](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1032) correctly uses no degree-3 implies 4-regular, hence `v=6`.
+  - Deleted commented Overview material: no evidence of load-bearing loss; refs/citations resolve.
+  - No Lean terminology or jokey prose found.
+
+- Local lemmas needed: none new for the paper version; just the local observation for the line-645 patch that an `XXy_0` face is absent from `X+Y`, so its coefficient in `\partial M` is zero.
+
+- Build: full `pdflatex`, `bibtex`, `pdflatex`, `pdflatex` cycle succeeds. Remaining TeX warnings are only small overfull boxes.
+tokens used
+49,167
+BLOCK
+
+- Verdict: not happy signing off as final yet. It builds, and the main grafts look structurally integrated, but I would patch three source lines first.
+
+- Exact recommended patch shape:
+  - [text/tautxy/tautA-02.tex:645](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:645): replace “Because `\del M = 0`” with “Because `s` is not a face of `X+Y`, its signed multiplicity in `\del M=X+Y` vanishes”.
+  - [text/tautxy/tautA-02.tex:595](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:595): remove duplicated “are”: “The remaining cases to check are the pure cases...”.
+  - [text/tautxy/tautA-02.tex:663](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:663): fix bracket typo `[x_0x_1y_0)` to `[x_0x_1y_0]`.
+
+- Files to edit: only `text/tautxy/tautA-02.tex`.
+
+- Checks:
+  - Shucking/monotone graft: cleanly integrated at [897](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:897)-[949](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:949); no broken cross-refs found.
+  - Theorem 2 has explicit cleanness verification: pseudomanifold [854](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:854), edge-link [866](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:866), vertex-link [880](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:880).
+  - Octahedral `maxdeg=4` argument is not overclaimed: [1026](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1026)-[1032](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1032) correctly uses no degree-3 implies 4-regular, hence `v=6`.
+  - Deleted commented Overview material: no evidence of load-bearing loss; refs/citations resolve.
+  - No Lean terminology or jokey prose found.
+
+- Local lemmas needed: none new for the paper version; just the local observation for the line-645 patch that an `XXy_0` face is absent from `X+Y`, so its coefficient in `\partial M` is zero.
+
+- Build: full `pdflatex`, `bibtex`, `pdflatex`, `pdflatex` cycle succeeds. Remaining TeX warnings are only small overfull boxes.

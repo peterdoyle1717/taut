@@ -1,0 +1,18 @@
+FOURTH-ROUND check of notes/taut-lean-proof.tex vs lean/Taut/ (the only oracle). Prior rounds logged in
+notes/codex-consults/2026-06-23-g3-writeup-*audit*-output.txt. Round 3 left exactly two residual
+defects, now re-edited (UNVERIFIED prose again). Open the Lean, read the exact statements, judge.
+
+Verify ONLY these two edits are now faithful and introduce nothing new:
+
+ 1. Definition 1.1 (Zvol), ~line 57-64: now "Zvol(X)=inf{||M||:dM=X} (Zvol, an inf over N). For a cycle
+    (dX=0) the cone over any vertex is a filling (bdry_cone_of_closed), so the inf is attained and
+    Zvol(X)=min{...} (exists_fill_eq_Zvol). Zvol is defined for every chain; used below only on cycles."
+    Check vs lean/Taut/Zvol.lean:74-76, bdry_cone_of_closed, exists_fill_eq_Zvol (lean/Taut/Theorem1.lean:325-330).
+
+ 2. Theorem 2.4 conclusion, ~line 258-262: now "dM_A=X follows by applying K_{A,p} to dM_A+dM_B=X+Y
+    (Kmap_eq_self on the A-part, Kmap_eq_zero_of_closed on the closed B-part); then dM_B=Y by cancellation.
+    Tautness from ||M_A||+||M_B||=||M||, additivity, ||M_A||>=Zvol X, ||M_B||>=Zvol Y." Check vs
+    lean/Taut/Splitting.lean:475-488.
+
+Then a final full scan for ANY remaining discrepancy anywhere. END with: verdict on edits 1-2, then either
+"NO REMAINING DISCREPANCIES" or a numbered list (file:line + corrected sentence). Be terse.

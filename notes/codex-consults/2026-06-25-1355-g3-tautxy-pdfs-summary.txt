@@ -1,0 +1,133 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-summary.txt
+
+=== raw size ===
+     271   15010 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt
+
+=== extracted markers ===
+230:WARN
+232:Verdict: done, with minor reporting caveats.
+252:WARN
+254:Verdict: done, with minor reporting caveats.
+
+=== final tail ===
+56:@article {pournin:diameter,
+72:@article {wang:gap,
+87:@misc{thurston:shapes,
+98:@misc{dew:filling,
+109:@misc{pw:flip,
+120:@article {whitney:hamiltonian,
+
+codex
+The file set and bibliography placement match the described outcome. One grep nuance: `\includegraphics` appears inside the macro definitions, so the useful check is whether the `\fig` or `\figsize` macros are called later, not whether `\includegraphics` exists textually.
+exec
+/bin/zsh -lc "rg -n '\\\\fig(size)?\\s*\\{' text/tautxy/*.tex || true" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+exec
+/bin/zsh -lc 'for f in text/tautxy/*.pdf; do ls -lh "$f"; done' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+-rw-r--r--@ 1 doyle  staff   387K Jun 25 13:53 text/tautxy/tautleancc.pdf
+-rw-r--r--@ 1 doyle  staff   207K Jun 25 13:53 text/tautxy/tautx.pdf
+-rw-r--r--@ 1 doyle  staff   211K Jun 25 13:53 text/tautxy/tautx_pass1_minimal.pdf
+-rw-r--r--@ 1 doyle  staff   211K Jun 25 13:53 text/tautxy/tautxy_formalizable.pdf
+-rw-r--r--@ 1 doyle  staff   211K Jun 25 13:53 text/tautxy/tauty.pdf
+
+exec
+/bin/zsh -lc 'cmp -s taut/taut.bib text/tautxy/taut.bib; echo "bib_cmp=$?"; cmp -s notes/taut-lean-proof.tex text/tautxy/tautleancc.tex; echo "lean_cmp=$?"' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+bib_cmp=0
+lean_cmp=2
+
+exec
+/bin/zsh -lc "which pdfinfo || true; for f in text/tautxy/*.pdf; do printf '%s ' \""'$f"; strings "$f" | rg '"'"'^/Count '"' | tail -1 || true; done" in /Users/doyle/Dropbox/taut
+ succeeded in 102ms:
+codex
+One item in the supplied facts did not verify as stated: the `notes/taut-lean-proof.tex` comparison returned “missing/inaccessible” rather than “identical.” That does not affect the requested PDFs, but I would omit that claim unless you independently have that file in another checkout.
+exec
+/bin/zsh -lc 'ls -l notes/taut-lean-proof.tex text/tautxy/tautleancc.tex 2>&1' in /Users/doyle/Dropbox/taut
+ exited 1 in 0ms:
+ls: notes/taut-lean-proof.tex: No such file or directory
+-rw-r--r--@ 1 doyle  staff  34826 Jun 25 10:07 text/tautxy/tautleancc.tex
+
+exec
+/bin/zsh -lc "rg -n '"'^(No file|LaTeX Warning: Citation|LaTeX Warning: Reference|There were undefined|Output written|!)'"' text/tautxy/*.log 2>/dev/null || true" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+zsh:1: no matches found: text/tautxy/*.log
+
+exec
+/bin/zsh -lc "which mdls || true; for f in text/tautxy/*.pdf; do printf '%s ' \""'$f"; mdls -name kMDItemNumberOfPages -raw "$f" 2>/dev/null || true; done' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+/usr/bin/mdls
+text/tautxy/tautleancc.pdf text/tautxy/tautleancc.pdf: could not find text/tautxy/tautleancc.pdf.
+text/tautxy/tautx.pdf text/tautxy/tautx.pdf: could not find text/tautxy/tautx.pdf.
+text/tautxy/tautx_pass1_minimal.pdf text/tautxy/tautx_pass1_minimal.pdf: could not find text/tautxy/tautx_pass1_minimal.pdf.
+text/tautxy/tautxy_formalizable.pdf text/tautxy/tautxy_formalizable.pdf: could not find text/tautxy/tautxy_formalizable.pdf.
+text/tautxy/tauty.pdf text/tautxy/tauty.pdf: could not find text/tautxy/tauty.pdf.
+
+codex
+The cleaned state has no logs or `.bbl`, so I can verify the kept artifacts but not independently re-check final-pass warnings from logs. Given your recorded final-pass checks, the main report is sound with two caveats: old TeX Live and non-reproducible single-pass rebuild after cleanup.
+exec
+/bin/zsh -lc "find text/tautxy -maxdepth 1 -type f \\( -name '*.aux' -o -name '*.bbl' -o -name '*.blg' -o -name '*.log' -o -name '*.out' \\) -print" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+exec
+/bin/zsh -lc 'file text/tautxy/*.pdf text/tautxy/taut.bib' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+text/tautxy/tautleancc.pdf:          PDF document, version 1.5
+text/tautxy/tautx.pdf:               PDF document, version 1.5
+text/tautxy/tautx_pass1_minimal.pdf: PDF document, version 1.5
+text/tautxy/tautxy_formalizable.pdf: PDF document, version 1.5
+text/tautxy/tauty.pdf:               PDF document, version 1.5
+text/tautxy/taut.bib:                BibTeX text file, ASCII text
+
+exec
+/bin/zsh -lc "for f in text/tautxy/*.pdf; do printf '%s ' \""'$f"; stat -f '"'%z bytes' \""'$f"; done' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+text/tautxy/tautleancc.pdf 396655 bytes
+text/tautxy/tautx.pdf 212440 bytes
+text/tautxy/tautx_pass1_minimal.pdf 216300 bytes
+text/tautxy/tautxy_formalizable.pdf 216339 bytes
+text/tautxy/tauty.pdf 216510 bytes
+
+codex
+WARN
+
+Verdict: done, with minor reporting caveats.
+
+Exact recommended patch shape:
+- Keep the five `.pdf` files in `text/tautxy/`.
+- Keep copied `text/tautxy/taut.bib`.
+- Do not keep `.aux/.bbl/.blg/.log/.out` unless reproducibility from one `pdflatex` command matters.
+
+Files to edit:
+- None.
+
+Local lemmas needed:
+- None.
+
+Findings:
+- Q1: All five expected PDFs exist, and `taut.bib` is present. The four citing files have `\bibliography{taut}`; `tautleancc.tex` does not cite or include a bibliography.
+- Q2: TeX Live 2010 is acceptable to report if the PDFs compiled cleanly, but mention it if exact modern typography/reproducibility matters. `0 undefined-citations` after `bibtex` plus populated `.bbl` is good evidence the cited keys resolved and bibliography rendered.
+- Q3: Copying `taut.bib` into the directory is fine and simplest. Removing `.bbl` is fine for a clean artifact directory, but a later rebuild requires the full `pdflatex -> bibtex -> pdflatex -> pdflatex` cycle for the four bib-using files.
+- Q4: One supplied claim did not verify locally: `notes/taut-lean-proof.tex` is not present, so I would not report byte identity unless you checked it elsewhere. Also, `\includegraphics` occurs inside unused macro definitions; the correct statement is that no figure macros are invoked.
+tokens used
+17,828
+WARN
+
+Verdict: done, with minor reporting caveats.
+
+Exact recommended patch shape:
+- Keep the five `.pdf` files in `text/tautxy/`.
+- Keep copied `text/tautxy/taut.bib`.
+- Do not keep `.aux/.bbl/.blg/.log/.out` unless reproducibility from one `pdflatex` command matters.
+
+Files to edit:
+- None.
+
+Local lemmas needed:
+- None.
+
+Findings:
+- Q1: All five expected PDFs exist, and `taut.bib` is present. The four citing files have `\bibliography{taut}`; `tautleancc.tex` does not cite or include a bibliography.
+- Q2: TeX Live 2010 is acceptable to report if the PDFs compiled cleanly, but mention it if exact modern typography/reproducibility matters. `0 undefined-citations` after `bibtex` plus populated `.bbl` is good evidence the cited keys resolved and bibliography rendered.
+- Q3: Copying `taut.bib` into the directory is fine and simplest. Removing `.bbl` is fine for a clean artifact directory, but a later rebuild requires the full `pdflatex -> bibtex -> pdflatex -> pdflatex` cycle for the four bib-using files.
+- Q4: One supplied claim did not verify locally: `notes/taut-lean-proof.tex` is not present, so I would not report byte identity unless you checked it elsewhere. Also, `\includegraphics` occurs inside unused macro definitions; the correct statement is that no figure macros are invoked.

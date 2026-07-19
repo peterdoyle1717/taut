@@ -1,0 +1,2704 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019f0542-a029-75a2-bb87-a16baedc998f
+--------
+user
+TASK: Independently compare three candidate paper-style drafts of "Taut fillings" (version A) and
+recommend how to build a joint version 02. Write your comparison to a file.
+
+REPO: /Users/doyle/Dropbox/taut  (work in text/tautxy/).
+
+READ these three drafts (all derived independently from the same Feb-20 base
+drafts_by_date/taut_2026-02-20_2b2e846.tex):
+  text/tautxy/tautA-claude-01.tex
+  text/tautxy/tautA-codex-01.tex
+  text/tautxy/tautA-gpt-01.tex
+
+DO NOT read text/tautxy/tautA-comparison-claude.md (that is the other reviewer's comparison; keep yours
+independent). Do not read tautA2.tex.
+
+Compare them on at least these dimensions, citing file:line:
+- notation (M for fillings, Omega, K(M)); whether the Triangulations section is live and the clean-complex
+  + clean-filling convention are correctly stated; the carrier typo fix.
+- Theorem 2: statement (does it keep "M is clean and K(M) triangulates B^3"?) and proof. CRUCIAL: does the
+  proof KEEP an explicit verification that M is clean (pseudomanifold + connected edge-/vertex-links), or
+  does it COLLAPSE cleanness into a compressed/sketched gluing claim?
+- eligible-tet count (support tets + correct boundary signs; how rigorous).
+- both post-flip cases (one sphere / conjoined spheres), the "M-t need not be clean as one complex but
+  splits into clean pieces" remark, and the disjoint-eligible multiplicity-2 obstruction.
+- shelling (shucking; monotone handling); flag section (flag vs clique terminology; K4 vs K5 correctness;
+  octahedral exceptional case; the S^3-not-in-B^3 step).
+- leftover jokey prose; typos/incomplete sentences; bibliography handling (\bibliography{taut} vs inline);
+  any stale commented-out material; overall completeness vs sketchiness; length.
+
+Then: rank the three, give each draft's main strengths and weaknesses, and recommend concretely how to
+assemble a JOINT version 02 (which draft to use as the spine, what to graft from the others, what to fix).
+Flag any place where a draft is mathematically weaker or sketchier than the others.
+
+WRITE your comparison to: text/tautxy/tautA-comparison-codex.md
+Do not modify the drafts. Do not commit. Print a one-line confirmation when done.
+codex
+I’ll do an independent local comparison only against the three named drafts, avoiding the other comparison and `tautA2.tex`. I’ll gather line-numbered evidence first, then write the requested markdown file.
+exec
+/bin/zsh -lc "pwd && rg --files text/tautxy | sort | sed -n '/tautA-.*-01\\.tex"'$/p'"'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+/Users/doyle/Dropbox/taut
+text/tautxy/tautA-claude-01.tex
+text/tautxy/tautA-codex-01.tex
+text/tautxy/tautA-gpt-01.tex
+
+exec
+/bin/zsh -lc 'wc -l text/tautxy/tautA-claude-01.tex text/tautxy/tautA-codex-01.tex text/tautxy/tautA-gpt-01.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    1084 text/tautxy/tautA-claude-01.tex
+    1055 text/tautxy/tautA-codex-01.tex
+     948 text/tautxy/tautA-gpt-01.tex
+    3087 total
+
+exec
+/bin/zsh -lc 'git status --short -- text/tautxy' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? text/tautxy/
+
+codex
+The three candidates are present and differ materially in length, with GPT shortest. I’m going to read targeted line ranges around the requested mathematical pressure points rather than diffing against the forbidden comparison.
+exec
+/bin/zsh -lc "rg -n \"newcommand|DeclareMathOperator|Omega|K\\(|clean|Triangulations|carrier|bibliography|begin\\{thebibliography\\}|joke|TODO|FIXME|comment|Conjecture|flag|clique|octa|K_?4|K_?5|shell|shuck|monotone|eligible|conjoined|disjoint|multiplicity|pseudomanifold|link|S\\"'^3|B'"\\"'^3|Theorem" text/tautxy/tautA-claude-01.tex' in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "rg -n \"newcommand|DeclareMathOperator|Omega|K\\(|clean|Triangulations|carrier|bibliography|begin\\{thebibliography\\}|joke|TODO|FIXME|comment|Conjecture|flag|clique|octa|K_?4|K_?5|shell|shuck|monotone|eligible|conjoined|disjoint|multiplicity|pseudomanifold|link|S\\"'^3|B'"\\"'^3|Theorem" text/tautxy/tautA-gpt-01.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+6:\newcommand{\nocopyright}{
+19:\newtheorem{theorem}{Theorem}
+25:\newtheorem*{conjecture}{Conjecture}
+31:\newcommand{\proofstart}{{\noindent \bf Proof.\ }}
+32:\newcommand{\note}{{\noindent \bf Note.\ }}
+33:\newcommand{\pfend}{\spadesuit}
+34:\newcommand{\mathproofend}{\quad \qed}
+35:\newcommand{\proofend}{$\quad \qed$}
+36:\newcommand{\goesto}{\rightarrow}
+37:\newcommand{\p}{\;\;\;}
+38:\newcommand{\comma}{\p,}
+39:\newcommand{\pd}{\p.}
+40:\newcommand{\semi}{\p;}
+41:\newcommand{\Rplus}{{\RR_{\geq 0}}}
+45:\newcommand{\beginfigurepos}{\begin{figure}[htbp]}
+50:\newcommand{\fig}[3]{
+61:\newcommand{\figsize}[4]{
+81:\newcommand{\parsec}{\subsection*}
+82:\newcommand{\sect}[1]{\S\ #1}
+84:%\newcommand{\gversus}[2]{\braket{#1\,|\,#2}}
+85:\newcommand{\pair}[1]{\braket{#1}}
+86:\newcommand{\sub}[1]{\braket{#1}}
+87:\newcommand{\nnn}{\mathbf{NSet}}
+88:\newcommand{\zzz}{\mathbf{ZSet}}
+89:\newcommand{\nn}{\mathbf{N}}
+90:\newcommand{\zz}{\mathbf{Z}}
+92:\newcommand{\versus}[2]{\left(#1\,|\,#2\right)}
+93:\newcommand{\gversus}[2]{\left[#1\,|\,#2\right]}
+94:\newcommand{\poly}[1]{\left[#1\right]}
+96:\newcommand{\rising}[1]{\overline{#1}}
+97:\newcommand{\floor}[1]{\left \lfloor #1 \right \rfloor}
+98:\newcommand{\ceiling}[1]{\left \lceil #1 \right \rceil}
+99:\newcommand{\gbinom}{\genfrac{[}{]}{0pt}{}}
+102:\newcommand{\xRrightarrow}[2][]{\ext@arrow 0359\Rrightarrowfill@{#1}{#2}}
+103:\newcommand{\Rrightarrowfill@}{\arrowfill@\equiv\equiv\Rrightarrow}
+104:\newcommand{\xLleftarrow}[2][]{\ext@arrow 3095\Lleftarrowfill@{#1}{#2}}
+105:\newcommand{\Lleftarrowfill@}{\arrowfill@\Lleftarrow\equiv\equiv}
+106:\newcommand{\xLleftRrightarrow}[2][]{\ext@arrow 3399\LleftRrightarrowfill@{#1}{#2}}
+107:\newcommand{\LleftRrightarrowfill@}{\arrowfill@\Lleftarrow\equiv\Rrightarrow}
+110:\newcommand{\eq}{\Rrightarrow}
+111:\newcommand{\funeq}[1]{\stackrel{#1}\eq}
+112:\newcommand{\funequiv}[1]{\stackrel{#1}\equiv}
+113:\newcommand{\funto}[1]{\stackrel{#1}\to}
+114:\newcommand{\union}{\cup}
+115:\newcommand{\cross}{\times}
+116:\newcommand{\op}{\operatorname}
+117:\newcommand{\kw}{\mathrm}
+118:\newcommand{\escape}{\op{escape}}
+119:\newcommand{\cancel}{\op{cancel}}
+120:\newcommand{\nestuntil}{\operatorname{nestuntil}}
+121:\newcommand{\size}{\operatorname{size}}
+122:\newcommand{\id}{\operatorname{id}}
+123:\newcommand{\create}{\operatorname{create}}
+124:\newcommand{\destroy}{\operatorname{destroy}}
+125:\newcommand{\then}{\triangleleft}
+126:\newcommand{\lp}{\kw{LP}}
+127:\newcommand{\LPvol}{\kw{LPvol}}
+128:\newcommand{\vol}{\kw{vol}}
+129:\newcommand{\flipdist}{\kw{flipdist}}
+130:\newcommand{\tetbar}{\kw{homvol}}
+131:\newcommand{\vsa}{\kw{vsa}}
+132:\newcommand{\cone}{\kw{cone}}
+133:\newcommand{\link}{\kw{link}}
+134:\newcommand{\maxdeg}{\kw{maxdeg}}
+135:\newcommand{\mindeg}{\kw{mindeg}}
+136:\newcommand{\vertices}{\kw{Vert}}
+137:\newcommand{\carrier}{\kw{carrier}}
+138:\newcommand{\nbhd}{\kw{nbhd}}
+139:\newcommand{\adj}{\kw{adj}}
+140:\newcommand{\taut}{\kw{taut}}
+141:\newcommand{\net}{\kw{net}}
+143:\newcommand{\Zvol}{\kw{Zvol}}
+144:\newcommand{\Qvol}{\kw{Qvol}}
+145:\newcommand{\Rvol}{\kw{Rvol}}
+146:\newcommand{\tetvol}{\kw{tetvol}}
+147:\newcommand{\hash}{\#}
+148:\newcommand{\ms}{[}
+149:\newcommand{\msend}{]}
+151:\newcommand{\kwstyle}{\bf}
+152:\newcommand{\IF}{{\ \kwstyle{if}\ }}
+153:\newcommand{\ELSE}{{\ \kwstyle{else}\ }}
+154:\newcommand{\WHILE}{{\kwstyle{while}\ }}
+155:\newcommand{\DO}{{\ \kwstyle{do}\ }}
+156:\newcommand{\RETURN}{{\kwstyle{return}\ }}
+157:\newcommand{\direct}{\oplus}
+158:\newcommand{\pls}{\mathord{+}}
+159:\newcommand{\mns}{\mathord{-}}
+176:This complex is shellable, and `flag':
+177:every clique in its 1-skeleton occurs as a simplex.
+180:splits under disjoint union, connected sum, and more generally
+181:what we call almost disjoint union,
+183:\begin{comment}
+186:\end{comment}
+190:Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+191:with vertices $\Omega$,
+193:$\Omega$.
+194:Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+195:and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+209:This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+211:Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+216:This notion generalizes both disjoint union and connected sum
+219:showed the $\Zvol$ adds under almost disjoint union:
+223:Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+234:disjoint union.
+250:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+259:Theorem \ref{th2} states that 
+261:The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+262:\begin{comment}
+272:In the first case induction yields a triangulation of $B^3$,
+274:In the second case by Theorem \ref{th1}
+276:by induction both give triangulations of $B^3$, which we
+278:So we wind up with some kind of triangulation $\tau$ of $B^3$,
+282:\end{comment}
+321:Theorem \ref{th2} here
+358:to its multiplicity.
+389:For $x \in \Omega$, $U \in C_n$ let
+448:\section{Almost disjoint unions}
+450:Recall that if $X,Y \in Z_n$ we call $X+Y$ an almost disjoint union
+476:For $A \subset \Omega$, $p \in A$ define
+478:\pi_{A,p}: \Omega \to A
+485:K_*(A,p): C_*(\Omega) \to C_*(A)
+488:This is a projection of $C_*(\Omega)$ onto $C_*(A)$.
+558:This result resembles Theorem 6.2 of
+628:The key is that since $|C|=3$, $\{c_1,c_2\}$ cannot be disjoint from $\{p,q\}$,
+670:Because $\del M = 0$ the signed multiplicity of $s$
+698:$\Qvol$ adds under almost disjoint union,
+704:\section{Triangulations}
+717:For any $k$-simplex $s \in \sigma$ define the \emph{link}
+719:\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+723:(except for $\link(\emptyset,\sigma)=\sigma$)
+729:called normal pseudomanifolds, or as we will prefer to say,
+730:\emph{clean $n$-complexes}.
+735:a clean complex must be \emph{pure},
+742:A clean complex is a \emph{pseudomanifold}:
+746:the link $\link(s,\sigma)$ of any $n-1$-simplex $s$
+753:A clean complex is \emph{normal}:
+755:$\link(s,\sigma)$ is connected.
+765:If $\sigma$ is clean, 
+766:$\link(s,\sigma)$ is clean.
+767:The boundary $\del \sigma$ of $\sigma$ is clean,
+774:if the geometric carrier of $\sigma$ is homeomorphic to $W$.
+775:In this case $\sigma$ is necessarily a clean complex.
+800:simplex occurs in $M$ with multiplicity $0$ or $\pm 1$.
+801:In that case we write $K(M)$ for the \emph{support} of $M$: the pure
+803:(In passing to $K(M)$ we view oriented simplices as a subclass of
+806:We call $M$ \emph{clean} if it is simplicial and $K(M)$ is clean.
+808:In particular, a filling $M$---an $(n\pls1)$-chain---is \emph{clean} when
+809:it has no repeated simplices and its support $K(M)$ is a clean simplicial
+818:Then $M$ is clean, and its support $K(M)$
+819:is a simplicial triangulation of $B^3$.
+837:Call a tet $t \in M$ \emph{eligible} if it shares two of its oriented
+853:faces each. These are \emph{disjointly eligible}: eligible tets whose
+854:pairs of boundary faces are mutually disjoint. We will need only two.
+856:Consider an eligible tet $t$ with boundary faces $s_1=[a,b,c]$ and
+864:taut filling of it. By minimality of $|M|$, $M-t$ is clean.
+866:is the almost disjoint union of two triangulations $\sigma_1,\sigma_2$
+867:of $S^2$, conjoined along the edge $cd$. By Theorem \ref{th1}, $M-t$
+869:$\sigma_i$; by minimality, each $M_i$ is clean. Here $M-t$ itself need
+870:\emph{not} be clean as a single complex---the link of the edge $cd$ in
+871:$K(M-t)$ is disconnected---even though it splits into the clean pieces
+876:We must now show that $M$ itself is clean. First, $M$ is simplicial: the
+877:only way it could fail to be is for some eligible tet $t$ to occur in $M$
+878:with multiplicity $2$. Choose a second tet $u$, disjointly eligible from
+883:It remains to verify that $M$ is clean, by checking the three conditions
+884:defining a clean complex.
+889:$M$ is a pseudomanifold.
+894:after removing any eligible tet it
+900:Remove some eligible tet that does not have $s$ as a face
+904:$M$ has no edge $\{a,b\}$ whose link
+906:For the link is a 1-dimensional complex whose edges correspond to
+908:The only way a component of the link can have fewer than three
+915:so no other component of the link can reduce to a single edge.
+916:If the link is disconnected, removing any eligible tet
+921:$M$ has no vertex whose link is disconnected:
+922:For if $\link(\{a\},M)$ is not connected,
+924:can render the link connected
+925:is if one component of the link has a single $2$-simplex
+931:\item Hence $M$ is clean.
+937:$M$ of $\sigma$ as `being' the simplicial triangulation $\tau=K(M)$ of
+938:$B^3$.
+942:A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$ is an
+944:one at a time maintains a triangulation of $B^3$: for each
+946:$\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B^3$.
+952:decreases. (A shelling with this property is sometimes called
+953:\emph{monotone}; here every shelling is monotone, so we do not belabor
+956:Call $\tau$ \emph{freely shellable} if any $t \in \tau$ can serve as the
+957:initial tet of a shelling.
+961:$M$ of $\sigma$ is freely shellable: its support $\tau=K(M)$ is a
+962:simplicial triangulation of $B^3$ admitting a shelling that begins with
+969:it \emph{shucking}---that takes $\tau$ apart so as to remove $t_1$ last;
+970:reversing it yields a shelling that begins with $t_1$.
+975:$t$ and shuck $\tau-t$, ending with $t_1$.
+978:of $\tau-t_1$ to which $t_1$ is attached; shuck $\tau-t_1$ ending with
+982:Theorem \ref{th2}, there are at least $\maxdeg \geq 4$ disjointly eligible
+984:apart, remove $t$ and shuck $\tau-t$ ending with $t_1$. If $\tau-t$ falls
+985:apart into the almost disjoint union of $\tau_1$ and $\tau_2$, with
+987:$\tau_2$ to which $t$ attaches; shuck $\tau_2$ ending with $t_2$, remove
+988:$t$, then shuck $\tau_1$ ending with $t_1$.
+993:A simplicial complex is a \emph{flag complex} (also called a
+994:\emph{clique complex}) if every clique in its $1$-skeleton occurs as a
+997:is flag just if it is \emph{prime} 
+1007:That each of these is freely shellable implies the same of the union.
+1010:any taut filling of $\sigma$ is a flag complex.
+1014:any taut filling $\tau$ of $\sigma$ is a flag complex.
+1025:The six edges of the $K_4$ $\{A,B,C,D\}$ without the 3-simplex $ABCD$.
+1027:The ten edges of the $K_5$ $\{A,B,C,D,E\}$.
+1031:along with the $K_5$ we would have the five associated $3$-simplices:
+1032:Together these would form an $S^3$, not possible as a subcomplex
+1045:$\maxdeg \geq 4$ disjointly eligible tets: tets that each meet the
+1046:boundary in two faces, with these pairs of faces disjoint.
+1050:or (b) becomes an almost disjoint union where
+1055:In case (b) the key is that if a $K_3$ or $K_4$ occurs
+1056:in the almost disjoint union, it occurs on one side or the other,
+1070:so at most five of the six $K_4$ edges lie on the boundary. Treating the
+1071:octahedron separately as a special case, we may assume $\maxdeg \geq 5$,
+1073:potential obstruction is when exactly five of the six $K_4$ edges lie on
+1075:faces of the $K_4$ are $ABC$ and $BCD$. Removing an eligible tet does no
+1077:of our disjointly eligible tets can have $ABC$ or $BCD$ as a boundary
+1078:face, leaving at least $\maxdeg-2 \geq 3$ further eligible tets whose
+1079:removal flips an edge while preserving the $K_4$.
+1082:\bibliography{taut}
+1083:\bibliographystyle{amsplain}
+
+ succeeded in 0ms:
+6:\newcommand{\nocopyright}{
+19:\newtheorem{theorem}{Theorem}
+25:\newtheorem*{conjecture}{Conjecture}
+31:\newcommand{\proofstart}{{\noindent \bf Proof.\ }}
+32:\newcommand{\note}{{\noindent \bf Note.\ }}
+33:\newcommand{\pfend}{\spadesuit}
+34:\newcommand{\mathproofend}{\quad \qed}
+35:\newcommand{\proofend}{$\quad \qed$}
+36:\newcommand{\goesto}{\rightarrow}
+37:\newcommand{\p}{\;\;\;}
+38:\newcommand{\comma}{\p,}
+39:\newcommand{\pd}{\p.}
+40:\newcommand{\semi}{\p;}
+41:\newcommand{\Rplus}{{\RR_{\geq 0}}}
+45:\newcommand{\beginfigurepos}{\begin{figure}[htbp]}
+50:\newcommand{\fig}[3]{
+61:\newcommand{\figsize}[4]{
+81:\newcommand{\parsec}{\subsection*}
+82:\newcommand{\sect}[1]{\S\ #1}
+84:%\newcommand{\gversus}[2]{\braket{#1\,|\,#2}}
+85:\newcommand{\pair}[1]{\braket{#1}}
+86:\newcommand{\sub}[1]{\braket{#1}}
+87:\newcommand{\nnn}{\mathbf{NSet}}
+88:\newcommand{\zzz}{\mathbf{ZSet}}
+89:\newcommand{\nn}{\mathbf{N}}
+90:\newcommand{\zz}{\mathbf{Z}}
+92:\newcommand{\versus}[2]{\left(#1\,|\,#2\right)}
+93:\newcommand{\gversus}[2]{\left[#1\,|\,#2\right]}
+94:\newcommand{\poly}[1]{\left[#1\right]}
+96:\newcommand{\rising}[1]{\overline{#1}}
+97:\newcommand{\floor}[1]{\left \lfloor #1 \right \rfloor}
+98:\newcommand{\ceiling}[1]{\left \lceil #1 \right \rceil}
+99:\newcommand{\gbinom}{\genfrac{[}{]}{0pt}{}}
+102:\newcommand{\xRrightarrow}[2][]{\ext@arrow 0359\Rrightarrowfill@{#1}{#2}}
+103:\newcommand{\Rrightarrowfill@}{\arrowfill@\equiv\equiv\Rrightarrow}
+104:\newcommand{\xLleftarrow}[2][]{\ext@arrow 3095\Lleftarrowfill@{#1}{#2}}
+105:\newcommand{\Lleftarrowfill@}{\arrowfill@\Lleftarrow\equiv\equiv}
+106:\newcommand{\xLleftRrightarrow}[2][]{\ext@arrow 3399\LleftRrightarrowfill@{#1}{#2}}
+107:\newcommand{\LleftRrightarrowfill@}{\arrowfill@\Lleftarrow\equiv\Rrightarrow}
+110:\newcommand{\eq}{\Rrightarrow}
+111:\newcommand{\funeq}[1]{\stackrel{#1}\eq}
+112:\newcommand{\funequiv}[1]{\stackrel{#1}\equiv}
+113:\newcommand{\funto}[1]{\stackrel{#1}\to}
+114:\newcommand{\union}{\cup}
+115:\newcommand{\cross}{\times}
+116:\newcommand{\op}{\operatorname}
+117:\newcommand{\kw}{\mathrm}
+118:\newcommand{\escape}{\op{escape}}
+119:\newcommand{\cancel}{\op{cancel}}
+120:\newcommand{\nestuntil}{\operatorname{nestuntil}}
+121:\newcommand{\size}{\operatorname{size}}
+122:\newcommand{\id}{\operatorname{id}}
+123:\newcommand{\create}{\operatorname{create}}
+124:\newcommand{\destroy}{\operatorname{destroy}}
+125:\newcommand{\then}{\triangleleft}
+126:\newcommand{\lp}{\kw{LP}}
+127:\newcommand{\LPvol}{\kw{LPvol}}
+128:\newcommand{\vol}{\kw{vol}}
+129:\newcommand{\flipdist}{\kw{flipdist}}
+130:\newcommand{\tetbar}{\kw{homvol}}
+131:\newcommand{\vsa}{\kw{vsa}}
+132:\newcommand{\cone}{\kw{cone}}
+133:\newcommand{\link}{\kw{link}}
+134:\newcommand{\maxdeg}{\kw{maxdeg}}
+135:\newcommand{\mindeg}{\kw{mindeg}}
+136:\newcommand{\vertices}{\kw{Vert}}
+137:\newcommand{\carrier}{\kw{carrier}}
+138:\newcommand{\nbhd}{\kw{nbhd}}
+139:\newcommand{\adj}{\kw{adj}}
+140:\newcommand{\taut}{\kw{taut}}
+141:\newcommand{\net}{\kw{net}}
+143:\newcommand{\Zvol}{\kw{Zvol}}
+144:\newcommand{\Qvol}{\kw{Qvol}}
+145:\newcommand{\Rvol}{\kw{Rvol}}
+146:\newcommand{\tetvol}{\kw{tetvol}}
+147:\newcommand{\hash}{\#}
+148:\newcommand{\ms}{[}
+149:\newcommand{\msend}{]}
+151:\newcommand{\kwstyle}{\bf}
+152:\newcommand{\IF}{{\ \kwstyle{if}\ }}
+153:\newcommand{\ELSE}{{\ \kwstyle{else}\ }}
+154:\newcommand{\WHILE}{{\kwstyle{while}\ }}
+155:\newcommand{\DO}{{\ \kwstyle{do}\ }}
+156:\newcommand{\RETURN}{{\kwstyle{return}\ }}
+157:\newcommand{\direct}{\oplus}
+158:\newcommand{\pls}{\mathord{+}}
+159:\newcommand{\mns}{\mathord{-}}
+175:simplicial chain whose support complex is clean and triangulates $B^3$; the
+176:resulting triangulation is freely shellable and flag.  The key input is the
+177:general fact that taut fillings of integral $n$-cycles split under disjoint
+178:union, connected sum, and more generally under almost disjoint union, where
+183:Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+184:with vertices $\Omega$,
+186:$\Omega$.
+187:Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+188:and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+202:This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+204:Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+209:This notion generalizes both disjoint union and connected sum
+212:showed the $\Zvol$ adds under almost disjoint union:
+216:Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+227:disjoint union.
+243:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+252:Theorem \ref{th2} states the stronger fact that every taut filling is clean and has support complex a triangulated ball.  The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+291:Theorem \ref{th2} here
+328:to its multiplicity.
+360:For $x \in \Omega$, $U \in C_n$ let
+419:\section{Almost disjoint unions}
+421:Recall that if $X,Y \in Z_n$ we call $X+Y$ an almost disjoint union
+447:For $A \subset \Omega$, $p \in A$ define
+449:\pi_{A,p}: \Omega \to A
+456:K_*(A,p): C_*(\Omega) \to C_*(A)
+459:This is a projection of $C_*(\Omega)$ onto $C_*(A)$.
+529:This result resembles Theorem 6.2 of
+599:The key is that since $|C|=3$, $\{c_1,c_2\}$ cannot be disjoint from $\{p,q\}$,
+641:Because $s$ has no support in $X+Y=\del M$, the signed multiplicity of $s$
+669:$\Qvol$ adds under almost disjoint union,
+675:\section{Triangulations}
+686:For a simplex $s\in K$, define the \emph{link}
+688:\link(s,K)=\{t: t\cap s=\emptyset,\ s\cup t\in K\}.
+694:We will call an $n$-dimensional simplicial complex \emph{clean} if it is a
+695:normal pseudomanifold with boundary, in the following concrete sense.
+699:$0,\ldots,n-2$, the link $\link(s,K)$ is connected.  Thus in dimension $3$
+701:edge links and connected vertex links.  We do not impose connectedness of
+705:The boundary of a clean complex is clean and closed, and links in a clean
+706:complex are clean of the corresponding dimension.
+709:triangulation} of $N$ if its geometric carrier is homeomorphic to $N$.  When
+720:with multiplicity greater than one.  If $M$ is simplicial, let $K(M)$ denote
+723:$M$ \emph{clean} if $M$ is simplicial and $K(M)$ is a clean complex.
+729:filling of $X(\sigma)$.  Then $M$ is clean, and $K(M)$ is a simplicial
+730:triangulation of $B^3$.
+736:Call such a pair \emph{good} if $M$ is clean and $K(M)$ is a simplicial
+737:triangulation of $B^3$.  We prove that every filling pair is good.
+746:A tet $t\in M$ is \emph{eligible} if two of its oriented faces occur as faces
+762:Hence $r\geq \maxdeg(\sigma)$.  These $r$ tets are eligible, and the pairs of
+763:new boundary faces assigned to them are disjoint.  We shall use only the
+764:existence of two such eligible tets, and the fact that for any fixed boundary
+765:face there is an eligible tet not containing it.
+767:Choose an eligible tet $t$ with boundary faces
+781:$\sigma_t$, so by minimality $(\sigma_t,M-t)$ is good.  Thus $M-t$ is clean
+782:and $K(M-t)$ triangulates $B^3$.  Gluing $t$ back along the two exposed
+783:boundary faces gives $K(M)$, provided $t$ was not already present in $M-t$.
+785:twice.  Choose another eligible tet $u$ whose two boundary faces are disjoint
+792:an almost disjoint union of two triangulated spheres, say $\sigma_1$ and
+793:$\sigma_2$, joined along the edge $cd$.  The filling $M-t$ need not be clean
+794:as one complex: the link of the common edge is disconnected.  But by
+795:Theorem \ref{th1}, the taut filling $M-t$ splits as
+800:$(\sigma_i,M_i)$ is good.  Thus $K(M_1)$ and $K(M_2)$ are clean triangulated
+802:$K(M)$, again unless $t$ was already present in $M-t$.  The same second
+803:eligible tet argument rules this obstruction out.  Therefore $M$ is good in
+806:It remains only to spell out why this gluing preserves cleanness.  Away from
+807:the two faces along which $t$ is attached, the links and face incidences are
+808:unchanged from the smaller clean ball or balls.  Along the gluing faces, each
+810:and vertex links are obtained from connected intervals or disks by attaching
+813:two tets, or a disconnected edge or vertex link already visible after removing
+814:a disjoint eligible tet.  Such a persistent failure would make the smaller
+816:is clean and triangulates $B^3$.
+822:of $\sigma$ is a simplicial triangulation $\tau$ of $B^3$.
+826:We next show that a taut filling may be shelled from any chosen initial tet.
+827:A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$ is an ordering
+829:generated by $t_1,\ldots,t_k$ is again a simplicial triangulation of $B^3$.
+832:of internal vertices.  We call $\tau$ \emph{freely shellable} if every tet of
+833:$\tau$ can be chosen as the first tet of some shelling.
+837:$\sigma$ is a freely shellable simplicial triangulation of $B^3$.
+841:This follows by turning the induction in Theorem \ref{th2} into a recursive
+842:``shucking'' procedure.  Fix the tet $t_1$ which is to be first in the final
+843:shelling; equivalently, we will remove all other tets first and remove $t_1$
+847:vertex belongs to a tet $t\neq t_1$, remove that tet and shuck the remaining
+850:attached; shuck $\tau-t_1$ ending with $t_2$, and then put $t_1$ first when
+853:If there is no degree-$3$ vertex, the eligible-tet count supplies at least
+854:$\maxdeg(\sigma)\geq 4$ disjoint eligible tets.  Choose one sharing no face
+856:filling.  If removing it splits the boundary into two conjoined spheres, split
+857:the filling as in Theorem \ref{th1}, shuck the side not containing $t_1$ first,
+858:then remove the bridging tet, and finally shuck the side containing $t_1$.
+859:Reading this removal order backwards gives a shelling beginning with $t_1$.
+864:A simplicial complex is a \emph{flag complex} if every clique in its
+865:$1$-skeleton occurs as a simplex.  A triangulation of $S^2$ is flag exactly
+875:$\sigma$ is a flag complex.
+882:\item the six edges of a $K_4$ on $\{A,B,C,D\}$ without the tet $ABCD$;
+883:\item the ten edges of a $K_5$ on $\{A,B,C,D,E\}$.
+886:well: a $K_5$ would force all five of its $K_4$ subcomplexes to occur as tets,
+896:Then the eligible-tet count gives at least $\maxdeg(\sigma)$ disjoint eligible
+898:remains a triangulated sphere or becomes an almost disjoint union of two
+901:a taboo $K_3$ or $K_4$ in the almost disjoint union lies entirely on one side
+905:For a missing triangle, only one edge disappears when we remove an eligible
+906:tet: the boundary edge being flipped.  There are at least four eligible flips,
+914:the octahedral boundary as the small exceptional case, we may assume
+915:$\maxdeg(\sigma)\geq 5$.  Hence there are at least five disjoint eligible
+916:flips.  If five of the six $K_4$ edges are not simultaneously boundary edges,
+917:one of these flips avoids the taboo $K_4$.  In the remaining case, say the
+919:$BCD$.  At most two of the disjoint eligible tets can use one of these two
+920:faces, leaving another eligible flip which preserves the $K_4$.  Again we get
+924:\begin{thebibliography}{5}
+947:\end{thebibliography}
+
+exec
+/bin/zsh -lc "rg -n \"newcommand|DeclareMathOperator|Omega|K\\(|clean|Triangulations|carrier|bibliography|begin\\{thebibliography\\}|joke|TODO|FIXME|comment|Conjecture|flag|clique|octa|K_?4|K_?5|shell|shuck|monotone|eligible|conjoined|disjoint|multiplicity|pseudomanifold|link|S\\"'^3|B'"\\"'^3|Theorem" text/tautxy/tautA-codex-01.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+6:\newcommand{\nocopyright}{
+20:\newtheorem{theorem}{Theorem}
+26:\newtheorem*{conjecture}{Conjecture}
+32:\newcommand{\proofstart}{{\noindent \bf Proof.\ }}
+33:\newcommand{\note}{{\noindent \bf Note.\ }}
+34:\newcommand{\pfend}{\spadesuit}
+35:\newcommand{\mathproofend}{\quad \qed}
+36:\newcommand{\proofend}{$\quad \qed$}
+37:\newcommand{\goesto}{\rightarrow}
+38:\newcommand{\p}{\;\;\;}
+39:\newcommand{\comma}{\p,}
+40:\newcommand{\pd}{\p.}
+41:\newcommand{\semi}{\p;}
+42:\newcommand{\Rplus}{{\RR_{\geq 0}}}
+46:\newcommand{\beginfigurepos}{\begin{figure}[htbp]}
+51:\newcommand{\fig}[3]{
+62:\newcommand{\figsize}[4]{
+82:\newcommand{\parsec}{\subsection*}
+83:\newcommand{\sect}[1]{\S\ #1}
+85:%\newcommand{\gversus}[2]{\braket{#1\,|\,#2}}
+86:\newcommand{\pair}[1]{\braket{#1}}
+87:\newcommand{\sub}[1]{\braket{#1}}
+88:\newcommand{\nnn}{\mathbf{NSet}}
+89:\newcommand{\zzz}{\mathbf{ZSet}}
+90:\newcommand{\nn}{\mathbf{N}}
+91:\newcommand{\zz}{\mathbf{Z}}
+93:\newcommand{\versus}[2]{\left(#1\,|\,#2\right)}
+94:\newcommand{\gversus}[2]{\left[#1\,|\,#2\right]}
+95:\newcommand{\poly}[1]{\left[#1\right]}
+97:\newcommand{\rising}[1]{\overline{#1}}
+98:\newcommand{\floor}[1]{\left \lfloor #1 \right \rfloor}
+99:\newcommand{\ceiling}[1]{\left \lceil #1 \right \rceil}
+100:\newcommand{\gbinom}{\genfrac{[}{]}{0pt}{}}
+103:\newcommand{\xRrightarrow}[2][]{\ext@arrow 0359\Rrightarrowfill@{#1}{#2}}
+104:\newcommand{\Rrightarrowfill@}{\arrowfill@\equiv\equiv\Rrightarrow}
+105:\newcommand{\xLleftarrow}[2][]{\ext@arrow 3095\Lleftarrowfill@{#1}{#2}}
+106:\newcommand{\Lleftarrowfill@}{\arrowfill@\Lleftarrow\equiv\equiv}
+107:\newcommand{\xLleftRrightarrow}[2][]{\ext@arrow 3399\LleftRrightarrowfill@{#1}{#2}}
+108:\newcommand{\LleftRrightarrowfill@}{\arrowfill@\Lleftarrow\equiv\Rrightarrow}
+111:\newcommand{\eq}{\Rrightarrow}
+112:\newcommand{\funeq}[1]{\stackrel{#1}\eq}
+113:\newcommand{\funequiv}[1]{\stackrel{#1}\equiv}
+114:\newcommand{\funto}[1]{\stackrel{#1}\to}
+115:\newcommand{\union}{\cup}
+116:\newcommand{\cross}{\times}
+117:\newcommand{\op}{\operatorname}
+118:\newcommand{\kw}{\mathrm}
+119:\newcommand{\escape}{\op{escape}}
+120:\newcommand{\cancel}{\op{cancel}}
+121:\newcommand{\nestuntil}{\operatorname{nestuntil}}
+122:\newcommand{\size}{\operatorname{size}}
+123:\newcommand{\id}{\operatorname{id}}
+124:\newcommand{\create}{\operatorname{create}}
+125:\newcommand{\destroy}{\operatorname{destroy}}
+126:\newcommand{\then}{\triangleleft}
+127:\newcommand{\lp}{\kw{LP}}
+128:\newcommand{\LPvol}{\kw{LPvol}}
+129:\newcommand{\vol}{\kw{vol}}
+130:\newcommand{\flipdist}{\kw{flipdist}}
+131:\newcommand{\tetbar}{\kw{homvol}}
+132:\newcommand{\vsa}{\kw{vsa}}
+133:\newcommand{\cone}{\kw{cone}}
+134:\newcommand{\link}{\kw{link}}
+135:\newcommand{\maxdeg}{\kw{maxdeg}}
+136:\newcommand{\mindeg}{\kw{mindeg}}
+137:\newcommand{\vertices}{\kw{Vert}}
+138:\newcommand{\carrier}{\kw{carrier}}
+139:\newcommand{\nbhd}{\kw{nbhd}}
+140:\newcommand{\adj}{\kw{adj}}
+141:\newcommand{\taut}{\kw{taut}}
+142:\newcommand{\net}{\kw{net}}
+144:\newcommand{\Zvol}{\kw{Zvol}}
+145:\newcommand{\Qvol}{\kw{Qvol}}
+146:\newcommand{\Rvol}{\kw{Rvol}}
+147:\newcommand{\tetvol}{\kw{tetvol}}
+148:\newcommand{\hash}{\#}
+149:\newcommand{\ms}{[}
+150:\newcommand{\msend}{]}
+152:\newcommand{\kwstyle}{\bf}
+153:\newcommand{\IF}{{\ \kwstyle{if}\ }}
+154:\newcommand{\ELSE}{{\ \kwstyle{else}\ }}
+155:\newcommand{\WHILE}{{\kwstyle{while}\ }}
+156:\newcommand{\DO}{{\ \kwstyle{do}\ }}
+157:\newcommand{\RETURN}{{\kwstyle{return}\ }}
+158:\newcommand{\direct}{\oplus}
+159:\newcommand{\pls}{\mathord{+}}
+160:\newcommand{\mns}{\mathord{-}}
+177:This complex is shellable, and `flag':
+178:every clique in its 1-skeleton occurs as a simplex.
+181:splits under disjoint union, connected sum, and more generally
+182:what we call almost disjoint union,
+184:\begin{comment}
+187:\end{comment}
+191:Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+192:with vertices $\Omega$,
+194:$\Omega$.
+195:Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+196:and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+210:This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+212:Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+217:This notion generalizes both disjoint union and connected sum
+220:showed the $\Zvol$ adds under almost disjoint union:
+224:Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+235:disjoint union.
+251:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+260:Theorem \ref{th2} states that 
+262:The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+263:\begin{comment}
+273:In the first case induction yields a triangulation of $B^3$,
+275:In the second case by Theorem \ref{th1}
+277:by induction both give triangulations of $B^3$, which we
+279:So we wind up with some kind of triangulation $\tau$ of $B^3$,
+283:\end{comment}
+322:Theorem \ref{th2} here
+359:to its multiplicity.
+390:For $x \in \Omega$, $U \in C_n$ let
+449:\section{Almost disjoint unions}
+451:Recall that if $X,Y \in Z_n$ we call $X+Y$ an almost disjoint union
+477:For $A \subset \Omega$, $p \in A$ define
+479:\pi_{A,p}: \Omega \to A
+486:K_*(A,p): C_*(\Omega) \to C_*(A)
+489:This is a projection of $C_*(\Omega)$ onto $C_*(A)$.
+559:This result resembles Theorem 6.2 of
+629:The key is that since $|C|=3$, $\{c_1,c_2\}$ cannot be disjoint from $\{p,q\}$,
+671:Because $\del M = 0$ the signed multiplicity of $s$
+699:$\Qvol$ adds under almost disjoint union,
+705:\section{Triangulations}
+718:For any simplex $s \in \sigma$ define the \emph{link}
+720:\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+724:(except for $\link(\emptyset,\sigma)=\sigma$)
+729:We are interested in normal pseudomanifolds,
+730:which we will call \emph{clean $n$-complexes}.
+731:A simplicial complex $\sigma$ is clean of dimension $n$ if:
+739:$\sigma$ is a pseudomanifold:
+740:the link $\link(s,\sigma)$ of any $(n-1)$-simplex $s$
+749:the link $\link(s,\sigma)$ is connected.
+755:If $\sigma$ is clean, then each link $\link(s,\sigma)$ is clean.
+756:The boundary $\del \sigma$ of a clean complex is clean and closed:
+761:if the geometric carrier of $\sigma$ is homeomorphic to $W$.
+762:In this case $\sigma$ is necessarily clean.
+782:For a chain $M \in C_n$, define $K(M)$ to be the pure simplicial
+787:We call $M$ \emph{clean} if $M$ is simplicial and $K(M)$ is a clean
+794:filling of $X(\sigma)$, then $M$ is clean and $K(M)$ is a simplicial
+795:triangulation of $B^3$.
+801:Call a filling pair \emph{good} if $M$ is clean and $K(M)$ is a
+802:simplicial triangulation of $B^3$.
+813:Call a support tetrahedron $t$ of $M$ \emph{eligible} if two of its
+833:Consequently there are at least $\maxdeg(\sigma)$ eligible support
+834:tetrahedra whose pairs of boundary faces are mutually disjoint.
+836:eligible tet $t$, there is another eligible tet whose boundary faces are
+837:disjoint from those of $t$ and do not include $s$.
+839:Let $t$ be an eligible tet with boundary faces
+850:Adding $t$ back gives a triangulation of $B^3$ unless the same support
+852:multiplicity $2$ in $M$.
+853:If that happened, remove instead an eligible tet $u$ whose boundary faces
+854:are disjoint from those of $t$.
+860:almost disjoint union of two simplicial triangulations
+861:$\sigma_1,\sigma_2$ of $S^2$, conjoined along the edge $cd$.
+862:By Theorem \ref{th1}, $M-t$ splits as $M_1+M_2$, where $M_i$ is a taut
+865:The complex $K(M-t)$ need not be clean as a single complex, because the
+866:link of the shared edge $cd$ can be disconnected; nevertheless it is the
+867:union of the two clean pieces $K(M_1)$ and $K(M_2)$.
+870:The same disjoint eligible-tet argument rules out that multiplicity-$2$
+873:We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+874:triangulation of $B^3$ unless one of the clean-complex conditions fails.
+879:$K(M)$ is a pseudomanifold.
+882:If $s \notin \sigma$, then after removing an eligible tet not needed to
+884:one-sphere case or in one of the two split pieces in the conjoined case,
+886:If $s \in \sigma$, choose an eligible tet not having $s$ as a boundary
+891:No edge $\{a,b\}$ has disconnected link in $K(M)$.
+892:The link is a $1$-dimensional complex whose edges correspond to support
+894:The only way a component of such a link can have fewer than three
+900:If the link were disconnected, removing an eligible tet other than this
+902:piece in the conjoined case, contradicting minimality.
+905:No vertex has disconnected link in $K(M)$.
+906:If $\link(\{a\},K(M))$ were disconnected, the only way removing one tet
+907:could make it connected would be for one component of the link to be a
+915:Thus $M$ is clean and $K(M)$ is a simplicial triangulation of $B^3$,
+919:After Theorem \ref{th2} we will often identify a taut filling $M$ of
+920:$X(\sigma)$ with the triangulated ball $K(M)$.
+924:A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+929:simplicial triangulation of $B^3$.
+931:faces.  In the shellings obtained below, the three-face move does not
+933:Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+934:the first tet of such a shelling.
+938:any taut filling of $X(\sigma)$ is a freely shellable
+939:simplicial triangulation of $B^3$.
+943:By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+946:the shelling.
+956:vertex.  As in the proof of Theorem \ref{th2}, there are at least
+957:$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+958:Choose one, say $t$, whose two boundary faces are disjoint from those of
+962:If removing $t$ splits the boundary into two conjoined spheres, then
+964:Theorem \ref{th1} and Theorem \ref{th2}.
+970:reversed order is the desired shelling.
+975:A simplicial complex is a \emph{flag complex}
+976:(or clique complex) if every clique in its $1$-skeleton occurs as a
+979:is flag exactly when it is prime
+989:every taut filling is flag.
+993:any taut filling of $X(\sigma)$ is a flag complex.
+998:We must rule out the following minimal failures of flagness:
+1003:the six edges of the $K_4$ on $\{A,B,C,D\}$ without the tet $ABCD$;
+1005:the ten edges of the $K_5$ on $\{A,B,C,D,E\}$.
+1009:well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+1021:Then the eligible-tet count from Theorem \ref{th2} gives at least
+1022:$\maxdeg(\sigma)\geq 4$ eligible tets with pairwise disjoint pairs of
+1026:triangulated spheres conjoined along the new edge.
+1027:In the conjoined case, any forbidden $K_3$ or $K_4$ that survives lies
+1030:For Configuration 1, removing an eligible tet deletes from $\tau$ only
+1040:We need an eligible flip that does not delete one of the six $K_4$ edges.
+1041:If $\maxdeg(\sigma)\geq 5$, the disjoint eligible-tet family gives at
+1044:preserve the $K_4$ unless all but one of its six edges lie on the
+1047:two disjoint eligible tets meet them.  A preserving flip remains.
+1048:The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+1053:\bibliography{taut}
+1054:\bibliographystyle{amsplain}
+
+codex
+The central distinction is already visible: Claude and Codex keep a longer explicit clean-complex verification after Theorem 2, while GPT compresses that into a gluing paragraph. I’m reading those proof blocks closely now so the recommendation can be concrete.
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-claude-01.tex | sed -n '704,1084p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   704	\section{Triangulations}
+   705	
+   706	We turn now to filling simplicial triangulations of $S^2$.
+   707	Let's begin by establishing terminology.
+   708	
+   709	An \emph{$n$-simplex} $s$ is simply a set of size $n+1$.
+   710	Its \emph{faces} are its subsets,
+   711	which are $k$-simplices with $-1 \leq k \leq n$,
+   712	$-1$ being the dimension of the empty simplex.
+   713	A \emph{simplicial complex} $\sigma$ is a finite collection of simplices
+   714	closed under taking faces:
+   715	If $t \subset s \in \sigma$ then $t \in \sigma$.
+   716	
+   717	For any $k$-simplex $s \in \sigma$ define the \emph{link}
+   718	\[
+   719	\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+   720	.
+   721	\]
+   722	This is a simplicial complex, but
+   723	(except for $\link(\emptyset,\sigma)=\sigma$)
+   724	it is not a subcomplex of $\sigma$,
+   725	because we are taking simplices in $\sigma$ and knocking down
+   726	their dimension by $k+1$.
+   727	
+   728	We are interested in particularly nice simplicial complexes
+   729	called normal pseudomanifolds, or as we will prefer to say,
+   730	\emph{clean $n$-complexes}.
+   731	
+   732	\begin{enumerate}
+   733	\item
+   734	To start with,
+   735	a clean complex must be \emph{pure},
+   736	meaning that every simplex of $\sigma$ belongs to some $n$-simplex in $\sigma$.
+   737	To determine $\sigma$ we can specify its $n$-simplices,
+   738	and then throw in all their subsets.
+   739	So we can confound a pure complex with the set of its $n$-simplices.
+   740	
+   741	\item
+   742	A clean complex is a \emph{pseudomanifold}:
+   743	Every $n$-simplex abuts at most one other $n$-simplex
+   744	across any given $n-1$-simplex.
+   745	Another way to say this is that
+   746	the link $\link(s,\sigma)$ of any $n-1$-simplex $s$
+   747	consists of either a single point 
+   748	(in which case $s \in \del \sigma$ is a \emph{boundary simplex}),
+   749	or two points
+   750	($s \in \sigma \setminus \del \sigma$ is an \emph{interior simplex}.)
+   751	
+   752	\item
+   753	A clean complex is \emph{normal}:
+   754	For any simplex $s$ of dimension $0,\ldots,n-2$,
+   755	$\link(s,\sigma)$ is connected.
+   756	(Some definitions extend this requirement
+   757	to the empty simplex of dimension $-1$;
+   758	this forces $\sigma$ to be connected.)
+   759	Being normal means that $\sigma$ is just what you get by gluing its 
+   760	$n$-simplices along shared faces,
+   761	without extra identifications. This rules out, for example,
+   762	an icosahedron with a pair of opposite vertices identified.
+   763	\end{enumerate}
+   764	
+   765	If $\sigma$ is clean, 
+   766	$\link(s,\sigma)$ is clean.
+   767	The boundary $\del \sigma$ of $\sigma$ is clean,
+   768	and closed:
+   769	$\del \del \sigma = \{\emptyset\}$.
+   770	
+   771	If $W$ is an $n$-manifold,
+   772	say that a simplicial complex $\sigma$
+   773	is a \emph{simplicial triangulation} of $W$
+   774	if the geometric carrier of $\sigma$ is homeomorphic to $W$.
+   775	In this case $\sigma$ is necessarily a clean complex.
+   776	We imagine that we have prescribed a specific homeomorphism,
+   777	at least up to the point of picking out one particular orientation
+   778	$X(\sigma) \in C_n$ when $W$ is oriented;
+   779	but we do not insist upon this, because nothing will depend on which
+   780	orientation we pick.
+   781	
+   782	This notion of triangulation is not as general as you might want
+   783	for some purposes.
+   784	The double cover of a triangle is not a simplicial triangulation
+   785	of $S^2$,
+   786	because that would requires two distinct
+   787	$2$-simplices to have the same three edges.
+   788	Nor can any $2$-simplex have two of its edges
+   789	glued to one another.
+   790	Thurston
+   791	\cite{thurston:shapes}
+   792	allows such triangulations,
+   793	but it is unclear how important these are to
+   794	his theory of shapes of surfaces.
+   795	We don't allow them.
+   796	
+   797	We continue to think of a chain $M \in C_n$ as a multiset of
+   798	oriented $n$-simplices.
+   799	We call $M$ \emph{simplicial} if no simplex is repeated, that is, if every
+   800	simplex occurs in $M$ with multiplicity $0$ or $\pm 1$.
+   801	In that case we write $K(M)$ for the \emph{support} of $M$: the pure
+   802	simplicial complex generated by the $n$-simplices occurring in $M$.
+   803	(In passing to $K(M)$ we view oriented simplices as a subclass of
+   804	simplices, and identify a set of $n$-simplices with the pure $n$-complex
+   805	it generates.)
+   806	We call $M$ \emph{clean} if it is simplicial and $K(M)$ is clean.
+   807	
+   808	In particular, a filling $M$---an $(n\pls1)$-chain---is \emph{clean} when
+   809	it has no repeated simplices and its support $K(M)$ is a clean simplicial
+   810	complex. For a filling of a triangulated $2$-sphere, the simplices in
+   811	question are tetrahedra.
+   812	
+   813	\section{Filling a triangulation of the 2-sphere}
+   814	
+   815	\begin{theorem} \label{th2}
+   816	Let $\sigma$ be a simplicial triangulation of $S^2$,
+   817	and $M$ a taut filling of $\sigma$.
+   818	Then $M$ is clean, and its support $K(M)$
+   819	is a simplicial triangulation of $B^3$.
+   820	\end{theorem}
+   821	
+   822	\proofstart
+   823	
+   824	Let $v,e,f$  count the vertices, edges, and faces of $\sigma$.
+   825	We have
+   826	$e=3v-6$, $f=2v-4$.
+   827	(Check: $3f=2e$, $v-e+f=2$.)
+   828	
+   829	Consider a counterexample pair $(\sigma,M)$ for which
+   830	$\Zvol(\sigma)=|M|$ is minimal.
+   831	Obviously $v>4$.
+   832	We can assume that $\sigma$ is prime
+   833	(not a connected sum along a triangle),
+   834	and in particular (this is all we will need) that there is no
+   835	vertex of degree $3$.
+   836	
+   837	Call a tet $t \in M$ \emph{eligible} if it shares two of its oriented
+   838	faces with $\sigma$. (It cannot share more than two, since $\sigma$ has
+   839	no vertex of degree $3$.)
+   840	By Proposition \ref{maxdeg},
+   841	\[
+   842	|M| = \Zvol(\sigma) \leq f-\maxdeg(\sigma)
+   843	.
+   844	\]
+   845	Regard $M$ as a multiset of tets, and assign to each $2$-simplex
+   846	$\alpha$ of $\sigma$ some tet of $M$ having $\alpha$ as a properly
+   847	oriented face. Such a tet exists, because $\alpha$ occurs with
+   848	coefficient $+1$ in $\del M = X(\sigma)$, so some tet of $M$ contributes
+   849	$\alpha$ with the correct sign. (Throughout we count support tets and
+   850	correct boundary signs, not coefficient copies or cancelled appearances.)
+   851	This assignment is at most $2$-to-$1$, since no tet of $M$ has more than
+   852	two faces on $\sigma$, so at least $\maxdeg(\sigma)$ tets receive two
+   853	faces each. These are \emph{disjointly eligible}: eligible tets whose
+   854	pairs of boundary faces are mutually disjoint. We will need only two.
+   855	
+   856	Consider an eligible tet $t$ with boundary faces $s_1=[a,b,c]$ and
+   857	$s_2=[b,a,d]$. Removing $t$ from $M$ produces a filling $M-t$ of a
+   858	$2$-complex $\sigma_t$, in which $s_1,s_2$ have been replaced by the
+   859	faces $[c,d,b],[d,c,a]$: the edge $ab$ has been \emph{flipped} to the
+   860	edge $cd$. There are two cases.
+   861	\begin{itemize}
+   862	\item[(1)] Edge $cd$ was not already an edge of $\sigma$. Then
+   863	$\sigma_t$ is again a simplicial triangulation of $S^2$, and $M-t$ is a
+   864	taut filling of it. By minimality of $|M|$, $M-t$ is clean.
+   865	\item[(2)] Edge $cd$ was already an edge of $\sigma$. Then $\sigma_t$
+   866	is the almost disjoint union of two triangulations $\sigma_1,\sigma_2$
+   867	of $S^2$, conjoined along the edge $cd$. By Theorem \ref{th1}, $M-t$
+   868	splits as $M-t=M_1+M_2$, where each $M_i$ is a taut filling of
+   869	$\sigma_i$; by minimality, each $M_i$ is clean. Here $M-t$ itself need
+   870	\emph{not} be clean as a single complex---the link of the edge $cd$ in
+   871	$K(M-t)$ is disconnected---even though it splits into the clean pieces
+   872	$M_1,M_2$. It is, however, still simplicial.
+   873	\end{itemize}
+   874	In either case $M-t$ is simplicial.
+   875	
+   876	We must now show that $M$ itself is clean. First, $M$ is simplicial: the
+   877	only way it could fail to be is for some eligible tet $t$ to occur in $M$
+   878	with multiplicity $2$. Choose a second tet $u$, disjointly eligible from
+   879	$t$, so that $u\neq t$. Removing $u$ leaves $2t$ present in $M-u$, so
+   880	$M-u$ is not simplicial---contradicting the previous paragraph applied to
+   881	$u$. Hence $M$ is simplicial.
+   882	
+   883	It remains to verify that $M$ is clean, by checking the three conditions
+   884	defining a clean complex.
+   885	
+   886	\begin{enumerate}
+   887	
+   888	\item
+   889	$M$ is a pseudomanifold.
+   890	For suppose some $2$-simplex $s$ occurs more than twice as the boundary
+   891	of a $3$-simplex of $M$.
+   892	If $s \notin \sigma$,
+   893	it must occur at least twice plus and twice minus;
+   894	after removing any eligible tet it
+   895	still occurs either twice plus or twice minus in $M-t$ in case (1),
+   896	or in one or the other of $M_1,M_2$ in case (2),
+   897	contradicting minimality.
+   898	If $s \in \sigma$,
+   899	it occurs at least twice plus in $M$:
+   900	Remove some eligible tet that does not have $s$ as a face
+   901	to get a contradiction.
+   902	
+   903	\item
+   904	$M$ has no edge $\{a,b\}$ whose link
+   905	is disconnected.
+   906	For the link is a 1-dimensional complex whose edges correspond to
+   907	tets of $M$ that contain $\{a,b\}$.
+   908	The only way a component of the link can have fewer than three
+   909	vertices is if consists of a single edge $\{c,d\}$, corresponding
+   910	to a tet $t=\{a,b,c,d\} \in M$.
+   911	In this case $\{a,b\}$ must be an edge of $\sigma$,
+   912	and $\{a,b,c\},\{a,b,d\}$ the faces of $\sigma$
+   913	that are adjacent along $\{a,b\}$.
+   914	These are the only faces of $\sigma$ that contain $\{a,b\}$,
+   915	so no other component of the link can reduce to a single edge.
+   916	If the link is disconnected, removing any eligible tet
+   917	other than $t$ will
+   918	leave it disconnected, contradicting minimality.
+   919	
+   920	\item
+   921	$M$ has no vertex whose link is disconnected:
+   922	For if $\link(\{a\},M)$ is not connected,
+   923	the only way removing a single tet $t$
+   924	can render the link connected
+   925	is if one component of the link has a single $2$-simplex
+   926	$\{b,c,d\}$ and $t=\{a,b,c,d\}$.
+   927	In this case $\{a,b,c\}$, $\{a,b,d\}$, $\{a,c,d\}$ must
+   928	all be faces of $\sigma$,
+   929	making $a$ a vertex of $\sigma$ of degree $3$, contradiction.
+   930	
+   931	\item Hence $M$ is clean.
+   932	\proofend
+   933	
+   934	\end{enumerate}
+   935	
+   936	Thanks to this theorem we may, when convenient, speak of a taut filling
+   937	$M$ of $\sigma$ as `being' the simplicial triangulation $\tau=K(M)$ of
+   938	$B^3$.
+   939	
+   940	\section{Shelling}
+   941	
+   942	A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$ is an
+   943	ordering $(t_1,\ldots,t_{|\tau|})$ of its tets such that gluing them on
+   944	one at a time maintains a triangulation of $B^3$: for each
+   945	$k=1,\ldots,|\tau|$, the subcomplex $\tau_k$ generated by
+   946	$\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B^3$.
+   947	For $k>1$ we classify $t_k$ by the number of faces it shares with
+   948	$\tau_{k-1}$. Gluing along one face increases the vertex count $v$ by
+   949	$1$; along two faces leaves $v$ unchanged; along three faces decreases
+   950	$v$ by $1$. In our setting the third type never occurs, since gluing a
+   951	tet along three faces would bury an interior vertex; thus $v$ never
+   952	decreases. (A shelling with this property is sometimes called
+   953	\emph{monotone}; here every shelling is monotone, so we do not belabor
+   954	the distinction.)
+   955	
+   956	Call $\tau$ \emph{freely shellable} if any $t \in \tau$ can serve as the
+   957	initial tet of a shelling.
+   958	
+   959	\begin{theorem} \label{th3}
+   960	If $\sigma$ is a simplicial triangulation of $S^2$, then any taut filling
+   961	$M$ of $\sigma$ is freely shellable: its support $\tau=K(M)$ is a
+   962	simplicial triangulation of $B^3$ admitting a shelling that begins with
+   963	any prescribed tet.
+   964	\end{theorem}
+   965	
+   966	\proofstart
+   967	Fix the designated initial tet $t_1 \in \tau$. Rather than building
+   968	$\tau$ up starting from $t_1$, we describe a recursive procedure---call
+   969	it \emph{shucking}---that takes $\tau$ apart so as to remove $t_1$ last;
+   970	reversing it yields a shelling that begins with $t_1$.
+   971	
+   972	The base case is $\tau = \{t_1\}$.
+   973	
+   974	If $\tau$ has a vertex of degree $3$ lying on a tet $t \neq t_1$, remove
+   975	$t$ and shuck $\tau-t$, ending with $t_1$.
+   976	
+   977	If $\tau$ has a vertex of degree $3$ lying on $t_1$, let $t_2$ be the tet
+   978	of $\tau-t_1$ to which $t_1$ is attached; shuck $\tau-t_1$ ending with
+   979	$t_2$, then remove $t_1$.
+   980	
+   981	If $\tau$ has no vertex of degree $3$, then, as in the proof of
+   982	Theorem \ref{th2}, there are at least $\maxdeg \geq 4$ disjointly eligible
+   983	tets. Pick one, $t$, sharing no face with $t_1$. If $\tau-t$ does not fall
+   984	apart, remove $t$ and shuck $\tau-t$ ending with $t_1$. If $\tau-t$ falls
+   985	apart into the almost disjoint union of $\tau_1$ and $\tau_2$, with
+   986	$t_1 \in \tau_1$ and $t$ bridging the two pieces, let $t_2$ be the tet of
+   987	$\tau_2$ to which $t$ attaches; shuck $\tau_2$ ending with $t_2$, remove
+   988	$t$, then shuck $\tau_1$ ending with $t_1$.
+   989	\proofend
+   990	
+   991	\section{Flag complex}
+   992	
+   993	A simplicial complex is a \emph{flag complex} (also called a
+   994	\emph{clique complex}) if every clique in its $1$-skeleton occurs as a
+   995	simplex.
+   996	A simplicial triangulation $\sigma$ of $S^2$
+   997	is flag just if it is \emph{prime} 
+   998	(not the connected sum of smaller complexes)
+   999	and not the boundary of a tetrahedron.
+  1000	
+  1001	We can decompose any $\sigma$ as the connected sum of
+  1002	prime components $\sigma_i$.
+  1003	(Of course, to reconstruct $\sigma$ we need more than this, we need to know
+  1004	just how they are connected.)
+  1005	From the point of taut fillings these components are independent:
+  1006	Any taut filling $\tau$ of $\sigma$ is a union of taut fillings $\tau_i$.
+  1007	That each of these is freely shellable implies the same of the union.
+  1008	
+  1009	Now we want to show that, whether or not $\sigma$ itself is prime, 
+  1010	any taut filling of $\sigma$ is a flag complex.
+  1011	
+  1012	\begin{theorem}
+  1013	If $\sigma$ is a simplicial triangulation of $S^2$,
+  1014	any taut filling $\tau$ of $\sigma$ is a flag complex.
+  1015	\end{theorem}
+  1016	
+  1017	\proofstart
+  1018	The goal here is to show that neither of these
+  1019	three taboo configurations occurs
+  1020	in $\tau$:
+  1021	\begin{enumerate}
+  1022	\item
+  1023	The three edges of triangle $\{A,B,C\}$ without the 2-simplex $ABC$.
+  1024	\item
+  1025	The six edges of the $K_4$ $\{A,B,C,D\}$ without the 3-simplex $ABCD$.
+  1026	\item
+  1027	The ten edges of the $K_5$ $\{A,B,C,D,E\}$.
+  1028	\end{enumerate}
+  1029	
+  1030	If we can rule out 1 and 2 then 3 will follow, because
+  1031	along with the $K_5$ we would have the five associated $3$-simplices:
+  1032	Together these would form an $S^3$, not possible as a subcomplex
+  1033	of the topological 3-ball $\tau$.
+  1034	
+  1035	To rule out 1 and 2,
+  1036	the strategy will be to consider a minimal counterexample,
+  1037	and find a modification that would produce a smaller counterexample.
+  1038	
+  1039	If $\sigma$ has a vertex of degree 3,
+  1040	it is a connected sum with one summand a single tetrahedron.
+  1041	We can pull off the vertex from $\sigma$, while removing the associated
+  1042	tet from $\tau$, to produce a smaller counterexample.
+  1043	
+  1044	Since $\sigma$ has no vertex of degree $3$, there are at least
+  1045	$\maxdeg \geq 4$ disjointly eligible tets: tets that each meet the
+  1046	boundary in two faces, with these pairs of faces disjoint.
+  1047	Removing any one of these tets performs an `edge flip' on the boundary
+  1048	$\sigma$,
+  1049	which either (a) remains a triangulation of the 2-sphere,
+  1050	or (b) becomes an almost disjoint union where
+  1051	two such triangulations are joined along an edge.
+  1052	We will show that some choice for the flip does not remove the taboo
+  1053	configuration.
+  1054	In case (a) we have a smaller counterexample already.
+  1055	In case (b) the key is that if a $K_3$ or $K_4$ occurs
+  1056	in the almost disjoint union, it occurs on one side or the other,
+  1057	also giving a counterexample.
+  1058	
+  1059	Configuration 1:
+  1060	When we remove a tet from $\tau$ to flip an edge of $\sigma$,
+  1061	the only edge that disappears from $\tau$ is the edge that gets flipped.
+  1062	There are four choices of the edge to flip, and three edges we must
+  1063	avoid flipping.
+  1064	
+  1065	Configuration 2:
+  1066	Now there are six edges we must avoid flipping. Having dealt with
+  1067	configuration 1, we know that along with the six edges of $\{A,B,C,D\}$,
+  1068	$\tau$ contains all four faces $ABC$, $ABD$, $ACD$, $BCD$. At most two of
+  1069	these can be boundary faces, since $\sigma$ has no vertex of degree $3$;
+  1070	so at most five of the six $K_4$ edges lie on the boundary. Treating the
+  1071	octahedron separately as a special case, we may assume $\maxdeg \geq 5$,
+  1072	which gives at least five boundary edges available to flip. The only
+  1073	potential obstruction is when exactly five of the six $K_4$ edges lie on
+  1074	the boundary, the interior edge being, say, $AD$; then the two boundary
+  1075	faces of the $K_4$ are $ABC$ and $BCD$. Removing an eligible tet does no
+  1076	harm unless one of its two boundary faces is $ABC$ or $BCD$. At most two
+  1077	of our disjointly eligible tets can have $ABC$ or $BCD$ as a boundary
+  1078	face, leaving at least $\maxdeg-2 \geq 3$ further eligible tets whose
+  1079	removal flips an edge while preserving the $K_4$.
+  1080	\proofend
+  1081	
+  1082	\bibliography{taut}
+  1083	\bibliographystyle{amsplain}
+  1084	\end{document}
+
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-codex-01.tex | sed -n '705,1055p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   705	\section{Triangulations}
+   706	
+   707	We turn now to filling simplicial triangulations of $S^2$.
+   708	We begin by fixing the terminology.
+   709	
+   710	An \emph{$n$-simplex} $s$ is a set of size $n+1$.
+   711	Its \emph{faces} are its subsets,
+   712	which are $k$-simplices with $-1 \leq k \leq n$,
+   713	where the empty simplex has dimension $-1$.
+   714	A \emph{simplicial complex} $\sigma$ is a finite collection of simplices
+   715	closed under taking faces:
+   716	if $t \subset s \in \sigma$ then $t \in \sigma$.
+   717	
+   718	For any simplex $s \in \sigma$ define the \emph{link}
+   719	\[
+   720	\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+   721	.
+   722	\]
+   723	This is a simplicial complex, but
+   724	(except for $\link(\emptyset,\sigma)=\sigma$)
+   725	it is not a subcomplex of $\sigma$,
+   726	because we are taking simplices in $\sigma$ and lowering
+   727	their dimension by $\dim s+1$.
+   728	
+   729	We are interested in normal pseudomanifolds,
+   730	which we will call \emph{clean $n$-complexes}.
+   731	A simplicial complex $\sigma$ is clean of dimension $n$ if:
+   732	\begin{enumerate}
+   733	\item
+   734	$\sigma$ is pure of dimension $n$,
+   735	meaning that every simplex of $\sigma$ is contained in some
+   736	$n$-simplex of $\sigma$.
+   737	
+   738	\item
+   739	$\sigma$ is a pseudomanifold:
+   740	the link $\link(s,\sigma)$ of any $(n-1)$-simplex $s$
+   741	consists of either one point
+   742	(so $s$ is a boundary simplex)
+   743	or two points
+   744	(so $s$ is an interior simplex).
+   745	
+   746	\item
+   747	$\sigma$ is normal:
+   748	for every simplex $s$ of dimension $0,\ldots,n-2$,
+   749	the link $\link(s,\sigma)$ is connected.
+   750	\end{enumerate}
+   751	The normality condition says that the $n$-simplices are glued along
+   752	shared faces without additional identifications.  It rules out,
+   753	for example, an icosahedron with a pair of opposite vertices identified.
+   754	
+   755	If $\sigma$ is clean, then each link $\link(s,\sigma)$ is clean.
+   756	The boundary $\del \sigma$ of a clean complex is clean and closed:
+   757	$\del \del \sigma = \{\emptyset\}$.
+   758	
+   759	If $W$ is an $n$-manifold, say that a simplicial complex $\sigma$
+   760	is a \emph{simplicial triangulation} of $W$
+   761	if the geometric carrier of $\sigma$ is homeomorphic to $W$.
+   762	In this case $\sigma$ is necessarily clean.
+   763	When $W$ is oriented, a choice of orientation determines one of the
+   764	two associated cycles $X(\sigma) \in C_n$; our arguments do not depend
+   765	on which of the two orientations is chosen.
+   766	
+   767	This notion of triangulation is not as general as one might want
+   768	for some purposes.
+   769	The double cover of a triangle is not a simplicial triangulation
+   770	of $S^2$,
+   771	because that would require two distinct
+   772	$2$-simplices to have the same three edges.
+   773	Nor can any $2$-simplex have two of its edges
+   774	glued to one another.
+   775	Thurston
+   776	\cite{thurston:shapes}
+   777	allows such triangulations,
+   778	but it is unclear how important these are to
+   779	his theory of shapes of surfaces.
+   780	We do not allow them here.
+   781	
+   782	For a chain $M \in C_n$, define $K(M)$ to be the pure simplicial
+   783	complex generated by the unoriented $n$-simplices on which $M$ has
+   784	nonzero coefficient.
+   785	We call $M$ \emph{simplicial} if every nonzero coefficient is $\pm 1$,
+   786	so no unoriented $n$-simplex is repeated.
+   787	We call $M$ \emph{clean} if $M$ is simplicial and $K(M)$ is a clean
+   788	simplicial complex.
+   789	
+   790	\section{Filling a triangulation of the 2-sphere}
+   791	
+   792	\begin{theorem} \label{th2}
+   793	If $\sigma$ is a simplicial triangulation of $S^2$ and $M$ is a taut
+   794	filling of $X(\sigma)$, then $M$ is clean and $K(M)$ is a simplicial
+   795	triangulation of $B^3$.
+   796	\end{theorem}
+   797	
+   798	\proofstart
+   799	Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial
+   800	triangulation of $S^2$ and $M$ is a taut filling of $X(\sigma)$.
+   801	Call a filling pair \emph{good} if $M$ is clean and $K(M)$ is a
+   802	simplicial triangulation of $B^3$.
+   803	We will show that every filling pair is good.
+   804	
+   805	Suppose not, and choose a bad filling pair $(\sigma,M)$ with $|M|$
+   806	minimal.  Let $v,e,f$ count the vertices, edges, and faces of $\sigma$.
+   807	Then $e=3v-6$ and $f=2v-4$.
+   808	The tetrahedral boundary is good, so $v>4$.
+   809	Because taut fillings split under connected sum, we may assume that
+   810	$\sigma$ is prime, meaning not a connected sum along a triangle.
+   811	In particular, $\sigma$ has no vertex of degree $3$.
+   812	
+   813	Call a support tetrahedron $t$ of $M$ \emph{eligible} if two of its
+   814	oriented boundary faces are faces of $X(\sigma)$ with the correct signs.
+   815	It cannot have three such faces, since that would give a degree-$3$
+   816	vertex in $\sigma$.
+   817	By Proposition \ref{maxdeg},
+   818	\[
+   819	|M|=\Zvol(\sigma) \leq f-\maxdeg(\sigma).
+   820	\]
+   821	For each support tetrahedron $u$ of $M$, let $A(u)$ be the set of faces
+   822	of $\sigma$ that occur as correctly oriented boundary faces of $u$.
+   823	Each $A(u)$ has size at most $2$.
+   824	Every face of $\sigma$ occurs in at least one $A(u)$, because its
+   825	coefficient in $\partial M=X(\sigma)$ is nonzero with the prescribed sign.
+   826	List the support tetrahedra of $M$ and reveal the sets $A(u)$ one at a
+   827	time, recording only faces of $\sigma$ not previously seen.
+   828	If $r$ support tetrahedra reveal two new faces, then
+   829	\[
+   830	f \leq |\operatorname{supp} M|+r \leq |M|+r.
+   831	\]
+   832	Thus $r\geq \maxdeg(\sigma)$.
+   833	Consequently there are at least $\maxdeg(\sigma)$ eligible support
+   834	tetrahedra whose pairs of boundary faces are mutually disjoint.
+   835	We will use only the fact that, given any boundary face $s$ and any
+   836	eligible tet $t$, there is another eligible tet whose boundary faces are
+   837	disjoint from those of $t$ and do not include $s$.
+   838	
+   839	Let $t$ be an eligible tet with boundary faces
+   840	$s_1=[a,b,c]$ and $s_2=[b,a,d]$.
+   841	Removing $t$ from $M$ gives a taut filling $M-t$ of the cycle obtained
+   842	from $X(\sigma)$ by replacing $s_1,s_2$ with
+   843	$[c,d,b]$ and $[d,c,a]$.
+   844	At the level of the boundary complex, this flips the edge $ab$ to $cd$.
+   845	There are two cases.
+   846	
+   847	First, if $cd$ was not an edge of $\sigma$, the flipped complex
+   848	$\sigma_t$ is again a simplicial triangulation of $S^2$.
+   849	By minimality, $(\sigma_t,M-t)$ is good.
+   850	Adding $t$ back gives a triangulation of $B^3$ unless the same support
+   851	tetrahedron $t$ was already present in $M-t$, i.e. unless $t$ had
+   852	multiplicity $2$ in $M$.
+   853	If that happened, remove instead an eligible tet $u$ whose boundary faces
+   854	are disjoint from those of $t$.
+   855	Then $M-u$ would still contain the repeated support tetrahedron $t$ and
+   856	could not be simplicial, so $(\sigma_u,M-u)$ would be a smaller bad
+   857	filling pair, a contradiction.
+   858	
+   859	Second, if $cd$ was already an edge of $\sigma$, the flipped cycle is an
+   860	almost disjoint union of two simplicial triangulations
+   861	$\sigma_1,\sigma_2$ of $S^2$, conjoined along the edge $cd$.
+   862	By Theorem \ref{th1}, $M-t$ splits as $M_1+M_2$, where $M_i$ is a taut
+   863	filling of $X(\sigma_i)$.
+   864	By minimality each $(\sigma_i,M_i)$ is good.
+   865	The complex $K(M-t)$ need not be clean as a single complex, because the
+   866	link of the shared edge $cd$ can be disconnected; nevertheless it is the
+   867	union of the two clean pieces $K(M_1)$ and $K(M_2)$.
+   868	Gluing these two triangulated balls to the two sides of $t$ gives a
+   869	triangulated ball, unless $t$ already occurred in $M-t$.
+   870	The same disjoint eligible-tet argument rules out that multiplicity-$2$
+   871	obstruction.
+   872	
+   873	We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+   874	triangulation of $B^3$ unless one of the clean-complex conditions fails.
+   875	The remaining conditions are ruled out by the same minimality argument.
+   876	
+   877	\begin{enumerate}
+   878	\item
+   879	$K(M)$ is a pseudomanifold.
+   880	Suppose a $2$-simplex $s$ occurs as a face of more than two support
+   881	tetrahedra of $M$.
+   882	If $s \notin \sigma$, then after removing an eligible tet not needed to
+   883	account for $s$, the same excess occurrence remains in either the
+   884	one-sphere case or in one of the two split pieces in the conjoined case,
+   885	contradicting minimality.
+   886	If $s \in \sigma$, choose an eligible tet not having $s$ as a boundary
+   887	face; the excess boundary incidence again persists, contradicting
+   888	minimality.
+   889	
+   890	\item
+   891	No edge $\{a,b\}$ has disconnected link in $K(M)$.
+   892	The link is a $1$-dimensional complex whose edges correspond to support
+   893	tetrahedra of $M$ containing $\{a,b\}$.
+   894	The only way a component of such a link can have fewer than three
+   895	vertices is for the component to be a single edge $\{c,d\}$,
+   896	corresponding to a tet $\{a,b,c,d\}$.
+   897	Then $\{a,b\}$ is an edge of $\sigma$ and
+   898	$\{a,b,c\},\{a,b,d\}$ are the two boundary faces adjacent along it.
+   899	No other component can also be a single edge.
+   900	If the link were disconnected, removing an eligible tet other than this
+   901	one would leave it disconnected in the one-sphere case or in one split
+   902	piece in the conjoined case, contradicting minimality.
+   903	
+   904	\item
+   905	No vertex has disconnected link in $K(M)$.
+   906	If $\link(\{a\},K(M))$ were disconnected, the only way removing one tet
+   907	could make it connected would be for one component of the link to be a
+   908	single $2$-simplex $\{b,c,d\}$ and for the removed tet to be
+   909	$\{a,b,c,d\}$.
+   910	Then $\{a,b,c\}$, $\{a,b,d\}$, and $\{a,c,d\}$ would all be boundary
+   911	faces of $\sigma$, so $a$ would have degree $3$ in $\sigma$, contrary to
+   912	primality.
+   913	\end{enumerate}
+   914	
+   915	Thus $M$ is clean and $K(M)$ is a simplicial triangulation of $B^3$,
+   916	contradicting that $(\sigma,M)$ was bad.
+   917	\proofend
+   918	
+   919	After Theorem \ref{th2} we will often identify a taut filling $M$ of
+   920	$X(\sigma)$ with the triangulated ball $K(M)$.
+   921	
+   922	\section{Shelling}
+   923	
+   924	A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+   925	is an ordering
+   926	$(t_1,\ldots,t_{|\tau|})$
+   927	of its tetrahedra such that, for each $k$,
+   928	the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+   929	simplicial triangulation of $B^3$.
+   930	For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+   931	faces.  In the shellings obtained below, the three-face move does not
+   932	occur; equivalently, the number of boundary vertices never decreases.
+   933	Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+   934	the first tet of such a shelling.
+   935	
+   936	\begin{theorem} \label{th3}
+   937	If $\sigma$ is a simplicial triangulation of $S^2$,
+   938	any taut filling of $X(\sigma)$ is a freely shellable
+   939	simplicial triangulation of $B^3$.
+   940	\end{theorem}
+   941	
+   942	\proofstart
+   943	By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+   944	Fix a tet $t_1 \in \tau$ that we want to remove last.
+   945	We recursively dismantle $\tau$; reversing the dismantling order gives
+   946	the shelling.
+   947	
+   948	If $\tau$ consists only of $t_1$, there is nothing to prove.
+   949	If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+   950	$t\ne t_1$, remove that tet and continue with $\tau-t$.
+   951	If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+   952	unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+   953	dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+   954	
+   955	It remains to consider the case where the boundary has no degree-$3$
+   956	vertex.  As in the proof of Theorem \ref{th2}, there are at least
+   957	$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+   958	Choose one, say $t$, whose two boundary faces are disjoint from those of
+   959	$t_1$.
+   960	If removing $t$ leaves one triangulated ball, remove $t$ and continue
+   961	ending with $t_1$.
+   962	If removing $t$ splits the boundary into two conjoined spheres, then
+   963	$\tau-t$ splits into two triangulated balls $\tau_1,\tau_2$ by
+   964	Theorem \ref{th1} and Theorem \ref{th2}.
+   965	Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+   966	the gluing face of $t$.
+   967	Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
+   968	$\tau_1$ ending with $t_1$.
+   969	Every removal is the reverse of attaching along one or two faces, so the
+   970	reversed order is the desired shelling.
+   971	\proofend
+   972	
+   973	\section{Flag complex}
+   974	
+   975	A simplicial complex is a \emph{flag complex}
+   976	(or clique complex) if every clique in its $1$-skeleton occurs as a
+   977	simplex.
+   978	A simplicial triangulation $\sigma$ of $S^2$
+   979	is flag exactly when it is prime
+   980	(not the connected sum of smaller complexes)
+   981	and is not the boundary of a tetrahedron.
+   982	
+   983	We can decompose any $\sigma$ as the connected sum of
+   984	prime components $\sigma_i$.
+   985	From the point of view of taut fillings these components are independent:
+   986	any taut filling of $X(\sigma)$ is the union of taut fillings of the
+   987	$X(\sigma_i)$.
+   988	We now prove that, regardless of whether $\sigma$ itself is prime,
+   989	every taut filling is flag.
+   990	
+   991	\begin{theorem}
+   992	If $\sigma$ is a simplicial triangulation of $S^2$,
+   993	any taut filling of $X(\sigma)$ is a flag complex.
+   994	\end{theorem}
+   995	
+   996	\proofstart
+   997	Let $\tau$ be the triangulated ball associated to the taut filling.
+   998	We must rule out the following minimal failures of flagness:
+   999	\begin{enumerate}
+  1000	\item
+  1001	the three edges of a triangle $\{A,B,C\}$ without the face $ABC$;
+  1002	\item
+  1003	the six edges of the $K_4$ on $\{A,B,C,D\}$ without the tet $ABCD$;
+  1004	\item
+  1005	the ten edges of the $K_5$ on $\{A,B,C,D,E\}$.
+  1006	\end{enumerate}
+  1007	
+  1008	If the first two configurations are absent, then the third is absent as
+  1009	well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+  1010	five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+  1011	Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+  1012	$3$-ball.
+  1013	
+  1014	We argue by minimal counterexample.
+  1015	If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+  1016	with one summand the tetrahedral boundary.
+  1017	Removing that summand from $\sigma$ and the corresponding boundary tet
+  1018	from $\tau$ gives a smaller counterexample.
+  1019	Thus we may assume that $\sigma$ has no degree-$3$ vertex.
+  1020	
+  1021	Then the eligible-tet count from Theorem \ref{th2} gives at least
+  1022	$\maxdeg(\sigma)\geq 4$ eligible tets with pairwise disjoint pairs of
+  1023	boundary faces.
+  1024	Removing one of them flips an edge of $\sigma$.
+  1025	The result is either a smaller triangulation of $S^2$ or a pair of
+  1026	triangulated spheres conjoined along the new edge.
+  1027	In the conjoined case, any forbidden $K_3$ or $K_4$ that survives lies
+  1028	on one side or the other, producing a smaller counterexample there.
+  1029	
+  1030	For Configuration 1, removing an eligible tet deletes from $\tau$ only
+  1031	the edge being flipped.  There are at least four available flips and only
+  1032	three edges in the forbidden triangle, so one flip preserves the
+  1033	configuration, contradiction.
+  1034	
+  1035	For Configuration 2, assume Configuration 1 has already been ruled out.
+  1036	Then the six edges on $\{A,B,C,D\}$ force all four triangular faces
+  1037	$ABC,ABD,ACD,BCD$ to be present in $\tau$.
+  1038	At most two of these faces can lie in the boundary $\sigma$, since three
+  1039	would make a degree-$3$ boundary vertex.
+  1040	We need an eligible flip that does not delete one of the six $K_4$ edges.
+  1041	If $\maxdeg(\sigma)\geq 5$, the disjoint eligible-tet family gives at
+  1042	least five candidate flips.  At most two candidates use one of the
+  1043	boundary faces among $ABC,ABD,ACD,BCD$, and the remaining candidates
+  1044	preserve the $K_4$ unless all but one of its six edges lie on the
+  1045	boundary.  In that exceptional case, say the interior edge is $AD$;
+  1046	then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+  1047	two disjoint eligible tets meet them.  A preserving flip remains.
+  1048	The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+  1049	fillings are checked directly from the same flip alternatives.
+  1050	Thus Configuration 2 is impossible.
+  1051	\proofend
+  1052	
+  1053	\bibliography{taut}
+  1054	\bibliographystyle{amsplain}
+  1055	\end{document}
+
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-gpt-01.tex | sed -n '675,947p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   675	\section{Triangulations}
+   676	
+   677	We turn now to filling simplicial triangulations of $S^2$.
+   678	We first fix the combinatorial language.
+   679	
+   680	An \emph{$n$-simplex} is a set of size $n+1$.
+   681	Its faces are its subsets, regarded as simplices of dimensions
+   682	$-1,0,\ldots,n$, where the empty simplex has dimension $-1$.
+   683	A \emph{simplicial complex} $K$ is a finite collection of simplices closed
+   684	under taking faces: if $t\subset s\in K$, then $t\in K$.
+   685	
+   686	For a simplex $s\in K$, define the \emph{link}
+   687	\[
+   688	\link(s,K)=\{t: t\cap s=\emptyset,\ s\cup t\in K\}.
+   689	\]
+   690	This is again a simplicial complex.  Except when $s=\emptyset$, it is not
+   691	literally a subcomplex of $K$: it records the faces complementary to $s$ in
+   692	simplices containing $s$.
+   693	
+   694	We will call an $n$-dimensional simplicial complex \emph{clean} if it is a
+   695	normal pseudomanifold with boundary, in the following concrete sense.
+   696	First, it is pure: every simplex belongs to some $n$-simplex.  Second, every
+   697	$(n-1)$-simplex lies in either one or two $n$-simplices; those lying in only
+   698	one form the boundary.  Third, for every simplex $s$ of dimension
+   699	$0,\ldots,n-2$, the link $\link(s,K)$ is connected.  Thus in dimension $3$
+   700	we are requiring the usual triangle-count condition together with connected
+   701	edge links and connected vertex links.  We do not impose connectedness of
+   702	$K$ itself as a separate convention; in the applications below the complexes
+   703	under discussion are connected.
+   704	
+   705	The boundary of a clean complex is clean and closed, and links in a clean
+   706	complex are clean of the corresponding dimension.
+   707	
+   708	If $N$ is a manifold, a simplicial complex $K$ is a \emph{simplicial
+   709	triangulation} of $N$ if its geometric carrier is homeomorphic to $N$.  When
+   710	$N$ is oriented, a choice of orientation of the triangulation gives an
+   711	integral cycle $X(K)$; in the case $N=S^2$ the two choices differ by sign, and
+   712	nothing below depends on which one is chosen.
+   713	
+   714	This notion is the ordinary simplicial one.  We do not allow two distinct
+   715	simplices with the same vertex set, nor do we allow self-identifications of a
+   716	simplex along its own faces.
+   717	
+   718	We continue to regard an $n$-chain $M\in C_n$ as a multiset of oriented
+   719	$n$-simplices.  We call $M$ \emph{simplicial} if no unoriented simplex occurs
+   720	with multiplicity greater than one.  If $M$ is simplicial, let $K(M)$ denote
+   721	the pure simplicial complex generated by the unoriented simplices occurring
+   722	in $M$.  A filling $M$ is a chain, not a complex; we will nevertheless call
+   723	$M$ \emph{clean} if $M$ is simplicial and $K(M)$ is a clean complex.
+   724	
+   725	\section{Filling a triangulation of the 2-sphere}
+   726	
+   727	\begin{theorem} \label{th2}
+   728	Let $\sigma$ be a simplicial triangulation of $S^2$, and let $M$ be a taut
+   729	filling of $X(\sigma)$.  Then $M$ is clean, and $K(M)$ is a simplicial
+   730	triangulation of $B^3$.
+   731	\end{theorem}
+   732	
+   733	\proofstart
+   734	Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial
+   735	triangulation of $S^2$ and $M$ is a taut filling of $X(\sigma)$.
+   736	Call such a pair \emph{good} if $M$ is clean and $K(M)$ is a simplicial
+   737	triangulation of $B^3$.  We prove that every filling pair is good.
+   738	
+   739	Suppose not, and choose a bad filling pair $(\sigma,M)$ for which $|M|$ is
+   740	minimal.  Let $v,e,f$ be the numbers of vertices, edges, and faces of
+   741	$\sigma$; then $e=3v-6$ and $f=2v-4$.  The tetrahedron boundary is the base
+   742	case, so $v>4$.  Since taut fillings split under connected sum, we may assume
+   743	that $\sigma$ is prime.  In particular, the only consequence we shall use is
+   744	that $\sigma$ has no vertex of degree $3$.
+   745	
+   746	A tet $t\in M$ is \emph{eligible} if two of its oriented faces occur as faces
+   747	of $\sigma$ with the boundary orientation.  It cannot have more than two such
+   748	faces, because that would give a degree-$3$ vertex of $\sigma$.  By
+   749	Proposition \ref{maxdeg},
+   750	\[
+   751	 |M|=\Zvol(\sigma)\leq f-\maxdeg(\sigma).
+   752	\]
+   753	For each support tet $u$ of $M$, let $A(u)$ be the set of faces of $\sigma$
+   754	which occur as properly oriented faces of $u$.  These sets cover the faces of
+   755	$\sigma$, since each boundary face has nonzero coefficient in $\del M$ with
+   756	the sign specified by $X(\sigma)$.  Moreover $|A(u)|\leq 2$.  Reveal the
+   757	support tets one at a time, and count how many previously uncovered boundary
+   758	faces each reveals.  If $r$ tets reveal two new boundary faces, then
+   759	\[
+   760	 f\leq |M|+r.
+   761	\]
+   762	Hence $r\geq \maxdeg(\sigma)$.  These $r$ tets are eligible, and the pairs of
+   763	new boundary faces assigned to them are disjoint.  We shall use only the
+   764	existence of two such eligible tets, and the fact that for any fixed boundary
+   765	face there is an eligible tet not containing it.
+   766	
+   767	Choose an eligible tet $t$ with boundary faces
+   768	\[
+   769	 s_1=[a,b,c],\qquad s_2=[b,a,d].
+   770	\]
+   771	Removing $t$ replaces these two boundary faces by
+   772	\[
+   773	 [c,d,b],\qquad [d,c,a],
+   774	\]
+   775	which is the boundary flip replacing the edge $ab$ by the edge $cd$.
+   776	Let the resulting boundary complex be denoted by $\sigma_t$.  There are two
+   777	possibilities.
+   778	
+   779	In the first case, $cd$ was not an edge of $\sigma$, and $\sigma_t$ is again
+   780	a simplicial triangulation of $S^2$.  Then $M-t$ is a taut filling of
+   781	$\sigma_t$, so by minimality $(\sigma_t,M-t)$ is good.  Thus $M-t$ is clean
+   782	and $K(M-t)$ triangulates $B^3$.  Gluing $t$ back along the two exposed
+   783	boundary faces gives $K(M)$, provided $t$ was not already present in $M-t$.
+   784	If $t$ were already present, then $M$ would contain the same unoriented tet
+   785	twice.  Choose another eligible tet $u$ whose two boundary faces are disjoint
+   786	from those of $t$.  Removing $u$ leaves a smaller filling in which the doubled
+   787	tet $t$ is still present, so the smaller pair is still bad, contradicting the
+   788	minimality of $(\sigma,M)$.  Hence no such doubling occurs, and in this case
+   789	$M$ is good.
+   790	
+   791	In the second case, $cd$ was already an edge of $\sigma$.  Then $\sigma_t$ is
+   792	an almost disjoint union of two triangulated spheres, say $\sigma_1$ and
+   793	$\sigma_2$, joined along the edge $cd$.  The filling $M-t$ need not be clean
+   794	as one complex: the link of the common edge is disconnected.  But by
+   795	Theorem \ref{th1}, the taut filling $M-t$ splits as
+   796	\[
+   797	 M-t=M_1+M_2,
+   798	\]
+   799	where $M_i$ is a taut filling of $\sigma_i$.  By minimality, each
+   800	$(\sigma_i,M_i)$ is good.  Thus $K(M_1)$ and $K(M_2)$ are clean triangulated
+   801	balls.  Gluing these two balls together with the bridging tet $t$ gives
+   802	$K(M)$, again unless $t$ was already present in $M-t$.  The same second
+   803	eligible tet argument rules this obstruction out.  Therefore $M$ is good in
+   804	this case as well.
+   805	
+   806	It remains only to spell out why this gluing preserves cleanness.  Away from
+   807	the two faces along which $t$ is attached, the links and face incidences are
+   808	unchanged from the smaller clean ball or balls.  Along the gluing faces, each
+   809	boundary triangle becomes incident to exactly two tets.  The new local edge
+   810	and vertex links are obtained from connected intervals or disks by attaching
+   811	one simplex along a nonempty connected part, so they remain connected.  The
+   812	only possible failures would be a repeated tet, a triangle used by more than
+   813	two tets, or a disconnected edge or vertex link already visible after removing
+   814	a disjoint eligible tet.  Such a persistent failure would make the smaller
+   815	pair bad, contradicting the chosen minimality.  Hence the reassembled complex
+   816	is clean and triangulates $B^3$.
+   817	
+   818	This contradiction proves the theorem.
+   819	\proofend
+   820	
+   821	Thanks to this theorem, we may take the liberty of saying that a taut filling
+   822	of $\sigma$ is a simplicial triangulation $\tau$ of $B^3$.
+   823	
+   824	\section{Shelling}
+   825	
+   826	We next show that a taut filling may be shelled from any chosen initial tet.
+   827	A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$ is an ordering
+   828	$(t_1,\ldots,t_{|\tau|})$ of its tets such that, for every $k$, the subcomplex
+   829	generated by $t_1,\ldots,t_k$ is again a simplicial triangulation of $B^3$.
+   830	For $k>1$, the new tet $t_k$ may meet the previous complex in one, two, or
+   831	three faces.  In our situation the three-face case is excluded by the absence
+   832	of internal vertices.  We call $\tau$ \emph{freely shellable} if every tet of
+   833	$\tau$ can be chosen as the first tet of some shelling.
+   834	
+   835	\begin{theorem} \label{th3}
+   836	If $\sigma$ is a simplicial triangulation of $S^2$, any taut filling $\tau$ of
+   837	$\sigma$ is a freely shellable simplicial triangulation of $B^3$.
+   838	\end{theorem}
+   839	
+   840	\proofstart
+   841	This follows by turning the induction in Theorem \ref{th2} into a recursive
+   842	``shucking'' procedure.  Fix the tet $t_1$ which is to be first in the final
+   843	shelling; equivalently, we will remove all other tets first and remove $t_1$
+   844	last.
+   845	
+   846	If $\tau$ consists only of $t_1$, there is nothing to prove.  If a degree-$3$
+   847	vertex belongs to a tet $t\neq t_1$, remove that tet and shuck the remaining
+   848	filling, still ending with $t_1$.  If the only available degree-$3$ vertex
+   849	belongs to $t_1$, let $t_2$ be the tet of $\tau-t_1$ to which $t_1$ is
+   850	attached; shuck $\tau-t_1$ ending with $t_2$, and then put $t_1$ first when
+   851	reading the removals backwards.
+   852	
+   853	If there is no degree-$3$ vertex, the eligible-tet count supplies at least
+   854	$\maxdeg(\sigma)\geq 4$ disjoint eligible tets.  Choose one sharing no face
+   855	with $t_1$.  If removing it leaves one sphere boundary, recurse on the smaller
+   856	filling.  If removing it splits the boundary into two conjoined spheres, split
+   857	the filling as in Theorem \ref{th1}, shuck the side not containing $t_1$ first,
+   858	then remove the bridging tet, and finally shuck the side containing $t_1$.
+   859	Reading this removal order backwards gives a shelling beginning with $t_1$.
+   860	\proofend
+   861	
+   862	\section{Flag complex}
+   863	
+   864	A simplicial complex is a \emph{flag complex} if every clique in its
+   865	$1$-skeleton occurs as a simplex.  A triangulation of $S^2$ is flag exactly
+   866	when it is prime and is not the boundary of a tetrahedron.
+   867	
+   868	We can decompose any triangulated $2$-sphere as a connected sum of prime
+   869	components.  Taut fillings split along this connected-sum decomposition, so
+   870	it is enough to understand the prime pieces; nevertheless the conclusion
+   871	below is stated for arbitrary $\sigma$.
+   872	
+   873	\begin{theorem} \label{th4}
+   874	If $\sigma$ is a simplicial triangulation of $S^2$, any taut filling $\tau$ of
+   875	$\sigma$ is a flag complex.
+   876	\end{theorem}
+   877	
+   878	\proofstart
+   879	We must rule out three taboo configurations in $\tau$:
+   880	\begin{enumerate}
+   881	\item the three edges of a triangle $\{A,B,C\}$ without the face $ABC$;
+   882	\item the six edges of a $K_4$ on $\{A,B,C,D\}$ without the tet $ABCD$;
+   883	\item the ten edges of a $K_5$ on $\{A,B,C,D,E\}$.
+   884	\end{enumerate}
+   885	If the first two configurations are ruled out, the third is ruled out as
+   886	well: a $K_5$ would force all five of its $K_4$ subcomplexes to occur as tets,
+   887	forming the boundary of a $4$-simplex, which cannot occur inside a triangulated
+   888	$3$-ball.
+   889	
+   890	Suppose there is a minimal counterexample.  If $\sigma$ has a vertex of
+   891	degree $3$, then $\sigma$ is a connected sum with one summand the boundary of
+   892	a tetrahedron.  Removing the corresponding tet from $\tau$ gives a smaller
+   893	counterexample, a contradiction.  Thus we may assume that $\sigma$ has no
+   894	vertex of degree $3$.
+   895	
+   896	Then the eligible-tet count gives at least $\maxdeg(\sigma)$ disjoint eligible
+   897	tets.  Removing one performs a boundary edge flip.  The new boundary either
+   898	remains a triangulated sphere or becomes an almost disjoint union of two
+   899	spheres joined along an edge.  In the first case, preserving the taboo
+   900	configuration gives an immediate smaller counterexample.  In the second case,
+   901	a taboo $K_3$ or $K_4$ in the almost disjoint union lies entirely on one side
+   902	or the other, again giving a smaller counterexample after splitting the taut
+   903	filling.
+   904	
+   905	For a missing triangle, only one edge disappears when we remove an eligible
+   906	tet: the boundary edge being flipped.  There are at least four eligible flips,
+   907	and only the three edges of the taboo triangle need to be avoided.  Thus some
+   908	flip preserves the missing triangle, contradicting minimality.
+   909	
+   910	For a missing tet on vertices $A,B,C,D$, there are six edges to avoid.  Since
+   911	missing triangles have already been ruled out, all four faces
+   912	$ABC,ABD,ACD,BCD$ occur.  At most two of these faces can lie in the boundary
+   913	$\sigma$, because otherwise $\sigma$ would have a degree-$3$ vertex.  Treating
+   914	the octahedral boundary as the small exceptional case, we may assume
+   915	$\maxdeg(\sigma)\geq 5$.  Hence there are at least five disjoint eligible
+   916	flips.  If five of the six $K_4$ edges are not simultaneously boundary edges,
+   917	one of these flips avoids the taboo $K_4$.  In the remaining case, say the
+   918	only interior edge is $AD$, so the boundary contains the faces $ABC$ and
+   919	$BCD$.  At most two of the disjoint eligible tets can use one of these two
+   920	faces, leaving another eligible flip which preserves the $K_4$.  Again we get
+   921	a smaller counterexample, contradiction.
+   922	\proofend
+   923	
+   924	\begin{thebibliography}{5}
+   925	
+   926	\bibitem{dew:filling}
+   927	Peter Doyle, Matthew Ellison, and Zili Wang,
+   928	\emph{Filling a triangulation of the 2-sphere}, 2024.
+   929	
+   930	\bibitem{ellison:gap}
+   931	Matthew Ellison,
+   932	\emph{Lower bounds and integrality gaps in simplicial decomposition}, 2024.
+   933	
+   934	\bibitem{mt}
+   935	Claire Mathieu and William Thurston,
+   936	\emph{Rotation distance using flows}, 1992.
+   937	
+   938	\bibitem{pw:flip}
+   939	Lionel Pournin and Zili Wang,
+   940	\emph{Strong convexity in flip-graphs}, 2021.
+   941	
+   942	\bibitem{stt:jams}
+   943	Daniel D. Sleator, Robert E. Tarjan, and William Thurston,
+   944	\emph{Rotation distance, triangulations, and hyperbolic geometry},
+   945	J. Amer. Math. Soc. \textbf{1} (1988), 647--681.
+   946	
+   947	\end{thebibliography}
+
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-codex-01.tex | sed -n '160,285p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   160	\newcommand{\mns}{\mathord{-}}
+   161	
+   162	
+   163	
+   164	\begin{document}
+   165	
+   166	\maketitle
+   167	
+   168	\begin{abstract}
+   169	Let $\sigma$ be a simplicial triangulation of the 2-sphere,
+   170	$X$ the associated integral 2-cycle.
+   171	A filling of $X$ is an integral 3-chain $M$
+   172	with $\del M = X$;
+   173	a taut filling is one with minimal $L_1$-norm.
+   174	We show that any taut filling 
+   175	arises from an extension of $\sigma$ to
+   176	a simplicial complex homeomorphic to the 3-ball.
+   177	This complex is shellable, and `flag':
+   178	every clique in its 1-skeleton occurs as a simplex.
+   179	The key to the proof is the general
+   180	fact that any taut filling of an $n$-cycle
+   181	splits under disjoint union, connected sum, and more generally
+   182	what we call almost disjoint union,
+   183	where summands are supported on sets that overlap in at most $n+1$ vertices.
+   184	\begin{comment}
+   185	Despite the generality of this result, we have nothing to say about
+   186	optimal fillings of spheres of dimension 3 or higher.
+   187	\end{comment}
+   188	\end{abstract}
+   189	
+   190	\section{Overview}
+   191	Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+   192	with vertices $\Omega$,
+   193	viewed as the abstract simplicial complex consisting of all subsets of
+   194	$\Omega$.
+   195	Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+   196	and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+   197	be its integral $n$-chains and $n$-cycles.
+   198	A \emph{filling} of an $n$-cycle $X \in Z_n$ is any
+   199	$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
+   200	(Here and throughout we assume $n\geq 1$.)
+   201	Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+   202	Call $M \in C_{n+1}$ \emph{taut} if it is an optimal filling
+   203	of its boundary, i.e., if $|M|=\Zvol(\del M)$.
+   204	
+   205	For $X \in C_n$ let
+   206	$\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+   207	to which $X$ assigns non-$0$ weight.
+   208	For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+   209	(Cf.\ Proposition \ref{nointernal} below.)
+   210	This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+   211	
+   212	Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+   213	\[
+   214	|\vertices(X) \cap \vertices(Y)| \leq n+1
+   215	.
+   216	\]
+   217	This notion generalizes both disjoint union and connected sum
+   218	along an $n$-simplex.
+   219	Ellison \cite{ellison:gap}
+   220	showed the $\Zvol$ adds under almost disjoint union:
+   221	$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+   222	This means that \emph{some} taut filling $M$ of $X$ splits into a sum
+   223	$M=M_X+M_Y$ of taut fillings of $X,Y$.
+   224	Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+   225	that when $n \geq 2$, \emph{any} taut filling of $X+Y$ splits.
+   226	
+   227	In place of integral chains we can use chains with
+   228	coefficients in $\QQ$ or $\RR$.
+   229	Evidently $\Rvol \leq \Qvol$.
+   230	But computing $\Rvol$ is
+   231	a linear programming problem with rational coefficients,
+   232	so in fact $\Qvol = \Rvol$.
+   233	Ellison used LP duality to prove that
+   234	$\Qvol$ adds under almost
+   235	disjoint union.
+   236	Now for $n \geq 2$ we get the stronger result
+   237	(Corollary \ref{cor1})
+   238	that taut $\QQ$-fillings split:
+   239	Multiplying a taut
+   240	$\QQ$-filling $M$ of $X$ by a common denominator $q$
+   241	yields a taut $\ZZ$-filling $qM$ of $qX$:
+   242	Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
+   243	of the $\QQ$-filling $M$.
+   244	
+   245	Now let $\sigma$ be a simplicial triangulation of $S^2$;
+   246	let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
+   247	be either one of the 2-cycles
+   248	that arises from $\sigma$ by orienting its $2$-simplices;
+   249	and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+   250	Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+   251	required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+   252	We will show that
+   253	\[
+   254	\Zvol(\sigma) = \tetvol(\sigma)
+   255	.
+   256	\]
+   257	Certainly $\Zvol \leq \tetvol$,
+   258	because any extension $\tau$ induces a filling
+   259	of $X(\sigma)$.
+   260	Theorem \ref{th2} states that 
+   261	any taut filling of $X(\sigma)$ arises in this way.
+   262	The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+   263	\begin{comment}
+   264	We use induction, with base case $\sigma$ a tetrahedron.
+   265	In any taut filling $M$ of $X(\sigma)$,
+   266	thought of as a multiset of oriented $3$-simplices,
+   267	some $t \in M$ meets $\sigma$ in at least two faces.
+   268	Ignoring the base case,
+   269	$M-t$ is a taut filling of
+   270	$X(\sigma) - \del t = X(\sigma^\prime)$,
+   271	where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+   272	or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+   273	In the first case induction yields a triangulation of $B^3$,
+   274	and we glue on $t$.
+   275	In the second case by Theorem \ref{th1}
+   276	$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+   277	by induction both give triangulations of $B^3$, which we
+   278	glue onto $t$.
+   279	So we wind up with some kind of triangulation $\tau$ of $B^3$,
+   280	built from the simplices of $M$.
+   281	The remaining point is to ensure that in $M$ there are no
+   282	identifications beyond those in $\tau$.
+   283	\end{comment}
+   284	
+   285	We do not know what happens for spheres of dimension 3 or greater.
+
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-claude-01.tex | sed -n '160,285p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   160	
+   161	
+   162	
+   163	\begin{document}
+   164	
+   165	\maketitle
+   166	
+   167	\begin{abstract}
+   168	Let $\sigma$ be a simplicial triangulation of the 2-sphere,
+   169	$X$ the associated integral 2-cycle.
+   170	A filling of $X$ is an integral 3-chain $M$
+   171	with $\del M = X$;
+   172	a taut filling is one with minimal $L_1$-norm.
+   173	We show that any taut filling 
+   174	arises from an extension of $\sigma$ to
+   175	a simplicial complex homeomorphic to the 3-ball.
+   176	This complex is shellable, and `flag':
+   177	every clique in its 1-skeleton occurs as a simplex.
+   178	The key to the proof is the general
+   179	fact that any taut filling of an $n$-cycle
+   180	splits under disjoint union, connected sum, and more generally
+   181	what we call almost disjoint union,
+   182	where summands are supported on sets that overlap in at most $n+1$ vertices.
+   183	\begin{comment}
+   184	Despite the generality of this result, we have nothing to say about
+   185	optimal fillings of spheres of dimension 3 or higher.
+   186	\end{comment}
+   187	\end{abstract}
+   188	
+   189	\section{Overview}
+   190	Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+   191	with vertices $\Omega$,
+   192	viewed as the abstract simplicial complex consisting of all subsets of
+   193	$\Omega$.
+   194	Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+   195	and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+   196	be its integral $n$-chains and $n$-cycles.
+   197	A \emph{filling} of an $n$-cycle $X \in Z_n$ is any
+   198	$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
+   199	(Here and throughout we'll assume $n\geq 1$.)
+   200	Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+   201	Call $M \in C_{n+1}$ \emph{taut} if it is an optimal filling
+   202	of its boundary, i.e., if $|M|=\Zvol(\del M)$,
+   203	
+   204	For $X \in C_n$ let
+   205	$\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+   206	to which $X$ assigns non-$0$ weight.
+   207	For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+   208	(Cf.\ Proposition \ref{nointernal} below.)
+   209	This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+   210	
+   211	Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+   212	\[
+   213	|\vertices(X) \cap \vertices(Y)| \leq n+1
+   214	.
+   215	\]
+   216	This notion generalizes both disjoint union and connected sum
+   217	along an $n$-simplex.
+   218	Ellison \cite{ellison:gap}
+   219	showed the $\Zvol$ adds under almost disjoint union:
+   220	$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+   221	This means that \emph{some} taut filling $M$ of $X$ splits into a sum
+   222	$M=M_X+M_Y$ of taut fillings of $X,Y$.
+   223	Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+   224	that when $n \geq 2$, \emph{any} taut filling of $X+Y$ splits.
+   225	
+   226	In place of integral chains we can use chains with
+   227	coefficients in $\QQ$ or $\RR$.
+   228	Evidently $\Rvol \leq \Qvol$.
+   229	But computing $\Rvol$ is
+   230	a linear programming problem with rational coefficients,
+   231	so in fact $\Qvol = \Rvol$.
+   232	Ellison used LP duality to prove that
+   233	$\Qvol$ adds under almost
+   234	disjoint union.
+   235	Now for $n \geq 2$ we get the stronger result
+   236	(Corollary \ref{cor1})
+   237	that taut $\QQ$-fillings split:
+   238	Multiplying a taut
+   239	$\QQ$-filling $M$ of $X$ by a common denominator $q$
+   240	yields a taut $\ZZ$-filling $qM$ of $qX$:
+   241	Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
+   242	of the $\QQ$-filling $M$.
+   243	
+   244	Now let $\sigma$ be a simplicial triangulation of $S^2$;
+   245	let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
+   246	be either one of the 2-cycles
+   247	that arises from $\sigma$ by orienting its $2$-simplices;
+   248	and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+   249	Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+   250	required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+   251	We will show that
+   252	\[
+   253	\Zvol(\sigma) = \tetvol(\sigma)
+   254	.
+   255	\]
+   256	Certainly $\Zvol \leq \tetvol$,
+   257	because any extension $\tau$ induces a filling
+   258	of $X(\sigma)$.
+   259	Theorem \ref{th2} states that 
+   260	any taut filling of $X(\sigma)$ arises in this way.
+   261	The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+   262	\begin{comment}
+   263	We use induction, with base case $\sigma$ a tetrahedron.
+   264	In any taut filling $Y$ of $X(\sigma)$,
+   265	thought of as a multiset of oriented $3$-simplices,
+   266	some $t \in Y$ meets $\sigma$ in at least two faces.
+   267	Ignoring the base case,
+   268	$Y-t$ is a taut filling of
+   269	$X(\sigma) - \del t = X(\sigma^\prime)$,
+   270	where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+   271	or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+   272	In the first case induction yields a triangulation of $B^3$,
+   273	and we glue on $t$.
+   274	In the second case by Theorem \ref{th1}
+   275	$Y-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+   276	by induction both give triangulations of $B^3$, which we
+   277	glue onto $t$.
+   278	So we wind up with some kind of triangulation $\tau$ of $B^3$,
+   279	built from the simplices of $Y$.
+   280	The wrinkle is that we need to ensure that in $Y$ there are no
+   281	identifications beyond those in $\tau$.
+   282	\end{comment}
+   283	
+   284	We don't know what happens for spheres of dimension 3 or greater.
+   285	
+
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-gpt-01.tex | sed -n '160,260p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   160	
+   161	
+   162	
+   163	\begin{document}
+   164	
+   165	\maketitle
+   166	
+   167	\begin{abstract}
+   168	Sleator, Tarjan, and Thurston asked: given a triangulation $\sigma$ of the
+   169	$2$-sphere, what is the minimum number of tetrahedra needed to extend
+   170	$\sigma$ to a triangulation of the ball?  Call this minimum $\tetvol(\sigma)$.
+   171	Let $X(\sigma)$ be either associated integral $2$-cycle, and let
+   172	$\Zvol(\sigma)$ be the minimum $L_1$-norm of an integral $3$-chain $M$ with
+   173	$\del M=X(\sigma)$.  Certainly $\Zvol(\sigma)\leq \tetvol(\sigma)$.  We prove
+   174	that equality holds.  More precisely, any taut filling of $X(\sigma)$ is a
+   175	simplicial chain whose support complex is clean and triangulates $B^3$; the
+   176	resulting triangulation is freely shellable and flag.  The key input is the
+   177	general fact that taut fillings of integral $n$-cycles split under disjoint
+   178	union, connected sum, and more generally under almost disjoint union, where
+   179	the summands are supported on vertex sets meeting in at most $n+1$ vertices.
+   180	\end{abstract}
+   181	
+   182	\section{Overview}
+   183	Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+   184	with vertices $\Omega$,
+   185	viewed as the abstract simplicial complex consisting of all subsets of
+   186	$\Omega$.
+   187	Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+   188	and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+   189	be its integral $n$-chains and $n$-cycles.
+   190	A \emph{filling} of an $n$-cycle $X \in Z_n$ is any
+   191	$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
+   192	(Here and throughout we'll assume $n\geq 1$.)
+   193	Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+   194	Call $M \in C_{n+1}$ \emph{taut} if it is an optimal filling
+   195	of its boundary, i.e., if $|M|=\Zvol(\del M)$.
+   196	
+   197	For $X \in C_n$ let
+   198	$\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+   199	to which $X$ assigns non-$0$ weight.
+   200	For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+   201	(Cf.\ Proposition \ref{nointernal} below.)
+   202	This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+   203	
+   204	Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+   205	\[
+   206	|\vertices(X) \cap \vertices(Y)| \leq n+1
+   207	.
+   208	\]
+   209	This notion generalizes both disjoint union and connected sum
+   210	along an $n$-simplex.
+   211	Ellison \cite{ellison:gap}
+   212	showed the $\Zvol$ adds under almost disjoint union:
+   213	$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+   214	This means that \emph{some} taut filling $M$ of $X$ splits into a sum
+   215	$M=M_X+M_Y$ of taut fillings of $X,Y$.
+   216	Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+   217	that when $n \geq 2$, \emph{any} taut filling of $X+Y$ splits.
+   218	
+   219	In place of integral chains we can use chains with
+   220	coefficients in $\QQ$ or $\RR$.
+   221	Evidently $\Rvol \leq \Qvol$.
+   222	But computing $\Rvol$ is
+   223	a linear programming problem with rational coefficients,
+   224	so in fact $\Qvol = \Rvol$.
+   225	Ellison used LP duality to prove that
+   226	$\Qvol$ adds under almost
+   227	disjoint union.
+   228	Now for $n \geq 2$ we get the stronger result
+   229	(Corollary \ref{cor1})
+   230	that taut $\QQ$-fillings split:
+   231	Multiplying a taut
+   232	$\QQ$-filling $M$ of $X$ by a common denominator $q$
+   233	yields a taut $\ZZ$-filling $qM$ of $qX$:
+   234	Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
+   235	of the $\QQ$-filling $M$.
+   236	
+   237	Now let $\sigma$ be a simplicial triangulation of $S^2$;
+   238	let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
+   239	be either one of the 2-cycles
+   240	that arises from $\sigma$ by orienting its $2$-simplices;
+   241	and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+   242	Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+   243	required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+   244	We will show that
+   245	\[
+   246	\Zvol(\sigma) = \tetvol(\sigma)
+   247	.
+   248	\]
+   249	Certainly $\Zvol \leq \tetvol$,
+   250	because any extension $\tau$ induces a filling
+   251	of $X(\sigma)$.
+   252	Theorem \ref{th2} states the stronger fact that every taut filling is clean and has support complex a triangulated ball.  The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+   253	
+   254	We don't know what happens for spheres of dimension 3 or greater.
+   255	
+   256	\section{Background}
+   257	
+   258	Our interest in $\Zvol$ stems from the work
+   259	of Sleator, Tarjan, and Thurston
+   260	\cite{stt:jams}.
+
+exec
+/bin/zsh -lc "rg -n \"\\\\cite|\\\\bibitem|\\\\bibliography|\\\\bibliographystyle|\\\\begin\\{comment\\}|\\\\end\\{comment\\}|requires|require|doesn|don't|we'll|some kind|wrinkle|jok|damn|obvious|Clearly|clear\" text/tautxy/tautA-codex-01.tex" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "rg -n \"\\\\cite|\\\\bibitem|\\\\bibliography|\\\\bibliographystyle|\\\\begin\\{comment\\}|\\\\end\\{comment\\}|requires|require|doesn|don't|we'll|some kind|wrinkle|jok|damn|obvious|Clearly|clear\" text/tautxy/tautA-claude-01.tex" in /Users/doyle/Dropbox/taut
+ exited 2 in 0ms:
+rg: regex parse error:
+    (?:\cite|\bibitem|\bibliography|\bibliographystyle|\begin\{comment\}|\end\{comment\}|requires|require|doesn|don't|we'll|some kind|wrinkle|jok|damn|obvious|Clearly|clear)
+       ^^
+error: unrecognized escape sequence
+
+ exited 2 in 0ms:
+rg: regex parse error:
+    (?:\cite|\bibitem|\bibliography|\bibliographystyle|\begin\{comment\}|\end\{comment\}|requires|require|doesn|don't|we'll|some kind|wrinkle|jok|damn|obvious|Clearly|clear)
+       ^^
+error: unrecognized escape sequence
+
+exec
+/bin/zsh -lc "rg -n \"\\\\cite|\\\\bibitem|\\\\bibliography|\\\\bibliographystyle|\\\\begin\\{comment\\}|\\\\end\\{comment\\}|requires|require|doesn|don't|we'll|some kind|wrinkle|jok|damn|obvious|Clearly|clear\" text/tautxy/tautA-gpt-01.tex" in /Users/doyle/Dropbox/taut
+ exited 2 in 0ms:
+rg: regex parse error:
+    (?:\cite|\bibitem|\bibliography|\bibliographystyle|\begin\{comment\}|\end\{comment\}|requires|require|doesn|don't|we'll|some kind|wrinkle|jok|damn|obvious|Clearly|clear)
+       ^^
+error: unrecognized escape sequence
+
+codex
+I hit a quoting issue in one search pattern; no files were modified. I’m rerunning that as fixed-string scans for citations, comments, and prose artifacts.
+exec
+/bin/zsh -lc "rg -n -F -e '\\cite' -e '\\bibitem' -e '\\bibliography' -e '\\bibliographystyle' -e '\\begin{comment}' -e '\\end{comment}' -e 'requires' -e 'require' -e \"don't\" -e \"we'll\" -e 'some kind' -e 'wrinkle' -e 'obvious' text/tautxy/tautA-gpt-01.tex" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "rg -n -F -e '\\cite' -e '\\bibitem' -e '\\bibliography' -e '\\bibliographystyle' -e '\\begin{comment}' -e '\\end{comment}' -e 'requires' -e 'require' -e \"don't\" -e \"we'll\" -e 'some kind' -e 'wrinkle' -e 'obvious' text/tautxy/tautA-claude-01.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+183:\begin{comment}
+186:\end{comment}
+199:(Here and throughout we'll assume $n\geq 1$.)
+218:Ellison \cite{ellison:gap}
+250:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+262:\begin{comment}
+278:So we wind up with some kind of triangulation $\tau$ of $B^3$,
+280:The wrinkle is that we need to ensure that in $Y$ there are no
+282:\end{comment}
+284:We don't know what happens for spheres of dimension 3 or greater.
+290:\cite{stt:jams}.
+310:\cite[p. 697]{stt:jams}
+313:Mathieu and Thurston \cite{mt}
+319:In \cite{dew:filling} we produced examples for any $v \geq 13$ with
+327:In \cite{dew:filling}
+337:(Ellison \cite{ellison:gap}),
+374:and then do any required cancellation of oppositely oriented simplices
+555:Ellison \cite{ellison:gap}
+560:\cite{pw:flip}
+564:\cite[Lemma 7]{stt:jams}.
+582:(For now we'll suppress the dependence of $M_X,M_Y$ on $p,q$.)
+601:because then we'll get additivity of $\Zvol$ from
+756:(Some definitions extend this requirement
+786:because that would requires two distinct
+791:\cite{thurston:shapes}
+795:We don't allow them.
+1082:\bibliography{taut}
+1083:\bibliographystyle{amsplain}
+
+ succeeded in 0ms:
+192:(Here and throughout we'll assume $n\geq 1$.)
+211:Ellison \cite{ellison:gap}
+243:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+254:We don't know what happens for spheres of dimension 3 or greater.
+260:\cite{stt:jams}.
+280:\cite[p. 697]{stt:jams}
+283:Mathieu and Thurston \cite{mt}
+289:In \cite{dew:filling} we produced examples for any $v \geq 13$ with
+297:In \cite{dew:filling}
+307:(Ellison \cite{ellison:gap}),
+345:and then do any required cancellation of oppositely oriented simplices
+526:Ellison \cite{ellison:gap}
+531:\cite{pw:flip}
+535:\cite[Lemma 7]{stt:jams}.
+553:(For now we'll suppress the dependence of $M_X,M_Y$ on $p,q$.)
+572:because then we'll get additivity of $\Zvol$ from
+926:\bibitem{dew:filling}
+930:\bibitem{ellison:gap}
+934:\bibitem{mt}
+938:\bibitem{pw:flip}
+942:\bibitem{stt:jams}
+
+exec
+/bin/zsh -lc "rg -n -F -e '\\cite' -e '\\bibitem' -e '\\bibliography' -e '\\bibliographystyle' -e '\\begin{comment}' -e '\\end{comment}' -e 'requires' -e 'require' -e \"don't\" -e \"we'll\" -e 'some kind' -e 'wrinkle' -e 'obvious' text/tautxy/tautA-codex-01.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+184:\begin{comment}
+187:\end{comment}
+219:Ellison \cite{ellison:gap}
+251:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+263:\begin{comment}
+279:So we wind up with some kind of triangulation $\tau$ of $B^3$,
+283:\end{comment}
+291:\cite{stt:jams}.
+311:\cite[p. 697]{stt:jams}
+314:Mathieu and Thurston \cite{mt}
+320:In \cite{dew:filling} we produced examples for any $v \geq 13$ with
+328:In \cite{dew:filling}
+338:(Ellison \cite{ellison:gap}),
+375:and then do any required cancellation of oppositely oriented simplices
+556:Ellison \cite{ellison:gap}
+561:\cite{pw:flip}
+565:\cite[Lemma 7]{stt:jams}.
+771:because that would require two distinct
+776:\cite{thurston:shapes}
+1053:\bibliography{taut}
+1054:\bibliographystyle{amsplain}
+
+exec
+/bin/zsh -lc "test -e text/tautxy/tautA-comparison-codex.md; printf '%s\\n' "'$?' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+1
+
+exec
+/bin/zsh -lc 'ls -l text/tautxy/tautA-comparison-codex.md 2>/dev/null || true' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+codex
+I’ve finished the evidence pass and the output file does not already exist. I’m going to add a focused comparison with rankings, line-cited findings, and a concrete version-02 assembly recipe.
+apply patch
+patch: completed
+/Users/doyle/Dropbox/taut/text/tautxy/tautA-comparison-codex.md
+diff --git a/text/tautxy/tautA-comparison-codex.md b/text/tautxy/tautA-comparison-codex.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4609069835d75e82e3ee665075603871d81c45fd
+--- /dev/null
++++ b/text/tautxy/tautA-comparison-codex.md
+@@ -0,0 +1,105 @@
++# Independent comparison of three Taut fillings version-A drafts
++
++I compared only:
++
++- `text/tautxy/tautA-claude-01.tex`
++- `text/tautxy/tautA-codex-01.tex`
++- `text/tautxy/tautA-gpt-01.tex`
++
++I did not read `tautA-comparison-claude.md` or `tautA2.tex`.
++
++## Ranking
++
++1. **`tautA-codex-01.tex`**: best spine for version 02. It keeps the full theorem statement, fixes several prose and typo issues, gives the most rigorous eligible-tet counting argument, and retains an explicit clean-complex verification.
++2. **`tautA-claude-01.tex`**: mathematically close and sometimes fuller in flavor, but less polished and with stale comments plus a real typo in the triangulation discussion.
++3. **`tautA-gpt-01.tex`**: cleanest and shortest prose, but mathematically weaker in the crucial Theorem 2 proof because it compresses cleanness into a gluing sketch instead of preserving the explicit pseudomanifold/link verification.
++
++## Notation and setup
++
++All three use the ambient vertex set notation `\Omega` and define `C_n(\Omega)` and `Z_n(\Omega)` in the overview: Claude at `text/tautxy/tautA-claude-01.tex:190`, Codex at `text/tautxy/tautA-codex-01.tex:191`, GPT at `text/tautxy/tautA-gpt-01.tex:183`. All three consistently use `M` for fillings in the basic definition: Claude `text/tautxy/tautA-claude-01.tex:197`, Codex `text/tautxy/tautA-codex-01.tex:198`, GPT `text/tautxy/tautA-gpt-01.tex:190`.
++
++The support notation `K(M)` is best in Codex: it defines `K(M)` as the pure complex generated by the unoriented support of `M`, then defines simplicial and clean chains immediately after `text/tautxy/tautA-codex-01.tex:782`. Claude has the same convention but with more words and a slightly awkward parenthetical `text/tautxy/tautA-claude-01.tex:797`. GPT is compact and clear about chains versus complexes `text/tautxy/tautA-gpt-01.tex:718`, but its Triangulations section switches the ambient complex variable to `K`, which may visually compete with `K(M)` `text/tautxy/tautA-gpt-01.tex:683`.
++
++The Triangulations section is live in all three. Claude and Codex still contain stale commented-out explanatory material in the abstract/overview: Claude `text/tautxy/tautA-claude-01.tex:183` and `text/tautxy/tautA-claude-01.tex:262`; Codex `text/tautxy/tautA-codex-01.tex:184` and `text/tautxy/tautA-codex-01.tex:263`. GPT removes these comments entirely.
++
++The clean-complex convention is correctly present in all three: purity, pseudomanifold boundary triangle condition, and connected links in codimension at least two. Claude states it at `text/tautxy/tautA-claude-01.tex:728`; Codex at `text/tautxy/tautA-codex-01.tex:729`; GPT at `text/tautxy/tautA-gpt-01.tex:694`. Codex is the best phrased version for v02 because it is precise without Claude's conversational digressions. GPT's explicit dimension-3 paraphrase is useful: connected edge links and connected vertex links `text/tautxy/tautA-gpt-01.tex:699`.
++
++Carrier typo: Claude has "would requires" at `text/tautxy/tautA-claude-01.tex:786`; Codex fixes it to "would require" at `text/tautxy/tautA-codex-01.tex:771`. GPT avoids the sentence and states the ordinary simplicial convention cleanly at `text/tautxy/tautA-gpt-01.tex:714`.
++
++## Theorem 2
++
++All three theorem statements preserve the essential conclusion that `M` is clean and `K(M)` triangulates `B^3`: Claude `text/tautxy/tautA-claude-01.tex:815`, Codex `text/tautxy/tautA-codex-01.tex:792`, GPT `text/tautxy/tautA-gpt-01.tex:727`. Codex's statement is the most compact and explicit because it says `M` is a taut filling of `X(\sigma)` `text/tautxy/tautA-codex-01.tex:793`.
++
++The proof should use Codex as spine. It introduces "filling pair" and "good" cleanly `text/tautxy/tautA-codex-01.tex:799`, reduces by minimality and connected-sum splitting `text/tautxy/tautA-codex-01.tex:805`, handles both post-flip cases, rules out multiplicity-2, and then explicitly checks the clean-complex conditions `text/tautxy/tautA-codex-01.tex:877`.
++
++The crucial cleanness issue:
++
++- Claude keeps the explicit verification: after proving `M` is simplicial `text/tautxy/tautA-claude-01.tex:876`, it checks pseudomanifold, disconnected edge links, and disconnected vertex links separately `text/tautxy/tautA-claude-01.tex:883`.
++- Codex also keeps the explicit verification and is the best version of it: pseudomanifold at `text/tautxy/tautA-codex-01.tex:877`, edge links at `text/tautxy/tautA-codex-01.tex:890`, vertex links at `text/tautxy/tautA-codex-01.tex:904`, and the final contradiction at `text/tautxy/tautA-codex-01.tex:915`.
++- GPT does **not** keep the explicit verification. It collapses cleanness into a gluing paragraph beginning "It remains only to spell out why this gluing preserves cleanness" `text/tautxy/tautA-gpt-01.tex:806`. This is the main mathematical weakness of GPT: the pseudomanifold, edge-link, and vertex-link obstructions are sketched as possible persistent failures `text/tautxy/tautA-gpt-01.tex:812`, but not separately proved.
++
++## Eligible-tet count
++
++Claude gives a simple assignment of boundary faces to tets, with correct signs and support/copy warning `text/tautxy/tautA-claude-01.tex:845`; it concludes at least `\maxdeg(\sigma)` disjointly eligible tets `text/tautxy/tautA-claude-01.tex:851`. This is readable but slightly handwavy because the disjointness comes from assignment choices rather than a named counting variable.
++
++Codex is most rigorous. It defines `A(u)` for each support tetrahedron, records only newly seen faces, and proves `f <= |supp M|+r <= |M|+r`, hence `r >= \maxdeg(\sigma)` `text/tautxy/tautA-codex-01.tex:821`. It also explicitly says these are support tetrahedra and correctly oriented boundary faces `text/tautxy/tautA-codex-01.tex:813`.
++
++GPT uses essentially the same reveal argument as Codex `text/tautxy/tautA-gpt-01.tex:753`, but is a little less careful: it says the sets cover boundary faces because each boundary face has nonzero coefficient with the right sign `text/tautxy/tautA-gpt-01.tex:754`; Codex's wording "prescribed sign" is cleaner and more tied to `X(\sigma)` `text/tautxy/tautA-codex-01.tex:824`.
++
++## Post-flip cases and multiplicity obstruction
++
++All three distinguish the one-sphere case from the conjoined-spheres case. Claude: `text/tautxy/tautA-claude-01.tex:856`; Codex: `text/tautxy/tautA-codex-01.tex:839`; GPT: `text/tautxy/tautA-gpt-01.tex:767`.
++
++All three preserve the important remark that `M-t` need not be clean as one complex in the conjoined case, because the common-edge link can be disconnected. Claude states this explicitly at `text/tautxy/tautA-claude-01.tex:869`, Codex at `text/tautxy/tautA-codex-01.tex:865`, GPT at `text/tautxy/tautA-gpt-01.tex:793`.
++
++All three include the disjoint-eligible multiplicity-2 obstruction. Claude's version is explicit after the two cases `text/tautxy/tautA-claude-01.tex:876`; Codex handles it inside each case with a second eligible tet `text/tautxy/tautA-codex-01.tex:850` and `text/tautxy/tautA-codex-01.tex:868`; GPT handles it similarly `text/tautxy/tautA-gpt-01.tex:782` and `text/tautxy/tautA-gpt-01.tex:801`. For v02, keep Codex's placement but add a single summarizing sentence afterward, as Claude does, that `M` is now known simplicial.
++
++## Shelling
++
++All three use the shucking idea. Claude names it explicitly and gives the clearest removal-order description `text/tautxy/tautA-claude-01.tex:966`. Codex is concise and still sufficient `text/tautxy/tautA-codex-01.tex:942`. GPT is shortest and more sketchlike `text/tautxy/tautA-gpt-01.tex:840`.
++
++Monotone handling is best in Claude: it explains one-, two-, and three-face attachments and notes that the three-face case would bury an interior vertex, so vertex count never decreases `text/tautxy/tautA-claude-01.tex:947`. Codex keeps the same point more briefly `text/tautxy/tautA-codex-01.tex:930`. GPT says the three-face case is excluded by absence of internal vertices `text/tautxy/tautA-gpt-01.tex:830`, but that is too compressed. Use Codex as base, graft Claude's monotone explanation in polished form.
++
++## Flag section
++
++Codex has the cleanest flag/clique terminology: "flag complex (or clique complex)" `text/tautxy/tautA-codex-01.tex:975`. Claude says "also called a clique complex" `text/tautxy/tautA-claude-01.tex:993`. GPT omits the clique synonym `text/tautxy/tautA-gpt-01.tex:864`; restore it.
++
++All three have the right minimal forbidden configurations: missing triangle, missing `K_4` tetrahedron, and `K_5` `text/tautxy/tautA-codex-01.tex:998`. Codex phrases the `K_5` obstruction best: a `K_5` forces five `K_4` tetrahedra, the boundary of a 4-simplex, a closed `3`-sphere/cycle that cannot occur in a triangulated 3-ball `text/tautxy/tautA-codex-01.tex:1008`. Claude says the five tets "would form an `S^3`" `text/tautxy/tautA-claude-01.tex:1030`; GPT says "forming the boundary of a 4-simplex" `text/tautxy/tautA-gpt-01.tex:885`. Use Codex/GPT wording and keep the explicit `S^3`-not-in-`B^3` step.
++
++The octahedral exceptional case is present but weak in all three. Claude says to treat the octahedron separately `text/tautxy/tautA-claude-01.tex:1070`; Codex says the octahedral boundary's taut fillings are checked directly from the same flip alternatives `text/tautxy/tautA-codex-01.tex:1048`; GPT similarly says it is the small exceptional case `text/tautxy/tautA-gpt-01.tex:913`. Version 02 needs either a real two-sentence direct check or a lemma/reference, not just "checked directly."
++
++The `K_4` proof is most complete in Claude and Codex. Codex gives a concise obstruction analysis around five candidate flips and boundary faces `text/tautxy/tautA-codex-01.tex:1040`. Claude's version is a little more explicit about the interior edge and the two boundary faces `ABC` and `BCD` `text/tautxy/tautA-claude-01.tex:1073`. GPT has the same idea but is shortest `text/tautxy/tautA-gpt-01.tex:910`.
++
++## Prose, typos, bibliography, and completeness
++
++Claude has the most leftover conversational prose and stale comments. Examples: commented-out abstract/overview material `text/tautxy/tautA-claude-01.tex:183` and `text/tautxy/tautA-claude-01.tex:262`; contractions and informal lines such as "Let's begin" `text/tautxy/tautA-claude-01.tex:707`, "we'll" `text/tautxy/tautA-claude-01.tex:199`, and "We don't allow them" `text/tautxy/tautA-claude-01.tex:795`; plus the typo "would requires" `text/tautxy/tautA-claude-01.tex:786`.
++
++Codex is the best polished middle ground. It fixes the taut definition punctuation that Claude leaves as a comma at `text/tautxy/tautA-claude-01.tex:202`, removes several contractions, fixes the carrier typo `text/tautxy/tautA-codex-01.tex:771`, and keeps external bibliography handling with `\bibliography{taut}` `text/tautxy/tautA-codex-01.tex:1053`. It still has stale commented-out material `text/tautxy/tautA-codex-01.tex:184` and `text/tautxy/tautA-codex-01.tex:263`.
++
++GPT has the cleanest abstract and removes stale comments `text/tautxy/tautA-gpt-01.tex:167`. It is the shortest draft at 948 lines versus Claude's 1084 and Codex's 1055. But it uses an inline bibliography `text/tautxy/tautA-gpt-01.tex:924`, omits the `thurston:shapes` bibliography item despite the other drafts citing it in the triangulation section, and weakens Theorem 2 as noted above. Prefer `\bibliography{taut}` / `\bibliographystyle{amsplain}` as in Claude and Codex.
++
++## Recommended joint version 02
++
++Use `tautA-codex-01.tex` as the spine.
++
++Graft from GPT:
++
++- The abstract's direct STT motivation and equality statement `text/tautxy/tautA-gpt-01.tex:167`.
++- The concise ordinary-simplicial convention, or at least its avoidance of the "double cover" digression if the paper wants to be shorter `text/tautxy/tautA-gpt-01.tex:714`.
++- The explicit dimension-3 reading of clean links, but preserve Codex's formal definition `text/tautxy/tautA-gpt-01.tex:699`.
++
++Graft from Claude:
++
++- The fuller monotone shelling explanation around one-, two-, and three-face attachments `text/tautxy/tautA-claude-01.tex:947`.
++- The explicit "shucking" terminology and removal-order clarity `text/tautxy/tautA-claude-01.tex:966`.
++- In the flag proof, the more explicit final `K_4` obstruction wording about the interior edge and boundary faces `ABC`, `BCD` `text/tautxy/tautA-claude-01.tex:1073`, but polish it into Codex's cleaner style.
++
++Fix in the joint version:
++
++- Delete stale commented-out material from the abstract and overview.
++- Keep `M` for chains/fillings, `\Omega` for ambient vertices, and `K(M)` for the support complex; avoid using bare `K` as the main complex variable in the Triangulations section.
++- Keep Theorem 2's statement exactly strong: `M` is clean and `K(M)` is a simplicial triangulation of `B^3`.
++- Do **not** adopt GPT's compressed gluing-only cleanness proof. Keep Codex's explicit pseudomanifold, edge-link, and vertex-link checks.
++- Keep Codex's eligible-tet reveal-count argument with support tetrahedra and correct boundary signs.
++- Add a non-handwavy treatment of the octahedral exceptional case in the flag proof.
++- Use external bibliography handling `\bibliography{taut}` and `\bibliographystyle{amsplain}` rather than GPT's inline bibliography.
+
+diff --git a/text/tautxy/tautA-comparison-codex.md b/text/tautxy/tautA-comparison-codex.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4609069835d75e82e3ee665075603871d81c45fd
+--- /dev/null
++++ b/text/tautxy/tautA-comparison-codex.md
+@@ -0,0 +1,105 @@
++# Independent comparison of three Taut fillings version-A drafts
++
++I compared only:
++
++- `text/tautxy/tautA-claude-01.tex`
++- `text/tautxy/tautA-codex-01.tex`
++- `text/tautxy/tautA-gpt-01.tex`
++
++I did not read `tautA-comparison-claude.md` or `tautA2.tex`.
++
++## Ranking
++
++1. **`tautA-codex-01.tex`**: best spine for version 02. It keeps the full theorem statement, fixes several prose and typo issues, gives the most rigorous eligible-tet counting argument, and retains an explicit clean-complex verification.
++2. **`tautA-claude-01.tex`**: mathematically close and sometimes fuller in flavor, but less polished and with stale comments plus a real typo in the triangulation discussion.
++3. **`tautA-gpt-01.tex`**: cleanest and shortest prose, but mathematically weaker in the crucial Theorem 2 proof because it compresses cleanness into a gluing sketch instead of preserving the explicit pseudomanifold/link verification.
++
++## Notation and setup
++
++All three use the ambient vertex set notation `\Omega` and define `C_n(\Omega)` and `Z_n(\Omega)` in the overview: Claude at `text/tautxy/tautA-claude-01.tex:190`, Codex at `text/tautxy/tautA-codex-01.tex:191`, GPT at `text/tautxy/tautA-gpt-01.tex:183`. All three consistently use `M` for fillings in the basic definition: Claude `text/tautxy/tautA-claude-01.tex:197`, Codex `text/tautxy/tautA-codex-01.tex:198`, GPT `text/tautxy/tautA-gpt-01.tex:190`.
++
++The support notation `K(M)` is best in Codex: it defines `K(M)` as the pure complex generated by the unoriented support of `M`, then defines simplicial and clean chains immediately after `text/tautxy/tautA-codex-01.tex:782`. Claude has the same convention but with more words and a slightly awkward parenthetical `text/tautxy/tautA-claude-01.tex:797`. GPT is compact and clear about chains versus complexes `text/tautxy/tautA-gpt-01.tex:718`, but its Triangulations section switches the ambient complex variable to `K`, which may visually compete with `K(M)` `text/tautxy/tautA-gpt-01.tex:683`.
++
++The Triangulations section is live in all three. Claude and Codex still contain stale commented-out explanatory material in the abstract/overview: Claude `text/tautxy/tautA-claude-01.tex:183` and `text/tautxy/tautA-claude-01.tex:262`; Codex `text/tautxy/tautA-codex-01.tex:184` and `text/tautxy/tautA-codex-01.tex:263`. GPT removes these comments entirely.
++
++The clean-complex convention is correctly present in all three: purity, pseudomanifold boundary triangle condition, and connected links in codimension at least two. Claude states it at `text/tautxy/tautA-claude-01.tex:728`; Codex at `text/tautxy/tautA-codex-01.tex:729`; GPT at `text/tautxy/tautA-gpt-01.tex:694`. Codex is the best phrased version for v02 because it is precise without Claude's conversational digressions. GPT's explicit dimension-3 paraphrase is useful: connected edge links and connected vertex links `text/tautxy/tautA-gpt-01.tex:699`.
++
++Carrier typo: Claude has "would requires" at `text/tautxy/tautA-claude-01.tex:786`; Codex fixes it to "would require" at `text/tautxy/tautA-codex-01.tex:771`. GPT avoids the sentence and states the ordinary simplicial convention cleanly at `text/tautxy/tautA-gpt-01.tex:714`.
++
++## Theorem 2
++
++All three theorem statements preserve the essential conclusion that `M` is clean and `K(M)` triangulates `B^3`: Claude `text/tautxy/tautA-claude-01.tex:815`, Codex `text/tautxy/tautA-codex-01.tex:792`, GPT `text/tautxy/tautA-gpt-01.tex:727`. Codex's statement is the most compact and explicit because it says `M` is a taut filling of `X(\sigma)` `text/tautxy/tautA-codex-01.tex:793`.
++
++The proof should use Codex as spine. It introduces "filling pair" and "good" cleanly `text/tautxy/tautA-codex-01.tex:799`, reduces by minimality and connected-sum splitting `text/tautxy/tautA-codex-01.tex:805`, handles both post-flip cases, rules out multiplicity-2, and then explicitly checks the clean-complex conditions `text/tautxy/tautA-codex-01.tex:877`.
++
++The crucial cleanness issue:
++
++- Claude keeps the explicit verification: after proving `M` is simplicial `text/tautxy/tautA-claude-01.tex:876`, it checks pseudomanifold, disconnected edge links, and disconnected vertex links separately `text/tautxy/tautA-claude-01.tex:883`.
++- Codex also keeps the explicit verification and is the best version of it: pseudomanifold at `text/tautxy/tautA-codex-01.tex:877`, edge links at `text/tautxy/tautA-codex-01.tex:890`, vertex links at `text/tautxy/tautA-codex-01.tex:904`, and the final contradiction at `text/tautxy/tautA-codex-01.tex:915`.
++- GPT does **not** keep the explicit verification. It collapses cleanness into a gluing paragraph beginning "It remains only to spell out why this gluing preserves cleanness" `text/tautxy/tautA-gpt-01.tex:806`. This is the main mathematical weakness of GPT: the pseudomanifold, edge-link, and vertex-link obstructions are sketched as possible persistent failures `text/tautxy/tautA-gpt-01.tex:812`, but not separately proved.
++
++## Eligible-tet count
++
++Claude gives a simple assignment of boundary faces to tets, with correct signs and support/copy warning `text/tautxy/tautA-claude-01.tex:845`; it concludes at least `\maxdeg(\sigma)` disjointly eligible tets `text/tautxy/tautA-claude-01.tex:851`. This is readable but slightly handwavy because the disjointness comes from assignment choices rather than a named counting variable.
++
++Codex is most rigorous. It defines `A(u)` for each support tetrahedron, records only newly seen faces, and proves `f <= |supp M|+r <= |M|+r`, hence `r >= \maxdeg(\sigma)` `text/tautxy/tautA-codex-01.tex:821`. It also explicitly says these are support tetrahedra and correctly oriented boundary faces `text/tautxy/tautA-codex-01.tex:813`.
++
++GPT uses essentially the same reveal argument as Codex `text/tautxy/tautA-gpt-01.tex:753`, but is a little less careful: it says the sets cover boundary faces because each boundary face has nonzero coefficient with the right sign `text/tautxy/tautA-gpt-01.tex:754`; Codex's wording "prescribed sign" is cleaner and more tied to `X(\sigma)` `text/tautxy/tautA-codex-01.tex:824`.
++
++## Post-flip cases and multiplicity obstruction
++
++All three distinguish the one-sphere case from the conjoined-spheres case. Claude: `text/tautxy/tautA-claude-01.tex:856`; Codex: `text/tautxy/tautA-codex-01.tex:839`; GPT: `text/tautxy/tautA-gpt-01.tex:767`.
++
++All three preserve the important remark that `M-t` need not be clean as one complex in the conjoined case, because the common-edge link can be disconnected. Claude states this explicitly at `text/tautxy/tautA-claude-01.tex:869`, Codex at `text/tautxy/tautA-codex-01.tex:865`, GPT at `text/tautxy/tautA-gpt-01.tex:793`.
++
++All three include the disjoint-eligible multiplicity-2 obstruction. Claude's version is explicit after the two cases `text/tautxy/tautA-claude-01.tex:876`; Codex handles it inside each case with a second eligible tet `text/tautxy/tautA-codex-01.tex:850` and `text/tautxy/tautA-codex-01.tex:868`; GPT handles it similarly `text/tautxy/tautA-gpt-01.tex:782` and `text/tautxy/tautA-gpt-01.tex:801`. For v02, keep Codex's placement but add a single summarizing sentence afterward, as Claude does, that `M` is now known simplicial.
++
++## Shelling
++
++All three use the shucking idea. Claude names it explicitly and gives the clearest removal-order description `text/tautxy/tautA-claude-01.tex:966`. Codex is concise and still sufficient `text/tautxy/tautA-codex-01.tex:942`. GPT is shortest and more sketchlike `text/tautxy/tautA-gpt-01.tex:840`.
++
++Monotone handling is best in Claude: it explains one-, two-, and three-face attachments and notes that the three-face case would bury an interior vertex, so vertex count never decreases `text/tautxy/tautA-claude-01.tex:947`. Codex keeps the same point more briefly `text/tautxy/tautA-codex-01.tex:930`. GPT says the three-face case is excluded by absence of internal vertices `text/tautxy/tautA-gpt-01.tex:830`, but that is too compressed. Use Codex as base, graft Claude's monotone explanation in polished form.
++
++## Flag section
++
++Codex has the cleanest flag/clique terminology: "flag complex (or clique complex)" `text/tautxy/tautA-codex-01.tex:975`. Claude says "also called a clique complex" `text/tautxy/tautA-claude-01.tex:993`. GPT omits the clique synonym `text/tautxy/tautA-gpt-01.tex:864`; restore it.
++
++All three have the right minimal forbidden configurations: missing triangle, missing `K_4` tetrahedron, and `K_5` `text/tautxy/tautA-codex-01.tex:998`. Codex phrases the `K_5` obstruction best: a `K_5` forces five `K_4` tetrahedra, the boundary of a 4-simplex, a closed `3`-sphere/cycle that cannot occur in a triangulated 3-ball `text/tautxy/tautA-codex-01.tex:1008`. Claude says the five tets "would form an `S^3`" `text/tautxy/tautA-claude-01.tex:1030`; GPT says "forming the boundary of a 4-simplex" `text/tautxy/tautA-gpt-01.tex:885`. Use Codex/GPT wording and keep the explicit `S^3`-not-in-`B^3` step.
++
++The octahedral exceptional case is present but weak in all three. Claude says to treat the octahedron separately `text/tautxy/tautA-claude-01.tex:1070`; Codex says the octahedral boundary's taut fillings are checked directly from the same flip alternatives `text/tautxy/tautA-codex-01.tex:1048`; GPT similarly says it is the small exceptional case `text/tautxy/tautA-gpt-01.tex:913`. Version 02 needs either a real two-sentence direct check or a lemma/reference, not just "checked directly."
++
++The `K_4` proof is most complete in Claude and Codex. Codex gives a concise obstruction analysis around five candidate flips and boundary faces `text/tautxy/tautA-codex-01.tex:1040`. Claude's version is a little more explicit about the interior edge and the two boundary faces `ABC` and `BCD` `text/tautxy/tautA-claude-01.tex:1073`. GPT has the same idea but is shortest `text/tautxy/tautA-gpt-01.tex:910`.
++
++## Prose, typos, bibliography, and completeness
++
++Claude has the most leftover conversational prose and stale comments. Examples: commented-out abstract/overview material `text/tautxy/tautA-claude-01.tex:183` and `text/tautxy/tautA-claude-01.tex:262`; contractions and informal lines such as "Let's begin" `text/tautxy/tautA-claude-01.tex:707`, "we'll" `text/tautxy/tautA-claude-01.tex:199`, and "We don't allow them" `text/tautxy/tautA-claude-01.tex:795`; plus the typo "would requires" `text/tautxy/tautA-claude-01.tex:786`.
++
++Codex is the best polished middle ground. It fixes the taut definition punctuation that Claude leaves as a comma at `text/tautxy/tautA-claude-01.tex:202`, removes several contractions, fixes the carrier typo `text/tautxy/tautA-codex-01.tex:771`, and keeps external bibliography handling with `\bibliography{taut}` `text/tautxy/tautA-codex-01.tex:1053`. It still has stale commented-out material `text/tautxy/tautA-codex-01.tex:184` and `text/tautxy/tautA-codex-01.tex:263`.
++
++GPT has the cleanest abstract and removes stale comments `text/tautxy/tautA-gpt-01.tex:167`. It is the shortest draft at 948 lines versus Claude's 1084 and Codex's 1055. But it uses an inline bibliography `text/tautxy/tautA-gpt-01.tex:924`, omits the `thurston:shapes` bibliography item despite the other drafts citing it in the triangulation section, and weakens Theorem 2 as noted above. Prefer `\bibliography{taut}` / `\bibliographystyle{amsplain}` as in Claude and Codex.
++
++## Recommended joint version 02
++
++Use `tautA-codex-01.tex` as the spine.
++
++Graft from GPT:
++
++- The abstract's direct STT motivation and equality statement `text/tautxy/tautA-gpt-01.tex:167`.
++- The concise ordinary-simplicial convention, or at least its avoidance of the "double cover" digression if the paper wants to be shorter `text/tautxy/tautA-gpt-01.tex:714`.
++- The explicit dimension-3 reading of clean links, but preserve Codex's formal definition `text/tautxy/tautA-gpt-01.tex:699`.
++
++Graft from Claude:
++
++- The fuller monotone shelling explanation around one-, two-, and three-face attachments `text/tautxy/tautA-claude-01.tex:947`.
++- The explicit "shucking" terminology and removal-order clarity `text/tautxy/tautA-claude-01.tex:966`.
++- In the flag proof, the more explicit final `K_4` obstruction wording about the interior edge and boundary faces `ABC`, `BCD` `text/tautxy/tautA-claude-01.tex:1073`, but polish it into Codex's cleaner style.
++
++Fix in the joint version:
++
++- Delete stale commented-out material from the abstract and overview.
++- Keep `M` for chains/fillings, `\Omega` for ambient vertices, and `K(M)` for the support complex; avoid using bare `K` as the main complex variable in the Triangulations section.
++- Keep Theorem 2's statement exactly strong: `M` is clean and `K(M)` is a simplicial triangulation of `B^3`.
++- Do **not** adopt GPT's compressed gluing-only cleanness proof. Keep Codex's explicit pseudomanifold, edge-link, and vertex-link checks.
++- Keep Codex's eligible-tet reveal-count argument with support tetrahedra and correct boundary signs.
++- Add a non-handwavy treatment of the octahedral exceptional case in the flag proof.
++- Use external bibliography handling `\bibliography{taut}` and `\bibliographystyle{amsplain}` rather than GPT's inline bibliography.
+
+codex
+The comparison file has been added. I’m doing a quick sanity check that only the requested file changed and that the markdown contains the required sections.
+exec
+/bin/zsh -lc 'git status --short -- text/tautxy/tautA-comparison-codex.md text/tautxy/tautA-claude-01.tex text/tautxy/tautA-codex-01.tex text/tautxy/tautA-gpt-01.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? text/tautxy/tautA-claude-01.tex
+?? text/tautxy/tautA-codex-01.tex
+?? text/tautxy/tautA-comparison-codex.md
+?? text/tautxy/tautA-gpt-01.tex
+
+exec
+/bin/zsh -lc 'wc -l text/tautxy/tautA-comparison-codex.md' in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc 'rg -n "Ranking|Theorem 2|Eligible-tet|Post-flip|Shelling|Flag section|Recommended joint version 02|tautA2|tautA-comparison-claude" text/tautxy/tautA-comparison-codex.md' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+     105 text/tautxy/tautA-comparison-codex.md
+
+ succeeded in 0ms:
+9:I did not read `tautA-comparison-claude.md` or `tautA2.tex`.
+11:## Ranking
+15:3. **`tautA-gpt-01.tex`**: cleanest and shortest prose, but mathematically weaker in the crucial Theorem 2 proof because it compresses cleanness into a gluing sketch instead of preserving the explicit pseudomanifold/link verification.
+29:## Theorem 2
+41:## Eligible-tet count
+49:## Post-flip cases and multiplicity obstruction
+57:## Shelling
+63:## Flag section
+79:GPT has the cleanest abstract and removes stale comments `text/tautxy/tautA-gpt-01.tex:167`. It is the shortest draft at 948 lines versus Claude's 1084 and Codex's 1055. But it uses an inline bibliography `text/tautxy/tautA-gpt-01.tex:924`, omits the `thurston:shapes` bibliography item despite the other drafts citing it in the triangulation section, and weakens Theorem 2 as noted above. Prefer `\bibliography{taut}` / `\bibliographystyle{amsplain}` as in Claude and Codex.
+81:## Recommended joint version 02
+101:- Keep Theorem 2's statement exactly strong: `M` is clean and `K(M)` is a simplicial triangulation of `B^3`.
+
+diff --git a/text/tautxy/tautA-comparison-codex.md b/text/tautxy/tautA-comparison-codex.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4609069835d75e82e3ee665075603871d81c45fd
+--- /dev/null
++++ b/text/tautxy/tautA-comparison-codex.md
+@@ -0,0 +1,105 @@
++# Independent comparison of three Taut fillings version-A drafts
++
++I compared only:
++
++- `text/tautxy/tautA-claude-01.tex`
++- `text/tautxy/tautA-codex-01.tex`
++- `text/tautxy/tautA-gpt-01.tex`
++
++I did not read `tautA-comparison-claude.md` or `tautA2.tex`.
++
++## Ranking
++
++1. **`tautA-codex-01.tex`**: best spine for version 02. It keeps the full theorem statement, fixes several prose and typo issues, gives the most rigorous eligible-tet counting argument, and retains an explicit clean-complex verification.
++2. **`tautA-claude-01.tex`**: mathematically close and sometimes fuller in flavor, but less polished and with stale comments plus a real typo in the triangulation discussion.
++3. **`tautA-gpt-01.tex`**: cleanest and shortest prose, but mathematically weaker in the crucial Theorem 2 proof because it compresses cleanness into a gluing sketch instead of preserving the explicit pseudomanifold/link verification.
++
++## Notation and setup
++
++All three use the ambient vertex set notation `\Omega` and define `C_n(\Omega)` and `Z_n(\Omega)` in the overview: Claude at `text/tautxy/tautA-claude-01.tex:190`, Codex at `text/tautxy/tautA-codex-01.tex:191`, GPT at `text/tautxy/tautA-gpt-01.tex:183`. All three consistently use `M` for fillings in the basic definition: Claude `text/tautxy/tautA-claude-01.tex:197`, Codex `text/tautxy/tautA-codex-01.tex:198`, GPT `text/tautxy/tautA-gpt-01.tex:190`.
++
++The support notation `K(M)` is best in Codex: it defines `K(M)` as the pure complex generated by the unoriented support of `M`, then defines simplicial and clean chains immediately after `text/tautxy/tautA-codex-01.tex:782`. Claude has the same convention but with more words and a slightly awkward parenthetical `text/tautxy/tautA-claude-01.tex:797`. GPT is compact and clear about chains versus complexes `text/tautxy/tautA-gpt-01.tex:718`, but its Triangulations section switches the ambient complex variable to `K`, which may visually compete with `K(M)` `text/tautxy/tautA-gpt-01.tex:683`.
++
++The Triangulations section is live in all three. Claude and Codex still contain stale commented-out explanatory material in the abstract/overview: Claude `text/tautxy/tautA-claude-01.tex:183` and `text/tautxy/tautA-claude-01.tex:262`; Codex `text/tautxy/tautA-codex-01.tex:184` and `text/tautxy/tautA-codex-01.tex:263`. GPT removes these comments entirely.
++
++The clean-complex convention is correctly present in all three: purity, pseudomanifold boundary triangle condition, and connected links in codimension at least two. Claude states it at `text/tautxy/tautA-claude-01.tex:728`; Codex at `text/tautxy/tautA-codex-01.tex:729`; GPT at `text/tautxy/tautA-gpt-01.tex:694`. Codex is the best phrased version for v02 because it is precise without Claude's conversational digressions. GPT's explicit dimension-3 paraphrase is useful: connected edge links and connected vertex links `text/tautxy/tautA-gpt-01.tex:699`.
++
++Carrier typo: Claude has "would requires" at `text/tautxy/tautA-claude-01.tex:786`; Codex fixes it to "would require" at `text/tautxy/tautA-codex-01.tex:771`. GPT avoids the sentence and states the ordinary simplicial convention cleanly at `text/tautxy/tautA-gpt-01.tex:714`.
++
++## Theorem 2
++
++All three theorem statements preserve the essential conclusion that `M` is clean and `K(M)` triangulates `B^3`: Claude `text/tautxy/tautA-claude-01.tex:815`, Codex `text/tautxy/tautA-codex-01.tex:792`, GPT `text/tautxy/tautA-gpt-01.tex:727`. Codex's statement is the most compact and explicit because it says `M` is a taut filling of `X(\sigma)` `text/tautxy/tautA-codex-01.tex:793`.
++
++The proof should use Codex as spine. It introduces "filling pair" and "good" cleanly `text/tautxy/tautA-codex-01.tex:799`, reduces by minimality and connected-sum splitting `text/tautxy/tautA-codex-01.tex:805`, handles both post-flip cases, rules out multiplicity-2, and then explicitly checks the clean-complex conditions `text/tautxy/tautA-codex-01.tex:877`.
++
++The crucial cleanness issue:
++
++- Claude keeps the explicit verification: after proving `M` is simplicial `text/tautxy/tautA-claude-01.tex:876`, it checks pseudomanifold, disconnected edge links, and disconnected vertex links separately `text/tautxy/tautA-claude-01.tex:883`.
++- Codex also keeps the explicit verification and is the best version of it: pseudomanifold at `text/tautxy/tautA-codex-01.tex:877`, edge links at `text/tautxy/tautA-codex-01.tex:890`, vertex links at `text/tautxy/tautA-codex-01.tex:904`, and the final contradiction at `text/tautxy/tautA-codex-01.tex:915`.
++- GPT does **not** keep the explicit verification. It collapses cleanness into a gluing paragraph beginning "It remains only to spell out why this gluing preserves cleanness" `text/tautxy/tautA-gpt-01.tex:806`. This is the main mathematical weakness of GPT: the pseudomanifold, edge-link, and vertex-link obstructions are sketched as possible persistent failures `text/tautxy/tautA-gpt-01.tex:812`, but not separately proved.
++
++## Eligible-tet count
++
++Claude gives a simple assignment of boundary faces to tets, with correct signs and support/copy warning `text/tautxy/tautA-claude-01.tex:845`; it concludes at least `\maxdeg(\sigma)` disjointly eligible tets `text/tautxy/tautA-claude-01.tex:851`. This is readable but slightly handwavy because the disjointness comes from assignment choices rather than a named counting variable.
++
++Codex is most rigorous. It defines `A(u)` for each support tetrahedron, records only newly seen faces, and proves `f <= |supp M|+r <= |M|+r`, hence `r >= \maxdeg(\sigma)` `text/tautxy/tautA-codex-01.tex:821`. It also explicitly says these are support tetrahedra and correctly oriented boundary faces `text/tautxy/tautA-codex-01.tex:813`.
++
++GPT uses essentially the same reveal argument as Codex `text/tautxy/tautA-gpt-01.tex:753`, but is a little less careful: it says the sets cover boundary faces because each boundary face has nonzero coefficient with the right sign `text/tautxy/tautA-gpt-01.tex:754`; Codex's wording "prescribed sign" is cleaner and more tied to `X(\sigma)` `text/tautxy/tautA-codex-01.tex:824`.
++
++## Post-flip cases and multiplicity obstruction
++
++All three distinguish the one-sphere case from the conjoined-spheres case. Claude: `text/tautxy/tautA-claude-01.tex:856`; Codex: `text/tautxy/tautA-codex-01.tex:839`; GPT: `text/tautxy/tautA-gpt-01.tex:767`.
++
++All three preserve the important remark that `M-t` need not be clean as one complex in the conjoined case, because the common-edge link can be disconnected. Claude states this explicitly at `text/tautxy/tautA-claude-01.tex:869`, Codex at `text/tautxy/tautA-codex-01.tex:865`, GPT at `text/tautxy/tautA-gpt-01.tex:793`.
++
++All three include the disjoint-eligible multiplicity-2 obstruction. Claude's version is explicit after the two cases `text/tautxy/tautA-claude-01.tex:876`; Codex handles it inside each case with a second eligible tet `text/tautxy/tautA-codex-01.tex:850` and `text/tautxy/tautA-codex-01.tex:868`; GPT handles it similarly `text/tautxy/tautA-gpt-01.tex:782` and `text/tautxy/tautA-gpt-01.tex:801`. For v02, keep Codex's placement but add a single summarizing sentence afterward, as Claude does, that `M` is now known simplicial.
++
++## Shelling
++
++All three use the shucking idea. Claude names it explicitly and gives the clearest removal-order description `text/tautxy/tautA-claude-01.tex:966`. Codex is concise and still sufficient `text/tautxy/tautA-codex-01.tex:942`. GPT is shortest and more sketchlike `text/tautxy/tautA-gpt-01.tex:840`.
++
++Monotone handling is best in Claude: it explains one-, two-, and three-face attachments and notes that the three-face case would bury an interior vertex, so vertex count never decreases `text/tautxy/tautA-claude-01.tex:947`. Codex keeps the same point more briefly `text/tautxy/tautA-codex-01.tex:930`. GPT says the three-face case is excluded by absence of internal vertices `text/tautxy/tautA-gpt-01.tex:830`, but that is too compressed. Use Codex as base, graft Claude's monotone explanation in polished form.
++
++## Flag section
++
++Codex has the cleanest flag/clique terminology: "flag complex (or clique complex)" `text/tautxy/tautA-codex-01.tex:975`. Claude says "also called a clique complex" `text/tautxy/tautA-claude-01.tex:993`. GPT omits the clique synonym `text/tautxy/tautA-gpt-01.tex:864`; restore it.
++
++All three have the right minimal forbidden configurations: missing triangle, missing `K_4` tetrahedron, and `K_5` `text/tautxy/tautA-codex-01.tex:998`. Codex phrases the `K_5` obstruction best: a `K_5` forces five `K_4` tetrahedra, the boundary of a 4-simplex, a closed `3`-sphere/cycle that cannot occur in a triangulated 3-ball `text/tautxy/tautA-codex-01.tex:1008`. Claude says the five tets "would form an `S^3`" `text/tautxy/tautA-claude-01.tex:1030`; GPT says "forming the boundary of a 4-simplex" `text/tautxy/tautA-gpt-01.tex:885`. Use Codex/GPT wording and keep the explicit `S^3`-not-in-`B^3` step.
++
++The octahedral exceptional case is present but weak in all three. Claude says to treat the octahedron separately `text/tautxy/tautA-claude-01.tex:1070`; Codex says the octahedral boundary's taut fillings are checked directly from the same flip alternatives `text/tautxy/tautA-codex-01.tex:1048`; GPT similarly says it is the small exceptional case `text/tautxy/tautA-gpt-01.tex:913`. Version 02 needs either a real two-sentence direct check or a lemma/reference, not just "checked directly."
++
++The `K_4` proof is most complete in Claude and Codex. Codex gives a concise obstruction analysis around five candidate flips and boundary faces `text/tautxy/tautA-codex-01.tex:1040`. Claude's version is a little more explicit about the interior edge and the two boundary faces `ABC` and `BCD` `text/tautxy/tautA-claude-01.tex:1073`. GPT has the same idea but is shortest `text/tautxy/tautA-gpt-01.tex:910`.
++
++## Prose, typos, bibliography, and completeness
++
++Claude has the most leftover conversational prose and stale comments. Examples: commented-out abstract/overview material `text/tautxy/tautA-claude-01.tex:183` and `text/tautxy/tautA-claude-01.tex:262`; contractions and informal lines such as "Let's begin" `text/tautxy/tautA-claude-01.tex:707`, "we'll" `text/tautxy/tautA-claude-01.tex:199`, and "We don't allow them" `text/tautxy/tautA-claude-01.tex:795`; plus the typo "would requires" `text/tautxy/tautA-claude-01.tex:786`.
++
++Codex is the best polished middle ground. It fixes the taut definition punctuation that Claude leaves as a comma at `text/tautxy/tautA-claude-01.tex:202`, removes several contractions, fixes the carrier typo `text/tautxy/tautA-codex-01.tex:771`, and keeps external bibliography handling with `\bibliography{taut}` `text/tautxy/tautA-codex-01.tex:1053`. It still has stale commented-out material `text/tautxy/tautA-codex-01.tex:184` and `text/tautxy/tautA-codex-01.tex:263`.
++
++GPT has the cleanest abstract and removes stale comments `text/tautxy/tautA-gpt-01.tex:167`. It is the shortest draft at 948 lines versus Claude's 1084 and Codex's 1055. But it uses an inline bibliography `text/tautxy/tautA-gpt-01.tex:924`, omits the `thurston:shapes` bibliography item despite the other drafts citing it in the triangulation section, and weakens Theorem 2 as noted above. Prefer `\bibliography{taut}` / `\bibliographystyle{amsplain}` as in Claude and Codex.
++
++## Recommended joint version 02
++
++Use `tautA-codex-01.tex` as the spine.
++
++Graft from GPT:
++
++- The abstract's direct STT motivation and equality statement `text/tautxy/tautA-gpt-01.tex:167`.
++- The concise ordinary-simplicial convention, or at least its avoidance of the "double cover" digression if the paper wants to be shorter `text/tautxy/tautA-gpt-01.tex:714`.
++- The explicit dimension-3 reading of clean links, but preserve Codex's formal definition `text/tautxy/tautA-gpt-01.tex:699`.
++
++Graft from Claude:
++
++- The fuller monotone shelling explanation around one-, two-, and three-face attachments `text/tautxy/tautA-claude-01.tex:947`.
++- The explicit "shucking" terminology and removal-order clarity `text/tautxy/tautA-claude-01.tex:966`.
++- In the flag proof, the more explicit final `K_4` obstruction wording about the interior edge and boundary faces `ABC`, `BCD` `text/tautxy/tautA-claude-01.tex:1073`, but polish it into Codex's cleaner style.
++
++Fix in the joint version:
++
++- Delete stale commented-out material from the abstract and overview.
++- Keep `M` for chains/fillings, `\Omega` for ambient vertices, and `K(M)` for the support complex; avoid using bare `K` as the main complex variable in the Triangulations section.
++- Keep Theorem 2's statement exactly strong: `M` is clean and `K(M)` is a simplicial triangulation of `B^3`.
++- Do **not** adopt GPT's compressed gluing-only cleanness proof. Keep Codex's explicit pseudomanifold, edge-link, and vertex-link checks.
++- Keep Codex's eligible-tet reveal-count argument with support tetrahedra and correct boundary signs.
++- Add a non-handwavy treatment of the octahedral exceptional case in the flag proof.
++- Use external bibliography handling `\bibliography{taut}` and `\bibliographystyle{amsplain}` rather than GPT's inline bibliography.
+
+codex
+Done: wrote `text/tautxy/tautA-comparison-codex.md` and did not modify the drafts or commit.
+diff --git a/text/tautxy/tautA-comparison-codex.md b/text/tautxy/tautA-comparison-codex.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4609069835d75e82e3ee665075603871d81c45fd
+--- /dev/null
++++ b/text/tautxy/tautA-comparison-codex.md
+@@ -0,0 +1,105 @@
++# Independent comparison of three Taut fillings version-A drafts
++
++I compared only:
++
++- `text/tautxy/tautA-claude-01.tex`
++- `text/tautxy/tautA-codex-01.tex`
++- `text/tautxy/tautA-gpt-01.tex`
++
++I did not read `tautA-comparison-claude.md` or `tautA2.tex`.
++
++## Ranking
++
++1. **`tautA-codex-01.tex`**: best spine for version 02. It keeps the full theorem statement, fixes several prose and typo issues, gives the most rigorous eligible-tet counting argument, and retains an explicit clean-complex verification.
++2. **`tautA-claude-01.tex`**: mathematically close and sometimes fuller in flavor, but less polished and with stale comments plus a real typo in the triangulation discussion.
++3. **`tautA-gpt-01.tex`**: cleanest and shortest prose, but mathematically weaker in the crucial Theorem 2 proof because it compresses cleanness into a gluing sketch instead of preserving the explicit pseudomanifold/link verification.
++
++## Notation and setup
++
++All three use the ambient vertex set notation `\Omega` and define `C_n(\Omega)` and `Z_n(\Omega)` in the overview: Claude at `text/tautxy/tautA-claude-01.tex:190`, Codex at `text/tautxy/tautA-codex-01.tex:191`, GPT at `text/tautxy/tautA-gpt-01.tex:183`. All three consistently use `M` for fillings in the basic definition: Claude `text/tautxy/tautA-claude-01.tex:197`, Codex `text/tautxy/tautA-codex-01.tex:198`, GPT `text/tautxy/tautA-gpt-01.tex:190`.
++
++The support notation `K(M)` is best in Codex: it defines `K(M)` as the pure complex generated by the unoriented support of `M`, then defines simplicial and clean chains immediately after `text/tautxy/tautA-codex-01.tex:782`. Claude has the same convention but with more words and a slightly awkward parenthetical `text/tautxy/tautA-claude-01.tex:797`. GPT is compact and clear about chains versus complexes `text/tautxy/tautA-gpt-01.tex:718`, but its Triangulations section switches the ambient complex variable to `K`, which may visually compete with `K(M)` `text/tautxy/tautA-gpt-01.tex:683`.
++
++The Triangulations section is live in all three. Claude and Codex still contain stale commented-out explanatory material in the abstract/overview: Claude `text/tautxy/tautA-claude-01.tex:183` and `text/tautxy/tautA-claude-01.tex:262`; Codex `text/tautxy/tautA-codex-01.tex:184` and `text/tautxy/tautA-codex-01.tex:263`. GPT removes these comments entirely.
++
++The clean-complex convention is correctly present in all three: purity, pseudomanifold boundary triangle condition, and connected links in codimension at least two. Claude states it at `text/tautxy/tautA-claude-01.tex:728`; Codex at `text/tautxy/tautA-codex-01.tex:729`; GPT at `text/tautxy/tautA-gpt-01.tex:694`. Codex is the best phrased version for v02 because it is precise without Claude's conversational digressions. GPT's explicit dimension-3 paraphrase is useful: connected edge links and connected vertex links `text/tautxy/tautA-gpt-01.tex:699`.
++
++Carrier typo: Claude has "would requires" at `text/tautxy/tautA-claude-01.tex:786`; Codex fixes it to "would require" at `text/tautxy/tautA-codex-01.tex:771`. GPT avoids the sentence and states the ordinary simplicial convention cleanly at `text/tautxy/tautA-gpt-01.tex:714`.
++
++## Theorem 2
++
++All three theorem statements preserve the essential conclusion that `M` is clean and `K(M)` triangulates `B^3`: Claude `text/tautxy/tautA-claude-01.tex:815`, Codex `text/tautxy/tautA-codex-01.tex:792`, GPT `text/tautxy/tautA-gpt-01.tex:727`. Codex's statement is the most compact and explicit because it says `M` is a taut filling of `X(\sigma)` `text/tautxy/tautA-codex-01.tex:793`.
++
++The proof should use Codex as spine. It introduces "filling pair" and "good" cleanly `text/tautxy/tautA-codex-01.tex:799`, reduces by minimality and connected-sum splitting `text/tautxy/tautA-codex-01.tex:805`, handles both post-flip cases, rules out multiplicity-2, and then explicitly checks the clean-complex conditions `text/tautxy/tautA-codex-01.tex:877`.
++
++The crucial cleanness issue:
++
++- Claude keeps the explicit verification: after proving `M` is simplicial `text/tautxy/tautA-claude-01.tex:876`, it checks pseudomanifold, disconnected edge links, and disconnected vertex links separately `text/tautxy/tautA-claude-01.tex:883`.
++- Codex also keeps the explicit verification and is the best version of it: pseudomanifold at `text/tautxy/tautA-codex-01.tex:877`, edge links at `text/tautxy/tautA-codex-01.tex:890`, vertex links at `text/tautxy/tautA-codex-01.tex:904`, and the final contradiction at `text/tautxy/tautA-codex-01.tex:915`.
++- GPT does **not** keep the explicit verification. It collapses cleanness into a gluing paragraph beginning "It remains only to spell out why this gluing preserves cleanness" `text/tautxy/tautA-gpt-01.tex:806`. This is the main mathematical weakness of GPT: the pseudomanifold, edge-link, and vertex-link obstructions are sketched as possible persistent failures `text/tautxy/tautA-gpt-01.tex:812`, but not separately proved.
++
++## Eligible-tet count
++
++Claude gives a simple assignment of boundary faces to tets, with correct signs and support/copy warning `text/tautxy/tautA-claude-01.tex:845`; it concludes at least `\maxdeg(\sigma)` disjointly eligible tets `text/tautxy/tautA-claude-01.tex:851`. This is readable but slightly handwavy because the disjointness comes from assignment choices rather than a named counting variable.
++
++Codex is most rigorous. It defines `A(u)` for each support tetrahedron, records only newly seen faces, and proves `f <= |supp M|+r <= |M|+r`, hence `r >= \maxdeg(\sigma)` `text/tautxy/tautA-codex-01.tex:821`. It also explicitly says these are support tetrahedra and correctly oriented boundary faces `text/tautxy/tautA-codex-01.tex:813`.
++
++GPT uses essentially the same reveal argument as Codex `text/tautxy/tautA-gpt-01.tex:753`, but is a little less careful: it says the sets cover boundary faces because each boundary face has nonzero coefficient with the right sign `text/tautxy/tautA-gpt-01.tex:754`; Codex's wording "prescribed sign" is cleaner and more tied to `X(\sigma)` `text/tautxy/tautA-codex-01.tex:824`.
++
++## Post-flip cases and multiplicity obstruction
++
++All three distinguish the one-sphere case from the conjoined-spheres case. Claude: `text/tautxy/tautA-claude-01.tex:856`; Codex: `text/tautxy/tautA-codex-01.tex:839`; GPT: `text/tautxy/tautA-gpt-01.tex:767`.
++
++All three preserve the important remark that `M-t` need not be clean as one complex in the conjoined case, because the common-edge link can be disconnected. Claude states this explicitly at `text/tautxy/tautA-claude-01.tex:869`, Codex at `text/tautxy/tautA-codex-01.tex:865`, GPT at `text/tautxy/tautA-gpt-01.tex:793`.
++
++All three include the disjoint-eligible multiplicity-2 obstruction. Claude's version is explicit after the two cases `text/tautxy/tautA-claude-01.tex:876`; Codex handles it inside each case with a second eligible tet `text/tautxy/tautA-codex-01.tex:850` and `text/tautxy/tautA-codex-01.tex:868`; GPT handles it similarly `text/tautxy/tautA-gpt-01.tex:782` and `text/tautxy/tautA-gpt-01.tex:801`. For v02, keep Codex's placement but add a single summarizing sentence afterward, as Claude does, that `M` is now known simplicial.
++
++## Shelling
++
++All three use the shucking idea. Claude names it explicitly and gives the clearest removal-order description `text/tautxy/tautA-claude-01.tex:966`. Codex is concise and still sufficient `text/tautxy/tautA-codex-01.tex:942`. GPT is shortest and more sketchlike `text/tautxy/tautA-gpt-01.tex:840`.
++
++Monotone handling is best in Claude: it explains one-, two-, and three-face attachments and notes that the three-face case would bury an interior vertex, so vertex count never decreases `text/tautxy/tautA-claude-01.tex:947`. Codex keeps the same point more briefly `text/tautxy/tautA-codex-01.tex:930`. GPT says the three-face case is excluded by absence of internal vertices `text/tautxy/tautA-gpt-01.tex:830`, but that is too compressed. Use Codex as base, graft Claude's monotone explanation in polished form.
++
++## Flag section
++
++Codex has the cleanest flag/clique terminology: "flag complex (or clique complex)" `text/tautxy/tautA-codex-01.tex:975`. Claude says "also called a clique complex" `text/tautxy/tautA-claude-01.tex:993`. GPT omits the clique synonym `text/tautxy/tautA-gpt-01.tex:864`; restore it.
++
++All three have the right minimal forbidden configurations: missing triangle, missing `K_4` tetrahedron, and `K_5` `text/tautxy/tautA-codex-01.tex:998`. Codex phrases the `K_5` obstruction best: a `K_5` forces five `K_4` tetrahedra, the boundary of a 4-simplex, a closed `3`-sphere/cycle that cannot occur in a triangulated 3-ball `text/tautxy/tautA-codex-01.tex:1008`. Claude says the five tets "would form an `S^3`" `text/tautxy/tautA-claude-01.tex:1030`; GPT says "forming the boundary of a 4-simplex" `text/tautxy/tautA-gpt-01.tex:885`. Use Codex/GPT wording and keep the explicit `S^3`-not-in-`B^3` step.
++
++The octahedral exceptional case is present but weak in all three. Claude says to treat the octahedron separately `text/tautxy/tautA-claude-01.tex:1070`; Codex says the octahedral boundary's taut fillings are checked directly from the same flip alternatives `text/tautxy/tautA-codex-01.tex:1048`; GPT similarly says it is the small exceptional case `text/tautxy/tautA-gpt-01.tex:913`. Version 02 needs either a real two-sentence direct check or a lemma/reference, not just "checked directly."
++
++The `K_4` proof is most complete in Claude and Codex. Codex gives a concise obstruction analysis around five candidate flips and boundary faces `text/tautxy/tautA-codex-01.tex:1040`. Claude's version is a little more explicit about the interior edge and the two boundary faces `ABC` and `BCD` `text/tautxy/tautA-claude-01.tex:1073`. GPT has the same idea but is shortest `text/tautxy/tautA-gpt-01.tex:910`.
++
++## Prose, typos, bibliography, and completeness
++
++Claude has the most leftover conversational prose and stale comments. Examples: commented-out abstract/overview material `text/tautxy/tautA-claude-01.tex:183` and `text/tautxy/tautA-claude-01.tex:262`; contractions and informal lines such as "Let's begin" `text/tautxy/tautA-claude-01.tex:707`, "we'll" `text/tautxy/tautA-claude-01.tex:199`, and "We don't allow them" `text/tautxy/tautA-claude-01.tex:795`; plus the typo "would requires" `text/tautxy/tautA-claude-01.tex:786`.
++
++Codex is the best polished middle ground. It fixes the taut definition punctuation that Claude leaves as a comma at `text/tautxy/tautA-claude-01.tex:202`, removes several contractions, fixes the carrier typo `text/tautxy/tautA-codex-01.tex:771`, and keeps external bibliography handling with `\bibliography{taut}` `text/tautxy/tautA-codex-01.tex:1053`. It still has stale commented-out material `text/tautxy/tautA-codex-01.tex:184` and `text/tautxy/tautA-codex-01.tex:263`.
++
++GPT has the cleanest abstract and removes stale comments `text/tautxy/tautA-gpt-01.tex:167`. It is the shortest draft at 948 lines versus Claude's 1084 and Codex's 1055. But it uses an inline bibliography `text/tautxy/tautA-gpt-01.tex:924`, omits the `thurston:shapes` bibliography item despite the other drafts citing it in the triangulation section, and weakens Theorem 2 as noted above. Prefer `\bibliography{taut}` / `\bibliographystyle{amsplain}` as in Claude and Codex.
++
++## Recommended joint version 02
++
++Use `tautA-codex-01.tex` as the spine.
++
++Graft from GPT:
++
++- The abstract's direct STT motivation and equality statement `text/tautxy/tautA-gpt-01.tex:167`.
++- The concise ordinary-simplicial convention, or at least its avoidance of the "double cover" digression if the paper wants to be shorter `text/tautxy/tautA-gpt-01.tex:714`.
++- The explicit dimension-3 reading of clean links, but preserve Codex's formal definition `text/tautxy/tautA-gpt-01.tex:699`.
++
++Graft from Claude:
++
++- The fuller monotone shelling explanation around one-, two-, and three-face attachments `text/tautxy/tautA-claude-01.tex:947`.
++- The explicit "shucking" terminology and removal-order clarity `text/tautxy/tautA-claude-01.tex:966`.
++- In the flag proof, the more explicit final `K_4` obstruction wording about the interior edge and boundary faces `ABC`, `BCD` `text/tautxy/tautA-claude-01.tex:1073`, but polish it into Codex's cleaner style.
++
++Fix in the joint version:
++
++- Delete stale commented-out material from the abstract and overview.
++- Keep `M` for chains/fillings, `\Omega` for ambient vertices, and `K(M)` for the support complex; avoid using bare `K` as the main complex variable in the Triangulations section.
++- Keep Theorem 2's statement exactly strong: `M` is clean and `K(M)` is a simplicial triangulation of `B^3`.
++- Do **not** adopt GPT's compressed gluing-only cleanness proof. Keep Codex's explicit pseudomanifold, edge-link, and vertex-link checks.
++- Keep Codex's eligible-tet reveal-count argument with support tetrahedra and correct boundary signs.
++- Add a non-handwavy treatment of the octahedral exceptional case in the flag proof.
++- Use external bibliography handling `\bibliography{taut}` and `\bibliographystyle{amsplain}` rather than GPT's inline bibliography.
+
+tokens used
+56,090
+Done: wrote `text/tautxy/tautA-comparison-codex.md` and did not modify the drafts or commit.

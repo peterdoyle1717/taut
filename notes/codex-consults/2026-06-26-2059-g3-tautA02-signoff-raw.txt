@@ -1,0 +1,1794 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019f0696-8b65-7012-9152-e72eceed2f1e
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+You (Codex) assembled the joint version 02 of the "Taut fillings" paper draft at
+text/tautxy/tautA-02.tex (built from your tautA-codex-01.tex spine plus agreed grafts from Claude's
+draft). Now give your HONEST sign-off on the FINISHED artifact, as the joint Claude+Codex version A.
+
+Read text/tautxy/tautA-02.tex (and rebuild if you wish: pdflatex/bibtex cycle, TeX Live 2010 at
+/usr/local/texlive/2010/bin/x86_64-darwin, taut.bib is in text/tautxy/).
+
+Question: are you happy with tautA-02.tex as the joint version A, or do you have residual concerns?
+Check specifically (cite file:line for anything wrong):
+- the shucking/monotone graft integrated cleanly into your spine (no broken cross-refs or duplicated text);
+- Theorem 2 still has the full explicit cleanness verification (pseudomanifold + edge-link + vertex-link);
+- the octahedral maxdeg=4 argument is correct (no-degree-3 => 4-regular => v=6 octahedron) and not overclaimed;
+- deleting the commented Overview material did not remove anything load-bearing;
+- no Lean terminology, no jokey prose, no leftover typos you can see;
+- it builds.
+Be candid: if there is anything you would still change before calling this final, say so. Distinguish
+"blocking" from "nice-to-have / human-review".
+
+Output: first line PASS / WARN / BLOCK. Then a short bullet list: are you happy (yes/with-caveats/no), and
+any residual concerns with file:line.
+codex
+I’ll inspect the TeX source, bibliography/build state, and the specific proof sections the sign-off depends on. Then I’ll run the requested TeX cycle if the local TeX binary is available.
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-02.tex | sed -n '1,260p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+     1	\documentclass[12pt]{article}
+     2	\usepackage{graphicx,amssymb,amsmath,amsthm}
+     3	\usepackage{hyperref,url}
+     4	\usepackage{verbatim}
+     5	\usepackage[labelfont=bf]{caption}
+     6	\newcommand{\nocopyright}{
+     7	No Copyright\thanks{
+     8	The authors hereby waive all copyright
+     9	and related or neighboring rights to this work,
+    10	and dedicate it to the public domain.
+    11	This applies worldwide.
+    12	}}
+    13	\title{Taut fillings}
+    14	\author{Peter Doyle \and Matthew Ellison \and Zili Wang\thanks{
+    15	Zili Wang is supported by
+    16	the National Natural Science Foundation of China (Grant No. 12301432)
+    17	}}
+    18	\date{Joint version 02 (Claude + Codex)}
+    19	\newtheorem{theorem}{Theorem}
+    20	\newtheorem{prop}{Proposition}
+    21	\newtheorem{lemma}[theorem]{Lemma}
+    22	\newtheorem*{hypo}{Hypothesis}
+    23	\newtheorem*{question}{Question}
+    24	\newtheorem{corollary}{Corollary}
+    25	\newtheorem*{conjecture}{Conjecture}
+    26	
+    27	\def\startproof{{\bf {\medskip}{\noindent}Proof: }}
+    28	\def\definition{{\bf {\bigskip}{\noindent}Definition: }}
+    29	\def\endproof{$\spadesuit$  \newline}
+    30	
+    31	\newcommand{\proofstart}{{\noindent \bf Proof.\ }}
+    32	\newcommand{\note}{{\noindent \bf Note.\ }}
+    33	\newcommand{\pfend}{\spadesuit}
+    34	\newcommand{\mathproofend}{\quad \qed}
+    35	\newcommand{\proofend}{$\quad \qed$}
+    36	\newcommand{\goesto}{\rightarrow}
+    37	\newcommand{\p}{\;\;\;}
+    38	\newcommand{\comma}{\p,}
+    39	\newcommand{\pd}{\p.}
+    40	\newcommand{\semi}{\p;}
+    41	\newcommand{\Rplus}{{\RR_{\geq 0}}}
+    42	
+    43	
+    44	
+    45	\newcommand{\beginfigurepos}{\begin{figure}[htbp]}
+    46	%
+    47	% \fig
+    48	% followed by {filename}{label}{caption}
+    49	%
+    50	\newcommand{\fig}[3]{
+    51	\beginfigurepos
+    52	\includegraphics[width=370pt]{figures/#1.pdf}
+    53	\caption{#3}
+    54	\label{#2}
+    55	\end{figure}
+    56	}
+    57	%
+    58	% \figsize
+    59	% followed by {size}{filename}{label}{caption}
+    60	%
+    61	\newcommand{\figsize}[4]{
+    62	\beginfigurepos
+    63	\centerline{
+    64	\includegraphics[width=#1]{figures/#2.pdf}
+    65	}
+    66	\caption{#4}
+    67	\label{#3}
+    68	\end{figure}
+    69	}
+    70	
+    71	
+    72	\def\ZZ{\mathbf{Z}}
+    73	\def\QQ{\mathbf{Q}}
+    74	\def\RR{\mathbf{R}}
+    75	\def\heartsuit{\mbox{\boldmath{$Z$}}}% 
+    76	\def\del{\partial}
+    77	\def\dist{\mathrm{dist}}
+    78	\def\eps{\epsilon}
+    79	
+    80	
+    81	\newcommand{\parsec}{\subsection*}
+    82	\newcommand{\sect}[1]{\S\ #1}
+    83	
+    84	%\newcommand{\gversus}[2]{\braket{#1\,|\,#2}}
+    85	\newcommand{\pair}[1]{\braket{#1}}
+    86	\newcommand{\sub}[1]{\braket{#1}}
+    87	\newcommand{\nnn}{\mathbf{NSet}}
+    88	\newcommand{\zzz}{\mathbf{ZSet}}
+    89	\newcommand{\nn}{\mathbf{N}}
+    90	\newcommand{\zz}{\mathbf{Z}}
+    91	
+    92	\newcommand{\versus}[2]{\left(#1\,|\,#2\right)}
+    93	\newcommand{\gversus}[2]{\left[#1\,|\,#2\right]}
+    94	\newcommand{\poly}[1]{\left[#1\right]}
+    95	
+    96	\newcommand{\rising}[1]{\overline{#1}}
+    97	\newcommand{\floor}[1]{\left \lfloor #1 \right \rfloor}
+    98	\newcommand{\ceiling}[1]{\left \lceil #1 \right \rceil}
+    99	\newcommand{\gbinom}{\genfrac{[}{]}{0pt}{}}
+   100	
+   101	\makeatletter
+   102	\newcommand{\xRrightarrow}[2][]{\ext@arrow 0359\Rrightarrowfill@{#1}{#2}}
+   103	\newcommand{\Rrightarrowfill@}{\arrowfill@\equiv\equiv\Rrightarrow}
+   104	\newcommand{\xLleftarrow}[2][]{\ext@arrow 3095\Lleftarrowfill@{#1}{#2}}
+   105	\newcommand{\Lleftarrowfill@}{\arrowfill@\Lleftarrow\equiv\equiv}
+   106	\newcommand{\xLleftRrightarrow}[2][]{\ext@arrow 3399\LleftRrightarrowfill@{#1}{#2}}
+   107	\newcommand{\LleftRrightarrowfill@}{\arrowfill@\Lleftarrow\equiv\Rrightarrow}
+   108	\makeatother
+   109	
+   110	\newcommand{\eq}{\Rrightarrow}
+   111	\newcommand{\funeq}[1]{\stackrel{#1}\eq}
+   112	\newcommand{\funequiv}[1]{\stackrel{#1}\equiv}
+   113	\newcommand{\funto}[1]{\stackrel{#1}\to}
+   114	\newcommand{\union}{\cup}
+   115	\newcommand{\cross}{\times}
+   116	\newcommand{\op}{\operatorname}
+   117	\newcommand{\kw}{\mathrm}
+   118	\newcommand{\escape}{\op{escape}}
+   119	\newcommand{\cancel}{\op{cancel}}
+   120	\newcommand{\nestuntil}{\operatorname{nestuntil}}
+   121	\newcommand{\size}{\operatorname{size}}
+   122	\newcommand{\id}{\operatorname{id}}
+   123	\newcommand{\create}{\operatorname{create}}
+   124	\newcommand{\destroy}{\operatorname{destroy}}
+   125	\newcommand{\then}{\triangleleft}
+   126	\newcommand{\lp}{\kw{LP}}
+   127	\newcommand{\LPvol}{\kw{LPvol}}
+   128	\newcommand{\vol}{\kw{vol}}
+   129	\newcommand{\flipdist}{\kw{flipdist}}
+   130	\newcommand{\tetbar}{\kw{homvol}}
+   131	\newcommand{\vsa}{\kw{vsa}}
+   132	\newcommand{\cone}{\kw{cone}}
+   133	\newcommand{\link}{\kw{link}}
+   134	\newcommand{\maxdeg}{\kw{maxdeg}}
+   135	\newcommand{\mindeg}{\kw{mindeg}}
+   136	\newcommand{\vertices}{\kw{Vert}}
+   137	\newcommand{\carrier}{\kw{carrier}}
+   138	\newcommand{\nbhd}{\kw{nbhd}}
+   139	\newcommand{\adj}{\kw{adj}}
+   140	\newcommand{\taut}{\kw{taut}}
+   141	\newcommand{\net}{\kw{net}}
+   142	
+   143	\newcommand{\Zvol}{\kw{Zvol}}
+   144	\newcommand{\Qvol}{\kw{Qvol}}
+   145	\newcommand{\Rvol}{\kw{Rvol}}
+   146	\newcommand{\tetvol}{\kw{tetvol}}
+   147	\newcommand{\hash}{\#}
+   148	\newcommand{\ms}{[}
+   149	\newcommand{\msend}{]}
+   150	
+   151	\newcommand{\kwstyle}{\bf}
+   152	\newcommand{\IF}{{\ \kwstyle{if}\ }}
+   153	\newcommand{\ELSE}{{\ \kwstyle{else}\ }}
+   154	\newcommand{\WHILE}{{\kwstyle{while}\ }}
+   155	\newcommand{\DO}{{\ \kwstyle{do}\ }}
+   156	\newcommand{\RETURN}{{\kwstyle{return}\ }}
+   157	\newcommand{\direct}{\oplus}
+   158	\newcommand{\pls}{\mathord{+}}
+   159	\newcommand{\mns}{\mathord{-}}
+   160	
+   161	
+   162	
+   163	\begin{document}
+   164	
+   165	\maketitle
+   166	
+   167	\begin{abstract}
+   168	Let $\sigma$ be a simplicial triangulation of the 2-sphere,
+   169	$X$ the associated integral 2-cycle.
+   170	A filling of $X$ is an integral 3-chain $M$
+   171	with $\del M = X$;
+   172	a taut filling is one with minimal $L_1$-norm.
+   173	We show that any taut filling 
+   174	arises from an extension of $\sigma$ to
+   175	a simplicial complex homeomorphic to the 3-ball.
+   176	This complex is shellable, and `flag':
+   177	every clique in its 1-skeleton occurs as a simplex.
+   178	The key to the proof is the general
+   179	fact that any taut filling of an $n$-cycle
+   180	splits under disjoint union, connected sum, and more generally
+   181	what we call almost disjoint union,
+   182	where summands are supported on sets that overlap in at most $n+1$ vertices.
+   183	\end{abstract}
+   184	
+   185	\section{Overview}
+   186	Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+   187	with vertices $\Omega$,
+   188	viewed as the abstract simplicial complex consisting of all subsets of
+   189	$\Omega$.
+   190	Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+   191	and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+   192	be its integral $n$-chains and $n$-cycles.
+   193	A \emph{filling} of an $n$-cycle $X \in Z_n$ is any
+   194	$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
+   195	(Here and throughout we assume $n\geq 1$.)
+   196	Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+   197	Call $M \in C_{n+1}$ \emph{taut} if it is an optimal filling
+   198	of its boundary, i.e., if $|M|=\Zvol(\del M)$.
+   199	
+   200	For $X \in C_n$ let
+   201	$\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+   202	to which $X$ assigns non-$0$ weight.
+   203	For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+   204	(Cf.\ Proposition \ref{nointernal} below.)
+   205	This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+   206	
+   207	Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+   208	\[
+   209	|\vertices(X) \cap \vertices(Y)| \leq n+1
+   210	.
+   211	\]
+   212	This notion generalizes both disjoint union and connected sum
+   213	along an $n$-simplex.
+   214	Ellison \cite{ellison:gap}
+   215	showed the $\Zvol$ adds under almost disjoint union:
+   216	$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+   217	This means that \emph{some} taut filling $M$ of $X$ splits into a sum
+   218	$M=M_X+M_Y$ of taut fillings of $X,Y$.
+   219	Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+   220	that when $n \geq 2$, \emph{any} taut filling of $X+Y$ splits.
+   221	
+   222	In place of integral chains we can use chains with
+   223	coefficients in $\QQ$ or $\RR$.
+   224	Evidently $\Rvol \leq \Qvol$.
+   225	But computing $\Rvol$ is
+   226	a linear programming problem with rational coefficients,
+   227	so in fact $\Qvol = \Rvol$.
+   228	Ellison used LP duality to prove that
+   229	$\Qvol$ adds under almost
+   230	disjoint union.
+   231	Now for $n \geq 2$ we get the stronger result
+   232	(Corollary \ref{cor1})
+   233	that taut $\QQ$-fillings split:
+   234	Multiplying a taut
+   235	$\QQ$-filling $M$ of $X$ by a common denominator $q$
+   236	yields a taut $\ZZ$-filling $qM$ of $qX$:
+   237	Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
+   238	of the $\QQ$-filling $M$.
+   239	
+   240	Now let $\sigma$ be a simplicial triangulation of $S^2$;
+   241	let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
+   242	be either one of the 2-cycles
+   243	that arises from $\sigma$ by orienting its $2$-simplices;
+   244	and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+   245	Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+   246	required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+   247	We will show that
+   248	\[
+   249	\Zvol(\sigma) = \tetvol(\sigma)
+   250	.
+   251	\]
+   252	Certainly $\Zvol \leq \tetvol$,
+   253	because any extension $\tau$ induces a filling
+   254	of $X(\sigma)$.
+   255	Theorem \ref{th2} states that 
+   256	any taut filling of $X(\sigma)$ arises in this way.
+   257	The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+   258	
+   259	We do not know what happens for spheres of dimension 3 or greater.
+   260	
+
+exec
+/bin/zsh -lc 'ls -l text/tautxy/tautA-02.tex text/tautxy/taut.bib /usr/local/texlive/2010/bin/x86_64-darwin/pdflatex /usr/local/texlive/2010/bin/x86_64-darwin/bibtex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+-rwxr-xr-x  1 root   wheel  178520 Jul 13  2010 /usr/local/texlive/2010/bin/x86_64-darwin/bibtex
+lrwxr-xr-x  1 root   wheel       6 Jan  1  2011 /usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -> pdftex
+-rw-r-----@ 1 doyle  staff    3798 Jun 25 13:52 text/tautxy/taut.bib
+-rw-r-----@ 1 doyle  staff   34802 Jun 26 14:53 text/tautxy/tautA-02.tex
+
+exec
+/bin/zsh -lc 'rg -n "shuck|monotone|Theorem 2|cleanness|pseudomanifold|edge-link|vertex-link|octa|Overview|Lean|jok|TODO|typo|FIXME|Claude|Codex|degree-3|degree 3|maxdeg|max degree|4-regular|4 regular" text/tautxy/tautA-02.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+18:\date{Joint version 02 (Claude + Codex)}
+134:\newcommand{\maxdeg}{\kw{maxdeg}}
+185:\section{Overview}
+269:of $S^2$ has $\tetvol \leq 2v-4-\maxdeg(\sigma)$.
+270:If $v\geq13$ $\maxdeg(\sigma) \geq 6$, so $\tetvol \leq 2v-10$.
+305:with $\maxdeg \leq 6$, the gap between $\Qvol$ and $\Zvol$ is $<1$,
+313:but taking the connected sum pushes $\maxdeg$ above $6$.
+374:\maxdeg(U) = \max_x \deg(x,U)
+393:\begin{prop} \label{maxdeg}
+396:\Zvol(X) \leq |X| - \maxdeg(X)
+405:By Proposition \ref{maxdeg} a non-trivial complete cone is not taut.
+703:We are interested in normal pseudomanifolds,
+713:$\sigma$ is a pseudomanifold:
+791:By Proposition \ref{maxdeg},
+793:|M|=\Zvol(\sigma) \leq f-\maxdeg(\sigma).
+806:Thus $r\geq \maxdeg(\sigma)$.
+807:Consequently there are at least $\maxdeg(\sigma)$ eligible support
+854:$K(M)$ is a pseudomanifold.
+922:recursive procedure, called \emph{shucking}, that takes $\tau$ apart
+923:so as to remove $t_1$ last; reversing the shucking order gives the
+931:shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+935:$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+945:Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+1000:$\maxdeg(\sigma)\geq 4$ eligible tets with pairwise disjoint pairs of
+1019:If $\maxdeg(\sigma)\geq 5$, the disjoint eligible-tet family gives at
+1026:It remains to consider $\maxdeg(\sigma)=4$.
+1030:the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
+
+codex
+The source has the expected joint marker and the broad section structure is present. I’m narrowing now to the proof bodies and the build log, since those are the places where a “finished artifact” can still hide real problems.
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-02.tex | sed -n '260,620p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-02.tex | sed -n '920,1180p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   920	By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+   921	Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
+   922	recursive procedure, called \emph{shucking}, that takes $\tau$ apart
+   923	so as to remove $t_1$ last; reversing the shucking order gives the
+   924	shelling.
+   925	
+   926	If $\tau$ consists only of $t_1$, there is nothing to prove.
+   927	If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+   928	$t\ne t_1$, remove that tet and continue with $\tau-t$.
+   929	If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+   930	unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+   931	shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+   932	
+   933	It remains to consider the case where the boundary has no degree-$3$
+   934	vertex.  As in the proof of Theorem \ref{th2}, there are at least
+   935	$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+   936	Choose one, say $t$, whose two boundary faces are disjoint from those of
+   937	$t_1$.
+   938	If removing $t$ leaves one triangulated ball, remove $t$ and continue
+   939	ending with $t_1$.
+   940	If removing $t$ splits the boundary into two conjoined spheres, then
+   941	$\tau-t$ splits into two triangulated balls $\tau_1,\tau_2$ by
+   942	Theorem \ref{th1} and Theorem \ref{th2}.
+   943	Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+   944	the gluing face of $t$.
+   945	Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+   946	$\tau_1$ ending with $t_1$.
+   947	Every removal is the reverse of attaching along one or two faces, so the
+   948	reversed order is the desired shelling.
+   949	\proofend
+   950	
+   951	\section{Flag complex}
+   952	
+   953	A simplicial complex is a \emph{flag complex}
+   954	(or clique complex) if every clique in its $1$-skeleton occurs as a
+   955	simplex.
+   956	A simplicial triangulation $\sigma$ of $S^2$
+   957	is flag exactly when it is prime
+   958	(not the connected sum of smaller complexes)
+   959	and is not the boundary of a tetrahedron.
+   960	
+   961	We can decompose any $\sigma$ as the connected sum of
+   962	prime components $\sigma_i$.
+   963	From the point of view of taut fillings these components are independent:
+   964	any taut filling of $X(\sigma)$ is the union of taut fillings of the
+   965	$X(\sigma_i)$.
+   966	We now prove that, regardless of whether $\sigma$ itself is prime,
+   967	every taut filling is flag.
+   968	
+   969	\begin{theorem}
+   970	If $\sigma$ is a simplicial triangulation of $S^2$,
+   971	any taut filling of $X(\sigma)$ is a flag complex.
+   972	\end{theorem}
+   973	
+   974	\proofstart
+   975	Let $\tau$ be the triangulated ball associated to the taut filling.
+   976	We must rule out the following minimal failures of flagness:
+   977	\begin{enumerate}
+   978	\item
+   979	the three edges of a triangle $\{A,B,C\}$ without the face $ABC$;
+   980	\item
+   981	the six edges of the $K_4$ on $\{A,B,C,D\}$ without the tet $ABCD$;
+   982	\item
+   983	the ten edges of the $K_5$ on $\{A,B,C,D,E\}$.
+   984	\end{enumerate}
+   985	
+   986	If the first two configurations are absent, then the third is absent as
+   987	well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+   988	five tetrahedra form the boundary of a $4$-simplex, a triangulated
+   989	$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
+   990	triangulated $B^3$.
+   991	
+   992	We argue by minimal counterexample.
+   993	If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+   994	with one summand the tetrahedral boundary.
+   995	Removing that summand from $\sigma$ and the corresponding boundary tet
+   996	from $\tau$ gives a smaller counterexample.
+   997	Thus we may assume that $\sigma$ has no degree-$3$ vertex.
+   998	
+   999	Then the eligible-tet count from Theorem \ref{th2} gives at least
+  1000	$\maxdeg(\sigma)\geq 4$ eligible tets with pairwise disjoint pairs of
+  1001	boundary faces.
+  1002	Removing one of them flips an edge of $\sigma$.
+  1003	The result is either a smaller triangulation of $S^2$ or a pair of
+  1004	triangulated spheres conjoined along the new edge.
+  1005	In the conjoined case, any forbidden $K_3$ or $K_4$ that survives lies
+  1006	on one side or the other, producing a smaller counterexample there.
+  1007	
+  1008	For Configuration 1, removing an eligible tet deletes from $\tau$ only
+  1009	the edge being flipped.  There are at least four available flips and only
+  1010	three edges in the forbidden triangle, so one flip preserves the
+  1011	configuration, contradiction.
+  1012	
+  1013	For Configuration 2, assume Configuration 1 has already been ruled out.
+  1014	Then the six edges on $\{A,B,C,D\}$ force all four triangular faces
+  1015	$ABC,ABD,ACD,BCD$ to be present in $\tau$.
+  1016	At most two of these faces can lie in the boundary $\sigma$, since three
+  1017	would make a degree-$3$ boundary vertex.
+  1018	We need an eligible flip that does not delete one of the six $K_4$ edges.
+  1019	If $\maxdeg(\sigma)\geq 5$, the disjoint eligible-tet family gives at
+  1020	least five candidate flips.  At most two candidates use one of the
+  1021	boundary faces among $ABC,ABD,ACD,BCD$, and the remaining candidates
+  1022	preserve the $K_4$ unless all but one of its six edges lie on the
+  1023	boundary.  In that exceptional case, say the interior edge is $AD$;
+  1024	then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+  1025	two disjoint eligible tets meet them.  A preserving flip remains.
+  1026	It remains to consider $\maxdeg(\sigma)=4$.
+  1027	Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
+  1028	$4$, so $\sigma$ is $4$-regular.  The equations
+  1029	$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
+  1030	the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
+  1031	For this single boundary triangulation the taut fillings are handled by
+  1032	a finite check using the same flip alternatives.
+  1033	Thus Configuration 2 is impossible.
+  1034	\proofend
+  1035	
+  1036	\bibliography{taut}
+  1037	\bibliographystyle{amsplain}
+  1038	\end{document}
+
+ succeeded in 0ms:
+   260	
+   261	\section{Background}
+   262	
+   263	Our interest in $\Zvol$ stems from the work
+   264	of Sleator, Tarjan, and Thurston
+   265	\cite{stt:jams}.
+   266	They observed that coning from a vertex of maximal degree
+   267	shows that a $v$-vertex
+   268	triangulation $\sigma$
+   269	of $S^2$ has $\tetvol \leq 2v-4-\maxdeg(\sigma)$.
+   270	If $v\geq13$ $\maxdeg(\sigma) \geq 6$, so $\tetvol \leq 2v-10$.
+   271	They
+   272	produced examples for which $\tetvol = 2v-10$, provided
+   273	$v$ is larger than some unspecified bound,
+   274	and conjectured that such examples should exist for any $v \geq 13$.
+   275	Their approach was to 
+   276	realize $\sigma$ as an ideal hyperbolic polyhedron
+   277	with volume $2v V_0-O(\log(v))$,
+   278	where $V_0$ is the volume of an
+   279	equilateral ideal tetrahedron,
+   280	which is maximal.
+   281	This implies $\tetvol \geq 2v-O(\log(v))$.
+   282	From there they bootstrapped their way up to showing
+   283	that $\tetvol=2v-10$.
+   284	They suggested
+   285	\cite[p. 697]{stt:jams}
+   286	that in fact $\Qvol= 2v-10$,
+   287	which would immediately imply $\tetvol=2v-10$.
+   288	Mathieu and Thurston \cite{mt}
+   289	produced a class of examples,
+   290	different from the examples of STT,
+   291	for which they could show that $\Qvol = 2v-10$,
+   292	still under the assumption that $v$
+   293	is sufficiently large.
+   294	In \cite{dew:filling} we produced examples for any $v \geq 13$ with
+   295	$\Qvol=2v-10$, confirming the conjecture of Sleator, Tarjan, and Thurston.
+   296	Theorem \ref{th2} here
+   297	tells us that whenever we have $\Qvol=2v-10$,
+   298	or just $\Zvol=2v-10$, any taut filling
+   299	must arise from a triangulation of the ball.
+   300	
+   301	About $\Qvol$ versus $\Zvol$.
+   302	In \cite{dew:filling}
+   303	we described triangulations of $S^2$ with $\Qvol < \Zvol$.
+   304	In all such examples that we know of
+   305	with $\maxdeg \leq 6$, the gap between $\Qvol$ and $\Zvol$ is $<1$,
+   306	so that
+   307	$\lceil \Qvol \rceil = \Zvol$.
+   308	Since $\Qvol$ and $\Zvol$
+   309	add under connected sum,
+   310	the gap between them can be arbitrarily
+   311	large
+   312	(Ellison \cite{ellison:gap}),
+   313	but taking the connected sum pushes $\maxdeg$ above $6$.
+   314	
+   315	
+   316	
+   317	\section{Taut fillings}
+   318	
+   319	We can think of an $n$-chain $X \in C_n$ as a multiset of
+   320	non-cancelling oriented simplices:
+   321	\[
+   322	X = \sum_{t \in X} t
+   323	.
+   324	\]
+   325	In this sum $t$ denotes an oriented simplex
+   326	\[
+   327	t=[x_0,\ldots,x_n]
+   328	= [x_{\pi(0)},\ldots,x_{\pi(n)}]
+   329	,\;\;\mbox{$\pi$ an even permutation}
+   330	,
+   331	\]
+   332	and each unoriented simplex contributes a number of terms corresponding
+   333	to its multiplicity.
+   334	
+   335	The size of $M$ as a multiset is its $L_1$-norm $|M|$.
+   336	Write $U \subset M$
+   337	if $U$ is a sub-multiset of $M$.
+   338	This happens just when
+   339	$|M| = |U| + |M-U|$.
+   340	
+   341	\begin{prop} \label{subtaut}
+   342	If $M$ is taut and $U \subset M$ then $U$ is taut.
+   343	\end{prop}
+   344	
+   345	\proofstart
+   346	If $U$ is not taut, there is a smaller filling $V$ of $\del U$.
+   347	Take $M^\prime = M-U+V$.
+   348	In terms of multisets, this means that we substitute $V$ for $U$,
+   349	and then do any required cancellation of oppositely oriented simplices
+   350	of $M-U$ and $V$.
+   351	We have
+   352	\[
+   353	\del M^\prime = \del M - \del U + \del V = \del M
+   354	\]
+   355	and
+   356	\[
+   357	|M^\prime| \leq |M-U| + |V| = |M| - |U| + |V| < |M|
+   358	,
+   359	\]
+   360	contradiction.
+   361	\proofend
+   362	
+   363	\section{Coning}
+   364	For $x \in \Omega$, $U \in C_n$ let
+   365	\[
+   366	\nbhd(x,U) = \sum_{ t \in U: x \in \vertices(t) } t
+   367	,
+   368	\]
+   369	\[
+   370	\deg(x,U) = |\nbhd(x,U)|
+   371	,
+   372	\]
+   373	\[
+   374	\maxdeg(U) = \max_x \deg(x,U)
+   375	.
+   376	\]
+   377	The \emph{cone from $x$ to $U$}
+   378	is the $(n+1)$-chain
+   379	\[
+   380	\cone(x,U) = 
+   381	\sum_{t \in U} \adj(x,t)
+   382	,
+   383	\]
+   384	consisting of all the non-trivial oriented
+   385	$(n+1)$-simplices $\adj(x,t)=[x x_0\ldots x_n]$ obtained
+   386	by adjoining $x$ to  $t = [x_0\ldots x_n] \in U$.
+   387	If $x \in \vertices(t)$ then $t$ does not contribute to the sum,
+   388	so $|\cone(x,U)| = |U| - \deg(x,U)$.
+   389	
+   390	If $U$ is closed then
+   391	$\del\, \cone(x,U) = U$, so
+   392	
+   393	\begin{prop} \label{maxdeg}
+   394	For any $X \in Z_n$
+   395	\[
+   396	\Zvol(X) \leq |X| - \maxdeg(X)
+   397	\mathproofend
+   398	\]
+   399	\end{prop}
+   400	
+   401	If $U \in Z_n$ and $x \notin \vertices(U)$ then
+   402	$\deg(x,U)=0$ and
+   403	$|\cone(x,U)| = |U|$.
+   404	In this case we call $\cone(x,U)$ a \emph{complete cone}.
+   405	By Proposition \ref{maxdeg} a non-trivial complete cone is not taut.
+   406	(Equivalently, instead of coning from
+   407	$x \notin U$, one could have coned from some $x \in U$.)
+   408	Thus:
+   409	\begin{prop}\label{nocone}
+   410	If $M$ is taut it contains no non-trivial complete cone.
+   411	\proofend
+   412	\end{prop}
+   413	
+   414	Call $x \in \vertices(M) \setminus \vertices(\del M)$ an
+   415	\emph{internal vertex} of $M$.
+   416	If $x$ is internal to $M$ then $\nbhd(x,M)$ is a complete cone, so:
+   417	\begin{prop} \label{nointernal}
+   418	If $M$ is taut then
+   419	it has no internal vertices.
+   420	\proofend
+   421	\end{prop}
+   422	
+   423	\section{Almost disjoint unions}
+   424	
+   425	Recall that if $X,Y \in Z_n$ we call $X+Y$ an almost disjoint union
+   426	if
+   427	\[
+   428	|\vertices(X) \cap \vertices(Y)| \leq n+1
+   429	.\]
+   430	The most interesting special case is a connected sum,
+   431	where $t=[c_0,c_1,\ldots,c_n]$ occurs once in $X$ and
+   432	$-t=[c_1,c_0,\ldots,c_n]$ occurs once in $Y$.
+   433	For example, if $n=1$ with $X$ a cycle of length $p$
+   434	and $Y$ a cycle of length $q$
+   435	the connected sum $X+Y$ is
+   436	a cycle of length $p+q-2$.
+   437	Here
+   438	$\Zvol$ adds, because
+   439	$\Zvol(X)=p-2$,
+   440	$\Zvol(Y) = q-2$,
+   441	and
+   442	\[
+   443	\Zvol(X+Y) = (p+q-2)-2 = \Zvol(X)+\Zvol(Y)
+   444	.
+   445	\]
+   446	But not every filling of $X+Y$ splits, because a taut filling
+   447	may contain any 2-simplex with vertices in $\vertices(X+Y)$.
+   448	
+   449	We want to show that fillings do split when $n \geq 2$.
+   450	
+   451	For $A \subset \Omega$, $p \in A$ define
+   452	\[
+   453	\pi_{A,p}: \Omega \to A
+   454	\]
+   455	\[
+   456	\pi_{A,p}(x) = x \IF x \in A \ELSE p
+   457	\]
+   458	and let
+   459	\[
+   460	K_*(A,p): C_*(\Omega) \to C_*(A)
+   461	\]
+   462	be the induced chain map.
+   463	This is a projection of $C_*(\Omega)$ onto $C_*(A)$.
+   464	
+   465	Let $A,B$ be finite vertex sets sharing the vertices
+   466	$C = A \cap B$,
+   467	and let $c=|C|$.
+   468	Observe that
+   469	$C_c(C)$ and $Z_{c-1}(C)$ are trivial,
+   470	because $\Delta(C)$ contains no $c$-simplex,
+   471	and (up to orientation) only one $c\mns 1$-simplex,
+   472	with nothing to cancel its boundary.
+   473	
+   474	Let
+   475	\[
+   476	C_*(A,B) = C_*(A) \direct C_*(B)
+   477	.
+   478	\]
+   479	For $p,q \in C$ define the mapping
+   480	\[
+   481	g_*(p,q) = K_*(A,p) \direct K_*(B,q):
+   482	C_*(A \cup B) \to C_*(A,B)
+   483	.
+   484	\]
+   485	
+   486	\begin{prop} \label{recover}
+   487	Let $(X,Y) \in C_n(A,B)$.
+   488	If $|A \cap B| \leq n$
+   489	we can recover $(X,Y)$ from $X+Y$.
+   490	If $(X,Y) \in Z_n(A,B)$ this holds also when $|A \cap B|  = n+1$.
+   491	\end{prop}
+   492	
+   493	\proofstart
+   494	Let $C=A \cap B$.
+   495	We can assume $|C| \geq 1$.
+   496	(Add a brand new point to $C$ if necessary.)
+   497	We claim that
+   498	for any $p,q \in C$
+   499	(not necessarily distinct) we have
+   500	\[
+   501	g_n(p,q)(X+Y)=(X,Y)
+   502	.
+   503	\]
+   504	Indeed,
+   505	\[
+   506	K_n(A,p)(X+Y) = X + K_n(A,p)(Y)
+   507	.
+   508	\]
+   509	The second term belongs to $C_n(C)$,
+   510	which is trivial when $|C| \leq n$.
+   511	If $Y \in Z_n(B)$ the second term belongs to $Z_n(C)$,
+   512	which is trivial when $|C| \leq n+1$.
+   513	\proofend
+   514	
+   515	
+   516	\begin{theorem} \label{th1}
+   517	If $|A \cap B| \leq n+1$,
+   518	for all $(X,Y) \in Z_n(A,B)$ we have
+   519	\[
+   520	\Zvol(X+Y) = \Zvol(X)+\Zvol(Y)
+   521	.
+   522	\]
+   523	And as long as $n \geq 2$,
+   524	for any $M \in \taut(X+Y)$ 
+   525	we have $M = M_X + M_Y$
+   526	with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+   527	\end{theorem}
+   528	
+   529	\note
+   530	Ellison \cite{ellison:gap}
+   531	proved the additivity of $\Zvol$.
+   532	What's new here is the splitting of taut fillings when $n\geq 2$.
+   533	This result resembles Theorem 6.2 of
+   534	Pournin and Wang
+   535	\cite{pw:flip}
+   536	about flip paths.
+   537	Like theirs, our proof uses a variation on the normalization technique
+   538	of STT
+   539	\cite[Lemma 7]{stt:jams}.
+   540	It would be nice to fit these results under one roof.
+   541	\medskip
+   542	
+   543	\proofstart
+   544	Again let $C = A \cap B$.
+   545	We can assume $|C| = n+1$,
+   546	as this is the hardest case.
+   547	And we might as well go ahead and take $n=2$, $|C|=3$,
+   548	as this case illustrates all the issues.
+   549	
+   550	Take any $M \in \taut(X+Y) \subset C_3(A \union B)$.
+   551	Pick distinct points $p,q \in C$,
+   552	and let
+   553	\[
+   554	(M_X,M_Y) = g_{3}(p,q)(M)
+   555	.
+   556	\]
+   557	(For now we suppress the dependence of $M_X,M_Y$ on $p,q$.)
+   558	
+   559	Because $g_*(p,q)$ is a chain map we have
+   560	$\del_{3} M_X = X$, $\del_{3} M_Y = Y$:
+   561	\[
+   562	(\del_{3} M_X, \del_{3} M_Y)
+   563	=
+   564	\del_{3} (g_{3}(p,q)(M))
+   565	=
+   566	g_2(p, q)(\del_{3} M)
+   567	=
+   568	g_2(p,q)(X+Y)
+   569	=
+   570	(X,Y)
+   571	.
+   572	\]
+   573	
+   574	We want to show that under the map $g_3(p,q)$ any $t \in M$
+   575	dies either in $M_X$ or $M_Y$,
+   576	because then additivity of $\Zvol$ follows from
+   577	\[
+   578	\Zvol(X+Y) = |M|
+   579	\geq |M_X| + |M_Y|
+   580	\geq \Zvol(X) + \Zvol(Y)
+   581	\geq \Zvol(X+Y)
+   582	.
+   583	\]
+   584	
+   585	Let's call a $3$-simplex a `tet' for short.
+   586	Say that a tet $t \in M$ has type $CCXY$ if $t= \pm[c_1c_2x_1y_1]$
+   587	for $c_1,c_2 \in C$, $x_1 \in A \setminus C$, $y_1 \in B \setminus C$.
+   588	Similarly for types $XXXX$, $CXXX$, $CXXY$, $XXXY$, etc.
+   589	The first two are pure $X$ cases, meaning that they live in $C_3(A)$;
+   590	the last two are hybrid cases.
+   591	
+   592	Any $XX..$ tet dies in $M_Y$;
+   593	any $YY..$ tet dies in $M_X$.
+   594	
+   595	The remaining cases to check are
+   596	are the pure cases $CCCX$, $CCCY$,
+   597	and the hybrid case $CCXY$.
+   598	A $CCCX$ tet $t=\pm[c_1c_2c_3x_1]$ dies in $M_Y$ because
+   599	$K_3(B,q)(t)=[c_1c_2c_3q]$,
+   600	which vanishes because $q \in C = \{c_1,c_2,c_3\}$ produces a repeated vertex.
+   601	Likewise a $CCCY$ tet dies in $M_X$.
+   602	The more interesting case is $CCXY$:
+   603	The key is that since $|C|=3$, $\{c_1,c_2\}$ cannot be disjoint from $\{p,q\}$,
+   604	so it dies on one side or the other.
+   605	
+   606	So 
+   607	\[
+   608	|M| = |M_X(p,q)| + |M_Y(p,q)|,
+   609	\]
+   610	and $\Zvol$ adds.
+   611	Note how we're now emphasizing the possible dependence of $M_X,M_Y$ on $p,q$.
+   612	When $n=1$ the choice of $p,q$ can indeed make a difference:
+   613	We can get a different pair $(M_X,M_Y)$ if we switch
+   614	$p$ and $q$.
+   615	(Think about the connected sum of two cycle graphs.)
+   616	
+   617	But when $n \geq 2$ we will now show that all tets are pure $X$ or pure $Y$,
+   618	so $M_X$ consists of all the pure $X$ tets, and ditto for $M_Y$.
+   619	This will make
+   620	$M = M_X + M_Y$ with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-02.tex | sed -n '620,920p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   620	$M = M_X + M_Y$ with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+   621	
+   622	Again our test case is $n=2$.
+   623	
+   624	The key observation is that, now that we know that every tet dies on
+   625	one side or the other, we know that no tet can die on both sides,
+   626	because that would make $|M| > \Zvol(X) + \Zvol(Y)$.
+   627	
+   628	An $XXYY$ tet would die on both sides, so there can be none of these.
+   629	
+   630	Any $pqXY$, $pXXY$, or $qXYY$ would die on both sides, and $p,q$ are arbitrary,
+   631	so this rules out all $CCXY,CXXY,CXYY$.
+   632	
+   633	The only remaining hybrids are $XXXY$ and $XYYY$.
+   634	Let's rule out $XXXY$, leaving $XYYY$ to symmetry.
+   635	
+   636	Fix any $y_0 \in B \setminus C$, and suppose there is
+   637	some $XXXy_0$ tet in $M$.
+   638	Let $U \subset M$ consist of all such $XXXy_0$ tets.
+   639	We claim that $y_0 \notin \vertices(\del U)$.
+   640	For let $s$ be any 2-simplex of the form $XXy_0$,
+   641	the only kind of 2-simplex containing $y_0$ that could belong
+   642	to $\del U$.
+   643	Any $t \in M$ of which $s$ or $-s$ is a face must be a hybrid tet,
+   644	and the only possibility is $XXXy_0$, so $t \in U$.
+   645	Because $\del M = 0$ the signed multiplicity of $s$
+   646	vanishes in $\del M$,
+   647	hence also in $\del U$,
+   648	because the tets of $M$ with $\pm s$ as a face all belong to $U$.
+   649	So $y_0 \notin \vertices(\del U)$,
+   650	making $U$ a complete cone on $y_0$,
+   651	contradicting \ref{nocone}.
+   652	So there is no such $XXXy_0$ tet, ruling out $XXXY$,
+   653	and with it $XYYY$.
+   654	
+   655	So there are no hybrid tets, meaning that $M$ splits, as claimed.
+   656	\proofend
+   657	
+   658	The splitting of taut fillings depends on the assumption $n\geq 2$.
+   659	Let's consider what goes wrong when $n=1$.
+   660	Here the hybrid types are $CXY$, $XXY$, $XYY$.
+   661	Neither $pXY$ nor $qXY$ dies on both sides, so we cannot rule out $CXY$.
+   662	Failing that, the $XXy_0$ tets needn't form a complete cone,
+   663	because $[x_0x_1y_0)$ can continue across $[x_1 y_0]$ to $-[p x_1 y_0]$,
+   664	so we cannot rule out $XXY$ either.
+   665	
+   666	The foregoing proof works equally well over $\QQ$, providing we
+   667	permit ourselves to work with fractional multisets.
+   668	Alternatively, we can clear denominators as in the introduction
+   669	above.
+   670	Either way, we have:
+   671	
+   672	\begin{corollary} \label{cor1}
+   673	$\Qvol$ adds under almost disjoint union,
+   674	and for $n \geq 2$
+   675	taut $\QQ$-fillings split.
+   676	\proofend
+   677	\end{corollary}
+   678	
+   679	\section{Triangulations}
+   680	
+   681	We turn now to filling simplicial triangulations of $S^2$.
+   682	We begin by fixing the terminology.
+   683	
+   684	An \emph{$n$-simplex} $s$ is a set of size $n+1$.
+   685	Its \emph{faces} are its subsets,
+   686	which are $k$-simplices with $-1 \leq k \leq n$,
+   687	where the empty simplex has dimension $-1$.
+   688	A \emph{simplicial complex} $\sigma$ is a finite collection of simplices
+   689	closed under taking faces:
+   690	if $t \subset s \in \sigma$ then $t \in \sigma$.
+   691	
+   692	For any simplex $s \in \sigma$ define the \emph{link}
+   693	\[
+   694	\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+   695	.
+   696	\]
+   697	This is a simplicial complex, but
+   698	(except for $\link(\emptyset,\sigma)=\sigma$)
+   699	it is not a subcomplex of $\sigma$,
+   700	because we are taking simplices in $\sigma$ and lowering
+   701	their dimension by $\dim s+1$.
+   702	
+   703	We are interested in normal pseudomanifolds,
+   704	which we will call \emph{clean $n$-complexes}.
+   705	A simplicial complex $\sigma$ is clean of dimension $n$ if:
+   706	\begin{enumerate}
+   707	\item
+   708	$\sigma$ is pure of dimension $n$,
+   709	meaning that every simplex of $\sigma$ is contained in some
+   710	$n$-simplex of $\sigma$.
+   711	
+   712	\item
+   713	$\sigma$ is a pseudomanifold:
+   714	the link $\link(s,\sigma)$ of any $(n-1)$-simplex $s$
+   715	consists of either one point
+   716	(so $s$ is a boundary simplex)
+   717	or two points
+   718	(so $s$ is an interior simplex).
+   719	
+   720	\item
+   721	$\sigma$ is normal:
+   722	for every simplex $s$ of dimension $0,\ldots,n-2$,
+   723	the link $\link(s,\sigma)$ is connected.
+   724	\end{enumerate}
+   725	The normality condition says that the $n$-simplices are glued along
+   726	shared faces without additional identifications.  It rules out,
+   727	for example, an icosahedron with a pair of opposite vertices identified.
+   728	
+   729	If $\sigma$ is clean, then each link $\link(s,\sigma)$ is clean.
+   730	The boundary $\del \sigma$ of a clean complex is clean and closed:
+   731	$\del \del \sigma = \{\emptyset\}$.
+   732	
+   733	If $W$ is an $n$-manifold, say that a simplicial complex $\sigma$
+   734	is a \emph{simplicial triangulation} of $W$
+   735	if the geometric carrier of $\sigma$ is homeomorphic to $W$.
+   736	In this case $\sigma$ is necessarily clean.
+   737	When $W$ is oriented, a choice of orientation determines one of the
+   738	two associated cycles $X(\sigma) \in C_n$; our arguments do not depend
+   739	on which of the two orientations is chosen.
+   740	
+   741	This notion of triangulation is not as general as one might want
+   742	for some purposes.
+   743	The double cover of a triangle is not a simplicial triangulation
+   744	of $S^2$,
+   745	because that would require two distinct
+   746	$2$-simplices to have the same three edges.
+   747	Nor can any $2$-simplex have two of its edges
+   748	glued to one another.
+   749	Thurston
+   750	\cite{thurston:shapes}
+   751	allows such triangulations,
+   752	but it is unclear how important these are to
+   753	his theory of shapes of surfaces.
+   754	We do not allow them here.
+   755	
+   756	For a chain $M \in C_n$, define $K(M)$ to be the pure simplicial
+   757	complex generated by the unoriented $n$-simplices on which $M$ has
+   758	nonzero coefficient.
+   759	We call $M$ \emph{simplicial} if every nonzero coefficient is $\pm 1$,
+   760	so no unoriented $n$-simplex is repeated.
+   761	We call $M$ \emph{clean} if $M$ is simplicial and $K(M)$ is a clean
+   762	simplicial complex.
+   763	
+   764	\section{Filling a triangulation of the 2-sphere}
+   765	
+   766	\begin{theorem} \label{th2}
+   767	If $\sigma$ is a simplicial triangulation of $S^2$ and $M$ is a taut
+   768	filling of $X(\sigma)$, then $M$ is clean and $K(M)$ is a simplicial
+   769	triangulation of $B^3$.
+   770	\end{theorem}
+   771	
+   772	\proofstart
+   773	Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial
+   774	triangulation of $S^2$ and $M$ is a taut filling of $X(\sigma)$.
+   775	Call a filling pair \emph{good} if $M$ is clean and $K(M)$ is a
+   776	simplicial triangulation of $B^3$.
+   777	We will show that every filling pair is good.
+   778	
+   779	Suppose not, and choose a bad filling pair $(\sigma,M)$ with $|M|$
+   780	minimal.  Let $v,e,f$ count the vertices, edges, and faces of $\sigma$.
+   781	Then $e=3v-6$ and $f=2v-4$.
+   782	The tetrahedral boundary is good, so $v>4$.
+   783	Because taut fillings split under connected sum, we may assume that
+   784	$\sigma$ is prime, meaning not a connected sum along a triangle.
+   785	In particular, $\sigma$ has no vertex of degree $3$.
+   786	
+   787	Call a support tetrahedron $t$ of $M$ \emph{eligible} if two of its
+   788	oriented boundary faces are faces of $X(\sigma)$ with the correct signs.
+   789	It cannot have three such faces, since that would give a degree-$3$
+   790	vertex in $\sigma$.
+   791	By Proposition \ref{maxdeg},
+   792	\[
+   793	|M|=\Zvol(\sigma) \leq f-\maxdeg(\sigma).
+   794	\]
+   795	For each support tetrahedron $u$ of $M$, let $A(u)$ be the set of faces
+   796	of $\sigma$ that occur as correctly oriented boundary faces of $u$.
+   797	Each $A(u)$ has size at most $2$.
+   798	Every face of $\sigma$ occurs in at least one $A(u)$, because its
+   799	coefficient in $\partial M=X(\sigma)$ is nonzero with the prescribed sign.
+   800	List the support tetrahedra of $M$ and reveal the sets $A(u)$ one at a
+   801	time, recording only faces of $\sigma$ not previously seen.
+   802	If $r$ support tetrahedra reveal two new faces, then
+   803	\[
+   804	f \leq |\operatorname{supp} M|+r \leq |M|+r.
+   805	\]
+   806	Thus $r\geq \maxdeg(\sigma)$.
+   807	Consequently there are at least $\maxdeg(\sigma)$ eligible support
+   808	tetrahedra whose pairs of boundary faces are mutually disjoint.
+   809	We will use only the fact that, given any boundary face $s$ and any
+   810	eligible tet $t$, there is another eligible tet whose boundary faces are
+   811	disjoint from those of $t$ and do not include $s$.
+   812	
+   813	Let $t$ be an eligible tet with boundary faces
+   814	$s_1=[a,b,c]$ and $s_2=[b,a,d]$.
+   815	Removing $t$ from $M$ gives a taut filling $M-t$ of the cycle obtained
+   816	from $X(\sigma)$ by replacing $s_1,s_2$ with
+   817	$[c,d,b]$ and $[d,c,a]$.
+   818	At the level of the boundary complex, this flips the edge $ab$ to $cd$.
+   819	There are two cases.
+   820	
+   821	First, if $cd$ was not an edge of $\sigma$, the flipped complex
+   822	$\sigma_t$ is again a simplicial triangulation of $S^2$.
+   823	By minimality, $(\sigma_t,M-t)$ is good.
+   824	Adding $t$ back gives a triangulation of $B^3$ unless the same support
+   825	tetrahedron $t$ was already present in $M-t$, i.e. unless $t$ had
+   826	multiplicity $2$ in $M$.
+   827	If that happened, remove instead an eligible tet $u$ whose boundary faces
+   828	are disjoint from those of $t$.
+   829	Then $M-u$ would still contain the repeated support tetrahedron $t$ and
+   830	could not be simplicial, so $(\sigma_u,M-u)$ would be a smaller bad
+   831	filling pair, a contradiction.
+   832	
+   833	Second, if $cd$ was already an edge of $\sigma$, the flipped cycle is an
+   834	almost disjoint union of two simplicial triangulations
+   835	$\sigma_1,\sigma_2$ of $S^2$, conjoined along the edge $cd$.
+   836	By Theorem \ref{th1}, $M-t$ splits as $M_1+M_2$, where $M_i$ is a taut
+   837	filling of $X(\sigma_i)$.
+   838	By minimality each $(\sigma_i,M_i)$ is good.
+   839	The complex $K(M-t)$ need not be clean as a single complex, because the
+   840	link of the shared edge $cd$ can be disconnected; nevertheless it is the
+   841	union of the two clean pieces $K(M_1)$ and $K(M_2)$.
+   842	Gluing these two triangulated balls to the two sides of $t$ gives a
+   843	triangulated ball, unless $t$ already occurred in $M-t$.
+   844	The same disjoint eligible-tet argument rules out that multiplicity-$2$
+   845	obstruction.
+   846	
+   847	In both post-flip cases, therefore, $M$ is now known to be simplicial.
+   848	We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+   849	triangulation of $B^3$ unless one of the clean-complex conditions fails.
+   850	The remaining conditions are ruled out by the same minimality argument.
+   851	
+   852	\begin{enumerate}
+   853	\item
+   854	$K(M)$ is a pseudomanifold.
+   855	Suppose a $2$-simplex $s$ occurs as a face of more than two support
+   856	tetrahedra of $M$.
+   857	If $s \notin \sigma$, then after removing an eligible tet not needed to
+   858	account for $s$, the same excess occurrence remains in either the
+   859	one-sphere case or in one of the two split pieces in the conjoined case,
+   860	contradicting minimality.
+   861	If $s \in \sigma$, choose an eligible tet not having $s$ as a boundary
+   862	face; the excess boundary incidence again persists, contradicting
+   863	minimality.
+   864	
+   865	\item
+   866	No edge $\{a,b\}$ has disconnected link in $K(M)$.
+   867	The link is a $1$-dimensional complex whose edges correspond to support
+   868	tetrahedra of $M$ containing $\{a,b\}$.
+   869	The only way a component of such a link can have fewer than three
+   870	vertices is for the component to be a single edge $\{c,d\}$,
+   871	corresponding to a tet $\{a,b,c,d\}$.
+   872	Then $\{a,b\}$ is an edge of $\sigma$ and
+   873	$\{a,b,c\},\{a,b,d\}$ are the two boundary faces adjacent along it.
+   874	No other component can also be a single edge.
+   875	If the link were disconnected, removing an eligible tet other than this
+   876	one would leave it disconnected in the one-sphere case or in one split
+   877	piece in the conjoined case, contradicting minimality.
+   878	
+   879	\item
+   880	No vertex has disconnected link in $K(M)$.
+   881	If $\link(\{a\},K(M))$ were disconnected, the only way removing one tet
+   882	could make it connected would be for one component of the link to be a
+   883	single $2$-simplex $\{b,c,d\}$ and for the removed tet to be
+   884	$\{a,b,c,d\}$.
+   885	Then $\{a,b,c\}$, $\{a,b,d\}$, and $\{a,c,d\}$ would all be boundary
+   886	faces of $\sigma$, so $a$ would have degree $3$ in $\sigma$, contrary to
+   887	primality.
+   888	\end{enumerate}
+   889	
+   890	Thus $M$ is clean and $K(M)$ is a simplicial triangulation of $B^3$,
+   891	contradicting that $(\sigma,M)$ was bad.
+   892	\proofend
+   893	
+   894	After Theorem \ref{th2} we will often identify a taut filling $M$ of
+   895	$X(\sigma)$ with the triangulated ball $K(M)$.
+   896	
+   897	\section{Shelling}
+   898	
+   899	A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+   900	is an ordering
+   901	$(t_1,\ldots,t_{|\tau|})$
+   902	of its tetrahedra such that, for each $k$,
+   903	the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+   904	simplicial triangulation of $B^3$.
+   905	For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+   906	faces. Gluing along one face increases the boundary vertex count by $1$;
+   907	gluing along two faces leaves it unchanged; gluing along three faces
+   908	would bury an interior vertex, and so cannot occur in the shellings
+   909	obtained below. Thus the boundary vertex count never decreases.
+   910	Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+   911	the first tet of such a shelling.
+   912	
+   913	\begin{theorem} \label{th3}
+   914	If $\sigma$ is a simplicial triangulation of $S^2$,
+   915	any taut filling of $X(\sigma)$ is a freely shellable
+   916	simplicial triangulation of $B^3$.
+   917	\end{theorem}
+   918	
+   919	\proofstart
+   920	By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+
+codex
+Two source-level issues already stand out: one real mathematical typo in Theorem 1’s proof (`\del M = 0` where the proof only needs that the relevant face has zero coefficient in `\del M = X+Y`), plus a couple of visible prose/TeX typos. I’m still building to separate cosmetic residue from compile or reference failures.
+exec
+/bin/zsh -lc 'PATH=/usr/local/texlive/2010/bin/x86_64-darwin:$PATH pdflatex -interaction=nonstopmode tautA-02.tex && bibtex tautA-02 && pdflatex -interaction=nonstopmode tautA-02.tex && pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+ exited 127 in 324ms:
+This is pdfTeX, Version 3.1415926-1.40.11 (TeX Live 2010)
+ restricted \write18 enabled.
+entering extended mode
+(./tautA-02.tex
+LaTeX2e <2009/09/24>
+Babel <v3.8l> and hyphenation patterns for english, dumylang, nohyphenation, ge
+rman-x-2009-06-19, ngerman-x-2009-06-19, ancientgreek, ibycus, arabic, armenian
+, basque, bulgarian, catalan, pinyin, coptic, croatian, czech, danish, dutch, u
+kenglish, usenglishmax, esperanto, estonian, farsi, finnish, french, galician, 
+german, ngerman, swissgerman, monogreek, greek, hungarian, icelandic, assamese,
+ bengali, gujarati, hindi, kannada, malayalam, marathi, oriya, panjabi, tamil, 
+telugu, indonesian, interlingua, irish, italian, kurmanji, lao, latin, latvian,
+ lithuanian, mongolian, mongolianlmc, bokmal, nynorsk, polish, portuguese, roma
+nian, russian, sanskrit, serbian, slovak, slovenian, spanish, swedish, turkish,
+ turkmen, ukrainian, uppersorbian, welsh, loaded.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/size12.clo))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/graphics.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/pdftex-def/pdftex.def)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ltxcmds.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/infwarerr.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/etexcmds.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdfescape.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifluatex.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifpdf.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifvtex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/ifxetex/ifxetex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/hycolor.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/xcolor-patch.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/letltxmacro.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/intcalc.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/hyperref.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/kvoptions.sty)
+Implicit mode ON; LaTeX internals redefined
+(/usr/local/texlive/2010/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bitset.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bigintcalc.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/atbegshi.sty))
+* hyperref using default driver hpdftex *
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/atveryend.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/rerunfilecheck.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/uniquecounter.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/tools/verbatim.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption3.sty))
+No file tautA-02.aux.
+(/usr/local/texlive/2010/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/grfext.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/refcount.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/gettitlestring.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsb.fd)
+
+LaTeX Warning: Reference `nointernal' on page 1 undefined on input line 204.
+
+[1{/usr/local/texlive/2010/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+
+LaTeX Warning: Citation `ellison:gap' on page 2 undefined on input line 214.
+
+
+LaTeX Warning: Reference `th1' on page 2 undefined on input line 219.
+
+
+LaTeX Warning: Reference `cor1' on page 2 undefined on input line 232.
+
+
+Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+[]\OT1/cmr/m/n/12 Now let $\OML/cmm/m/it/12 ^^[$ \OT1/cmr/m/n/12 be a sim-pli-c
+ial tri-an-gu-la-tion of $\OML/cmm/m/it/12 S[]$\OT1/cmr/m/n/12 ; let $\OML/cmm/
+m/it/12 X\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/1
+2 2 \OML/cmm/m/it/12 Z[]\OT1/cmr/m/n/12 (^^A([](\OML/cmm/m/it/12 ^^[\OT1/cmr/m/
+n/12 ))\OML/cmm/m/it/12 ; \OT1/cmr/bx/n/12 Z\OT1/cmr/m/n/12 )$
+
+LaTeX Warning: Reference `th2' on page 2 undefined on input line 255.
+
+
+LaTeX Warning: Reference `th2' on page 2 undefined on input line 257.
+
+
+LaTeX Warning: Reference `th1' on page 2 undefined on input line 257.
+
+
+LaTeX Warning: Citation `stt:jams' on page 2 undefined on input line 265.
+
+
+LaTeX Warning: Citation `stt:jams' on page 2 undefined on input line 285.
+
+
+LaTeX Warning: Citation `mt' on page 2 undefined on input line 288.
+
+
+LaTeX Warning: Citation `dew:filling' on page 2 undefined on input line 294.
+
+
+LaTeX Warning: Reference `th2' on page 2 undefined on input line 296.
+
+[2]
+
+LaTeX Warning: Citation `dew:filling' on page 3 undefined on input line 302.
+
+
+LaTeX Warning: Citation `ellison:gap' on page 3 undefined on input line 312.
+
+[3]
+Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+\OT1/cmr/m/n/12 consisting of all the non-trivial ori-ented $(\OML/cmm/m/it/12 
+n \OT1/cmr/m/n/12 + 1)$-simplices $[](\OML/cmm/m/it/12 x; t\OT1/cmr/m/n/12 ) = 
+[\OML/cmm/m/it/12 xx[] [] x[]\OT1/cmr/m/n/12 ]$
+
+LaTeX Warning: Reference `maxdeg' on page 4 undefined on input line 405.
+
+[4] [5]
+
+LaTeX Warning: Citation `ellison:gap' on page 6 undefined on input line 530.
+
+
+LaTeX Warning: Citation `pw:flip' on page 6 undefined on input line 535.
+
+
+LaTeX Warning: Citation `stt:jams' on page 6 undefined on input line 539.
+
+
+Overfull \hbox (6.74567pt too wide) detected at line 572
+\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 @[]M[]; @[]M[]\OT1/cmr/m/n/12 ) = \OML/cmm/m/
+it/12 @[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12
+ p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )) = \OML/cmm/m/it/12 
+g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 @[]
+M\OT1/cmr/m/n/12 ) = \OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q
+\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 X \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 Y\OT1/c
+mr/m/n/12 ) = (\OML/cmm/m/it/12 X; Y\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 :
+[6]
+
+LaTeX Warning: Reference `nocone' on page 7 undefined on input line 651.
+
+[7] [8]
+
+LaTeX Warning: Citation `thurston:shapes' on page 9 undefined on input line 750
+.
+
+
+LaTeX Warning: Reference `maxdeg' on page 9 undefined on input line 791.
+
+[9]
+
+LaTeX Warning: Reference `th1' on page 10 undefined on input line 836.
+
+[10]
+Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/12 No edge $\OMS/cmsy/m/n/12 f\OML/cmm/m/it/12 a; b\OMS/cmsy/m/n
+/12 g$ \OT1/cmr/m/n/12 has dis-con-nected link in $\OML/cmm/m/it/12 K\OT1/cmr/m
+/n/12 (\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )$. The link is a $1$-dimensional
+
+LaTeX Warning: Reference `th2' on page 11 undefined on input line 894.
+
+[11]
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 920.
+
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 934.
+
+
+LaTeX Warning: Reference `th1' on page 12 undefined on input line 942.
+
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 942.
+
+[12]
+
+LaTeX Warning: Reference `th2' on page 13 undefined on input line 999.
+
+[13]
+No file tautA-02.bbl.
+[14] (./tautA-02.aux)
+
+Package rerunfilecheck Warning: File `tautA-02.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ )
+(see the transcript file for additional information)</usr/local/texlive/2010/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2010/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2010/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2010/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2010/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2010/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2010/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2010/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2010/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2010/texmf-dist/font
+s/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2010/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2010/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmti12.pfb>
+Output written on tautA-02.pdf (14 pages, 211470 bytes).
+Transcript written on tautA-02.log.
+zsh:1: command not found: bibtex
+
+codex
+The first LaTeX pass produced a PDF, but the chained `bibtex` call failed as “command not found” despite the binary existing. I’m checking whether that is a PATH/shell issue or an old-binary execution issue, then I’ll rerun with absolute paths.
+exec
+/bin/zsh -lc 'tail -n 80 text/tautxy/tautA-02.log' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+
+[10]
+Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/12 No edge $\OMS/cmsy/m/n/12 f\OML/cmm/m/it/12 a; b\OMS/cmsy/m/n
+/12 g$ \OT1/cmr/m/n/12 has dis-con-nected link in $\OML/cmm/m/it/12 K\OT1/cmr/m
+/n/12 (\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )$. The link is a $1$-dimensional
+ []
+
+
+LaTeX Warning: Reference `th2' on page 11 undefined on input line 894.
+
+[11]
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 920.
+
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 934.
+
+
+LaTeX Warning: Reference `th1' on page 12 undefined on input line 942.
+
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 942.
+
+[12]
+
+LaTeX Warning: Reference `th2' on page 13 undefined on input line 999.
+
+[13]
+No file tautA-02.bbl.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1038.
+[14]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1038.
+ (./tautA-02.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1038.
+
+
+Package rerunfilecheck Warning: File `tautA-02.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `tautA-02.out':
+(rerunfilecheck)             Before: <no file>
+(rerunfilecheck)             After:  217C71B2013A297C2CA3972B09C4079D;447.
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ ) 
+Here is how much of TeX's memory you used:
+ 6713 strings out of 493747
+ 99491 string characters out of 3143546
+ 186266 words of memory out of 3000000
+ 9859 multiletter control sequences out of 15000+200000
+ 15565 words of font info for 60 fonts, out of 3000000 for 9000
+ 714 hyphenation exceptions out of 8191
+ 36i,13n,38p,243b,391s stack positions out of 5000i,500n,10000p,200000b,50000s
+</usr/local/texlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
+></usr/local/texlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb>
+</usr/local/texlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><
+/usr/local/texlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></
+usr/local/texlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></u
+sr/local/texlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr
+/local/texlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/l
+ocal/texlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/loc
+al/texlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local
+/texlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/te
+xlive/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/tex
+live/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texli
+ve/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive
+/2010/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb>
+Output written on tautA-02.pdf (14 pages, 211470 bytes).
+PDF statistics:
+ 163 PDF objects out of 1000 (max. 8388607)
+ 131 compressed objects within 2 object streams
+ 43 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+
+
+exec
+/bin/zsh -lc 'file /usr/local/texlive/2010/bin/x86_64-darwin/bibtex /usr/local/texlive/2010/bin/x86_64-darwin/pdftex && otool -L /usr/local/texlive/2010/bin/x86_64-darwin/bibtex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+/usr/local/texlive/2010/bin/x86_64-darwin/bibtex: Mach-O 64-bit executable x86_64
+/usr/local/texlive/2010/bin/x86_64-darwin/pdftex: Mach-O 64-bit executable x86_64
+/usr/local/texlive/2010/bin/x86_64-darwin/bibtex:
+	/usr/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 625.0.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 125.2.0)
+
+exec
+/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/bibtex tautA-02' in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 105ms:
+This is BibTeX, Version 0.99d (TeX Live 2010)
+The top-level auxiliary file: tautA-02.aux
+The style file: amsplain.bst
+Database file #1: taut.bib
+
+codex
+`bibtex` works with the absolute path, so the earlier failure was just the shell resolving the chained command oddly. I’m completing the second and third LaTeX passes and then I’ll report only remaining substantive concerns.
+exec
+/bin/zsh -lc "/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex >/tmp/tautA-02-pdflatex2.log && /usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex >/tmp/tautA-02-pdflatex3.log; tail -n 60 /tmp/tautA-02-pdflatex3.log; printf '\\n--- warnings ---\\n'; rg -n \"Warning|undefined|Citation|Reference|Overfull|Underfull|Error|"'!" tautA-02.log /tmp/tautA-02-pdflatex3.log' in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 479ms:
+(/usr/local/texlive/2010/texmf-dist/tex/latex/tools/verbatim.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption3.sty))
+(./tautA-02.aux)
+(/usr/local/texlive/2010/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/grfext.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/refcount.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/gettitlestring.sty))
+(./tautA-02.out) (./tautA-02.out)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsb.fd) [1{/usr/local/t
+exlive/2010/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+[]\OT1/cmr/m/n/12 Now let $\OML/cmm/m/it/12 ^^[$ \OT1/cmr/m/n/12 be a sim-pli-c
+ial tri-an-gu-la-tion of $\OML/cmm/m/it/12 S[]$\OT1/cmr/m/n/12 ; let $\OML/cmm/
+m/it/12 X\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/1
+2 2 \OML/cmm/m/it/12 Z[]\OT1/cmr/m/n/12 (^^A([](\OML/cmm/m/it/12 ^^[\OT1/cmr/m/
+n/12 ))\OML/cmm/m/it/12 ; \OT1/cmr/bx/n/12 Z\OT1/cmr/m/n/12 )$
+[2] [3]
+Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+\OT1/cmr/m/n/12 consisting of all the non-trivial ori-ented $(\OML/cmm/m/it/12 
+n \OT1/cmr/m/n/12 + 1)$-simplices $[](\OML/cmm/m/it/12 x; t\OT1/cmr/m/n/12 ) = 
+[\OML/cmm/m/it/12 xx[] [] x[]\OT1/cmr/m/n/12 ]$
+[4] [5]
+Overfull \hbox (6.74567pt too wide) detected at line 572
+\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 @[]M[]; @[]M[]\OT1/cmr/m/n/12 ) = \OML/cmm/m/
+it/12 @[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12
+ p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )) = \OML/cmm/m/it/12 
+g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 @[]
+M\OT1/cmr/m/n/12 ) = \OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q
+\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 X \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 Y\OT1/c
+mr/m/n/12 ) = (\OML/cmm/m/it/12 X; Y\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 :
+[6] [7] [8] [9] [10]
+Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/12 No edge $\OMS/cmsy/m/n/12 f\OML/cmm/m/it/12 a; b\OMS/cmsy/m/n
+/12 g$ \OT1/cmr/m/n/12 has dis-con-nected link in $\OML/cmm/m/it/12 K\OT1/cmr/m
+/n/12 (\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )$. The link is a $1$-dimensional
+[11] [12] [13] (./tautA-02.bbl) [14] (./tautA-02.aux) )
+(see the transcript file for additional information)</usr/local/texlive/2010/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2010/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2010/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2010/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2010/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2010/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2010/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2010/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2010/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2010/texmf-dist/font
+s/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2010/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2010/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmti12.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmtt12.pfb>
+Output written on tautA-02.pdf (14 pages, 221366 bytes).
+Transcript written on tautA-02.log.
+
+--- warnings ---
+/tmp/tautA-02-pdflatex3.log:78:Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+/tmp/tautA-02-pdflatex3.log:85:Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+/tmp/tautA-02-pdflatex3.log:90:Overfull \hbox (6.74567pt too wide) detected at line 572
+/tmp/tautA-02-pdflatex3.log:99:Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+tautA-02.log:381:Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+tautA-02.log:390:Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+tautA-02.log:397:Overfull \hbox (6.74567pt too wide) detected at line 572
+tautA-02.log:408:Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+
+codex
+The build now completes cleanly after the full cycle: no undefined refs or citations remain, only small overfull boxes. I’m doing one final text sweep for leftovers/typos and then I’ll give the requested verdict.
+exec
+/bin/zsh -lc 'rg -n "undefined|Citation|Reference|Rerun|Warning|Error|Overfull" text/tautxy/tautA-02.log' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+265:Package: rerunfilecheck 2010/03/16 v1.6 Rerun checks for auxiliary files (HO)
+381:Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+390:Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+397:Overfull \hbox (6.74567pt too wide) detected at line 572
+408:Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+
+exec
+/bin/zsh -lc "rg -n \"%|Lean|lean|sorry|TODO|FIXME|joke|goblin|Claude|Codex|overview|Overview|are are|\\)|\\[.*\\)|teh|hte|recieve|occurance|iff|\\bweird\\b|\\bmagic\\b\" text/tautxy/tautA-02.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+16:the National Natural Science Foundation of China (Grant No. 12301432)
+18:\date{Joint version 02 (Claude + Codex)}
+46:%
+47:% \fig
+48:% followed by {filename}{label}{caption}
+49:%
+57:%
+58:% \figsize
+59:% followed by {size}{filename}{label}{caption}
+60:%
+75:\def\heartsuit{\mbox{\boldmath{$Z$}}}% 
+84:%\newcommand{\gversus}[2]{\braket{#1\,|\,#2}}
+92:\newcommand{\versus}[2]{\left(#1\,|\,#2\right)}
+185:\section{Overview}
+186:Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+190:Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+191:and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+195:(Here and throughout we assume $n\geq 1$.)
+196:Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+198:of its boundary, i.e., if $|M|=\Zvol(\del M)$.
+201:$\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+203:For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+204:(Cf.\ Proposition \ref{nointernal} below.)
+209:|\vertices(X) \cap \vertices(Y)| \leq n+1
+216:$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+219:Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+232:(Corollary \ref{cor1})
+241:let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
+244:and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+245:Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+249:\Zvol(\sigma) = \tetvol(\sigma)
+254:of $X(\sigma)$.
+256:any taut filling of $X(\sigma)$ arises in this way.
+269:of $S^2$ has $\tetvol \leq 2v-4-\maxdeg(\sigma)$.
+270:If $v\geq13$ $\maxdeg(\sigma) \geq 6$, so $\tetvol \leq 2v-10$.
+277:with volume $2v V_0-O(\log(v))$,
+281:This implies $\tetvol \geq 2v-O(\log(v))$.
+290:different from the examples of STT,
+312:(Ellison \cite{ellison:gap}),
+328:= [x_{\pi(0)},\ldots,x_{\pi(n)}]
+366:\nbhd(x,U) = \sum_{ t \in U: x \in \vertices(t) } t
+370:\deg(x,U) = |\nbhd(x,U)|
+374:\maxdeg(U) = \max_x \deg(x,U)
+378:is the $(n+1)$-chain
+380:\cone(x,U) = 
+381:\sum_{t \in U} \adj(x,t)
+385:$(n+1)$-simplices $\adj(x,t)=[x x_0\ldots x_n]$ obtained
+387:If $x \in \vertices(t)$ then $t$ does not contribute to the sum,
+388:so $|\cone(x,U)| = |U| - \deg(x,U)$.
+391:$\del\, \cone(x,U) = U$, so
+396:\Zvol(X) \leq |X| - \maxdeg(X)
+401:If $U \in Z_n$ and $x \notin \vertices(U)$ then
+402:$\deg(x,U)=0$ and
+403:$|\cone(x,U)| = |U|$.
+404:In this case we call $\cone(x,U)$ a \emph{complete cone}.
+407:$x \notin U$, one could have coned from some $x \in U$.)
+414:Call $x \in \vertices(M) \setminus \vertices(\del M)$ an
+416:If $x$ is internal to $M$ then $\nbhd(x,M)$ is a complete cone, so:
+428:|\vertices(X) \cap \vertices(Y)| \leq n+1
+439:$\Zvol(X)=p-2$,
+440:$\Zvol(Y) = q-2$,
+443:\Zvol(X+Y) = (p+q-2)-2 = \Zvol(X)+\Zvol(Y)
+447:may contain any 2-simplex with vertices in $\vertices(X+Y)$.
+456:\pi_{A,p}(x) = x \IF x \in A \ELSE p
+460:K_*(A,p): C_*(\Omega) \to C_*(A)
+463:This is a projection of $C_*(\Omega)$ onto $C_*(A)$.
+469:$C_c(C)$ and $Z_{c-1}(C)$ are trivial,
+470:because $\Delta(C)$ contains no $c$-simplex,
+471:and (up to orientation) only one $c\mns 1$-simplex,
+476:C_*(A,B) = C_*(A) \direct C_*(B)
+481:g_*(p,q) = K_*(A,p) \direct K_*(B,q):
+482:C_*(A \cup B) \to C_*(A,B)
+487:Let $(X,Y) \in C_n(A,B)$.
+489:we can recover $(X,Y)$ from $X+Y$.
+490:If $(X,Y) \in Z_n(A,B)$ this holds also when $|A \cap B|  = n+1$.
+496:(Add a brand new point to $C$ if necessary.)
+499:(not necessarily distinct) we have
+501:g_n(p,q)(X+Y)=(X,Y)
+506:K_n(A,p)(X+Y) = X + K_n(A,p)(Y)
+509:The second term belongs to $C_n(C)$,
+511:If $Y \in Z_n(B)$ the second term belongs to $Z_n(C)$,
+518:for all $(X,Y) \in Z_n(A,B)$ we have
+520:\Zvol(X+Y) = \Zvol(X)+\Zvol(Y)
+524:for any $M \in \taut(X+Y)$ 
+526:with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+550:Take any $M \in \taut(X+Y) \subset C_3(A \union B)$.
+554:(M_X,M_Y) = g_{3}(p,q)(M)
+557:(For now we suppress the dependence of $M_X,M_Y$ on $p,q$.)
+559:Because $g_*(p,q)$ is a chain map we have
+562:(\del_{3} M_X, \del_{3} M_Y)
+564:\del_{3} (g_{3}(p,q)(M))
+566:g_2(p, q)(\del_{3} M)
+568:g_2(p,q)(X+Y)
+570:(X,Y)
+574:We want to show that under the map $g_3(p,q)$ any $t \in M$
+578:\Zvol(X+Y) = |M|
+580:\geq \Zvol(X) + \Zvol(Y)
+581:\geq \Zvol(X+Y)
+589:The first two are pure $X$ cases, meaning that they live in $C_3(A)$;
+599:$K_3(B,q)(t)=[c_1c_2c_3q]$,
+608:|M| = |M_X(p,q)| + |M_Y(p,q)|,
+612:When $n=1$ the choice of $p,q$ can indeed make a difference:
+613:We can get a different pair $(M_X,M_Y)$ if we switch
+615:(Think about the connected sum of two cycle graphs.)
+620:$M = M_X + M_Y$ with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+626:because that would make $|M| > \Zvol(X) + \Zvol(Y)$.
+639:We claim that $y_0 \notin \vertices(\del U)$.
+649:So $y_0 \notin \vertices(\del U)$,
+663:because $[x_0x_1y_0)$ can continue across $[x_1 y_0]$ to $-[p x_1 y_0]$,
+694:\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+698:(except for $\link(\emptyset,\sigma)=\sigma$)
+704:which we will call \emph{clean $n$-complexes}.
+705:A simplicial complex $\sigma$ is clean of dimension $n$ if:
+714:the link $\link(s,\sigma)$ of any $(n-1)$-simplex $s$
+716:(so $s$ is a boundary simplex)
+718:(so $s$ is an interior simplex).
+723:the link $\link(s,\sigma)$ is connected.
+729:If $\sigma$ is clean, then each link $\link(s,\sigma)$ is clean.
+730:The boundary $\del \sigma$ of a clean complex is clean and closed:
+736:In this case $\sigma$ is necessarily clean.
+738:two associated cycles $X(\sigma) \in C_n$; our arguments do not depend
+756:For a chain $M \in C_n$, define $K(M)$ to be the pure simplicial
+761:We call $M$ \emph{clean} if $M$ is simplicial and $K(M)$ is a clean
+768:filling of $X(\sigma)$, then $M$ is clean and $K(M)$ is a simplicial
+773:Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial
+774:triangulation of $S^2$ and $M$ is a taut filling of $X(\sigma)$.
+775:Call a filling pair \emph{good} if $M$ is clean and $K(M)$ is a
+779:Suppose not, and choose a bad filling pair $(\sigma,M)$ with $|M|$
+788:oriented boundary faces are faces of $X(\sigma)$ with the correct signs.
+793:|M|=\Zvol(\sigma) \leq f-\maxdeg(\sigma).
+795:For each support tetrahedron $u$ of $M$, let $A(u)$ be the set of faces
+797:Each $A(u)$ has size at most $2$.
+798:Every face of $\sigma$ occurs in at least one $A(u)$, because its
+799:coefficient in $\partial M=X(\sigma)$ is nonzero with the prescribed sign.
+800:List the support tetrahedra of $M$ and reveal the sets $A(u)$ one at a
+806:Thus $r\geq \maxdeg(\sigma)$.
+807:Consequently there are at least $\maxdeg(\sigma)$ eligible support
+816:from $X(\sigma)$ by replacing $s_1,s_2$ with
+823:By minimality, $(\sigma_t,M-t)$ is good.
+830:could not be simplicial, so $(\sigma_u,M-u)$ would be a smaller bad
+837:filling of $X(\sigma_i)$.
+838:By minimality each $(\sigma_i,M_i)$ is good.
+839:The complex $K(M-t)$ need not be clean as a single complex, because the
+841:union of the two clean pieces $K(M_1)$ and $K(M_2)$.
+848:We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+849:triangulation of $B^3$ unless one of the clean-complex conditions fails.
+854:$K(M)$ is a pseudomanifold.
+866:No edge $\{a,b\}$ has disconnected link in $K(M)$.
+880:No vertex has disconnected link in $K(M)$.
+881:If $\link(\{a\},K(M))$ were disconnected, the only way removing one tet
+890:Thus $M$ is clean and $K(M)$ is a simplicial triangulation of $B^3$,
+891:contradicting that $(\sigma,M)$ was bad.
+895:$X(\sigma)$ with the triangulated ball $K(M)$.
+901:$(t_1,\ldots,t_{|\tau|})$
+915:any taut filling of $X(\sigma)$ is a freely shellable
+935:$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+954:(or clique complex) if every clique in its $1$-skeleton occurs as a
+958:(not the connected sum of smaller complexes)
+964:any taut filling of $X(\sigma)$ is the union of taut fillings of the
+965:$X(\sigma_i)$.
+971:any taut filling of $X(\sigma)$ is a flag complex.
+1000:$\maxdeg(\sigma)\geq 4$ eligible tets with pairwise disjoint pairs of
+1019:If $\maxdeg(\sigma)\geq 5$, the disjoint eligible-tet family gives at
+1026:It remains to consider $\maxdeg(\sigma)=4$.
+1030:the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
+
+exec
+/bin/zsh -lc 'git status --short text/tautxy/tautA-02.tex text/tautxy/tautA-02.pdf text/tautxy/tautA-02.aux text/tautxy/tautA-02.bbl text/tautxy/tautA-02.blg text/tautxy/tautA-02.log text/tautxy/tautA-02.out' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? text/tautxy/tautA-02.aux
+?? text/tautxy/tautA-02.bbl
+?? text/tautxy/tautA-02.blg
+?? text/tautxy/tautA-02.log
+?? text/tautxy/tautA-02.out
+?? text/tautxy/tautA-02.pdf
+?? text/tautxy/tautA-02.tex
+
+codex
+BLOCK
+
+- Verdict: not happy signing off as final yet. It builds, and the main grafts look structurally integrated, but I would patch three source lines first.
+
+- Exact recommended patch shape:
+  - [text/tautxy/tautA-02.tex:645](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:645): replace “Because `\del M = 0`” with “Because `s` is not a face of `X+Y`, its signed multiplicity in `\del M=X+Y` vanishes”.
+  - [text/tautxy/tautA-02.tex:595](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:595): remove duplicated “are”: “The remaining cases to check are the pure cases...”.
+  - [text/tautxy/tautA-02.tex:663](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:663): fix bracket typo `[x_0x_1y_0)` to `[x_0x_1y_0]`.
+
+- Files to edit: only `text/tautxy/tautA-02.tex`.
+
+- Checks:
+  - Shucking/monotone graft: cleanly integrated at [897](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:897)-[949](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:949); no broken cross-refs found.
+  - Theorem 2 has explicit cleanness verification: pseudomanifold [854](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:854), edge-link [866](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:866), vertex-link [880](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:880).
+  - Octahedral `maxdeg=4` argument is not overclaimed: [1026](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1026)-[1032](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1032) correctly uses no degree-3 implies 4-regular, hence `v=6`.
+  - Deleted commented Overview material: no evidence of load-bearing loss; refs/citations resolve.
+  - No Lean terminology or jokey prose found.
+
+- Local lemmas needed: none new for the paper version; just the local observation for the line-645 patch that an `XXy_0` face is absent from `X+Y`, so its coefficient in `\partial M` is zero.
+
+- Build: full `pdflatex`, `bibtex`, `pdflatex`, `pdflatex` cycle succeeds. Remaining TeX warnings are only small overfull boxes.
+tokens used
+49,167
+BLOCK
+
+- Verdict: not happy signing off as final yet. It builds, and the main grafts look structurally integrated, but I would patch three source lines first.
+
+- Exact recommended patch shape:
+  - [text/tautxy/tautA-02.tex:645](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:645): replace “Because `\del M = 0`” with “Because `s` is not a face of `X+Y`, its signed multiplicity in `\del M=X+Y` vanishes”.
+  - [text/tautxy/tautA-02.tex:595](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:595): remove duplicated “are”: “The remaining cases to check are the pure cases...”.
+  - [text/tautxy/tautA-02.tex:663](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:663): fix bracket typo `[x_0x_1y_0)` to `[x_0x_1y_0]`.
+
+- Files to edit: only `text/tautxy/tautA-02.tex`.
+
+- Checks:
+  - Shucking/monotone graft: cleanly integrated at [897](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:897)-[949](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:949); no broken cross-refs found.
+  - Theorem 2 has explicit cleanness verification: pseudomanifold [854](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:854), edge-link [866](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:866), vertex-link [880](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:880).
+  - Octahedral `maxdeg=4` argument is not overclaimed: [1026](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1026)-[1032](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1032) correctly uses no degree-3 implies 4-regular, hence `v=6`.
+  - Deleted commented Overview material: no evidence of load-bearing loss; refs/citations resolve.
+  - No Lean terminology or jokey prose found.
+
+- Local lemmas needed: none new for the paper version; just the local observation for the line-645 patch that an `XXy_0` face is absent from `X+Y`, so its coefficient in `\partial M` is zero.
+
+- Build: full `pdflatex`, `bibtex`, `pdflatex`, `pdflatex` cycle succeeds. Remaining TeX warnings are only small overfull boxes.

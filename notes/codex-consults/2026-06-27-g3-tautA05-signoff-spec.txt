@@ -1,0 +1,37 @@
+Review text/tautxy/tautA-05.tex (a stabilization of tautA-04) and confirm whether you AGREE it is a
+sound, complete paper-style version A. We are wrapping up. Focus on substance; ignore tiny prose nits.
+
+The substantive change is a REWRITTEN flag-complex proof that mirrors the Lean's three-config structure
+and ELIMINATES the octahedron/maxdeg special case. Verify the math (you formalized the Lean versions):
+
+1. New Corollary (after Prop 1, label `nosubcycle`): "a taut chain contains no nonzero closed subchain"
+   (U ⊂ M, ∂U=0 ⟹ U=0, via Prop 1 + Zvol 0 = 0). Correct?
+
+2. K5 step now uses that corollary instead of S^3⊄B^3: the five tetrahedra on the K5 vertices form a
+   subchain U; each of the ten triangles is a face of exactly two of them (triangle-boundedness), is
+   interior, so has coeff 0 in ∂M=X(σ); hence ∂U=0; corollary ⟹ U=0, contradiction. Is this correct and
+   does it avoid all topology? (cf Lean `no_k5Clique_of_no_emptyK4_taut` / `bdry_filter_subset_eq_zero`.)
+
+3. K4 (Configuration 2) now uses PERSISTENCE, no maxdeg/octahedron: under no empty K3, the four triangles
+   ABC,ABD,ACD,BCD are simplices; removing ANY eligible tet t leaves the empty K4 because each edge, say
+   AB, survives — one of ABC,ABD is not ⊆ t (containing both forces t={A,B,C,D}, not a tet), is a simplex
+   hence a face of some tet u≠t, so AB ⊆ that u. Is this argument correct and complete? (cf Lean
+   `hasEmptyK4_removeTet_of_eligible`.) Crucially: does it genuinely remove the need for the octahedral
+   maxdeg=4 case? Confirm there is NO remaining octahedron placeholder.
+
+4. K3 (Configuration 1): flip-count — ≥maxdeg≥4 eligible tets with distinct flip edges, only 3 K3 edges to
+   avoid, so some removal preserves the K3. Sound?
+
+5. The conjoined-split localization ("a forbidden K3/K4 lies on one side") and the deg-3 peel: still sound?
+
+6. Theorem 2 proof's revised "local witness" paragraph (directive D): is it now accurate (not implying
+   every witness literally has boundary faces)?
+
+7. Any Lean terminology, endpoint names, or formalization-status language leaked in? (There must be none.)
+
+Build: I ran pdflatex/bibtex/pdflatex/pdflatex from text/tautxy/: 15 pages, 0 errors, 0 undefined
+references, 0 undefined citations.
+
+Output: first line PASS (you agree tautA-05 is a sound, complete version A with the flag proof now
+complete and no octahedron placeholder) or BLOCK (with the exact substantive fix). Cite file:line for any
+real error. Be concise; do not nitpick prose.

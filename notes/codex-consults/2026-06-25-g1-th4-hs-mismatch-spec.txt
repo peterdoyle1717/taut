@@ -1,0 +1,47 @@
+CODEX CONSULT (G1) — confirm a hypothesis-mismatch in the Theorem-4 public endpoint and bless the
+narrow fix, before I touch Lean or the writeup. Be adversarial; verify signatures yourself.
+
+REPO: /Users/doyle/Dropbox/taut, branch clean-anyrooted-stickerball, HEAD a8f4566.
+Build green 8273; grep over lean/Taut for sorry/admit/axiom/native_decide = ZERO.
+
+BACKGROUND. Earlier this session the public stickerball endpoint was made hS-free: the bridge
+`taut_filling_is_simplicialChain` (Theorem3Clean.lean:3462) derives `SimplicialChain M` from tautness,
+and `taut_filling_is_anyrootedStickerball` (Theorem3Clean.lean:3636) now derives hS internally:
+    have hS : SimplicialChain M := taut_filling_is_simplicialChain hσ hU hXc hMX hT
+    exact ⟨⟨theorem2_clean … hS, hσ.nonempty⟩, theorem3_clean … hS⟩
+The user is now adding Theorem 4 (flag complex) to the Lean→informal writeup and wants the Th4 PUBLIC
+STATEMENT to be hS-free IF Theorems 2/3 already supply simpliciality (internal use of hS is fine).
+
+FINDING TO CONFIRM (I read these; verify):
+- `theorem4_flag` (Theorem4.lean:1503) signature ends `… (hT : IsTaut M) (hS : SimplicialChain M) :
+  IsFlagComplex M.support` — hS is an EXTERNAL hypothesis.
+- `taut_filling_is_flagComplex` (Theorem4.lean:1511) is a rename: same hS hypothesis, body
+  `theorem4_flag hσ hU hXc hMX hT hS`.
+- Theorem4.lean NEVER calls `taut_filling_is_simplicialChain` (grep finds none) — so neither flag
+  endpoint derives hS; both demand it. This is asymmetric with the stickerball endpoint above.
+- Theorem4.lean line 1 is `import Taut.Theorem3Clean`, so the bridge IS in scope.
+
+PROPOSED NARROW FIX (Lean): replace `taut_filling_is_flagComplex` with an hS-free version deriving hS
+from the existing bridge (keep `theorem4_flag` as the internal hS-taking lemma):
+    theorem taut_filling_is_flagComplex {σ} {X M} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
+        (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) : IsFlagComplex M.support :=
+      theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)
+This reuses the bridge; it does NOT reopen the hens-and-baskets proof. The internal induction
+`no_emptyK3K4_of_taut` keeps threading hS for sub-fillings as it already does (unchanged, already CHECKED).
+
+QUESTIONS:
+Q1. Confirm the finding: both Th4 flag endpoints take external hS and neither derives it; the stickerball
+    endpoint does derive it. Is this correctly a "mismatch" the user wants fixed (Th4 public statement
+    should be hS-free since 2/3 provide simpliciality)?
+Q2. Is the proposed 1-line wrapper correct and sufficient (types line up; `taut_filling_is_simplicialChain`
+    has exactly the hyps hσ/hU/hXc/hMX/hT and concludes SimplicialChain M)? Any reason it would NOT
+    typecheck or would change axioms?
+Q3. Is there any reason Th4 was deliberately left hS-taking (a real obstruction — e.g. the induction's
+    IH needs SimplicialChain for smaller fillings in a way the top-level derivation cannot supply)?
+    I claim NO: the top-level wrapper only supplies the top-level hS; the existing proof already
+    re-derives/threads simpliciality for sub-fillings internally. Confirm or refute.
+Q4. For the WRITEUP: with the wrapper in place, is it faithful to state Theorem 4 hS-free and say
+    "simpliciality is supplied by Theorems 2/3 / the bridge (Thm `thm:simpl`)", exactly as the writeup
+    already does for the pure/triangle-bounded (thm:pm) and rooted (thm:freely) theorems?
+
+Output per contract: PASS/WARN/BLOCK first, then concrete answers with file:line citations.

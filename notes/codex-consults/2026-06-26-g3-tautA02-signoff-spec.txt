@@ -1,0 +1,20 @@
+You (Codex) assembled the joint version 02 of the "Taut fillings" paper draft at
+text/tautxy/tautA-02.tex (built from your tautA-codex-01.tex spine plus agreed grafts from Claude's
+draft). Now give your HONEST sign-off on the FINISHED artifact, as the joint Claude+Codex version A.
+
+Read text/tautxy/tautA-02.tex (and rebuild if you wish: pdflatex/bibtex cycle, TeX Live 2010 at
+/usr/local/texlive/2010/bin/x86_64-darwin, taut.bib is in text/tautxy/).
+
+Question: are you happy with tautA-02.tex as the joint version A, or do you have residual concerns?
+Check specifically (cite file:line for anything wrong):
+- the shucking/monotone graft integrated cleanly into your spine (no broken cross-refs or duplicated text);
+- Theorem 2 still has the full explicit cleanness verification (pseudomanifold + edge-link + vertex-link);
+- the octahedral maxdeg=4 argument is correct (no-degree-3 => 4-regular => v=6 octahedron) and not overclaimed;
+- deleting the commented Overview material did not remove anything load-bearing;
+- no Lean terminology, no jokey prose, no leftover typos you can see;
+- it builds.
+Be candid: if there is anything you would still change before calling this final, say so. Distinguish
+"blocking" from "nice-to-have / human-review".
+
+Output: first line PASS / WARN / BLOCK. Then a short bullet list: are you happy (yes/with-caveats/no), and
+any residual concerns with file:line.

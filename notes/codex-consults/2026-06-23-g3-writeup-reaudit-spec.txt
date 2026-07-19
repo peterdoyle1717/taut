@@ -1,0 +1,50 @@
+RE-AUDIT of the CORRECTED writeup notes/taut-lean-proof.tex against lean/Taut/ (the only oracle).
+
+Context: a first audit (logged at notes/codex-consults/2026-06-23-g3-writeup-audit-output.txt) found 4
+discrepancies; those plus 2 earlier ones have now been edited in the .tex. The fixes are NEW prose and
+are themselves unverified. Treat them with the same suspicion as the originals: prose that reads as
+correct can still say MORE or LESS than the Lean.
+
+FRAMING: for every claim below, OPEN the Lean file, read the EXACT statement, and judge FAITHFUL /
+OVERCLAIM / UNDERCLAIM / WRONG-CITATION / MISSING-HYPOTHESIS / QUANTIFIER-ERROR. Plausibility is the
+failure mode to avoid. Be terse; cite file:line.
+
+PART A — verify each of the SIX corrections is now faithful AND introduced no new error:
+
+ 1. (T3) bullet, near the top: "a taut chain contains no nontrivial complete cone cone x W as a subchain
+    --- W closed (bdry W = 0), apex x absent from W, W nonzero (not_taut_complete_cone)."
+    Check against not_taut_complete_cone (lean/Taut/Zvol.lean ~122): are the four hypotheses
+    (SubChain (cone x W) M, bdry W = 0, deg x W = 0, deg x' W ≠ 0) rendered correctly? Is "W nonzero" an
+    accurate paraphrase of deg x' W ≠ 0?
+
+ 2. Section 2 framing + the "homological input" lemma: the writeup now asserts the SPLITTING theorem
+    does NOT use the cut and that its closedness analogue is the coefficient-level bdry_lk_eq_zero.
+    Verify: does lean/Taut/Splitting.lean use exists_cut / range_bd2_eq_ker_bd1 / bd2 / gammaChain
+    anywhere? Does it use bdry_lk_eq_zero? Is the claim "splitting does not rest on H1=0" correct?
+
+ 3. Lemma 2.2 (Small-support triviality): now splits into "< n+1 vertices => no generator
+    (eq_zero_of_supp_card_lt, no closedness)" and "= n+1, closed => zero
+    (eq_zero_of_closed_supp_card_eq)." Check both lemma statements (lean/Taut/Projection.lean ~383 and
+    ~394) match this case split exactly (hypotheses, the 1 <= k condition).
+
+ 4. Theorem 2.3, the (<=) direction: now "sum of minimal fillings ... by subadditivity of the norm,
+    Zvol(X+Y) <= ||M_X|| + ||M_Y|| = Zvol X + Zvol Y (Zvol_le, nrm_add_le)." Check this matches the
+    Lean (<=) proof (lean/Taut/Theorem1.lean ~372-376). Confirm no leftover "no cancellation" claim.
+
+ 5. Theorem 2.4 / no_extreme_hybrid: now the link L "closed by a coefficient-level computation --- bdry U
+    carries no face through y0 because such faces lie in neither X nor Y (bdry_lk_eq_zero), not via the
+    F2 cut." SCRUTINIZE THE CITATION PLACEMENT: in lean/Taut/Splitting.lean, is bdry_lk_eq_zero the lemma
+    that proves "bdry U has no face through y0", or is it the lemma that converts that fact into
+    "bdry L = 0"? If the latter, the prose attaches the wrong lemma to the wrong clause. State the correct
+    attribution (which lemma/argument establishes the no-y0-face fact, and which gives bdry L = 0).
+
+ 6. Theorem 2.3, the additivity (>=) direction (fixed earlier): confirm "killed by at least one of
+    K_{A,p},K_{B,q} (Kkills_or_Kkills, inclusive or)" and the two norm bounds nrm_Kmap_add_killed_le /
+    nrm_le_killed_add_killed are faithful; and that the prime-step text no longer claims IsTaut.splits.
+
+PART B — fast full re-scan: read the rest of the document and flag any remaining claim that is stronger,
+weaker, or mis-cited relative to the Lean it depends on (definitions 1.1-1.6, theorems 3.1-3.3, the §4
+table, §5 bridges). Do not restate faithful items beyond a one-line confirmation per section.
+
+END with: a per-correction verdict (1-6: FAITHFUL or the fix needed), then a numbered list of any NEW or
+remaining discrepancies with file:line and a corrected sentence each, or "no further discrepancies."

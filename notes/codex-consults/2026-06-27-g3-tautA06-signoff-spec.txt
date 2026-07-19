@@ -1,0 +1,33 @@
+Final sign-off review of text/tautxy/tautA-06.tex as the current FINAL Version A candidate of the
+taut-fillings paper. This is a sign-off, NOT a drafting pass; do not rewrite. tautA-06 is a minimal
+cleanup of tautA-05 (which you already PASSed). The ONLY intended delta from A-05: in the K5 part of the
+flag proof, "by triangle-boundedness (Theorem 2)" was replaced by "by the pseudomanifold condition from
+Theorem 2" (you may diff tautA-05.tex vs tautA-06.tex to confirm nothing else substantive changed).
+
+Confirm each (cite file:line only for ACTUAL problems, not style):
+1. Version/date line says "Version A-06".
+2. Theorem 2: M is clean and K(M) triangulates B^3. Theorem 3: K(M) is freely shellable. Theorem 4:
+   K(M) is flag.
+3. K5 argument sound with the NEW wording: the five K4 tetrahedra form a nonzero subchain U; each of the
+   ten triangles is incident to exactly two of these five; by the pseudomanifold condition from Theorem 2
+   no further tetrahedron of M is incident to such a triangle; hence the triangles are interior, not
+   boundary faces of sigma; so dU=0; by Corollary 1 (a taut chain has no nonzero closed subchain) U=0,
+   contradiction. Is the "pseudomanifold condition from Theorem 2" citation accurate (Theorem 2 gives
+   K(M) clean, hence pseudomanifold)?
+4. K4 argument sound: Config 1 ruled out => all four K4 triangles present; removing any eligible tet
+   preserves every K4 edge (each edge lies in two K4 triangles; the removed tet can't contain both
+   without being the missing K4 tet); removal creates no tetrahedron; so the empty K4 persists; no
+   maxdeg=4/octahedron case remains.
+5. Theorem 2 cleanness paragraph (repeated tet / over-incident triangle / disconnected edge link /
+   disconnected vertex link) is acceptable paper-level; flag only ACTUAL false statements.
+6. No Lean names or formalization-status commentary leaked.
+7. No unresolved placeholders: "finite check", "octahedron case remains", "to be checked", "TODO",
+   "sorry", "Lean", "formal endpoint". (The only octahedron mention should be the closing line saying no
+   octahedral case is needed.)
+
+I verified locally: full pdflatex/bibtex/pdflatex/pdflatex cycle builds, 15 pages, 0 errors, 0 undefined
+references, 0 undefined citations; version line = A-06; the three theorem statements are as in item 2; no
+placeholder/Lean hits except the intended "no octahedral special case is needed" sentence.
+
+Output: first line exactly "PASS" (tautA-06 is safe as the current final Version A candidate) or "BLOCKED"
+(then list ONLY actual problems with file:line). Be concise.

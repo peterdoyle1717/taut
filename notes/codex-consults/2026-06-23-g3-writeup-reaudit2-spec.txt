@@ -1,0 +1,43 @@
+THIRD-ROUND faithfulness check of notes/taut-lean-proof.tex against lean/Taut/ (the only oracle).
+
+Two prior audits are logged (notes/codex-consults/2026-06-23-g3-writeup-audit-output.txt and
+...-reaudit-output.txt). Round 2 flagged that TWO of the round-1 fixes were themselves imperfect, plus
+five more discrepancies. Those have now been re-edited. The new edits are again UNVERIFIED prose; check
+them with the same suspicion. Open the Lean, read the exact statement, judge FAITHFUL or the precise
+defect (OVERCLAIM/UNDERCLAIM/WRONG-CITATION/MISSING-HYPOTHESIS/QUANTIFIER-ERROR). Plausibility is the
+failure mode. Be terse; cite file:line.
+
+Verify each of the following edits is now faithful AND introduced no new error:
+
+ 1. Definition 1.1 (Zvol): now "filling volume of a chain X is inf{||M||:dM=X} (Zvol, an inf over N);
+    for a cycle a filling exists, the inf is attained, Zvol = min ... (exists_fill_eq_Zvol); Zvol is
+    defined for every chain, used only on cycles." Check vs lean/Taut/Zvol.lean:74-76 (sInf) and
+    exists_fill_eq_Zvol (lean/Taut/Theorem1.lean ~325). Is "attained on cycles" correct (sInf over N of a
+    nonempty set is a min)?
+
+ 2. (T3): now "no nontrivial complete cone cone x W as a subchain --- W closed (bdry W=0), apex x absent
+    from W (deg x W = 0), some vertex x' present in W (deg x' W != 0) (not_taut_complete_cone)." Check vs
+    lean/Taut/Zvol.lean:122-124 — all four hypotheses now rendered correctly?
+
+ 3. Definition 1.2 (IsSphere2): now "every vertex link is connected ... (that each link is a cycle /
+    2-regular is then derived: link_two_regular)." Check vs lean/Taut/Complex2.lean:97-102 (the linkConn
+    field) and link_two_regular (lean/Taut/Complex2.lean:237). Faithful now?
+
+ 4. Theorem 2.4 conclusion: now "literal restrictions give M = M_A + M_B; the boundary identities
+    dM_A = X, dM_B = Y follow by applying the K-maps to the boundary equation (Kmap_eq_self on the A-part,
+    Kmap_eq_zero_of_closed on the closed B-part), tautness of the pieces from ||M_A||+||M_B||=||M|| with
+    ||M_A|| >= Zvol X, ||M_B|| >= Zvol Y." Check vs lean/Taut/Splitting.lean ~464-496. Is the coincidence
+    claim gone, and is this how the Lean actually derives boundaries and tautness?
+
+ 5. Theorem 2.4 no_extreme_hybrid: now "L closed is NOT the F2 cut: a coefficient computation shows dU
+    carries no face through y0 (such faces lie in neither X nor Y), and bdry_lk_eq_zero then converts
+    this into dL=0." Check the citation placement is now correct vs lean/Taut/Splitting.lean:339-388.
+
+ 6. Definition 1.6: now "'Rooted at t' (RootedStickerball) is not a standalone Lean predicate; it names
+    the existence clause for that t inside FreelyCleanShellable." Faithful vs
+    lean/Taut/CleanShelling.lean:70-72, 91-92?
+
+Then a FINAL full scan: is there ANY remaining claim, anywhere in the document, stronger/weaker/mis-cited
+relative to the Lean it depends on? If you find none, say so explicitly per section. END with: per-edit
+verdict (1-6), then a numbered list of any remaining discrepancies (file:line + corrected sentence), or
+"NO REMAINING DISCREPANCIES."

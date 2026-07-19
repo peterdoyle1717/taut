@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1005-g3-writeup-simpl-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1005-g3-writeup-simpl-summary.txt
+
+=== raw size ===
+    1359   88848 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1005-g3-writeup-simpl-raw.txt
+
+=== extracted markers ===
+1298:WARN
+1300:Verdict: faithful overall, with one minor wording bug in the count.
+1327:Blockers: none.
+1330:WARN
+1332:Verdict: faithful overall, with one minor wording bug in the count.
+1359:Blockers: none.
+
+=== final tail ===
+   609	    t ∈ nonUnitSupport M ↔ t ∈ M.support ∧ (M t).natAbs ≠ 1 := Finset.mem_filter
+   610	
+   611	omit [LinearOrder V] in
+   612	/-- **The budget inequality.** `support.card + |nonUnitSupport| ≤ nrm M`: each support tet is worth
+   613	`≥ 1`, each non-unit one `≥ 2`. (Generalises `card_support_le_nrm`.) -/
+   614	lemma support_card_add_nonUnitSupport_card_le_nrm (M : Chain V) :
+   615	    M.support.card + (nonUnitSupport M).card ≤ nrm M := by
+   616	  show M.support.card + (nonUnitSupport M).card ≤ ∑ s ∈ M.support, (M s).natAbs
+   617	  -- write the LHS as a single sum over support: `if t ∈ nonUnit then 2 else 1`
+   618	  have hweight : M.support.card + (nonUnitSupport M).card
+   619	      = ∑ t ∈ M.support, (if (M t).natAbs ≠ 1 then 2 else 1) := by
+   620	    rw [nonUnitSupport, Finset.card_filter, Finset.card_eq_sum_ones, ← Finset.sum_add_distrib]
+   621	    refine Finset.sum_congr rfl fun t _ => ?_
+   622	    by_cases hc : (M t).natAbs ≠ 1
+   623	    · rw [if_pos hc, if_pos hc]
+   624	    · rw [if_neg hc, if_neg hc]
+   625	  rw [hweight]
+
+ succeeded in 0ms:
+   559	theorem finset_twofer_fibers {β η : Type*} [DecidableEq β] [DecidableEq η]
+   560	    (B : Finset β) (H : Finset η) (f : β → η)
+   561	    (hmap : ∀ b ∈ B, f b ∈ H)
+   562	    (hfiber_le2 : ∀ h ∈ H, (B.filter fun b => f b = h).card ≤ 2)
+   563	    {k : ℕ} (hgap : H.card + k ≤ B.card) :
+   564	    ∃ E : Finset η, E ⊆ H ∧ k ≤ E.card ∧
+   565	      (∀ h ∈ E, (B.filter fun b => f b = h).card = 2) ∧
+   566	      (↑E : Set η).PairwiseDisjoint (fun h => B.filter fun b => f b = h) := by
+   567	  classical
+   568	  set E : Finset η := H.filter fun h => (B.filter fun b => f b = h).card = 2 with hE_def
+   569	  have hEsub : E ⊆ H := Finset.filter_subset _ _
+   570	  -- the fibre count: B.card = ∑_{h∈H} fibre.card
+   571	  have hsum : B.card = ∑ h ∈ H, (B.filter fun b => f b = h).card :=
+   572	    Finset.card_eq_sum_card_fiberwise hmap
+   573	  -- pointwise: fibre.card ≤ 1 + indicator(fibre = 2)
+   574	  have hbound : B.card ≤ H.card + E.card := by
+   575	    rw [hsum]
+   576	    have hle : ∑ h ∈ H, (B.filter fun b => f b = h).card
+   577	        ≤ ∑ h ∈ H, (1 + if (B.filter fun b => f b = h).card = 2 then 1 else 0) := by
+   578	      refine Finset.sum_le_sum fun h hh => ?_
+   579	      have h2 := hfiber_le2 h hh
+   580	      by_cases hc : (B.filter fun b => f b = h).card = 2
+   581	      · simp [hc]
+   582	      · simp only [hc, if_false, add_zero]; omega
+   583	    have heq : ∑ h ∈ H, (1 + if (B.filter fun b => f b = h).card = 2 then 1 else 0)
+   584	        = H.card + E.card := by
+   585	      rw [Finset.sum_add_distrib, ← Finset.card_eq_sum_ones, ← Finset.card_filter, ← hE_def]
+   586	    omega
+   587	  refine ⟨E, hEsub, by omega, ?_, ?_⟩
+   588	  · intro h hh; exact (Finset.mem_filter.mp hh).2
+   589	  · intro h₁ hh₁ h₂ hh₂ hne
+   590	    simp only [Finset.mem_coe] at hh₁ hh₂
+   591	    show Disjoint (B.filter fun b => f b = h₁) (B.filter fun b => f b = h₂)
+   592	    rw [Finset.disjoint_left]
+   593	    intro b hb₁ hb₂
+   594	    rw [Finset.mem_filter] at hb₁ hb₂
+   595	    exact hne (hb₁.2.symm.trans hb₂.2)
+
+codex
+WARN
+
+Verdict: faithful overall, with one minor wording bug in the count.
+
+Finding:
+- `notes/taut-lean-proof.tex:332` says “A map from the `|σ|` triangles **onto** the `s` generators”. Lean only builds a map from boundary triangles into `M.support`; it does not prove surjectivity onto every support generator. See `lean/Taut/Eligible.lean:653-663` (`c : {α // α ∈ σ} → {t // t ∈ M.support}` plus `hmap`) and `lean/Taut/Eligible.lean:559-566` (`finset_twofer_fibers` requires `hmap`, not surjectivity). This is a real phrasing overstatement, though it does not affect the described inequality or conclusion.
+
+Exact recommended patch shape:
+- In `notes/taut-lean-proof.tex:332`, replace:
+  - “A map from the `\card\sigma` triangles onto the `s` generators”
+- with:
+  - “A map from the `\card\sigma` triangles into the `s` generators”
+- or:
+  - “A choice map from boundary triangles to support generators”
+
+Files to edit:
+- `notes/taut-lean-proof.tex`
+
+Local lemmas needed:
+- No Lean lemmas needed; documentation-only patch.
+- Existing cited lemmas are the right ones: `sameSignSupportFace_cover`, `sharedFaces_card_le_two_of_noDegree3`, `support_card_add_nonUnitSupport_card_le_nrm`, `Zvol_add_deg_le`, `UnitOn.nrm_eq`, `finset_twofer_fibers`, `sameSignFace_to_proper_of_unit`.
+
+Review answers:
+- Q1: Count matches Lean except the “onto” wording above. Coverage is boundary-face coverage, not support-surjectivity. Non-unit discard and gap match `Eligible.lean:684-745`; eligibility/orientation/disjointness match `Eligible.lean:746-778`.
+- Q2: Four branches and `t_0` persistence match. Base `3481-3483`; degree-3 cut `3490-3531`; flip-present `3553-3572`; flip-absent `3573-3585`; persistence via cardinality choice and `removeTet_apply_ne` at `3538-3551`.
+- Q3: No-circularity framing is correct. The bridge proof `Theorem3Clean.lean:3462-3585` does not call `taut_isPseudomanifold`, stickerball, or clean-shelling machinery; public endpoint then derives `hS` at `3636-3640`.
+- Q4: Prior fixes are correct. `u ≠ t_0` is by `E.card ≥ 2`, not disjointness (`notes:363-366`, Lean `3538-3546`). `lem:family` concludes `EligibleTet` plus disjointness, while coefficient `±1` is derived under `UnitOn` (`notes:306-308`, Lean `Eligible.lean:643-648`, `Theorem3Clean.lean:3579`).
+- Q5: Status table and derived-not-assumed claim are correct (`notes:523`, `580-583`; endpoint `Theorem3Clean.lean:3636-3640`).
+
+Blockers: none.
+tokens used
+37,770
+WARN
+
+Verdict: faithful overall, with one minor wording bug in the count.
+
+Finding:
+- `notes/taut-lean-proof.tex:332` says “A map from the `|σ|` triangles **onto** the `s` generators”. Lean only builds a map from boundary triangles into `M.support`; it does not prove surjectivity onto every support generator. See `lean/Taut/Eligible.lean:653-663` (`c : {α // α ∈ σ} → {t // t ∈ M.support}` plus `hmap`) and `lean/Taut/Eligible.lean:559-566` (`finset_twofer_fibers` requires `hmap`, not surjectivity). This is a real phrasing overstatement, though it does not affect the described inequality or conclusion.
+
+Exact recommended patch shape:
+- In `notes/taut-lean-proof.tex:332`, replace:
+  - “A map from the `\card\sigma` triangles onto the `s` generators”
+- with:
+  - “A map from the `\card\sigma` triangles into the `s` generators”
+- or:
+  - “A choice map from boundary triangles to support generators”
+
+Files to edit:
+- `notes/taut-lean-proof.tex`
+
+Local lemmas needed:
+- No Lean lemmas needed; documentation-only patch.
+- Existing cited lemmas are the right ones: `sameSignSupportFace_cover`, `sharedFaces_card_le_two_of_noDegree3`, `support_card_add_nonUnitSupport_card_le_nrm`, `Zvol_add_deg_le`, `UnitOn.nrm_eq`, `finset_twofer_fibers`, `sameSignFace_to_proper_of_unit`.
+
+Review answers:
+- Q1: Count matches Lean except the “onto” wording above. Coverage is boundary-face coverage, not support-surjectivity. Non-unit discard and gap match `Eligible.lean:684-745`; eligibility/orientation/disjointness match `Eligible.lean:746-778`.
+- Q2: Four branches and `t_0` persistence match. Base `3481-3483`; degree-3 cut `3490-3531`; flip-present `3553-3572`; flip-absent `3573-3585`; persistence via cardinality choice and `removeTet_apply_ne` at `3538-3551`.
+- Q3: No-circularity framing is correct. The bridge proof `Theorem3Clean.lean:3462-3585` does not call `taut_isPseudomanifold`, stickerball, or clean-shelling machinery; public endpoint then derives `hS` at `3636-3640`.
+- Q4: Prior fixes are correct. `u ≠ t_0` is by `E.card ≥ 2`, not disjointness (`notes:363-366`, Lean `3538-3546`). `lem:family` concludes `EligibleTet` plus disjointness, while coefficient `±1` is derived under `UnitOn` (`notes:306-308`, Lean `Eligible.lean:643-648`, `Theorem3Clean.lean:3579`).
+- Q5: Status table and derived-not-assumed claim are correct (`notes:523`, `580-583`; endpoint `Theorem3Clean.lean:3636-3640`).
+
+Blockers: none.

@@ -1,0 +1,899 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019f0a3f-5f70-7cb0-88ff-858413c42547
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+Review text/tautxy/tautA-05.tex (a stabilization of tautA-04) and confirm whether you AGREE it is a
+sound, complete paper-style version A. We are wrapping up. Focus on substance; ignore tiny prose nits.
+
+The substantive change is a REWRITTEN flag-complex proof that mirrors the Lean's three-config structure
+and ELIMINATES the octahedron/maxdeg special case. Verify the math (you formalized the Lean versions):
+
+1. New Corollary (after Prop 1, label `nosubcycle`): "a taut chain contains no nonzero closed subchain"
+   (U ⊂ M, ∂U=0 ⟹ U=0, via Prop 1 + Zvol 0 = 0). Correct?
+
+2. K5 step now uses that corollary instead of S^3⊄B^3: the five tetrahedra on the K5 vertices form a
+   subchain U; each of the ten triangles is a face of exactly two of them (triangle-boundedness), is
+   interior, so has coeff 0 in ∂M=X(σ); hence ∂U=0; corollary ⟹ U=0, contradiction. Is this correct and
+   does it avoid all topology? (cf Lean `no_k5Clique_of_no_emptyK4_taut` / `bdry_filter_subset_eq_zero`.)
+
+3. K4 (Configuration 2) now uses PERSISTENCE, no maxdeg/octahedron: under no empty K3, the four triangles
+   ABC,ABD,ACD,BCD are simplices; removing ANY eligible tet t leaves the empty K4 because each edge, say
+   AB, survives — one of ABC,ABD is not ⊆ t (containing both forces t={A,B,C,D}, not a tet), is a simplex
+   hence a face of some tet u≠t, so AB ⊆ that u. Is this argument correct and complete? (cf Lean
+   `hasEmptyK4_removeTet_of_eligible`.) Crucially: does it genuinely remove the need for the octahedral
+   maxdeg=4 case? Confirm there is NO remaining octahedron placeholder.
+
+4. K3 (Configuration 1): flip-count — ≥maxdeg≥4 eligible tets with distinct flip edges, only 3 K3 edges to
+   avoid, so some removal preserves the K3. Sound?
+
+5. The conjoined-split localization ("a forbidden K3/K4 lies on one side") and the deg-3 peel: still sound?
+
+6. Theorem 2 proof's revised "local witness" paragraph (directive D): is it now accurate (not implying
+   every witness literally has boundary faces)?
+
+7. Any Lean terminology, endpoint names, or formalization-status language leaked in? (There must be none.)
+
+Build: I ran pdflatex/bibtex/pdflatex/pdflatex from text/tautxy/: 15 pages, 0 errors, 0 undefined
+references, 0 undefined citations.
+
+Output: first line PASS (you agree tautA-05 is a sound, complete version A with the flag proof now
+complete and no octahedron placeholder) or BLOCK (with the exact substantive fix). Cite file:line for any
+real error. Be concise; do not nitpick prose.
+codex
+I’ll review the TeX source against those seven substantive points and check for leaked formalization language. I’ll use line-numbered reads and targeted searches so the answer can cite only real blockers if any.
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-05.tex | sed -n '1,260p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+     1	\documentclass[12pt]{article}
+     2	\usepackage{graphicx,amssymb,amsmath,amsthm}
+     3	\usepackage{hyperref,url}
+     4	\usepackage{verbatim}
+     5	\usepackage[labelfont=bf]{caption}
+     6	\newcommand{\nocopyright}{
+     7	No Copyright\thanks{
+     8	The authors hereby waive all copyright
+     9	and related or neighboring rights to this work,
+    10	and dedicate it to the public domain.
+    11	This applies worldwide.
+    12	}}
+    13	\title{Taut fillings}
+    14	\author{Peter Doyle \and Matthew Ellison \and Zili Wang\thanks{
+    15	Zili Wang is supported by
+    16	the National Natural Science Foundation of China (Grant No. 12301432)
+    17	}}
+    18	\date{Version A-05, dated 2026-06-27}
+    19	\newtheorem{theorem}{Theorem}
+    20	\newtheorem{prop}{Proposition}
+    21	\newtheorem{lemma}[theorem]{Lemma}
+    22	\newtheorem*{hypo}{Hypothesis}
+    23	\newtheorem*{question}{Question}
+    24	\newtheorem{corollary}{Corollary}
+    25	\newtheorem*{conjecture}{Conjecture}
+    26	
+    27	\def\startproof{{\bf {\medskip}{\noindent}Proof: }}
+    28	\def\definition{{\bf {\bigskip}{\noindent}Definition: }}
+    29	\def\endproof{$\spadesuit$  \newline}
+    30	
+    31	\newcommand{\proofstart}{{\noindent \bf Proof.\ }}
+    32	\newcommand{\note}{{\noindent \bf Note.\ }}
+    33	\newcommand{\pfend}{\spadesuit}
+    34	\newcommand{\mathproofend}{\quad \qed}
+    35	\newcommand{\proofend}{$\quad \qed$}
+    36	\newcommand{\goesto}{\rightarrow}
+    37	\newcommand{\p}{\;\;\;}
+    38	\newcommand{\comma}{\p,}
+    39	\newcommand{\pd}{\p.}
+    40	\newcommand{\semi}{\p;}
+    41	\newcommand{\Rplus}{{\RR_{\geq 0}}}
+    42	
+    43	
+    44	
+    45	\newcommand{\beginfigurepos}{\begin{figure}[htbp]}
+    46	%
+    47	% \fig
+    48	% followed by {filename}{label}{caption}
+    49	%
+    50	\newcommand{\fig}[3]{
+    51	\beginfigurepos
+    52	\includegraphics[width=370pt]{figures/#1.pdf}
+    53	\caption{#3}
+    54	\label{#2}
+    55	\end{figure}
+    56	}
+    57	%
+    58	% \figsize
+    59	% followed by {size}{filename}{label}{caption}
+    60	%
+    61	\newcommand{\figsize}[4]{
+    62	\beginfigurepos
+    63	\centerline{
+    64	\includegraphics[width=#1]{figures/#2.pdf}
+    65	}
+    66	\caption{#4}
+    67	\label{#3}
+    68	\end{figure}
+    69	}
+    70	
+    71	
+    72	\def\ZZ{\mathbf{Z}}
+    73	\def\QQ{\mathbf{Q}}
+    74	\def\RR{\mathbf{R}}
+    75	\def\heartsuit{\mbox{\boldmath{$Z$}}}% 
+    76	\def\del{\partial}
+    77	\def\dist{\mathrm{dist}}
+    78	\def\eps{\epsilon}
+    79	
+    80	
+    81	\newcommand{\parsec}{\subsection*}
+    82	\newcommand{\sect}[1]{\S\ #1}
+    83	
+    84	%\newcommand{\gversus}[2]{\braket{#1\,|\,#2}}
+    85	\newcommand{\pair}[1]{\braket{#1}}
+    86	\newcommand{\sub}[1]{\braket{#1}}
+    87	\newcommand{\nnn}{\mathbf{NSet}}
+    88	\newcommand{\zzz}{\mathbf{ZSet}}
+    89	\newcommand{\nn}{\mathbf{N}}
+    90	\newcommand{\zz}{\mathbf{Z}}
+    91	
+    92	\newcommand{\versus}[2]{\left(#1\,|\,#2\right)}
+    93	\newcommand{\gversus}[2]{\left[#1\,|\,#2\right]}
+    94	\newcommand{\poly}[1]{\left[#1\right]}
+    95	
+    96	\newcommand{\rising}[1]{\overline{#1}}
+    97	\newcommand{\floor}[1]{\left \lfloor #1 \right \rfloor}
+    98	\newcommand{\ceiling}[1]{\left \lceil #1 \right \rceil}
+    99	\newcommand{\gbinom}{\genfrac{[}{]}{0pt}{}}
+   100	
+   101	\makeatletter
+   102	\newcommand{\xRrightarrow}[2][]{\ext@arrow 0359\Rrightarrowfill@{#1}{#2}}
+   103	\newcommand{\Rrightarrowfill@}{\arrowfill@\equiv\equiv\Rrightarrow}
+   104	\newcommand{\xLleftarrow}[2][]{\ext@arrow 3095\Lleftarrowfill@{#1}{#2}}
+   105	\newcommand{\Lleftarrowfill@}{\arrowfill@\Lleftarrow\equiv\equiv}
+   106	\newcommand{\xLleftRrightarrow}[2][]{\ext@arrow 3399\LleftRrightarrowfill@{#1}{#2}}
+   107	\newcommand{\LleftRrightarrowfill@}{\arrowfill@\Lleftarrow\equiv\Rrightarrow}
+   108	\makeatother
+   109	
+   110	\newcommand{\eq}{\Rrightarrow}
+   111	\newcommand{\funeq}[1]{\stackrel{#1}\eq}
+   112	\newcommand{\funequiv}[1]{\stackrel{#1}\equiv}
+   113	\newcommand{\funto}[1]{\stackrel{#1}\to}
+   114	\newcommand{\union}{\cup}
+   115	\newcommand{\cross}{\times}
+   116	\newcommand{\op}{\operatorname}
+   117	\newcommand{\kw}{\mathrm}
+   118	\newcommand{\escape}{\op{escape}}
+   119	\newcommand{\cancel}{\op{cancel}}
+   120	\newcommand{\nestuntil}{\operatorname{nestuntil}}
+   121	\newcommand{\size}{\operatorname{size}}
+   122	\newcommand{\id}{\operatorname{id}}
+   123	\newcommand{\create}{\operatorname{create}}
+   124	\newcommand{\destroy}{\operatorname{destroy}}
+   125	\newcommand{\then}{\triangleleft}
+   126	\newcommand{\lp}{\kw{LP}}
+   127	\newcommand{\LPvol}{\kw{LPvol}}
+   128	\newcommand{\vol}{\kw{vol}}
+   129	\newcommand{\flipdist}{\kw{flipdist}}
+   130	\newcommand{\tetbar}{\kw{homvol}}
+   131	\newcommand{\vsa}{\kw{vsa}}
+   132	\newcommand{\cone}{\kw{cone}}
+   133	\newcommand{\link}{\kw{link}}
+   134	\newcommand{\maxdeg}{\kw{maxdeg}}
+   135	\newcommand{\mindeg}{\kw{mindeg}}
+   136	\newcommand{\vertices}{\kw{Vert}}
+   137	\newcommand{\carrier}{\kw{carrier}}
+   138	\newcommand{\nbhd}{\kw{nbhd}}
+   139	\newcommand{\adj}{\kw{adj}}
+   140	\newcommand{\taut}{\kw{taut}}
+   141	\newcommand{\net}{\kw{net}}
+   142	
+   143	\newcommand{\Zvol}{\kw{Zvol}}
+   144	\newcommand{\Qvol}{\kw{Qvol}}
+   145	\newcommand{\Rvol}{\kw{Rvol}}
+   146	\newcommand{\tetvol}{\kw{tetvol}}
+   147	\newcommand{\hash}{\#}
+   148	\newcommand{\ms}{[}
+   149	\newcommand{\msend}{]}
+   150	
+   151	\newcommand{\kwstyle}{\bf}
+   152	\newcommand{\IF}{{\ \kwstyle{if}\ }}
+   153	\newcommand{\ELSE}{{\ \kwstyle{else}\ }}
+   154	\newcommand{\WHILE}{{\kwstyle{while}\ }}
+   155	\newcommand{\DO}{{\ \kwstyle{do}\ }}
+   156	\newcommand{\RETURN}{{\kwstyle{return}\ }}
+   157	\newcommand{\direct}{\oplus}
+   158	\newcommand{\pls}{\mathord{+}}
+   159	\newcommand{\mns}{\mathord{-}}
+   160	
+   161	
+   162	
+   163	\begin{document}
+   164	
+   165	\maketitle
+   166	
+   167	\begin{abstract}
+   168	Let $\sigma$ be a simplicial triangulation of the 2-sphere,
+   169	$X$ the associated integral 2-cycle.
+   170	A filling of $X$ is an integral 3-chain $M$
+   171	with $\del M = X$;
+   172	a taut filling is one with minimal $L_1$-norm.
+   173	We show that any taut filling 
+   174	arises from an extension of $\sigma$ to
+   175	a simplicial complex homeomorphic to the 3-ball.
+   176	The filling is \emph{clean}: it has no repeated tetrahedron, and its
+   177	support complex is a clean simplicial complex.
+   178	This support complex is shellable and flag: every clique in its
+   179	1-skeleton occurs as a simplex.
+   180	The key to the proof is the general
+   181	fact that any taut filling of an $n$-cycle
+   182	splits under disjoint union, connected sum, and more generally
+   183	what we call almost disjoint union,
+   184	where summands are supported on sets that overlap in at most $n+1$ vertices.
+   185	\end{abstract}
+   186	
+   187	\section{Overview}
+   188	Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+   189	with vertices $\Omega$,
+   190	viewed as the abstract simplicial complex consisting of all subsets of
+   191	$\Omega$.
+   192	Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+   193	and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+   194	be its integral $n$-chains and $n$-cycles.
+   195	A \emph{filling} of an $n$-cycle $X \in Z_n$ is any
+   196	$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
+   197	(Here and throughout we assume $n\geq 1$.)
+   198	Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+   199	Call $M \in C_{n+1}$ \emph{taut} if it is an optimal filling
+   200	of its boundary, i.e., if $|M|=\Zvol(\del M)$.
+   201	
+   202	For $X \in C_n$ let
+   203	$\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+   204	to which $X$ assigns non-$0$ weight.
+   205	For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+   206	(Cf.\ Proposition \ref{nointernal} below.)
+   207	This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+   208	
+   209	Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+   210	\[
+   211	|\vertices(X) \cap \vertices(Y)| \leq n+1
+   212	.
+   213	\]
+   214	This notion generalizes both disjoint union and connected sum
+   215	along an $n$-simplex.
+   216	Ellison \cite{ellison:gap}
+   217	showed the $\Zvol$ adds under almost disjoint union:
+   218	$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+   219	This means that \emph{some} taut filling $M$ of $X$ splits into a sum
+   220	$M=M_X+M_Y$ of taut fillings of $X,Y$.
+   221	Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+   222	that when $n \geq 2$, \emph{any} taut filling of $X+Y$ splits.
+   223	
+   224	In place of integral chains we can use chains with
+   225	coefficients in $\QQ$ or $\RR$.
+   226	Evidently $\Rvol \leq \Qvol$.
+   227	But computing $\Rvol$ is
+   228	a linear programming problem with rational coefficients,
+   229	so in fact $\Qvol = \Rvol$.
+   230	Ellison used LP duality to prove that
+   231	$\Qvol$ adds under almost
+   232	disjoint union.
+   233	Now for $n \geq 2$ we get the stronger result
+   234	(Corollary \ref{cor1})
+   235	that taut $\QQ$-fillings split:
+   236	Multiplying a taut
+   237	$\QQ$-filling $M$ of $X$ by a common denominator $q$
+   238	yields a taut $\ZZ$-filling $qM$ of $qX$:
+   239	Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
+   240	of the $\QQ$-filling $M$.
+   241	
+   242	Now let $\sigma$ be a simplicial triangulation of $S^2$;
+   243	let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
+   244	be either one of the 2-cycles
+   245	that arises from $\sigma$ by orienting its $2$-simplices;
+   246	and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+   247	Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+   248	required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+   249	We will show that
+   250	\[
+   251	\Zvol(\sigma) = \tetvol(\sigma)
+   252	.
+   253	\]
+   254	Certainly $\Zvol \leq \tetvol$,
+   255	because any extension $\tau$ induces a filling
+   256	of $X(\sigma)$.
+   257	Theorem \ref{th2} states that any taut filling of $X(\sigma)$ is clean
+   258	and that its support complex $K(M)$ triangulates $B^3$.
+   259	The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+   260	
+
+exec
+/bin/zsh -lc 'rg -n "octa|octahedron|maxdeg|max degree|max-degree|Lean|formal|TODO|placeholder|sorry|admit|configuration|Config|nosubcycle|no nonzero closed|local witness|endpoint|K_3|K_4|K_5|conjoined|degree|peel" text/tautxy/tautA-05.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+134:\newcommand{\maxdeg}{\kw{maxdeg}}
+268:They observed that coning from a vertex of maximal degree
+271:of $S^2$ has $\tetvol \leq 2v-4-\maxdeg(\sigma)$.
+272:If $v\geq13$ $\maxdeg(\sigma) \geq 6$, so $\tetvol \leq 2v-10$.
+307:with $\maxdeg \leq 6$, the gap between $\Qvol$ and $\Zvol$ is $<1$,
+315:but taking the connected sum pushes $\maxdeg$ above $6$.
+365:\begin{corollary} \label{nosubcycle}
+366:A taut chain contains no nonzero closed subchain: if $M$ is taut,
+386:\maxdeg(U) = \max_x \deg(x,U)
+405:\begin{prop} \label{maxdeg}
+408:\Zvol(X) \leq |X| - \maxdeg(X)
+417:By Proposition \ref{maxdeg} a non-trivial complete cone is not taut.
+611:$K_3(B,q)(t)=[c_1c_2c_3q]$,
+797:In particular, $\sigma$ has no vertex of degree $3$.
+801:It cannot have three such faces, since that would give a degree-$3$
+803:By Proposition \ref{maxdeg},
+805:|M|=\Zvol(\sigma) \leq f-\maxdeg(\sigma).
+818:Thus $r\geq \maxdeg(\sigma)$.
+819:Consequently there are at least $\maxdeg(\sigma)$ eligible support
+847:$\sigma_1,\sigma_2$ of $S^2$, conjoined along the edge $cd$.
+866:the finitely many boundary faces needed to change that local witness, then
+872:$M-u$; in the conjoined case it persists in one of the two split summands,
+885:of the two smaller fillings after a conjoined split.  This would contradict
+908:of the split summands in the conjoined case, contradicting minimality.
+916:$\sigma$, so $a$ would have degree $3$ in $\sigma$, contrary to primality.
+958:If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+960:If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+964:It remains to consider the case where the boundary has no degree-$3$
+966:$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+971:If removing $t$ splits the boundary into two conjoined spheres, then
+1012:the six edges of the $K_4$ on $\{A,B,C,D\}$ without the tet $ABCD$;
+1014:the ten edges of the $K_5$ on $\{A,B,C,D,E\}$.
+1017:If Configurations 1 and 2 are absent, so is Configuration 3.  Suppose the
+1018:five vertices $\{A,B,C,D,E\}$ carried all ten edges.  With no empty $K_4$,
+1026:$\del U = 0$.  By Corollary \ref{nosubcycle} this forces $U = 0$,
+1029:We rule out Configurations 1 and 2 by minimal counterexample.
+1030:If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum with
+1033:So assume $\sigma$ has no degree-$3$ vertex.
+1035:$\maxdeg(\sigma)\geq 4$ eligible tetrahedra with pairwise disjoint pairs of
+1039:triangulated sphere or two spheres conjoined along the new edge.  In the
+1040:conjoined case a forbidden $K_3$ or $K_4$, all of whose vertices are joined
+1043:\emph{Configuration 1.}  Removing an eligible tet deletes from $\tau$ only
+1049:\emph{Configuration 2.}  Assume Configuration 1 is already ruled out, so the
+1052:leaves the empty $K_4$ in place, so a single removal already gives a smaller
+1060:of $t$.  Hence all six edges remain and the empty $K_4$ persists, giving a
+1061:smaller counterexample.  No maximum-degree bound and no octahedral special
+
+codex
+The targeted hits show the new proof section is in the expected area, and the only “octahedral” occurrence appears to be a statement that no special case remains. I’m reading the surrounding argument now, including the splitting and peel lemmas that the flag proof depends on.
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-05.tex | sed -n '760,925p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   760	glued to one another.
+   761	Thurston
+   762	\cite{thurston:shapes}
+   763	allows such triangulations,
+   764	but it is unclear how important these are to
+   765	his theory of shapes of surfaces.
+   766	We do not allow them here.
+   767	
+   768	For a chain $M \in C_n$, define $K(M)$ to be the pure simplicial
+   769	complex generated by the unoriented $n$-simplices on which $M$ has
+   770	nonzero coefficient.
+   771	We call $M$ \emph{simplicial} if every nonzero coefficient is $\pm 1$,
+   772	so no unoriented $n$-simplex is repeated.
+   773	We call $M$ \emph{clean} if $M$ is simplicial and $K(M)$ is a clean
+   774	simplicial complex.
+   775	
+   776	\section{Filling a triangulation of the 2-sphere}
+   777	
+   778	\begin{theorem} \label{th2}
+   779	If $\sigma$ is a simplicial triangulation of $S^2$ and $M$ is a taut
+   780	filling of $X(\sigma)$, then $M$ is clean and $K(M)$ is a simplicial
+   781	triangulation of $B^3$.
+   782	\end{theorem}
+   783	
+   784	\proofstart
+   785	Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial
+   786	triangulation of $S^2$ and $M$ is a taut filling of $X(\sigma)$.
+   787	Call a filling pair \emph{good} if $M$ is clean and $K(M)$ is a
+   788	simplicial triangulation of $B^3$.
+   789	We will show that every filling pair is good.
+   790	
+   791	Suppose not, and choose a bad filling pair $(\sigma,M)$ with $|M|$
+   792	minimal.  Let $v,e,f$ count the vertices, edges, and faces of $\sigma$.
+   793	Then $e=3v-6$ and $f=2v-4$.
+   794	The tetrahedral boundary is good, so $v>4$.
+   795	Because taut fillings split under connected sum, we may assume that
+   796	$\sigma$ is prime, meaning not a connected sum along a triangle.
+   797	In particular, $\sigma$ has no vertex of degree $3$.
+   798	
+   799	Call a support tetrahedron $t$ of $M$ \emph{eligible} if two of its
+   800	oriented boundary faces are faces of $X(\sigma)$ with the correct signs.
+   801	It cannot have three such faces, since that would give a degree-$3$
+   802	vertex in $\sigma$.
+   803	By Proposition \ref{maxdeg},
+   804	\[
+   805	|M|=\Zvol(\sigma) \leq f-\maxdeg(\sigma).
+   806	\]
+   807	For each support tetrahedron $u$ of $M$, let $A(u)$ be the set of faces
+   808	of $\sigma$ that occur as correctly oriented boundary faces of $u$.
+   809	Each $A(u)$ has size at most $2$.
+   810	Every face of $\sigma$ occurs in at least one $A(u)$, because its
+   811	coefficient in $\partial M=X(\sigma)$ is nonzero with the prescribed sign.
+   812	List the support tetrahedra of $M$ and reveal the sets $A(u)$ one at a
+   813	time, recording only faces of $\sigma$ not previously seen.
+   814	If $r$ support tetrahedra reveal two new faces, then
+   815	\[
+   816	f \leq |\operatorname{supp} M|+r \leq |M|+r.
+   817	\]
+   818	Thus $r\geq \maxdeg(\sigma)$.
+   819	Consequently there are at least $\maxdeg(\sigma)$ eligible support
+   820	tetrahedra whose pairs of boundary faces are mutually disjoint.
+   821	We will use only the fact that, given any boundary face $s$ and any
+   822	eligible tet $t$, there is another eligible tet whose boundary faces are
+   823	disjoint from those of $t$ and do not include $s$.
+   824	
+   825	Let $t$ be an eligible tet with boundary faces
+   826	$s_1=[a,b,c]$ and $s_2=[b,a,d]$.
+   827	Removing $t$ from $M$ gives a taut filling $M-t$ of the cycle obtained
+   828	from $X(\sigma)$ by replacing $s_1,s_2$ with
+   829	$[c,d,b]$ and $[d,c,a]$.
+   830	At the level of the boundary complex, this flips the edge $ab$ to $cd$.
+   831	There are two cases.
+   832	
+   833	First, if $cd$ was not an edge of $\sigma$, the flipped complex
+   834	$\sigma_t$ is again a simplicial triangulation of $S^2$.
+   835	By minimality, $(\sigma_t,M-t)$ is good.
+   836	Adding $t$ back gives a triangulation of $B^3$ unless the same support
+   837	tetrahedron $t$ was already present in $M-t$, i.e. unless $t$ had
+   838	multiplicity $2$ in $M$.
+   839	If that happened, remove instead an eligible tet $u$ whose boundary faces
+   840	are disjoint from those of $t$.
+   841	Then $M-u$ would still contain the repeated support tetrahedron $t$ and
+   842	could not be simplicial, so $(\sigma_u,M-u)$ would be a smaller bad
+   843	filling pair, a contradiction.
+   844	
+   845	Second, if $cd$ was already an edge of $\sigma$, the flipped cycle is an
+   846	almost disjoint union of two simplicial triangulations
+   847	$\sigma_1,\sigma_2$ of $S^2$, conjoined along the edge $cd$.
+   848	By Theorem \ref{th1}, $M-t$ splits as $M_1+M_2$, where $M_i$ is a taut
+   849	filling of $X(\sigma_i)$.
+   850	By minimality each $(\sigma_i,M_i)$ is good.
+   851	The complex $K(M-t)$ need not be clean as a single complex, because the
+   852	link of the shared edge $cd$ can be disconnected; nevertheless it is the
+   853	union of the two clean pieces $K(M_1)$ and $K(M_2)$.
+   854	Gluing these two triangulated balls to the two sides of $t$ gives a
+   855	triangulated ball, unless $t$ already occurred in $M-t$.
+   856	The same disjoint eligible-tet argument rules out that multiplicity-$2$
+   857	obstruction.
+   858	
+   859	The preceding paragraph shows that, for an eligible tet $t$, the intended
+   860	reassembly is legitimate unless a local obstruction was already present in
+   861	$M$ away from $t$.  Such obstructions are also excluded by the same
+   862	minimality argument, using the supply of disjoint eligible tets.  The point
+   863	is that an obstruction to cleanness is local: it is witnessed by one repeated
+   864	tet, by one triangle with too many incident tets, or by one disconnected
+   865	link.  If we choose an eligible tet whose two boundary faces are disjoint from
+   866	the finitely many boundary faces needed to change that local witness, then
+   867	the witness persists after the flip; for a repeated tetrahedron, avoid the
+   868	boundary faces of that tetrahedron; for an over-incident triangle, avoid the
+   869	boundary faces through which the incidence could change; and for a
+   870	disconnected link, avoid the unique tetrahedron whose removal would bridge the
+   871	exceptional component.  In the one-sphere case it persists in the smaller filling
+   872	$M-u$; in the conjoined case it persists in one of the two split summands,
+   873	unless it is exactly the artificial disconnected link of the new common edge.
+   874	That exceptional disconnected link is the reason we split $M-u$ into two
+   875	pieces before applying induction.
+   876	
+   877	We now spell this out for the clean-complex conditions.
+   878	
+   879	\begin{enumerate}
+   880	\item
+   881	$M$ has no repeated tetrahedron.
+   882	If the same unoriented tet occurred twice in $M$, then removing an eligible
+   883	tet $u$ not equal to one of these copies and not using any of the relevant
+   884	boundary faces would leave the repeated tet in the smaller filling, or in one
+   885	of the two smaller fillings after a conjoined split.  This would contradict
+   886	minimality, since the smaller filling could not be clean.
+   887	
+   888	\item
+   889	$K(M)$ is a pseudomanifold.
+   890	Suppose a $2$-simplex $s$ occurs as a face of more than two support
+   891	tetrahedra of $M$.  If $s\notin \sigma$, the excess is an interior incidence;
+   892	removing an eligible tet avoiding the tets accounting for this incidence
+   893	leaves the same excess in the smaller one-sphere filling or in one of the two
+   894	split pieces.  If $s\in\sigma$, choose the eligible tet so that $s$ is not one
+   895	of its two boundary faces; the boundary excess again persists.  Either way
+   896	we get a smaller bad filling pair, contradicting minimality.
+   897	
+   898	\item
+   899	No edge $\{a,b\}$ has disconnected link in $K(M)$.
+   900	The link is a $1$-dimensional complex whose edges correspond to support
+   901	tetrahedra of $M$ containing $\{a,b\}$.  If a component of such a link has
+   902	fewer than three vertices, then it is a single edge $\{c,d\}$, corresponding
+   903	to a tet $\{a,b,c,d\}$.  In that case $\{a,b\}$ is a boundary edge of
+   904	$\sigma$, and $\{a,b,c\}$ and $\{a,b,d\}$ are the two boundary faces adjacent
+   905	along it.  There can be at most one such isolated-edge component.  If the
+   906	link were disconnected, remove an eligible tet away from this exceptional
+   907	component.  The disconnected link remains in the one-sphere case or in one
+   908	of the split summands in the conjoined case, contradicting minimality.
+   909	
+   910	\item
+   911	No vertex has disconnected link in $K(M)$.
+   912	If $\link(\{a\},K(M))$ were disconnected, the only way a single removal
+   913	could connect it would be for one component of the link to be a single
+   914	$2$-simplex $\{b,c,d\}$ and for the removed tet to be $\{a,b,c,d\}$.  Then
+   915	$\{a,b,c\}$, $\{a,b,d\}$, and $\{a,c,d\}$ would all be boundary faces of
+   916	$\sigma$, so $a$ would have degree $3$ in $\sigma$, contrary to primality.
+   917	Thus a disconnected vertex link would persist under a suitable smaller
+   918	removal and again contradict minimality.
+   919	\end{enumerate}
+   920	
+   921	Thus $M$ is simplicial, $K(M)$ is clean, and $K(M)$ is a simplicial
+   922	triangulation of $B^3$, contradicting that $(\sigma,M)$ was bad.
+   923	\proofend
+   924	
+   925	After Theorem \ref{th2} we will often identify a taut filling $M$ of
+
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-05.tex | sed -n '330,460p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   330	= [x_{\pi(0)},\ldots,x_{\pi(n)}]
+   331	,\;\;\mbox{$\pi$ an even permutation}
+   332	,
+   333	\]
+   334	and each unoriented simplex contributes a number of terms corresponding
+   335	to its multiplicity.
+   336	
+   337	The size of $M$ as a multiset is its $L_1$-norm $|M|$.
+   338	Write $U \subset M$
+   339	if $U$ is a sub-multiset of $M$.
+   340	This happens just when
+   341	$|M| = |U| + |M-U|$.
+   342	
+   343	\begin{prop} \label{subtaut}
+   344	If $M$ is taut and $U \subset M$ then $U$ is taut.
+   345	\end{prop}
+   346	
+   347	\proofstart
+   348	If $U$ is not taut, there is a smaller filling $V$ of $\del U$.
+   349	Take $M^\prime = M-U+V$.
+   350	In terms of multisets, this means that we substitute $V$ for $U$,
+   351	and then do any required cancellation of oppositely oriented simplices
+   352	of $M-U$ and $V$.
+   353	We have
+   354	\[
+   355	\del M^\prime = \del M - \del U + \del V = \del M
+   356	\]
+   357	and
+   358	\[
+   359	|M^\prime| \leq |M-U| + |V| = |M| - |U| + |V| < |M|
+   360	,
+   361	\]
+   362	contradiction.
+   363	\proofend
+   364	
+   365	\begin{corollary} \label{nosubcycle}
+   366	A taut chain contains no nonzero closed subchain: if $M$ is taut,
+   367	$U \subset M$, and $\del U = 0$, then $U = 0$.
+   368	\end{corollary}
+   369	
+   370	\proofstart
+   371	By Proposition \ref{subtaut}, $U$ is taut, so
+   372	$|U| = \Zvol(\del U) = \Zvol(0) = 0$, whence $U = 0$.
+   373	\proofend
+   374	
+   375	\section{Coning}
+   376	For $x \in \Omega$, $U \in C_n$ let
+   377	\[
+   378	\nbhd(x,U) = \sum_{ t \in U: x \in \vertices(t) } t
+   379	,
+   380	\]
+   381	\[
+   382	\deg(x,U) = |\nbhd(x,U)|
+   383	,
+   384	\]
+   385	\[
+   386	\maxdeg(U) = \max_x \deg(x,U)
+   387	.
+   388	\]
+   389	The \emph{cone from $x$ to $U$}
+   390	is the $(n+1)$-chain
+   391	\[
+   392	\cone(x,U) = 
+   393	\sum_{t \in U} \adj(x,t)
+   394	,
+   395	\]
+   396	consisting of all the non-trivial oriented
+   397	$(n+1)$-simplices $\adj(x,t)=[x x_0\ldots x_n]$ obtained
+   398	by adjoining $x$ to  $t = [x_0\ldots x_n] \in U$.
+   399	If $x \in \vertices(t)$ then $t$ does not contribute to the sum,
+   400	so $|\cone(x,U)| = |U| - \deg(x,U)$.
+   401	
+   402	If $U$ is closed then
+   403	$\del\, \cone(x,U) = U$, so
+   404	
+   405	\begin{prop} \label{maxdeg}
+   406	For any $X \in Z_n$
+   407	\[
+   408	\Zvol(X) \leq |X| - \maxdeg(X)
+   409	\mathproofend
+   410	\]
+   411	\end{prop}
+   412	
+   413	If $U \in Z_n$ and $x \notin \vertices(U)$ then
+   414	$\deg(x,U)=0$ and
+   415	$|\cone(x,U)| = |U|$.
+   416	In this case we call $\cone(x,U)$ a \emph{complete cone}.
+   417	By Proposition \ref{maxdeg} a non-trivial complete cone is not taut.
+   418	(Equivalently, instead of coning from
+   419	$x \notin U$, one could have coned from some $x \in U$.)
+   420	Thus:
+   421	\begin{prop}\label{nocone}
+   422	If $M$ is taut it contains no non-trivial complete cone.
+   423	\proofend
+   424	\end{prop}
+   425	
+   426	Call $x \in \vertices(M) \setminus \vertices(\del M)$ an
+   427	\emph{internal vertex} of $M$.
+   428	If $x$ is internal to $M$ then $\nbhd(x,M)$ is a complete cone, so:
+   429	\begin{prop} \label{nointernal}
+   430	If $M$ is taut then
+   431	it has no internal vertices.
+   432	\proofend
+   433	\end{prop}
+   434	
+   435	\section{Almost disjoint unions}
+   436	
+   437	Recall that if $X,Y \in Z_n$ we call $X+Y$ an almost disjoint union
+   438	if
+   439	\[
+   440	|\vertices(X) \cap \vertices(Y)| \leq n+1
+   441	.\]
+   442	The most interesting special case is a connected sum,
+   443	where $t=[c_0,c_1,\ldots,c_n]$ occurs once in $X$ and
+   444	$-t=[c_1,c_0,\ldots,c_n]$ occurs once in $Y$.
+   445	For example, if $n=1$ with $X$ a cycle of length $p$
+   446	and $Y$ a cycle of length $q$
+   447	the connected sum $X+Y$ is
+   448	a cycle of length $p+q-2$.
+   449	Here
+   450	$\Zvol$ adds, because
+   451	$\Zvol(X)=p-2$,
+   452	$\Zvol(Y) = q-2$,
+   453	and
+   454	\[
+   455	\Zvol(X+Y) = (p+q-2)-2 = \Zvol(X)+\Zvol(Y)
+   456	.
+   457	\]
+   458	But not every filling of $X+Y$ splits, because a taut filling
+   459	may contain any 2-simplex with vertices in $\vertices(X+Y)$.
+   460	
+
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautA-05.tex | sed -n '925,1085p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   925	After Theorem \ref{th2} we will often identify a taut filling $M$ of
+   926	$X(\sigma)$ with the triangulated ball $K(M)$.
+   927	
+   928	\section{Shelling}
+   929	
+   930	A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+   931	is an ordering
+   932	$(t_1,\ldots,t_{|\tau|})$
+   933	of its tetrahedra such that, for each $k$,
+   934	the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+   935	simplicial triangulation of $B^3$.
+   936	For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+   937	faces. Gluing along one face increases the boundary vertex count by $1$;
+   938	gluing along two faces leaves it unchanged; gluing along three faces
+   939	would bury an interior vertex, and so cannot occur in the shellings
+   940	obtained below. Thus the boundary vertex count never decreases.
+   941	Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+   942	the first tet of such a shelling.
+   943	
+   944	\begin{theorem} \label{th3}
+   945	If $\sigma$ is a simplicial triangulation of $S^2$ and $M$ is a taut
+   946	filling of $X(\sigma)$, then $K(M)$ is a freely shellable simplicial
+   947	triangulation of $B^3$.
+   948	\end{theorem}
+   949	
+   950	\proofstart
+   951	By Theorem \ref{th2}, $K(M)$ is a triangulated ball; write $\tau = K(M)$.
+   952	Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
+   953	recursive procedure, called \emph{shucking}, that takes $\tau$ apart
+   954	so as to remove $t_1$ last; reversing the shucking order gives the
+   955	shelling.
+   956	
+   957	If $\tau$ consists only of $t_1$, there is nothing to prove.
+   958	If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+   959	$t\ne t_1$, remove that tet and continue with $\tau-t$.
+   960	If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+   961	unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+   962	shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+   963	
+   964	It remains to consider the case where the boundary has no degree-$3$
+   965	vertex.  As in the proof of Theorem \ref{th2}, there are at least
+   966	$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+   967	Choose one, say $t$, whose two boundary faces are disjoint from those of
+   968	$t_1$.
+   969	If removing $t$ leaves one triangulated ball, remove $t$ and continue
+   970	ending with $t_1$.
+   971	If removing $t$ splits the boundary into two conjoined spheres, then
+   972	$\tau-t$ splits into two triangulated balls $\tau_1,\tau_2$ by
+   973	Theorem \ref{th1} and Theorem \ref{th2}.
+   974	Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+   975	the gluing face of $t$.
+   976	Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+   977	$\tau_1$ ending with $t_1$.
+   978	Every removal is the reverse of attaching along one or two faces, so the
+   979	reversed order is the desired shelling.
+   980	\proofend
+   981	
+   982	\section{Flag complex}
+   983	
+   984	A simplicial complex is a \emph{flag complex}
+   985	(or clique complex) if every clique in its $1$-skeleton occurs as a
+   986	simplex.
+   987	A simplicial triangulation $\sigma$ of $S^2$
+   988	is flag exactly when it is prime
+   989	(not the connected sum of smaller complexes)
+   990	and is not the boundary of a tetrahedron.
+   991	
+   992	We can decompose any $\sigma$ as the connected sum of
+   993	prime components $\sigma_i$.
+   994	From the point of view of taut fillings these components are independent:
+   995	any taut filling of $X(\sigma)$ is the union of taut fillings of the
+   996	$X(\sigma_i)$.
+   997	We now prove that, regardless of whether $\sigma$ itself is prime,
+   998	every taut filling is flag.
+   999	
+  1000	\begin{theorem} \label{th4}
+  1001	If $\sigma$ is a simplicial triangulation of $S^2$ and $M$ is a taut
+  1002	filling of $X(\sigma)$, then $K(M)$ is a flag complex.
+  1003	\end{theorem}
+  1004	
+  1005	\proofstart
+  1006	Let $\tau = K(M)$.
+  1007	We must rule out the following minimal failures of flagness:
+  1008	\begin{enumerate}
+  1009	\item
+  1010	the three edges of a triangle $\{A,B,C\}$ without the face $ABC$;
+  1011	\item
+  1012	the six edges of the $K_4$ on $\{A,B,C,D\}$ without the tet $ABCD$;
+  1013	\item
+  1014	the ten edges of the $K_5$ on $\{A,B,C,D,E\}$.
+  1015	\end{enumerate}
+  1016	
+  1017	If Configurations 1 and 2 are absent, so is Configuration 3.  Suppose the
+  1018	five vertices $\{A,B,C,D,E\}$ carried all ten edges.  With no empty $K_4$,
+  1019	all five tetrahedra on four of these vertices are simplices of $\tau$; let
+  1020	$U \subset M$ be the subchain formed by those five tetrahedra.  Each of the
+  1021	ten triangles on the five vertices is a face of exactly two of the five
+  1022	tetrahedra, and by triangle-boundedness (Theorem \ref{th2}) these are the
+  1023	only tetrahedra of $M$ containing it; incident to two tetrahedra, the
+  1024	triangle is interior, so it is not a face of $\sigma$ and has coefficient
+  1025	$0$ in $\del M = X(\sigma)$.  Hence $\del U$ vanishes on every triangle, so
+  1026	$\del U = 0$.  By Corollary \ref{nosubcycle} this forces $U = 0$,
+  1027	contradicting that $U$ contains five tetrahedra.
+  1028	
+  1029	We rule out Configurations 1 and 2 by minimal counterexample.
+  1030	If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum with
+  1031	one summand the tetrahedral boundary; removing that summand from $\sigma$ and
+  1032	the corresponding tetrahedron from $\tau$ gives a smaller counterexample.
+  1033	So assume $\sigma$ has no degree-$3$ vertex.
+  1034	By the eligible-tet count of Theorem \ref{th2} there are then at least
+  1035	$\maxdeg(\sigma)\geq 4$ eligible tetrahedra with pairwise disjoint pairs of
+  1036	boundary faces; in particular their flip edges are distinct, since the two
+  1037	boundary faces sharing an edge are the only two faces of $\sigma$ along it.
+  1038	Removing an eligible tet flips its edge of $\sigma$, leaving either a smaller
+  1039	triangulated sphere or two spheres conjoined along the new edge.  In the
+  1040	conjoined case a forbidden $K_3$ or $K_4$, all of whose vertices are joined
+  1041	by edges, lies on one side, where it gives a smaller counterexample.
+  1042	
+  1043	\emph{Configuration 1.}  Removing an eligible tet deletes from $\tau$ only
+  1044	the flipped edge.  The eligible tets have distinct flip edges, and the
+  1045	forbidden triangle has only three edges, so among at least four eligible
+  1046	tets some flip edge avoids all three; removing that tet preserves the
+  1047	triangle, a contradiction.
+  1048	
+  1049	\emph{Configuration 2.}  Assume Configuration 1 is already ruled out, so the
+  1050	six edges on $\{A,B,C,D\}$ make all four triangles $ABC,ABD,ACD,BCD$
+  1051	simplices of $\tau$.  We claim that removing \emph{any} eligible tet $t$
+  1052	leaves the empty $K_4$ in place, so a single removal already gives a smaller
+  1053	counterexample.  Removal creates no tetrahedron, so $\{A,B,C,D\}$ is still
+  1054	not one.  Each of the six edges survives: for an edge, say $AB$, the
+  1055	triangles $ABC$ and $ABD$ are simplices, and $t$ contains at most one of
+  1056	them, since containing both would force $\{A,B,C,D\}\subseteq t$, that is
+  1057	$t=\{A,B,C,D\}$, which is not a tetrahedron.  So one of them, say $ABD$, is
+  1058	not contained in $t$; being a simplex it is a face of some tetrahedron
+  1059	$u\neq t$, and $AB\subseteq ABD\subseteq u$ shows $AB$ survives the removal
+  1060	of $t$.  Hence all six edges remain and the empty $K_4$ persists, giving a
+  1061	smaller counterexample.  No maximum-degree bound and no octahedral special
+  1062	case is needed.
+  1063	\proofend
+  1064	
+  1065	\bibliography{taut}
+  1066	\bibliographystyle{amsplain}
+  1067	\end{document}
+
+exec
+/bin/zsh -lc 'rg -n "Lean|Mathlib|formaliz|theorem prover|endpoint|no_k5|bdry|hasEmpty|eligible|directive|octahedron placeholder|placeholder|TODO|FIXME|sorry|admit" text/tautxy/tautA-05.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+799:Call a support tetrahedron $t$ of $M$ \emph{eligible} if two of its
+819:Consequently there are at least $\maxdeg(\sigma)$ eligible support
+822:eligible tet $t$, there is another eligible tet whose boundary faces are
+825:Let $t$ be an eligible tet with boundary faces
+839:If that happened, remove instead an eligible tet $u$ whose boundary faces
+856:The same disjoint eligible-tet argument rules out that multiplicity-$2$
+859:The preceding paragraph shows that, for an eligible tet $t$, the intended
+862:minimality argument, using the supply of disjoint eligible tets.  The point
+865:link.  If we choose an eligible tet whose two boundary faces are disjoint from
+882:If the same unoriented tet occurred twice in $M$, then removing an eligible
+892:removing an eligible tet avoiding the tets accounting for this incidence
+894:split pieces.  If $s\in\sigma$, choose the eligible tet so that $s$ is not one
+906:link were disconnected, remove an eligible tet away from this exceptional
+966:$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+1034:By the eligible-tet count of Theorem \ref{th2} there are then at least
+1035:$\maxdeg(\sigma)\geq 4$ eligible tetrahedra with pairwise disjoint pairs of
+1038:Removing an eligible tet flips its edge of $\sigma$, leaving either a smaller
+1043:\emph{Configuration 1.}  Removing an eligible tet deletes from $\tau$ only
+1044:the flipped edge.  The eligible tets have distinct flip edges, and the
+1045:forbidden triangle has only three edges, so among at least four eligible
+1051:simplices of $\tau$.  We claim that removing \emph{any} eligible tet $t$
+
+codex
+PASS
+
+Verdict: I agree `text/tautxy/tautA-05.tex` is a sound, complete paper-style version A. The rewritten flag proof is substantive and complete, and the octahedral/maxdeg special case has been removed.
+
+Exact recommended patch shape: no substantive patch needed.
+
+Files to edit: none.
+
+Local lemmas needed:
+- `nosubcycle`: taut subchains are taut, so a closed subchain has norm `Zvol(0)=0`; lines 365-373 are correct.
+- K5 closed-subchain exclusion: the five K4 tetrahedra form `U ⊂ M`; each triangle’s two incidences are exactly its incidences in `M`, so its boundary coefficient is zero; lines 1017-1027 are correct and avoid topology.
+- K4 persistence: with no empty K3, all four triangle faces exist; any eligible removal preserves each edge via one surviving triangle face; lines 1049-1062 are correct.
+- K3 flip count: at least four distinct flip edges versus three forbidden edges; lines 1034-1047 are sound.
+- Conjoined localization and degree-3 peel: lines 1030-1041 are sound in the needed minimal-counterexample sense.
+- Theorem 2 local-witness paragraph: lines 859-875 now states persistence by avoiding boundary faces needed to change the witness, without claiming every witness literally has boundary faces.
+
+Blockers: none.
+
+No leaked Lean/formalization-status language found. The only octahedral occurrence is the intended closing sentence at lines 1061-1062 saying no octahedral special case is needed.
+tokens used
+18,712
+PASS
+
+Verdict: I agree `text/tautxy/tautA-05.tex` is a sound, complete paper-style version A. The rewritten flag proof is substantive and complete, and the octahedral/maxdeg special case has been removed.
+
+Exact recommended patch shape: no substantive patch needed.
+
+Files to edit: none.
+
+Local lemmas needed:
+- `nosubcycle`: taut subchains are taut, so a closed subchain has norm `Zvol(0)=0`; lines 365-373 are correct.
+- K5 closed-subchain exclusion: the five K4 tetrahedra form `U ⊂ M`; each triangle’s two incidences are exactly its incidences in `M`, so its boundary coefficient is zero; lines 1017-1027 are correct and avoid topology.
+- K4 persistence: with no empty K3, all four triangle faces exist; any eligible removal preserves each edge via one surviving triangle face; lines 1049-1062 are correct.
+- K3 flip count: at least four distinct flip edges versus three forbidden edges; lines 1034-1047 are sound.
+- Conjoined localization and degree-3 peel: lines 1030-1041 are sound in the needed minimal-counterexample sense.
+- Theorem 2 local-witness paragraph: lines 859-875 now states persistence by avoiding boundary faces needed to change the witness, without claiming every witness literally has boundary faces.
+
+Blockers: none.
+
+No leaked Lean/formalization-status language found. The only octahedral occurrence is the intended closing sentence at lines 1061-1062 saying no octahedral special case is needed.

@@ -1,0 +1,33 @@
+CODEX CONSULT (G3, lightweight) — sanity-check a mechanical PDF build before I report it to the user.
+You can verify from the directory listing and the facts below; you do NOT need to read the full
+~1000-line sources. Be quick but flag anything wrong or overlooked.
+
+TASK the user gave: "produce pdfs of all the .tex files in text/tautxy. don't worry about bib files" then
+"there are no figures; if you can locate taut.bib move it in and include the refs."
+
+WHAT I DID (verify if you doubt it):
+- Dir: /Users/doyle/Dropbox/taut/text/tautxy. Five standalone `\documentclass{article}` files:
+  tautleancc.tex, tautx.tex, tautx_pass1_minimal.tex, tautxy_formalizable.tex, tauty.tex.
+- Figures: the `\fig`/`\figsize` macros are DEFINED but never invoked (0 `\fig{}`/`\figsize{}` calls,
+  0 other `\includegraphics`), so no figures/ dir is needed. Confirmed by grep.
+- Bib: copied taut/taut.bib (canonical, 11 @-entries) -> text/tautxy/taut.bib. Four files have
+  `\bibliography{taut}` (all but tautleancc, which has no `\cite` and no `\bibliography`).
+- Toolchain: only TeX on this box is TeX Live 2010 x86_64 (pdflatex+bibtex) run under Rosetta on arm64.
+- Compiled each: pdflatex -> bibtex -> pdflatex -> pdflatex (the 4 bib files); pdflatex x2 (tautleancc).
+- RESULT (final-pass logs): every file Output-written; errors(^!)=0, undefined-citations=0,
+  undefined-references=0 for ALL five. .bbl populated (31-39 lines). PDFs:
+    tautleancc.pdf 9pp, tautx.pdf 12pp, tautx_pass1_minimal.pdf 13pp,
+    tautxy_formalizable.pdf 13pp, tauty.pdf 14pp.
+- Note: tautleancc.tex is byte-identical to notes/taut-lean-proof.tex (the Lean-companion writeup),
+  hence its 9pp PDF matches the one produced earlier this session.
+- Cleaned build artifacts (.aux/.bbl/.blg/.log/.out); kept .tex, .pdf, taut.bib.
+
+QUESTIONS:
+Q1. Did I miss anything the user asked for (all 5 compiled? bib moved + refs included)?
+Q2. Any risk in (a) using TeX Live 2010 for these, or (b) reporting 0 undefined-citations as evidence
+    that the bibliography is actually complete and rendered?
+Q3. Anything off about copying (vs symlinking / BIBINPUTS) taut.bib into the dir, or removing the .bbl
+    files (a naive single-pass recompile would then drop the bibliography until bibtex is rerun)?
+Q4. Anything else worth flagging before I tell the user it's done?
+
+Output per contract: PASS / WARN / BLOCK first, then terse findings.
