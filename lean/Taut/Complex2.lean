@@ -30,14 +30,11 @@ variable {V : Type*} [LinearOrder V]
 
 /-! ## Derived skeleta of a pure 2-complex -/
 
-/-- The edges (1-simplices) of a complex of triangles. -/
 def edgesOf (σ : Finset (Finset V)) : Finset (Finset V) :=
   σ.biUnion (Finset.powersetCard 2)
 
-/-- The vertices of a complex. -/
 def vertsOf (σ : Finset (Finset V)) : Finset V := σ.biUnion id
 
-/-- The number of faces containing a given edge. -/
 def edgeDeg (σ : Finset (Finset V)) (e : Finset V) : ℕ :=
   (σ.filter (fun f => e ⊆ f)).card
 
@@ -54,7 +51,6 @@ lemma mem_vertsOf {σ : Finset (Finset V)} {x : V} :
     x ∈ vertsOf σ ↔ ∃ f ∈ σ, x ∈ f := by
   simp [vertsOf]
 
-/-- The 1-skeleton, as a simple graph on all of `V`. -/
 def skel (σ : Finset (Finset V)) : SimpleGraph V where
   Adj a b := a ≠ b ∧ {a, b} ∈ edgesOf σ
   symm := by
@@ -62,8 +58,6 @@ def skel (σ : Finset (Finset V)) : SimpleGraph V where
     exact ⟨h.1.symm, by rw [Finset.pair_comm b a]; exact h.2⟩
   loopless := ⟨fun a h => h.1 rfl⟩
 
-/-- The link of a vertex, as a simple graph: `a ~ b` iff `{v,a,b}` is a
-face. -/
 def linkGraph (σ : Finset (Finset V)) (v : V) : SimpleGraph V where
   Adj a b := a ≠ b ∧ {v, a, b} ∈ σ
   symm := by
@@ -79,11 +73,9 @@ instance (σ : Finset (Finset V)) (v : V) : DecidableRel (linkGraph σ v).Adj :=
 instance (σ : Finset (Finset V)) : DecidableRel (skel σ).Adj :=
   fun a b => decidable_of_iff (a ≠ b ∧ {a, b} ∈ edgesOf σ) Iff.rfl
 
-/-- The neighbors of `v`: vertices of the faces at `v`, except `v`. -/
 def linkVerts (σ : Finset (Finset V)) (v : V) : Finset V :=
   (vertsOf (σ.filter (fun f => v ∈ f))).erase v
 
-/-- Connectivity of a graph on a prescribed finite support. -/
 def ConnOn (G : SimpleGraph V) (s : Finset V) : Prop :=
   ∀ a ∈ s, ∀ b ∈ s, G.Reachable a b
 
@@ -109,14 +101,12 @@ structure IsSphere2 (σ : Finset (Finset V)) : Prop where
   conn : ConnOn (skel σ) (vertsOf σ)
   euler : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2
 
-/-- Forget the Euler constraint: every sphere is a closed surface. -/
 def IsSphere2.toClosedSurface {σ : Finset (Finset V)} (h : IsSphere2 σ) :
     IsClosedSurface σ :=
   ⟨h.pure, h.closed, h.linkConn, h.conn⟩
 
 /-! ## Euler counting -/
 
-/-- Double counting face–edge incidences: `3f = 2e`. -/
 theorem three_mul_card_faces {σ : Finset (Finset V)} (h : IsSphere2 σ) :
     3 * σ.card = 2 * (edgesOf σ).card := by
   classical
@@ -148,14 +138,12 @@ theorem three_mul_card_faces {σ : Finset (Finset V)} (h : IsSphere2 σ) :
     rw [Finset.sum_congr rfl hcl, Finset.sum_const, smul_eq_mul, mul_comm]
   rw [← hleft, key, hright]
 
-/-- `3v = e + 6`. -/
 theorem three_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
     3 * (vertsOf σ).card = (edgesOf σ).card + 6 := by
   have h1 := three_mul_card_faces h
   have h2 := h.euler
   omega
 
-/-- `2v = f + 4`. -/
 theorem two_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
     2 * (vertsOf σ).card = σ.card + 4 := by
   have h1 := three_mul_card_faces h
@@ -164,7 +152,6 @@ theorem two_mul_card_verts {σ : Finset (Finset V)} (h : IsSphere2 σ) :
 
 /-! ## Local structure: edges and links -/
 
-/-- The third vertex of a triangle over an edge. -/
 lemma exists_third {e f : Finset V} (hef : e ⊆ f) (he : e.card = 2)
     (hf : f.card = 3) : ∃ z, z ∉ e ∧ f = insert z e := by
   have hd : (f \ e).card = 1 := by
@@ -187,7 +174,6 @@ lemma exists_third {e f : Finset V} (hef : e ⊆ f) (he : e.card = 2)
     · exact hzf'
     · exact hef hx
 
-/-- The two faces over an edge of a sphere, by name. -/
 lemma exists_two_faces {σ : Finset (Finset V)} (h : IsClosedSurface σ)
     {e : Finset V} (he : e ∈ edgesOf σ) :
     ∃ f₁ ∈ σ, ∃ f₂ ∈ σ, f₁ ≠ f₂ ∧ e ⊆ f₁ ∧ e ⊆ f₂ ∧
@@ -204,7 +190,6 @@ lemma exists_two_faces {σ : Finset (Finset V)} (h : IsClosedSurface σ)
   rw [hpair] at hmem
   simpa using hmem
 
-/-- Two distinct triangles over a common edge meet exactly in it. -/
 lemma inter_eq_edge_of_two_faces {f₁ f₂ e : Finset V}
     (h3₁ : f₁.card = 3) (h3₂ : f₂.card = 3) (hne : f₁ ≠ f₂)
     (he : e.card = 2) (h1 : e ⊆ f₁) (h2 : e ⊆ f₂) : f₁ ∩ f₂ = e := by
@@ -220,7 +205,6 @@ lemma inter_eq_edge_of_two_faces {f₁ f₂ e : Finset V}
   have h2le := Finset.card_le_card hsub
   exact (Finset.eq_of_subset_of_card_le hsub (by omega)).symm
 
-/-- Membership in the link of a vertex. -/
 lemma mem_linkVerts {σ : Finset (Finset V)} {v x : V} :
     x ∈ linkVerts σ v ↔ x ≠ v ∧ ∃ f ∈ σ, v ∈ f ∧ x ∈ f := by
   rw [linkVerts, Finset.mem_erase, mem_vertsOf]
@@ -231,7 +215,6 @@ lemma mem_linkVerts {σ : Finset (Finset V)} {v x : V} :
   · rintro ⟨hxv, f, hf, hvf, hxf⟩
     exact ⟨hxv, f, Finset.mem_filter.mpr ⟨hf, hvf⟩, hxf⟩
 
-/-- In a sphere, link membership is edge membership. -/
 lemma mem_linkVerts_iff_edge {σ : Finset (Finset V)} (h : IsSphere2 σ)
     {v x : V} (hxv : x ≠ v) :
     x ∈ linkVerts σ v ↔ {v, x} ∈ edgesOf σ := by
@@ -250,8 +233,7 @@ lemma mem_linkVerts_iff_edge {σ : Finset (Finset V)} (h : IsSphere2 σ)
       hef (Finset.mem_insert_self v _),
       hef (by simp)⟩
 
-/-- In a sphere, every link vertex has exactly two neighbors in the
-link: the links are 2-regular. -/
+/-- The links are 2-regular. -/
 theorem link_two_regular {σ : Finset (Finset V)} (h : IsSphere2 σ)
     {v x : V} (hx : x ∈ linkVerts σ v) :
     ((linkVerts σ v).filter (fun y => (linkGraph σ v).Adj x y)).card = 2 := by
@@ -307,8 +289,6 @@ theorem link_two_regular {σ : Finset (Finset V)} (h : IsSphere2 σ)
   rw [← hcard]
   exact h.closed _ hedge
 
-/-- Minimum degree three: every vertex of a sphere has at least three
-neighbors. -/
 theorem three_le_card_linkVerts {σ : Finset (Finset V)} (h : IsSphere2 σ)
     {v : V} (hv : v ∈ vertsOf σ) : 3 ≤ (linkVerts σ v).card := by
   obtain ⟨f, hf, hvf⟩ := mem_vertsOf.mp hv
@@ -367,7 +347,6 @@ theorem three_le_card_linkVerts {σ : Finset (Finset V)} (h : IsSphere2 σ)
 
 /-! ## The boundary of the tetrahedron -/
 
-/-- The boundary complex of the tetrahedron on `a, b, c, d`. -/
 def tetraBdry (a b c d : V) : Finset (Finset V) :=
   {{a, b, c}, {a, b, d}, {a, c, d}, {b, c, d}}
 
@@ -384,7 +363,6 @@ private lemma tetra_T_card : ({a, b, c, d} : Finset V).card = 4 := by
     Finset.card_insert_of_notMem (by simp [hcd]),
     Finset.card_singleton]
 
-/-- Membership in `tetraBdry` is "card-3 subset of the vertex set". -/
 private lemma tetra_mem :
     ∀ f : Finset V, f ∈ tetraBdry a b c d ↔
       f ⊆ {a, b, c, d} ∧ f.card = 3 := by
@@ -466,7 +444,6 @@ private lemma tetra_verts :
   · rintro ⟨f, hf, hxf⟩
     exact ((tetra_mem hab hac had hbc hbd hcd f).mp hf).1 hxf
   · intro hx
-    -- pick two other vertices of T to complete a face
     have h2 : 2 ≤ (({a, b, c, d} : Finset V).erase x).card := by
       rw [Finset.card_erase_of_mem hx, tetra_T_card hab hac had hbc hbd hcd]
       omega
@@ -492,7 +469,6 @@ private lemma tetra_edges :
   · rintro ⟨f, hf, hef, hcard⟩
     exact ⟨hef.trans ((tetra_mem hab hac had hbc hbd hcd f).mp hf).1, hcard⟩
   · rintro ⟨hsub, hcard⟩
-    -- complete the edge to a face with any third vertex
     have h1 : 1 ≤ (({a, b, c, d} : Finset V) \ e).card := by
       rw [Finset.card_sdiff_of_subset hsub, tetra_T_card hab hac had hbc hbd hcd, hcard]
       omega
@@ -504,8 +480,6 @@ private lemma tetra_edges :
       Finset.subset_insert z e, hcard⟩
     rw [Finset.card_insert_of_notMem hze, hcard]
 
-/-- Faces containing a fixed edge of the tetrahedron boundary: exactly
-the two completions by a vertex outside the edge. -/
 private lemma tetra_closed :
     ∀ e ∈ edgesOf (tetraBdry a b c d), edgeDeg (tetraBdry a b c d) e = 2 := by
   intro e he
@@ -544,8 +518,6 @@ private lemma tetra_closed :
   · exact h
   · exact absurd h (Finset.mem_sdiff.mp h₁).2
 
-/-- Validation instance: the boundary of the tetrahedron is a
-combinatorial 2-sphere. -/
 theorem isSphere2_tetraBdry :
     IsSphere2 (tetraBdry a b c d) := by
   have hmem := tetra_mem hab hac had hbc hbd hcd
@@ -554,8 +526,7 @@ theorem isSphere2_tetraBdry :
   constructor
   · exact fun f hf => ((hmem f).mp hf).2
   · exact tetra_closed hab hac had hbc hbd hcd
-  · -- links: every pair of neighbours of v spans a face with v
-    intro v hv x hx y hy
+  · intro v hv x hx y hy
     rw [hverts] at hv
     have hmemT : ∀ w, w ∈ linkVerts (tetraBdry a b c d) v →
         w ∈ ({a, b, c, d} : Finset V) ∧ w ≠ v := by
@@ -580,8 +551,7 @@ theorem isSphere2_tetraBdry :
       · exact hxT
       · rw [Finset.mem_singleton] at hu
         exact hu ▸ hyT
-  · -- the 1-skeleton is complete on the four vertices
-    intro x hx y hy
+  · intro x hx y hy
     rw [hverts] at hx hy
     by_cases hxy : x = y
     · subst hxy; exact ⟨SimpleGraph.Walk.nil⟩
@@ -593,8 +563,7 @@ theorem isSphere2_tetraBdry :
     · exact hx
     · rw [Finset.mem_singleton] at hu
       exact hu ▸ hy
-  · -- Euler: 4 + 4 = 6 + 2
-    have hS : tetraBdry a b c d = ({a, b, c, d} : Finset V).powersetCard 3 := by
+  · have hS : tetraBdry a b c d = ({a, b, c, d} : Finset V).powersetCard 3 := by
       ext f
       rw [hmem f, Finset.mem_powersetCard]
     rw [hverts, tetra_edges hab hac had hbc hbd hcd, hS,
@@ -603,8 +572,7 @@ theorem isSphere2_tetraBdry :
 
 end Tetra
 
-/-- The boundary of any 4-element set (its card-3 subsets) is a combinatorial
-2-sphere.  This is the base-case sphere of the Theorem 2 induction and the
+/-- The base-case sphere of the Theorem 2 induction and the
 initial boundary of a one-tet ball. -/
 theorem isSphere2_powersetCard3 {t : Finset V} (ht : t.card = 4) :
     IsSphere2 (t.powersetCard 3) := by

@@ -1,0 +1,1084 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx,amssymb,amsmath,amsthm}
+\usepackage{hyperref,url}
+\usepackage{verbatim}
+\usepackage[labelfont=bf]{caption}
+\newcommand{\nocopyright}{
+No Copyright\thanks{
+The authors hereby waive all copyright
+and related or neighboring rights to this work,
+and dedicate it to the public domain.
+This applies worldwide.
+}}
+\title{Taut fillings}
+\author{Peter Doyle \and Matthew Ellison \and Zili Wang\thanks{
+Zili Wang is supported by
+the National Natural Science Foundation of China (Grant No. 12301432)
+}}
+\date{Draft A}
+\newtheorem{theorem}{Theorem}
+\newtheorem{prop}{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem*{hypo}{Hypothesis}
+\newtheorem*{question}{Question}
+\newtheorem{corollary}{Corollary}
+\newtheorem*{conjecture}{Conjecture}
+
+\def\startproof{{\bf {\medskip}{\noindent}Proof: }}
+\def\definition{{\bf {\bigskip}{\noindent}Definition: }}
+\def\endproof{$\spadesuit$  \newline}
+
+\newcommand{\proofstart}{{\noindent \bf Proof.\ }}
+\newcommand{\note}{{\noindent \bf Note.\ }}
+\newcommand{\pfend}{\spadesuit}
+\newcommand{\mathproofend}{\quad \qed}
+\newcommand{\proofend}{$\quad \qed$}
+\newcommand{\goesto}{\rightarrow}
+\newcommand{\p}{\;\;\;}
+\newcommand{\comma}{\p,}
+\newcommand{\pd}{\p.}
+\newcommand{\semi}{\p;}
+\newcommand{\Rplus}{{\RR_{\geq 0}}}
+
+
+
+\newcommand{\beginfigurepos}{\begin{figure}[htbp]}
+%
+% \fig
+% followed by {filename}{label}{caption}
+%
+\newcommand{\fig}[3]{
+\beginfigurepos
+\includegraphics[width=370pt]{figures/#1.pdf}
+\caption{#3}
+\label{#2}
+\end{figure}
+}
+%
+% \figsize
+% followed by {size}{filename}{label}{caption}
+%
+\newcommand{\figsize}[4]{
+\beginfigurepos
+\centerline{
+\includegraphics[width=#1]{figures/#2.pdf}
+}
+\caption{#4}
+\label{#3}
+\end{figure}
+}
+
+
+\def\ZZ{\mathbf{Z}}
+\def\QQ{\mathbf{Q}}
+\def\RR{\mathbf{R}}
+\def\heartsuit{\mbox{\boldmath{$Z$}}}% 
+\def\del{\partial}
+\def\dist{\mathrm{dist}}
+\def\eps{\epsilon}
+
+
+\newcommand{\parsec}{\subsection*}
+\newcommand{\sect}[1]{\S\ #1}
+
+%\newcommand{\gversus}[2]{\braket{#1\,|\,#2}}
+\newcommand{\pair}[1]{\braket{#1}}
+\newcommand{\sub}[1]{\braket{#1}}
+\newcommand{\nnn}{\mathbf{NSet}}
+\newcommand{\zzz}{\mathbf{ZSet}}
+\newcommand{\nn}{\mathbf{N}}
+\newcommand{\zz}{\mathbf{Z}}
+
+\newcommand{\versus}[2]{\left(#1\,|\,#2\right)}
+\newcommand{\gversus}[2]{\left[#1\,|\,#2\right]}
+\newcommand{\poly}[1]{\left[#1\right]}
+
+\newcommand{\rising}[1]{\overline{#1}}
+\newcommand{\floor}[1]{\left \lfloor #1 \right \rfloor}
+\newcommand{\ceiling}[1]{\left \lceil #1 \right \rceil}
+\newcommand{\gbinom}{\genfrac{[}{]}{0pt}{}}
+
+\makeatletter
+\newcommand{\xRrightarrow}[2][]{\ext@arrow 0359\Rrightarrowfill@{#1}{#2}}
+\newcommand{\Rrightarrowfill@}{\arrowfill@\equiv\equiv\Rrightarrow}
+\newcommand{\xLleftarrow}[2][]{\ext@arrow 3095\Lleftarrowfill@{#1}{#2}}
+\newcommand{\Lleftarrowfill@}{\arrowfill@\Lleftarrow\equiv\equiv}
+\newcommand{\xLleftRrightarrow}[2][]{\ext@arrow 3399\LleftRrightarrowfill@{#1}{#2}}
+\newcommand{\LleftRrightarrowfill@}{\arrowfill@\Lleftarrow\equiv\Rrightarrow}
+\makeatother
+
+\newcommand{\eq}{\Rrightarrow}
+\newcommand{\funeq}[1]{\stackrel{#1}\eq}
+\newcommand{\funequiv}[1]{\stackrel{#1}\equiv}
+\newcommand{\funto}[1]{\stackrel{#1}\to}
+\newcommand{\union}{\cup}
+\newcommand{\cross}{\times}
+\newcommand{\op}{\operatorname}
+\newcommand{\kw}{\mathrm}
+\newcommand{\escape}{\op{escape}}
+\newcommand{\cancel}{\op{cancel}}
+\newcommand{\nestuntil}{\operatorname{nestuntil}}
+\newcommand{\size}{\operatorname{size}}
+\newcommand{\id}{\operatorname{id}}
+\newcommand{\create}{\operatorname{create}}
+\newcommand{\destroy}{\operatorname{destroy}}
+\newcommand{\then}{\triangleleft}
+\newcommand{\lp}{\kw{LP}}
+\newcommand{\LPvol}{\kw{LPvol}}
+\newcommand{\vol}{\kw{vol}}
+\newcommand{\flipdist}{\kw{flipdist}}
+\newcommand{\tetbar}{\kw{homvol}}
+\newcommand{\vsa}{\kw{vsa}}
+\newcommand{\cone}{\kw{cone}}
+\newcommand{\link}{\kw{link}}
+\newcommand{\maxdeg}{\kw{maxdeg}}
+\newcommand{\mindeg}{\kw{mindeg}}
+\newcommand{\vertices}{\kw{Vert}}
+\newcommand{\carrier}{\kw{carrier}}
+\newcommand{\nbhd}{\kw{nbhd}}
+\newcommand{\adj}{\kw{adj}}
+\newcommand{\taut}{\kw{taut}}
+\newcommand{\net}{\kw{net}}
+
+\newcommand{\Zvol}{\kw{Zvol}}
+\newcommand{\Qvol}{\kw{Qvol}}
+\newcommand{\Rvol}{\kw{Rvol}}
+\newcommand{\tetvol}{\kw{tetvol}}
+\newcommand{\hash}{\#}
+\newcommand{\ms}{[}
+\newcommand{\msend}{]}
+
+\newcommand{\kwstyle}{\bf}
+\newcommand{\IF}{{\ \kwstyle{if}\ }}
+\newcommand{\ELSE}{{\ \kwstyle{else}\ }}
+\newcommand{\WHILE}{{\kwstyle{while}\ }}
+\newcommand{\DO}{{\ \kwstyle{do}\ }}
+\newcommand{\RETURN}{{\kwstyle{return}\ }}
+\newcommand{\direct}{\oplus}
+\newcommand{\pls}{\mathord{+}}
+\newcommand{\mns}{\mathord{-}}
+
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Let $\sigma$ be a simplicial triangulation of the 2-sphere,
+$X$ the associated integral 2-cycle.
+A filling of $X$ is an integral 3-chain $M$
+with $\del M = X$;
+a taut filling is one with minimal $L_1$-norm.
+We show that any taut filling 
+arises from an extension of $\sigma$ to
+a simplicial complex homeomorphic to the 3-ball.
+This complex is shellable, and `flag':
+every clique in its 1-skeleton occurs as a simplex.
+The key to the proof is the general
+fact that any taut filling of an $n$-cycle
+splits under disjoint union, connected sum, and more generally
+what we call almost disjoint union,
+where summands are supported on sets that overlap in at most $n+1$ vertices.
+\begin{comment}
+Despite the generality of this result, we have nothing to say about
+optimal fillings of spheres of dimension 3 or higher.
+\end{comment}
+\end{abstract}
+
+\section{Overview}
+Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+with vertices $\Omega$,
+viewed as the abstract simplicial complex consisting of all subsets of
+$\Omega$.
+Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+be its integral $n$-chains and $n$-cycles.
+A \emph{filling} of an $n$-cycle $X \in Z_n$ is any
+$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
+(Here and throughout we'll assume $n\geq 1$.)
+Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+Call $M \in C_{n+1}$ \emph{taut} if it is an optimal filling
+of its boundary, i.e., if $|M|=\Zvol(\del M)$,
+
+For $X \in C_n$ let
+$\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+to which $X$ assigns non-$0$ weight.
+For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+(Cf.\ Proposition \ref{nointernal} below.)
+This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+
+Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+\[
+|\vertices(X) \cap \vertices(Y)| \leq n+1
+.
+\]
+This notion generalizes both disjoint union and connected sum
+along an $n$-simplex.
+Ellison \cite{ellison:gap}
+showed the $\Zvol$ adds under almost disjoint union:
+$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+This means that \emph{some} taut filling $M$ of $X$ splits into a sum
+$M=M_X+M_Y$ of taut fillings of $X,Y$.
+Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+that when $n \geq 2$, \emph{any} taut filling of $X+Y$ splits.
+
+In place of integral chains we can use chains with
+coefficients in $\QQ$ or $\RR$.
+Evidently $\Rvol \leq \Qvol$.
+But computing $\Rvol$ is
+a linear programming problem with rational coefficients,
+so in fact $\Qvol = \Rvol$.
+Ellison used LP duality to prove that
+$\Qvol$ adds under almost
+disjoint union.
+Now for $n \geq 2$ we get the stronger result
+(Corollary \ref{cor1})
+that taut $\QQ$-fillings split:
+Multiplying a taut
+$\QQ$-filling $M$ of $X$ by a common denominator $q$
+yields a taut $\ZZ$-filling $qM$ of $qX$:
+Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
+of the $\QQ$-filling $M$.
+
+Now let $\sigma$ be a simplicial triangulation of $S^2$;
+let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
+be either one of the 2-cycles
+that arises from $\sigma$ by orienting its $2$-simplices;
+and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+We will show that
+\[
+\Zvol(\sigma) = \tetvol(\sigma)
+.
+\]
+Certainly $\Zvol \leq \tetvol$,
+because any extension $\tau$ induces a filling
+of $X(\sigma)$.
+Theorem \ref{th2} states that 
+any taut filling of $X(\sigma)$ arises in this way.
+The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+\begin{comment}
+We use induction, with base case $\sigma$ a tetrahedron.
+In any taut filling $Y$ of $X(\sigma)$,
+thought of as a multiset of oriented $3$-simplices,
+some $t \in Y$ meets $\sigma$ in at least two faces.
+Ignoring the base case,
+$Y-t$ is a taut filling of
+$X(\sigma) - \del t = X(\sigma^\prime)$,
+where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+In the first case induction yields a triangulation of $B^3$,
+and we glue on $t$.
+In the second case by Theorem \ref{th1}
+$Y-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+by induction both give triangulations of $B^3$, which we
+glue onto $t$.
+So we wind up with some kind of triangulation $\tau$ of $B^3$,
+built from the simplices of $Y$.
+The wrinkle is that we need to ensure that in $Y$ there are no
+identifications beyond those in $\tau$.
+\end{comment}
+
+We don't know what happens for spheres of dimension 3 or greater.
+
+\section{Background}
+
+Our interest in $\Zvol$ stems from the work
+of Sleator, Tarjan, and Thurston
+\cite{stt:jams}.
+They observed that coning from a vertex of maximal degree
+shows that a $v$-vertex
+triangulation $\sigma$
+of $S^2$ has $\tetvol \leq 2v-4-\maxdeg(\sigma)$.
+If $v\geq13$ $\maxdeg(\sigma) \geq 6$, so $\tetvol \leq 2v-10$.
+They
+produced examples for which $\tetvol = 2v-10$, provided
+$v$ is larger than some unspecified bound,
+and conjectured that such examples should exist for any $v \geq 13$.
+Their approach was to 
+realize $\sigma$ as an ideal hyperbolic polyhedron
+with volume $2v V_0-O(\log(v))$,
+where $V_0$ is the volume of an
+equilateral ideal tetrahedron,
+which is maximal.
+This implies $\tetvol \geq 2v-O(\log(v))$.
+From there they bootstrapped their way up to showing
+that $\tetvol=2v-10$.
+They suggested
+\cite[p. 697]{stt:jams}
+that in fact $\Qvol= 2v-10$,
+which would immediately imply $\tetvol=2v-10$.
+Mathieu and Thurston \cite{mt}
+produced a class of examples,
+different from the examples of STT,
+for which they could show that $\Qvol = 2v-10$,
+still under the assumption that $v$
+is sufficiently large.
+In \cite{dew:filling} we produced examples for any $v \geq 13$ with
+$\Qvol=2v-10$, confirming the conjecture of Sleator, Tarjan, and Thurston.
+Theorem \ref{th2} here
+tells us that whenever we have $\Qvol=2v-10$,
+or just $\Zvol=2v-10$, any taut filling
+must arise from a triangulation of the ball.
+
+About $\Qvol$ versus $\Zvol$.
+In \cite{dew:filling}
+we described triangulations of $S^2$ with $\Qvol < \Zvol$.
+In all such examples that we know of
+with $\maxdeg \leq 6$, the gap between $\Qvol$ and $\Zvol$ is $<1$,
+so that
+$\lceil \Qvol \rceil = \Zvol$.
+Since $\Qvol$ and $\Zvol$
+add under connected sum,
+the gap between them can be arbitrarily
+large
+(Ellison \cite{ellison:gap}),
+but taking the connected sum pushes $\maxdeg$ above $6$.
+
+
+
+\section{Taut fillings}
+
+We can think of an $n$-chain $X \in C_n$ as a multiset of
+non-cancelling oriented simplices:
+\[
+X = \sum_{t \in X} t
+.
+\]
+In this sum $t$ denotes an oriented simplex
+\[
+t=[x_0,\ldots,x_n]
+= [x_{\pi(0)},\ldots,x_{\pi(n)}]
+,\;\;\mbox{$\pi$ an even permutation}
+,
+\]
+and each unoriented simplex contributes a number of terms corresponding
+to its multiplicity.
+
+The size of $M$ as a multiset is its $L_1$-norm $|M|$.
+Write $U \subset M$
+if $U$ is a sub-multiset of $M$.
+This happens just when
+$|M| = |U| + |M-U|$.
+
+\begin{prop} \label{subtaut}
+If $M$ is taut and $U \subset M$ then $U$ is taut.
+\end{prop}
+
+\proofstart
+If $U$ is not taut, there is a smaller filling $V$ of $\del U$.
+Take $M^\prime = M-U+V$.
+In terms of multisets, this means that we substitute $V$ for $U$,
+and then do any required cancellation of oppositely oriented simplices
+of $M-U$ and $V$.
+We have
+\[
+\del M^\prime = \del M - \del U + \del V = \del M
+\]
+and
+\[
+|M^\prime| \leq |M-U| + |V| = |M| - |U| + |V| < |M|
+,
+\]
+contradiction.
+\proofend
+
+\section{Coning}
+For $x \in \Omega$, $U \in C_n$ let
+\[
+\nbhd(x,U) = \sum_{ t \in U: x \in \vertices(t) } t
+,
+\]
+\[
+\deg(x,U) = |\nbhd(x,U)|
+,
+\]
+\[
+\maxdeg(U) = \max_x \deg(x,U)
+.
+\]
+The \emph{cone from $x$ to $U$}
+is the $(n+1)$-chain
+\[
+\cone(x,U) = 
+\sum_{t \in U} \adj(x,t)
+,
+\]
+consisting of all the non-trivial oriented
+$(n+1)$-simplices $\adj(x,t)=[x x_0\ldots x_n]$ obtained
+by adjoining $x$ to  $t = [x_0\ldots x_n] \in U$.
+If $x \in \vertices(t)$ then $t$ doesn't contribute to the sum,
+so $|\cone(x,U)| = |U| - \deg(x,U)$.
+
+If $U$ is closed then
+$\del\, \cone(x,U) = U$, so
+
+\begin{prop} \label{maxdeg}
+For any $X \in Z_n$
+\[
+\Zvol(X) \leq |X| - \maxdeg(X)
+\mathproofend
+\]
+\end{prop}
+
+If $U \in Z_n$ and $x \notin \vertices(U)$ then
+$\deg(x,U)=0$ and
+$|\cone(x,U)| = |U|$.
+In this case we call $\cone(x,U)$ a \emph{complete cone}.
+By Proposition \ref{maxdeg} a non-trivial complete cone is not taut.
+(Equivalently: rather than coning from $x \notin U$, one could cone from
+some $x \in U$.)
+Thus:
+\begin{prop}\label{nocone}
+If $M$ is taut it contains no non-trivial complete cone.
+\proofend
+\end{prop}
+
+Call $x \in \vertices(M) \setminus \vertices(\del M)$ an
+\emph{internal vertex} of $M$.
+If $x$ is internal to $M$ then $\nbhd(x,M)$ is a complete cone, so:
+\begin{prop} \label{nointernal}
+If $M$ is taut then
+it has no internal vertices.
+\proofend
+\end{prop}
+
+\section{Almost disjoint unions}
+
+Recall that if $X,Y \in Z_n$ we call $X+Y$ an almost disjoint union
+if
+\[
+|\vertices(X) \cap \vertices(Y)| \leq n+1
+.\]
+The most interesting special case is a connected sum,
+where $t=[c_0,c_1,\ldots,c_n]$ occurs once in $X$ and
+$-t=[c_1,c_0,\ldots,c_n]$ occurs once in $Y$.
+For example, if $n=1$ with $X$ a cycle of length $p$
+and $Y$ a cycle of length $q$
+the connected sum $X+Y$ is
+a cycle of length $p+q-2$.
+Here
+$\Zvol$ adds, because
+$\Zvol(X)=p-2$,
+$\Zvol(Y) = q-2$,
+and
+\[
+\Zvol(X+Y) = (p+q-2)-2 = \Zvol(X)+\Zvol(Y)
+.
+\]
+But not every filling of $X+Y$ splits, because a taut filling
+may contain any 2-simplex with vertices in $\vertices(X+Y)$.
+
+We want to show that fillings do split when $n \geq 2$.
+
+For $A \subset \Omega$, $p \in A$ define
+\[
+\pi_{A,p}: \Omega \to A
+\]
+\[
+\pi_{A,p}(x) = x \IF x \in A \ELSE p
+\]
+and let
+\[
+K_*(A,p): C_*(\Omega) \to C_*(A)
+\]
+be the induced chain map.
+This is a projection of $C_*(\Omega)$ onto $C_*(A)$.
+
+Let $A,B$ be finite vertex sets sharing the vertices
+$C = A \cap B$,
+and let $c=|C|$.
+Observe that
+$C_c(C)$ and $Z_{c-1}(C)$ are trivial,
+because $\Delta(C)$ contains no $c$-simplex,
+and (up to orientation) only one $c\mns 1$-simplex,
+with nothing to cancel its boundary.
+
+Let
+\[
+C_*(A,B) = C_*(A) \direct C_*(B)
+.
+\]
+For $p,q \in C$ define the mapping
+\[
+g_*(p,q) = K_*(A,p) \direct K_*(B,q):
+C_*(A \cup B) \to C_*(A,B)
+.
+\]
+
+\begin{prop} \label{recover}
+Let $(X,Y) \in C_n(A,B)$.
+If $|A \cap B| \leq n$
+we can recover $(X,Y)$ from $X+Y$.
+If $(X,Y) \in Z_n(A,B)$ this holds also when $|A \cap B|  = n+1$.
+\end{prop}
+
+\proofstart
+Let $C=A \cap B$.
+We can assume $|C| \geq 1$.
+(Add a brand new point to $C$ if necessary.)
+We claim that
+for any $p,q \in C$
+(not necessarily distinct) we have
+\[
+g_n(p,q)(X+Y)=(X,Y)
+.
+\]
+Indeed,
+\[
+K_n(A,p)(X+Y) = X + K_n(A,p)(Y)
+.
+\]
+The second term belongs to $C_n(C)$,
+which is trivial when $|C| \leq n$.
+If $Y \in Z_n(B)$ the second term belongs to $Z_n(C)$,
+which is trivial when $|C| \leq n+1$.
+\proofend
+
+
+\begin{theorem} \label{th1}
+If $|A \cap B| \leq n+1$,
+for all $(X,Y) \in Z_n(A,B)$ we have
+\[
+\Zvol(X+Y) = \Zvol(X)+\Zvol(Y)
+.
+\]
+And as long as $n \geq 2$,
+for any $M \in \taut(X+Y)$ 
+we have $M = M_X + M_Y$
+with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+\end{theorem}
+
+\note
+Ellison \cite{ellison:gap}
+proved the additivity of $\Zvol$.
+What's new here is the splitting of taut fillings when $n\geq 2$.
+This result resembles Theorem 6.2 of
+Pournin and Wang
+\cite{pw:flip}
+about flip paths.
+Like theirs, our proof uses a variation on the normalization technique
+of STT
+\cite[Lemma 7]{stt:jams}.
+It would be nice to fit these results under one roof.
+\medskip
+
+\proofstart
+Again let $C = A \cap B$.
+We can assume $|C| = n+1$,
+as this is the hardest case.
+And we might as well go ahead and take $n=2$, $|C|=3$,
+as this case illustrates all the issues.
+
+Take any $M \in \taut(X+Y) \subset C_3(A \union B)$.
+Pick distinct points $p,q \in C$,
+and let
+\[
+(M_X,M_Y) = g_{3}(p,q)(M)
+.
+\]
+(For now we'll suppress the dependence of $M_X,M_Y$ on $p,q$.)
+
+Because $g_*(p,q)$ is a chain map we have
+$\del_{3} M_X = X$, $\del_{3} M_Y = Y$:
+\[
+(\del_{3} M_X, \del_{3} M_Y)
+=
+\del_{3} (g_{3}(p,q)(M))
+=
+g_2(p, q)(\del_{3} M)
+=
+g_2(p,q)(X+Y)
+=
+(X,Y)
+.
+\]
+
+We want to show that under the map $g_3(p,q)$ any $t \in M$
+dies either in $M_X$ or $M_Y$,
+because then we'll get additivity of $\Zvol$ from
+\[
+\Zvol(X+Y) = |M|
+\geq |M_X| + |M_Y|
+\geq \Zvol(X) + \Zvol(Y)
+\geq \Zvol(X+Y)
+.
+\]
+
+Let's call a $3$-simplex a `tet' for short.
+Say that a tet $t \in M$ has type $CCXY$ if $t= \pm[c_1c_2x_1y_1]$
+for $c_1,c_2 \in C$, $x_1 \in A \setminus C$, $y_1 \in B \setminus C$.
+Similarly for types $XXXX$, $CXXX$, $CXXY$, $XXXY$, etc.
+The first two are pure $X$ cases, meaning that they live in $C_3(A)$;
+the last two are hybrid cases.
+
+Any $XX..$ tet dies in $M_Y$;
+any $YY..$ tet dies in $M_X$.
+
+The remaining cases to check are
+are the pure cases $CCCX$, $CCCY$,
+and the hybrid case $CCXY$.
+A $CCCX$ tet $t=\pm[c_1c_2c_3x_1]$ dies in $M_Y$ because
+$K_3(B,q)(t)=[c_1c_2c_3q]$,
+which vanishes because $q \in C = \{c_1,c_2,c_3\}$ produces a repeated vertex.
+Likewise a $CCCY$ tet dies in $M_X$.
+The more interesting case is $CCXY$:
+The key is that since $|C|=3$, $\{c_1,c_2\}$ cannot be disjoint from $\{p,q\}$,
+so it dies on one side or the other.
+
+So 
+\[
+|M| = |M_X(p,q)| + |M_Y(p,q)|,
+\]
+and $\Zvol$ adds.
+Note how we're now emphasizing the possible dependence of $M_X,M_Y$ on $p,q$.
+When $n=1$ the choice of $p,q$ can indeed make a difference:
+We can get a different pair $(M_X,M_Y)$ if we switch
+$p$ and $q$.
+(Think about the connected sum of two cycle graphs.)
+
+But when $n \geq 2$ we will now show that all tets are pure $X$ or pure $Y$,
+so $M_X$ consists of all the pure $X$ tets, and ditto for $M_Y$.
+This will make
+$M = M_X + M_Y$ with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+
+Again our test case is $n=2$.
+
+The key observation is that, now that we know that every tet dies on
+one side or the other, we know that no tet can die on both sides,
+because that would make $|M| > \Zvol(X) + \Zvol(Y)$.
+
+An $XXYY$ tet would die on both sides, so there can be none of these.
+
+Any $pqXY$, $pXXY$, or $qXYY$ would die on both sides, and $p,q$ are arbitrary,
+so this rules out all $CCXY,CXXY,CXYY$.
+
+The only remaining hybrids are $XXXY$ and $XYYY$.
+Let's rule out $XXXY$, leaving $XYYY$ to symmetry.
+
+Fix any $y_0 \in B \setminus C$, and suppose there is
+some $XXXy_0$ tet in $M$.
+Let $U \subset M$ consist of all such $XXXy_0$ tets.
+We claim that $y_0 \notin \vertices(\del U)$.
+For let $s$ be any 2-simplex of the form $XXy_0$,
+the only kind of 2-simplex containing $y_0$ that could belong
+to $\del U$.
+Any $t \in M$ of which $s$ or $-s$ is a face must be a hybrid tet,
+and the only possibility is $XXXy_0$, so $t \in U$.
+Because $\del M = 0$ the signed multiplicity of $s$
+vanishes in $\del M$,
+hence also in $\del U$,
+because the tets of $M$ with $\pm s$ as a face all belong to $U$.
+So $y_0 \notin \vertices(\del U)$,
+making $U$ a complete cone on $y_0$,
+contradicting \ref{nocone}.
+So there is no such $XXXy_0$ tet, ruling out $XXXY$,
+and with it $XYYY$.
+
+So there are no hybrid tets, meaning that $M$ splits, as claimed.
+\proofend
+
+The splitting of taut fillings depends on the assumption $n\geq 2$.
+Let's consider what goes wrong when $n=1$.
+Here the hybrid types are $CXY$, $XXY$, $XYY$.
+Neither $pXY$ nor $qXY$ dies on both sides, so we can't rule out $CXY$.
+Failing that, the $XXy_0$ tets needn't form a complete cone,
+because $[x_0x_1y_0)$ can continue across $[x_1 y_0]$ to $-[p x_1 y_0]$,
+so we can't rule out $XXY$ either.
+
+The foregoing proof works equally well over $\QQ$, providing we
+permit ourselves to work with fractional multisets.
+Alternatively, we can clear denominators as in the introduction
+above.
+Either way, we have:
+
+\begin{corollary} \label{cor1}
+$\Qvol$ adds under almost disjoint union,
+and for $n \geq 2$
+taut $\QQ$-fillings split.
+\proofend
+\end{corollary}
+
+\section{Triangulations}
+
+We turn now to filling simplicial triangulations of $S^2$.
+Let's begin by establishing terminology.
+
+An \emph{$n$-simplex} $s$ is simply a set of size $n+1$.
+Its \emph{faces} are its subsets,
+which are $k$-simplices with $-1 \leq k \leq n$,
+$-1$ being the dimension of the empty simplex.
+A \emph{simplicial complex} $\sigma$ is a finite collection of simplices
+closed under taking faces:
+If $t \subset s \in \sigma$ then $t \in \sigma$.
+
+For any $k$-simplex $s \in \sigma$ define the \emph{link}
+\[
+\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+.
+\]
+This is a simplicial complex, but
+(except for $\link(\emptyset,\sigma)=\sigma$)
+it is not a subcomplex of $\sigma$,
+because we are taking simplices in $\sigma$ and knocking down
+their dimension by $k+1$.
+
+We are interested in particularly nice simplicial complexes
+called normal pseudomanifolds, or as we will prefer to say,
+\emph{clean $n$-complexes}.
+
+\begin{enumerate}
+\item
+To start with,
+a clean complex must be \emph{pure},
+meaning that every simplex of $\sigma$ belongs to some $n$-simplex in $\sigma$.
+To determine $\sigma$ we can specify its $n$-simplices,
+and then throw in all their subsets.
+So we can confound a pure complex with the set of its $n$-simplices.
+
+\item
+A clean complex is a \emph{pseudomanifold}:
+Every $n$-simplex abuts at most one other $n$-simplex
+across any given $n-1$-simplex.
+Another way to say this is that
+the link $\link(s,\sigma)$ of any $n-1$-simplex $s$
+consists of either a single point 
+(in which case $s \in \del \sigma$ is a \emph{boundary simplex}),
+or two points
+($s \in \sigma \setminus \del \sigma$ is an \emph{interior simplex}.)
+
+\item
+A clean complex is \emph{normal}:
+For any simplex $s$ of dimension $0,\ldots,n-2$,
+$\link(s,\sigma)$ is connected.
+(Some definitions extend this requirement
+to the empty simplex of dimension $-1$;
+this forces $\sigma$ to be connected.)
+Being normal means that $\sigma$ is just what you get by gluing its 
+$n$-simplices along shared faces,
+without extra identifications. This rules out, for example,
+an icosahedron with a pair of opposite vertices identified.
+\end{enumerate}
+
+If $\sigma$ is clean, 
+$\link(s,\sigma)$ is clean.
+The boundary $\del \sigma$ of $\sigma$ is clean,
+and closed:
+$\del \del \sigma = \{\emptyset\}$.
+
+If $W$ is an $n$-manifold,
+say that a simplicial complex $\sigma$
+is a \emph{simplicial triangulation} of $W$
+if the geometric carrier of $\sigma$ is homeomorphic to $W$.
+In this case $\sigma$ is necessarily a clean complex.
+We imagine that we have prescribed a specific homeomorphism,
+at least up to the point of picking out one particular orientation
+$X(\sigma) \in C_n$ when $W$ is oriented;
+but we do not insist upon this, because nothing will depend on which
+orientation we pick.
+
+This notion of triangulation is not as general as you might want
+for some purposes.
+The double cover of a triangle is not a simplicial triangulation
+of $S^2$,
+because that would requires two distinct
+$2$-simplices to have the same three edges.
+Nor can any $2$-simplex have two of its edges
+glued to one another.
+Thurston
+\cite{thurston:shapes}
+allows such triangulations,
+but it is unclear how important these are to
+his theory of shapes of surfaces.
+We don't allow them.
+
+We continue to think of a chain $M \in C_n$ as a multiset of
+oriented $n$-simplices.
+We call $M$ \emph{simplicial} if no simplex is repeated, that is, if every
+simplex occurs in $M$ with multiplicity $0$ or $\pm 1$.
+In that case we write $K(M)$ for the \emph{support} of $M$: the pure
+simplicial complex generated by the $n$-simplices occurring in $M$.
+(In passing to $K(M)$ we view oriented simplices as a subclass of
+simplices, and identify a set of $n$-simplices with the pure $n$-complex
+it generates.)
+We call $M$ \emph{clean} if it is simplicial and $K(M)$ is clean.
+
+In particular, a filling $M$---an $(n\pls1)$-chain---is \emph{clean} when
+it has no repeated simplices and its support $K(M)$ is a clean simplicial
+complex. For a filling of a triangulated $2$-sphere, the simplices in
+question are tetrahedra.
+
+\section{Filling a triangulation of the 2-sphere}
+
+\begin{theorem} \label{th2}
+Let $\sigma$ be a simplicial triangulation of $S^2$,
+and $M$ a taut filling of $\sigma$.
+Then $M$ is clean, and its support $K(M)$
+is a simplicial triangulation of $B^3$.
+\end{theorem}
+
+\proofstart
+
+Let $v,e,f$  count the vertices, edges, and faces of $\sigma$.
+We have
+$e=3v-6$, $f=2v-4$.
+(Check: $3f=2e$, $v-e+f=2$.)
+
+Consider a counterexample pair $(\sigma,M)$ for which
+$\Zvol(\sigma)=|M|$ is minimal.
+Obviously $v>4$.
+We can assume that $\sigma$ is prime
+(not a connected sum along a triangle),
+and in particular (this is all we will need) that there is no
+vertex of degree $3$.
+
+Call a tet $t \in M$ \emph{eligible} if it shares two of its oriented
+faces with $\sigma$. (It cannot share more than two, since $\sigma$ has
+no vertex of degree $3$.)
+By Proposition \ref{maxdeg},
+\[
+|M| = \Zvol(\sigma) \leq f-\maxdeg(\sigma)
+.
+\]
+Regard $M$ as a multiset of tets, and assign to each $2$-simplex
+$\alpha$ of $\sigma$ some tet of $M$ having $\alpha$ as a properly
+oriented face. Such a tet exists, because $\alpha$ occurs with
+coefficient $+1$ in $\del M = X(\sigma)$, so some tet of $M$ contributes
+$\alpha$ with the correct sign. (Throughout we count support tets and
+correct boundary signs, not coefficient copies or cancelled appearances.)
+This assignment is at most $2$-to-$1$, since no tet of $M$ has more than
+two faces on $\sigma$, so at least $\maxdeg(\sigma)$ tets receive two
+faces each. These are \emph{disjointly eligible}: eligible tets whose
+pairs of boundary faces are mutually disjoint. We will need only two.
+
+Consider an eligible tet $t$ with boundary faces $s_1=[a,b,c]$ and
+$s_2=[b,a,d]$. Removing $t$ from $M$ produces a filling $M-t$ of a
+$2$-complex $\sigma_t$, in which $s_1,s_2$ have been replaced by the
+faces $[c,d,b],[d,c,a]$: the edge $ab$ has been \emph{flipped} to the
+edge $cd$. There are two cases.
+\begin{itemize}
+\item[(1)] Edge $cd$ was not already an edge of $\sigma$. Then
+$\sigma_t$ is again a simplicial triangulation of $S^2$, and $M-t$ is a
+taut filling of it. By minimality of $|M|$, $M-t$ is clean.
+\item[(2)] Edge $cd$ was already an edge of $\sigma$. Then $\sigma_t$
+is the almost disjoint union of two triangulations $\sigma_1,\sigma_2$
+of $S^2$, conjoined along the edge $cd$. By Theorem \ref{th1}, $M-t$
+splits as $M-t=M_1+M_2$, where each $M_i$ is a taut filling of
+$\sigma_i$; by minimality, each $M_i$ is clean. Here $M-t$ itself need
+\emph{not} be clean as a single complex---the link of the edge $cd$ in
+$K(M-t)$ is disconnected---even though it splits into the clean pieces
+$M_1,M_2$. It is, however, still simplicial.
+\end{itemize}
+In either case $M-t$ is simplicial.
+
+We must now show that $M$ itself is clean. First, $M$ is simplicial: the
+only way it could fail to be is for some eligible tet $t$ to occur in $M$
+with multiplicity $2$. Choose a second tet $u$, disjointly eligible from
+$t$, so that $u\neq t$. Removing $u$ leaves $2t$ present in $M-u$, so
+$M-u$ is not simplicial---contradicting the previous paragraph applied to
+$u$. Hence $M$ is simplicial.
+
+It remains to verify that $M$ is clean, by checking the three conditions
+defining a clean complex.
+
+\begin{enumerate}
+
+\item
+$M$ is a pseudomanifold.
+For suppose some $2$-simplex $s$ occurs more than twice as the boundary
+of a $3$-simplex of $M$.
+If $s \notin \sigma$,
+it must occur at least twice plus and twice minus;
+after removing any eligible tet it
+still occurs either twice plus or twice minus in $M-t$ in case (1),
+or in one or the other of $M_1,M_2$ in case (2),
+contradicting minimality.
+If $s \in \sigma$,
+it occurs at least twice plus in $M$:
+Remove some eligible tet that does not have $s$ as a face
+to get a contradiction.
+
+\item
+$M$ has no edge $\{a,b\}$ whose link
+is disconnected.
+For the link is a 1-dimensional complex whose edges correspond to
+tets of $M$ that contain $\{a,b\}$.
+The only way a component of the link can have fewer than three
+vertices is if consists of a single edge $\{c,d\}$, corresponding
+to a tet $t=\{a,b,c,d\} \in M$.
+In this case $\{a,b\}$ must be an edge of $\sigma$,
+and $\{a,b,c\},\{a,b,d\}$ the faces of $\sigma$
+that are adjacent along $\{a,b\}$.
+These are the only faces of $\sigma$ that contain $\{a,b\}$,
+so no other component of the link can reduce to a single edge.
+If the link is disconnected, removing any eligible tet
+other than $t$ will
+leave it disconnected, contradicting minimality.
+
+\item
+$M$ has no vertex whose link is disconnected:
+For if $\link(\{a\},M)$ is not connected,
+the only way removing a single tet $t$
+can render the link connected
+is if one component of the link has a single $2$-simplex
+$\{b,c,d\}$ and $t=\{a,b,c,d\}$.
+In this case $\{a,b,c\}$, $\{a,b,d\}$, $\{a,c,d\}$ must
+all be faces of $\sigma$,
+making $a$ a vertex of $\sigma$ of degree $3$, contradiction.
+
+\item Hence $M$ is clean.
+\proofend
+
+\end{enumerate}
+
+Thanks to this theorem we may, when convenient, speak of a taut filling
+$M$ of $\sigma$ as `being' the simplicial triangulation $\tau=K(M)$ of
+$B^3$.
+
+\section{Shelling}
+
+A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$ is an
+ordering $(t_1,\ldots,t_{|\tau|})$ of its tets such that gluing them on
+one at a time maintains a triangulation of $B^3$: for each
+$k=1,\ldots,|\tau|$, the subcomplex $\tau_k$ generated by
+$\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B^3$.
+For $k>1$ we classify $t_k$ by the number of faces it shares with
+$\tau_{k-1}$. Gluing along one face increases the vertex count $v$ by
+$1$; along two faces leaves $v$ unchanged; along three faces decreases
+$v$ by $1$. In our setting the third type never occurs, since gluing a
+tet along three faces would bury an interior vertex; thus $v$ never
+decreases. (A shelling with this property is sometimes called
+\emph{monotone}; here every shelling is monotone, so we do not belabor
+the distinction.)
+
+Call $\tau$ \emph{freely shellable} if any $t \in \tau$ can serve as the
+initial tet of a shelling.
+
+\begin{theorem} \label{th3}
+If $\sigma$ is a simplicial triangulation of $S^2$, then any taut filling
+$M$ of $\sigma$ is freely shellable: its support $\tau=K(M)$ is a
+simplicial triangulation of $B^3$ admitting a shelling that begins with
+any prescribed tet.
+\end{theorem}
+
+\proofstart
+Fix the designated initial tet $t_1 \in \tau$. Rather than building
+$\tau$ up starting from $t_1$, we describe a recursive procedure---call
+it \emph{shucking}---that takes $\tau$ apart so as to remove $t_1$ last;
+reversing it yields a shelling that begins with $t_1$.
+
+The base case is $\tau = \{t_1\}$.
+
+If $\tau$ has a vertex of degree $3$ lying on a tet $t \neq t_1$, remove
+$t$ and shuck $\tau-t$, ending with $t_1$.
+
+If $\tau$ has a vertex of degree $3$ lying on $t_1$, let $t_2$ be the tet
+of $\tau-t_1$ to which $t_1$ is attached; shuck $\tau-t_1$ ending with
+$t_2$, then remove $t_1$.
+
+If $\tau$ has no vertex of degree $3$, then, as in the proof of
+Theorem \ref{th2}, there are at least $\maxdeg \geq 4$ disjointly eligible
+tets. Pick one, $t$, sharing no face with $t_1$. If $\tau-t$ does not fall
+apart, remove $t$ and shuck $\tau-t$ ending with $t_1$. If $\tau-t$ falls
+apart into the almost disjoint union of $\tau_1$ and $\tau_2$, with
+$t_1 \in \tau_1$ and $t$ bridging the two pieces, let $t_2$ be the tet of
+$\tau_2$ to which $t$ attaches; shuck $\tau_2$ ending with $t_2$, remove
+$t$, then shuck $\tau_1$ ending with $t_1$.
+\proofend
+
+\section{Flag complex}
+
+A simplicial complex is a \emph{flag complex} (also called a
+\emph{clique complex}) if every clique in its $1$-skeleton occurs as a
+simplex.
+A simplicial triangulation $\sigma$ of $S^2$
+is flag just if it is \emph{prime} 
+(not the connected sum of smaller complexes)
+and not the boundary of a tetrahedron.
+
+We can decompose any $\sigma$ as the connected sum of
+prime components $\sigma_i$.
+(Of course, to reconstruct $\sigma$ we need more than this, we need to know
+just how they are connected.)
+From the point of taut fillings these components are independent:
+Any taut filling $\tau$ of $\sigma$ is a union of taut fillings $\tau_i$.
+That each of these is freely shellable implies the same of the union.
+
+Now we want to show that, whether or not $\sigma$ itself is prime, 
+any taut filling of $\sigma$ is a flag complex.
+
+\begin{theorem}
+If $\sigma$ is a simplicial triangulation of $S^2$,
+any taut filling $\tau$ of $\sigma$ is a flag complex.
+\end{theorem}
+
+\proofstart
+The goal here is to show that neither of these
+three taboo configurations occurs
+in $\tau$:
+\begin{enumerate}
+\item
+The three edges of triangle $\{A,B,C\}$ without the 2-simplex $ABC$.
+\item
+The six edges of the $K_4$ $\{A,B,C,D\}$ without the 3-simplex $ABCD$.
+\item
+The ten edges of the $K_5$ $\{A,B,C,D,E\}$.
+\end{enumerate}
+
+If we can rule out 1 and 2 then 3 will follow, because
+along with the $K_5$ we would have the five associated $3$-simplices:
+Together these would form an $S^3$, not possible as a subcomplex
+of the topological 3-ball $\tau$.
+
+To rule out 1 and 2,
+the strategy will be to consider a minimal counterexample,
+and find a modification that would produce a smaller counterexample.
+
+If $\sigma$ has a vertex of degree 3,
+it is a connected sum with one summand a single tetrahedron.
+We can pull off the vertex from $\sigma$, while removing the associated
+tet from $\tau$, to produce a smaller counterexample.
+
+Since $\sigma$ has no vertex of degree $3$, there are at least
+$\maxdeg \geq 4$ disjointly eligible tets: tets that each meet the
+boundary in two faces, with these pairs of faces disjoint.
+Removing any one of these tets performs an `edge flip' on the boundary
+$\sigma$,
+which either (a) remains a triangulation of the 2-sphere,
+or (b) becomes an almost disjoint union where
+two such triangulations are joined along an edge.
+We will show that some choice for the flip does not remove the taboo
+configuration.
+In case (a) we have a smaller counterexample already.
+In case (b) the key is that if a $K_3$ or $K_4$ occurs
+in the almost disjoint union, it occurs on one side or the other,
+also giving a counterexample.
+
+Configuration 1:
+When we remove a tet from $\tau$ to flip an edge of $\sigma$,
+the only edge that disappears from $\tau$ is the edge that gets flipped.
+There are four choices of the edge to flip, and three edges we must
+avoid flipping.
+
+Configuration 2:
+Now there are six edges we must avoid flipping. Having dealt with
+configuration 1, we know that along with the six edges of $\{A,B,C,D\}$,
+$\tau$ contains all four faces $ABC$, $ABD$, $ACD$, $BCD$. At most two of
+these can be boundary faces, since $\sigma$ has no vertex of degree $3$;
+so at most five of the six $K_4$ edges lie on the boundary. Treating the
+octahedron separately as a special case, we may assume $\maxdeg \geq 5$,
+which gives at least five boundary edges available to flip. The only
+potential obstruction is when exactly five of the six $K_4$ edges lie on
+the boundary, the interior edge being, say, $AD$; then the two boundary
+faces of the $K_4$ are $ABC$ and $BCD$. Removing an eligible tet does no
+harm unless one of its two boundary faces is $ABC$ or $BCD$. At most two
+of our disjointly eligible tets can have $ABC$ or $BCD$ as a boundary
+face, leaving at least $\maxdeg-2 \geq 3$ further eligible tets whose
+removal flips an edge while preserving the $K_4$.
+\proofend
+
+\bibliography{taut}
+\bibliographystyle{amsplain}
+\end{document}

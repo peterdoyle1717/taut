@@ -1,0 +1,3191 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019f0546-bf30-7470-8fd2-e103fbe6d91c
+--------
+user
+TASK: Claude and Codex have compared the three version-A drafts and AGREED on a joint version 02. Build
+it now. Write text/tautxy/tautA-02.tex (the joint Claude+Codex v02). Do NOT overwrite any existing file.
+
+REPO: /Users/doyle/Dropbox/taut (work in text/tautxy/).
+
+AGREED RECIPE (both reviewers concur):
+SPINE: copy text/tautxy/tautA-codex-01.tex as the base for tautA-02.tex (it is the strongest draft:
+rigorous A(u) eligible-count, kept the explicit clean-complex verification, good/bad filling-pair framing).
+
+You MAY read text/tautxy/tautA-claude-01.tex and text/tautxy/tautA-gpt-01.tex to graft the agreed pieces.
+
+APPLY these agreed changes to the Codex spine:
+1. DELETE the stale commented-out material in the abstract/overview (the \begin{comment}...\end{comment}
+   blocks near lines 184 and 263 of tautA-codex-01.tex). GPT correctly removed these.
+2. SHELLING: graft Claude's fuller exposition (tautA-claude-01.tex around lines 940-989): use the word
+   "shucking" for the recursive procedure, and keep Claude's one-/two-/three-face attachment explanation
+   noting the three-face move would bury an interior vertex (so the vertex count never decreases). Keep it
+   concise and in Codex's polished style. (Codex's current "dismantle" phrasing may be replaced by
+   "shucking".)
+3. FLAG: keep the "flag complex (or clique complex)" terminology. Keep the explicit K4 obstruction wording
+   (interior edge, the two boundary faces ABC and BCD). Keep the explicit S^3-not-in-B^3 step.
+4. OCTAHEDRAL CASE (both reviewers say this must be made non-handwavy): replace "checked directly" with a
+   real short argument. Use this fact: in the no-degree-3 case every vertex has degree >= 4, so
+   maxdeg(sigma)=4 forces sigma to be 4-regular; a 4-regular triangulation of S^2 has v=6, e=12, f=8 and is
+   the octahedron. State that the octahedron is therefore the only sigma with maxdeg=4, and that its taut
+   filling is checked directly (a finite check). Two to three sentences; do not just say "checked directly".
+5. Keep Theorem 2 EXACTLY as strong: "M is clean and K(M) is a simplicial triangulation of B^3", WITH the
+   explicit pseudomanifold + edge-link + vertex-link verification (do NOT adopt GPT's compressed
+   gluing-only cleanness). After the two post-flip cases, add one summarizing sentence that M is now known
+   to be simplicial.
+6. Keep Codex's A(u) reveal eligible-tet count (support tets, correct boundary signs).
+7. Keep external bibliography: \bibliography{taut} and \bibliographystyle{amsplain} (do NOT inline a
+   bibliography; GPT's inline version even omits thurston:shapes).
+8. NOTATION: M for fillings, \Omega for ambient vertices, K(M) for the support complex. Do not use bare K
+   as the ambient-complex variable.
+9. Fix any leftover typos/contractions you find (e.g. "would requires" -> "would require"). Keep paper
+   register; no jokey prose; no Lean terminology.
+10. Set \date{Joint version 02 (Claude + Codex)}.
+
+Then BUILD the PDF: from text/tautxy/, run pdflatex -interaction=nonstopmode tautA-02.tex ; bibtex tautA-02 ;
+pdflatex ...; pdflatex ... (TeX Live 2010 at /usr/local/texlive/2010/bin/x86_64-darwin ; taut.bib is in
+text/tautxy/). Report whether it builds and the page count. Do NOT commit. Print a one-line confirmation
+of the files written and the build result.
+codex
+I’ll build this from the Codex draft, first checking the three source drafts and the target path so I don’t overwrite anything. Then I’ll patch the new v02 and run the requested TeX sequence from `text/tautxy/`.
+exec
+/bin/zsh -lc 'pwd && test ! -e text/tautxy/tautA-02.tex && printf '"'target clear\\n' || printf 'target exists\\n'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+/Users/doyle/Dropbox/taut
+target clear
+
+exec
+/bin/zsh -lc "sed -n '920,1005p' text/tautxy/tautA-claude-01.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+\item
+$M$ has no vertex whose link is disconnected:
+For if $\link(\{a\},M)$ is not connected,
+the only way removing a single tet $t$
+can render the link connected
+is if one component of the link has a single $2$-simplex
+$\{b,c,d\}$ and $t=\{a,b,c,d\}$.
+In this case $\{a,b,c\}$, $\{a,b,d\}$, $\{a,c,d\}$ must
+all be faces of $\sigma$,
+making $a$ a vertex of $\sigma$ of degree $3$, contradiction.
+
+\item Hence $M$ is clean.
+\proofend
+
+\end{enumerate}
+
+Thanks to this theorem we may, when convenient, speak of a taut filling
+$M$ of $\sigma$ as `being' the simplicial triangulation $\tau=K(M)$ of
+$B^3$.
+
+\section{Shelling}
+
+A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$ is an
+ordering $(t_1,\ldots,t_{|\tau|})$ of its tets such that gluing them on
+one at a time maintains a triangulation of $B^3$: for each
+$k=1,\ldots,|\tau|$, the subcomplex $\tau_k$ generated by
+$\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B^3$.
+For $k>1$ we classify $t_k$ by the number of faces it shares with
+$\tau_{k-1}$. Gluing along one face increases the vertex count $v$ by
+$1$; along two faces leaves $v$ unchanged; along three faces decreases
+$v$ by $1$. In our setting the third type never occurs, since gluing a
+tet along three faces would bury an interior vertex; thus $v$ never
+decreases. (A shelling with this property is sometimes called
+\emph{monotone}; here every shelling is monotone, so we do not belabor
+the distinction.)
+
+Call $\tau$ \emph{freely shellable} if any $t \in \tau$ can serve as the
+initial tet of a shelling.
+
+\begin{theorem} \label{th3}
+If $\sigma$ is a simplicial triangulation of $S^2$, then any taut filling
+$M$ of $\sigma$ is freely shellable: its support $\tau=K(M)$ is a
+simplicial triangulation of $B^3$ admitting a shelling that begins with
+any prescribed tet.
+\end{theorem}
+
+\proofstart
+Fix the designated initial tet $t_1 \in \tau$. Rather than building
+$\tau$ up starting from $t_1$, we describe a recursive procedure---call
+it \emph{shucking}---that takes $\tau$ apart so as to remove $t_1$ last;
+reversing it yields a shelling that begins with $t_1$.
+
+The base case is $\tau = \{t_1\}$.
+
+If $\tau$ has a vertex of degree $3$ lying on a tet $t \neq t_1$, remove
+$t$ and shuck $\tau-t$, ending with $t_1$.
+
+If $\tau$ has a vertex of degree $3$ lying on $t_1$, let $t_2$ be the tet
+of $\tau-t_1$ to which $t_1$ is attached; shuck $\tau-t_1$ ending with
+$t_2$, then remove $t_1$.
+
+If $\tau$ has no vertex of degree $3$, then, as in the proof of
+Theorem \ref{th2}, there are at least $\maxdeg \geq 4$ disjointly eligible
+tets. Pick one, $t$, sharing no face with $t_1$. If $\tau-t$ does not fall
+apart, remove $t$ and shuck $\tau-t$ ending with $t_1$. If $\tau-t$ falls
+apart into the almost disjoint union of $\tau_1$ and $\tau_2$, with
+$t_1 \in \tau_1$ and $t$ bridging the two pieces, let $t_2$ be the tet of
+$\tau_2$ to which $t$ attaches; shuck $\tau_2$ ending with $t_2$, remove
+$t$, then shuck $\tau_1$ ending with $t_1$.
+\proofend
+
+\section{Flag complex}
+
+A simplicial complex is a \emph{flag complex} (also called a
+\emph{clique complex}) if every clique in its $1$-skeleton occurs as a
+simplex.
+A simplicial triangulation $\sigma$ of $S^2$
+is flag just if it is \emph{prime} 
+(not the connected sum of smaller complexes)
+and not the boundary of a tetrahedron.
+
+We can decompose any $\sigma$ as the connected sum of
+prime components $\sigma_i$.
+(Of course, to reconstruct $\sigma$ we need more than this, we need to know
+just how they are connected.)
+From the point of taut fillings these components are independent:
+
+exec
+/bin/zsh -lc "sed -n '160,290p' text/tautxy/tautA-codex-01.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+\newcommand{\mns}{\mathord{-}}
+
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Let $\sigma$ be a simplicial triangulation of the 2-sphere,
+$X$ the associated integral 2-cycle.
+A filling of $X$ is an integral 3-chain $M$
+with $\del M = X$;
+a taut filling is one with minimal $L_1$-norm.
+We show that any taut filling 
+arises from an extension of $\sigma$ to
+a simplicial complex homeomorphic to the 3-ball.
+This complex is shellable, and `flag':
+every clique in its 1-skeleton occurs as a simplex.
+The key to the proof is the general
+fact that any taut filling of an $n$-cycle
+splits under disjoint union, connected sum, and more generally
+what we call almost disjoint union,
+where summands are supported on sets that overlap in at most $n+1$ vertices.
+\begin{comment}
+Despite the generality of this result, we have nothing to say about
+optimal fillings of spheres of dimension 3 or higher.
+\end{comment}
+\end{abstract}
+
+\section{Overview}
+Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+with vertices $\Omega$,
+viewed as the abstract simplicial complex consisting of all subsets of
+$\Omega$.
+Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+be its integral $n$-chains and $n$-cycles.
+A \emph{filling} of an $n$-cycle $X \in Z_n$ is any
+$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
+(Here and throughout we assume $n\geq 1$.)
+Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+Call $M \in C_{n+1}$ \emph{taut} if it is an optimal filling
+of its boundary, i.e., if $|M|=\Zvol(\del M)$.
+
+For $X \in C_n$ let
+$\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+to which $X$ assigns non-$0$ weight.
+For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+(Cf.\ Proposition \ref{nointernal} below.)
+This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+
+Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+\[
+|\vertices(X) \cap \vertices(Y)| \leq n+1
+.
+\]
+This notion generalizes both disjoint union and connected sum
+along an $n$-simplex.
+Ellison \cite{ellison:gap}
+showed the $\Zvol$ adds under almost disjoint union:
+$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+This means that \emph{some} taut filling $M$ of $X$ splits into a sum
+$M=M_X+M_Y$ of taut fillings of $X,Y$.
+Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+that when $n \geq 2$, \emph{any} taut filling of $X+Y$ splits.
+
+In place of integral chains we can use chains with
+coefficients in $\QQ$ or $\RR$.
+Evidently $\Rvol \leq \Qvol$.
+But computing $\Rvol$ is
+a linear programming problem with rational coefficients,
+so in fact $\Qvol = \Rvol$.
+Ellison used LP duality to prove that
+$\Qvol$ adds under almost
+disjoint union.
+Now for $n \geq 2$ we get the stronger result
+(Corollary \ref{cor1})
+that taut $\QQ$-fillings split:
+Multiplying a taut
+$\QQ$-filling $M$ of $X$ by a common denominator $q$
+yields a taut $\ZZ$-filling $qM$ of $qX$:
+Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
+of the $\QQ$-filling $M$.
+
+Now let $\sigma$ be a simplicial triangulation of $S^2$;
+let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
+be either one of the 2-cycles
+that arises from $\sigma$ by orienting its $2$-simplices;
+and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+We will show that
+\[
+\Zvol(\sigma) = \tetvol(\sigma)
+.
+\]
+Certainly $\Zvol \leq \tetvol$,
+because any extension $\tau$ induces a filling
+of $X(\sigma)$.
+Theorem \ref{th2} states that 
+any taut filling of $X(\sigma)$ arises in this way.
+The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+\begin{comment}
+We use induction, with base case $\sigma$ a tetrahedron.
+In any taut filling $M$ of $X(\sigma)$,
+thought of as a multiset of oriented $3$-simplices,
+some $t \in M$ meets $\sigma$ in at least two faces.
+Ignoring the base case,
+$M-t$ is a taut filling of
+$X(\sigma) - \del t = X(\sigma^\prime)$,
+where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+In the first case induction yields a triangulation of $B^3$,
+and we glue on $t$.
+In the second case by Theorem \ref{th1}
+$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+by induction both give triangulations of $B^3$, which we
+glue onto $t$.
+So we wind up with some kind of triangulation $\tau$ of $B^3$,
+built from the simplices of $M$.
+The remaining point is to ensure that in $M$ there are no
+identifications beyond those in $\tau$.
+\end{comment}
+
+We do not know what happens for spheres of dimension 3 or greater.
+
+\section{Background}
+
+Our interest in $\Zvol$ stems from the work
+of Sleator, Tarjan, and Thurston
+
+exec
+/bin/zsh -lc "rg --files text/tautxy | rg 'tautA-(codex|claude|gpt)-01\\.tex|taut\\.bib'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+text/tautxy/tautA-gpt-01.tex
+text/tautxy/tautA-claude-01.tex
+text/tautxy/taut.bib
+text/tautxy/tautA-codex-01.tex
+
+codex
+The target does not exist, and the Codex draft has exactly the stale comment blocks called out in the task. I’ve also pulled Claude’s shelling wording; next I’m locating the matching sections in the Codex spine so the changes stay local.
+exec
+/bin/zsh -lc "sed -n '850,1045p' text/tautxy/tautA-codex-01.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+Adding $t$ back gives a triangulation of $B^3$ unless the same support
+tetrahedron $t$ was already present in $M-t$, i.e. unless $t$ had
+multiplicity $2$ in $M$.
+If that happened, remove instead an eligible tet $u$ whose boundary faces
+are disjoint from those of $t$.
+Then $M-u$ would still contain the repeated support tetrahedron $t$ and
+could not be simplicial, so $(\sigma_u,M-u)$ would be a smaller bad
+filling pair, a contradiction.
+
+Second, if $cd$ was already an edge of $\sigma$, the flipped cycle is an
+almost disjoint union of two simplicial triangulations
+$\sigma_1,\sigma_2$ of $S^2$, conjoined along the edge $cd$.
+By Theorem \ref{th1}, $M-t$ splits as $M_1+M_2$, where $M_i$ is a taut
+filling of $X(\sigma_i)$.
+By minimality each $(\sigma_i,M_i)$ is good.
+The complex $K(M-t)$ need not be clean as a single complex, because the
+link of the shared edge $cd$ can be disconnected; nevertheless it is the
+union of the two clean pieces $K(M_1)$ and $K(M_2)$.
+Gluing these two triangulated balls to the two sides of $t$ gives a
+triangulated ball, unless $t$ already occurred in $M-t$.
+The same disjoint eligible-tet argument rules out that multiplicity-$2$
+obstruction.
+
+We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+triangulation of $B^3$ unless one of the clean-complex conditions fails.
+The remaining conditions are ruled out by the same minimality argument.
+
+\begin{enumerate}
+\item
+$K(M)$ is a pseudomanifold.
+Suppose a $2$-simplex $s$ occurs as a face of more than two support
+tetrahedra of $M$.
+If $s \notin \sigma$, then after removing an eligible tet not needed to
+account for $s$, the same excess occurrence remains in either the
+one-sphere case or in one of the two split pieces in the conjoined case,
+contradicting minimality.
+If $s \in \sigma$, choose an eligible tet not having $s$ as a boundary
+face; the excess boundary incidence again persists, contradicting
+minimality.
+
+\item
+No edge $\{a,b\}$ has disconnected link in $K(M)$.
+The link is a $1$-dimensional complex whose edges correspond to support
+tetrahedra of $M$ containing $\{a,b\}$.
+The only way a component of such a link can have fewer than three
+vertices is for the component to be a single edge $\{c,d\}$,
+corresponding to a tet $\{a,b,c,d\}$.
+Then $\{a,b\}$ is an edge of $\sigma$ and
+$\{a,b,c\},\{a,b,d\}$ are the two boundary faces adjacent along it.
+No other component can also be a single edge.
+If the link were disconnected, removing an eligible tet other than this
+one would leave it disconnected in the one-sphere case or in one split
+piece in the conjoined case, contradicting minimality.
+
+\item
+No vertex has disconnected link in $K(M)$.
+If $\link(\{a\},K(M))$ were disconnected, the only way removing one tet
+could make it connected would be for one component of the link to be a
+single $2$-simplex $\{b,c,d\}$ and for the removed tet to be
+$\{a,b,c,d\}$.
+Then $\{a,b,c\}$, $\{a,b,d\}$, and $\{a,c,d\}$ would all be boundary
+faces of $\sigma$, so $a$ would have degree $3$ in $\sigma$, contrary to
+primality.
+\end{enumerate}
+
+Thus $M$ is clean and $K(M)$ is a simplicial triangulation of $B^3$,
+contradicting that $(\sigma,M)$ was bad.
+\proofend
+
+After Theorem \ref{th2} we will often identify a taut filling $M$ of
+$X(\sigma)$ with the triangulated ball $K(M)$.
+
+\section{Shelling}
+
+A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+is an ordering
+$(t_1,\ldots,t_{|\tau|})$
+of its tetrahedra such that, for each $k$,
+the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+simplicial triangulation of $B^3$.
+For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+faces.  In the shellings obtained below, the three-face move does not
+occur; equivalently, the number of boundary vertices never decreases.
+Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+the first tet of such a shelling.
+
+\begin{theorem} \label{th3}
+If $\sigma$ is a simplicial triangulation of $S^2$,
+any taut filling of $X(\sigma)$ is a freely shellable
+simplicial triangulation of $B^3$.
+\end{theorem}
+
+\proofstart
+By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+Fix a tet $t_1 \in \tau$ that we want to remove last.
+We recursively dismantle $\tau$; reversing the dismantling order gives
+the shelling.
+
+If $\tau$ consists only of $t_1$, there is nothing to prove.
+If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+$t\ne t_1$, remove that tet and continue with $\tau-t$.
+If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+
+It remains to consider the case where the boundary has no degree-$3$
+vertex.  As in the proof of Theorem \ref{th2}, there are at least
+$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+Choose one, say $t$, whose two boundary faces are disjoint from those of
+$t_1$.
+If removing $t$ leaves one triangulated ball, remove $t$ and continue
+ending with $t_1$.
+If removing $t$ splits the boundary into two conjoined spheres, then
+$\tau-t$ splits into two triangulated balls $\tau_1,\tau_2$ by
+Theorem \ref{th1} and Theorem \ref{th2}.
+Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+the gluing face of $t$.
+Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
+$\tau_1$ ending with $t_1$.
+Every removal is the reverse of attaching along one or two faces, so the
+reversed order is the desired shelling.
+\proofend
+
+\section{Flag complex}
+
+A simplicial complex is a \emph{flag complex}
+(or clique complex) if every clique in its $1$-skeleton occurs as a
+simplex.
+A simplicial triangulation $\sigma$ of $S^2$
+is flag exactly when it is prime
+(not the connected sum of smaller complexes)
+and is not the boundary of a tetrahedron.
+
+We can decompose any $\sigma$ as the connected sum of
+prime components $\sigma_i$.
+From the point of view of taut fillings these components are independent:
+any taut filling of $X(\sigma)$ is the union of taut fillings of the
+$X(\sigma_i)$.
+We now prove that, regardless of whether $\sigma$ itself is prime,
+every taut filling is flag.
+
+\begin{theorem}
+If $\sigma$ is a simplicial triangulation of $S^2$,
+any taut filling of $X(\sigma)$ is a flag complex.
+\end{theorem}
+
+\proofstart
+Let $\tau$ be the triangulated ball associated to the taut filling.
+We must rule out the following minimal failures of flagness:
+\begin{enumerate}
+\item
+the three edges of a triangle $\{A,B,C\}$ without the face $ABC$;
+\item
+the six edges of the $K_4$ on $\{A,B,C,D\}$ without the tet $ABCD$;
+\item
+the ten edges of the $K_5$ on $\{A,B,C,D,E\}$.
+\end{enumerate}
+
+If the first two configurations are absent, then the third is absent as
+well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+$3$-ball.
+
+We argue by minimal counterexample.
+If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+with one summand the tetrahedral boundary.
+Removing that summand from $\sigma$ and the corresponding boundary tet
+from $\tau$ gives a smaller counterexample.
+Thus we may assume that $\sigma$ has no degree-$3$ vertex.
+
+Then the eligible-tet count from Theorem \ref{th2} gives at least
+$\maxdeg(\sigma)\geq 4$ eligible tets with pairwise disjoint pairs of
+boundary faces.
+Removing one of them flips an edge of $\sigma$.
+The result is either a smaller triangulation of $S^2$ or a pair of
+triangulated spheres conjoined along the new edge.
+In the conjoined case, any forbidden $K_3$ or $K_4$ that survives lies
+on one side or the other, producing a smaller counterexample there.
+
+For Configuration 1, removing an eligible tet deletes from $\tau$ only
+the edge being flipped.  There are at least four available flips and only
+three edges in the forbidden triangle, so one flip preserves the
+configuration, contradiction.
+
+For Configuration 2, assume Configuration 1 has already been ruled out.
+Then the six edges on $\{A,B,C,D\}$ force all four triangular faces
+$ABC,ABD,ACD,BCD$ to be present in $\tau$.
+At most two of these faces can lie in the boundary $\sigma$, since three
+would make a degree-$3$ boundary vertex.
+We need an eligible flip that does not delete one of the six $K_4$ edges.
+If $\maxdeg(\sigma)\geq 5$, the disjoint eligible-tet family gives at
+least five candidate flips.  At most two candidates use one of the
+boundary faces among $ABC,ABD,ACD,BCD$, and the remaining candidates
+preserve the $K_4$ unless all but one of its six edges lie on the
+boundary.  In that exceptional case, say the interior edge is $AD$;
+
+exec
+/bin/zsh -lc "rg -n \"date\\{|section\\{Shelling\\}|section\\{Flag|checked directly|octa|would requires|would require|Theorem \\\\ref\\{th2\\}|S\\"'^3|K'"\\(M\\)|bare K|bibliography|bibliographystyle|flag complex|clique complex|maxdeg\" text/tautxy/tautA-codex-01.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+18:\date{Version dated 2026-02-19
+135:\newcommand{\maxdeg}{\kw{maxdeg}}
+295:of $S^2$ has $\tetvol \leq 2v-4-\maxdeg(\sigma)$.
+296:If $v\geq13$ $\maxdeg(\sigma) \geq 6$, so $\tetvol \leq 2v-10$.
+331:with $\maxdeg \leq 6$, the gap between $\Qvol$ and $\Zvol$ is $<1$,
+339:but taking the connected sum pushes $\maxdeg$ above $6$.
+400:\maxdeg(U) = \max_x \deg(x,U)
+419:\begin{prop} \label{maxdeg}
+422:\Zvol(X) \leq |X| - \maxdeg(X)
+431:By Proposition \ref{maxdeg} a non-trivial complete cone is not taut.
+771:because that would require two distinct
+782:For a chain $M \in C_n$, define $K(M)$ to be the pure simplicial
+787:We call $M$ \emph{clean} if $M$ is simplicial and $K(M)$ is a clean
+794:filling of $X(\sigma)$, then $M$ is clean and $K(M)$ is a simplicial
+801:Call a filling pair \emph{good} if $M$ is clean and $K(M)$ is a
+817:By Proposition \ref{maxdeg},
+819:|M|=\Zvol(\sigma) \leq f-\maxdeg(\sigma).
+832:Thus $r\geq \maxdeg(\sigma)$.
+833:Consequently there are at least $\maxdeg(\sigma)$ eligible support
+873:We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+879:$K(M)$ is a pseudomanifold.
+891:No edge $\{a,b\}$ has disconnected link in $K(M)$.
+905:No vertex has disconnected link in $K(M)$.
+906:If $\link(\{a\},K(M))$ were disconnected, the only way removing one tet
+915:Thus $M$ is clean and $K(M)$ is a simplicial triangulation of $B^3$,
+920:$X(\sigma)$ with the triangulated ball $K(M)$.
+922:\section{Shelling}
+957:$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+973:\section{Flag complex}
+975:A simplicial complex is a \emph{flag complex}
+976:(or clique complex) if every clique in its $1$-skeleton occurs as a
+993:any taut filling of $X(\sigma)$ is a flag complex.
+1022:$\maxdeg(\sigma)\geq 4$ eligible tets with pairwise disjoint pairs of
+1041:If $\maxdeg(\sigma)\geq 5$, the disjoint eligible-tet family gives at
+1048:The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+1049:fillings are checked directly from the same flip alternatives.
+1053:\bibliography{taut}
+1054:\bibliographystyle{amsplain}
+
+exec
+/bin/zsh -lc "sed -n '1045,1165p' text/tautxy/tautA-codex-01.tex" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '1,80p' text/tautxy/tautA-codex-01.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+boundary.  In that exceptional case, say the interior edge is $AD$;
+then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+two disjoint eligible tets meet them.  A preserving flip remains.
+The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+fillings are checked directly from the same flip alternatives.
+Thus Configuration 2 is impossible.
+\proofend
+
+\bibliography{taut}
+\bibliographystyle{amsplain}
+\end{document}
+
+ succeeded in 0ms:
+\documentclass[12pt]{article}
+\usepackage{graphicx,amssymb,amsmath,amsthm}
+\usepackage{hyperref,url}
+\usepackage{verbatim}
+\usepackage[labelfont=bf]{caption}
+\newcommand{\nocopyright}{
+No Copyright\thanks{
+The authors hereby waive all copyright
+and related or neighboring rights to this work,
+and dedicate it to the public domain.
+This applies worldwide.
+}}
+\title{Taut fillings}
+\author{Peter Doyle \and Matthew Ellison \and Zili Wang\thanks{
+Zili Wang is supported by
+the National Natural Science Foundation of China (Grant No. 12301432)
+}}
+\date{Version dated 2026-02-19
+}
+\newtheorem{theorem}{Theorem}
+\newtheorem{prop}{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem*{hypo}{Hypothesis}
+\newtheorem*{question}{Question}
+\newtheorem{corollary}{Corollary}
+\newtheorem*{conjecture}{Conjecture}
+
+\def\startproof{{\bf {\medskip}{\noindent}Proof: }}
+\def\definition{{\bf {\bigskip}{\noindent}Definition: }}
+\def\endproof{$\spadesuit$  \newline}
+
+\newcommand{\proofstart}{{\noindent \bf Proof.\ }}
+\newcommand{\note}{{\noindent \bf Note.\ }}
+\newcommand{\pfend}{\spadesuit}
+\newcommand{\mathproofend}{\quad \qed}
+\newcommand{\proofend}{$\quad \qed$}
+\newcommand{\goesto}{\rightarrow}
+\newcommand{\p}{\;\;\;}
+\newcommand{\comma}{\p,}
+\newcommand{\pd}{\p.}
+\newcommand{\semi}{\p;}
+\newcommand{\Rplus}{{\RR_{\geq 0}}}
+
+
+
+\newcommand{\beginfigurepos}{\begin{figure}[htbp]}
+%
+% \fig
+% followed by {filename}{label}{caption}
+%
+\newcommand{\fig}[3]{
+\beginfigurepos
+\includegraphics[width=370pt]{figures/#1.pdf}
+\caption{#3}
+\label{#2}
+\end{figure}
+}
+%
+% \figsize
+% followed by {size}{filename}{label}{caption}
+%
+\newcommand{\figsize}[4]{
+\beginfigurepos
+\centerline{
+\includegraphics[width=#1]{figures/#2.pdf}
+}
+\caption{#4}
+\label{#3}
+\end{figure}
+}
+
+
+\def\ZZ{\mathbf{Z}}
+\def\QQ{\mathbf{Q}}
+\def\RR{\mathbf{R}}
+\def\heartsuit{\mbox{\boldmath{$Z$}}}% 
+\def\del{\partial}
+\def\dist{\mathrm{dist}}
+\def\eps{\epsilon}
+
+
+codex
+I’m going to create `tautA-02.tex` by copying the Codex draft now that the target is confirmed clear. The edits are confined to the requested prose sections: metadata, stale comments, shelling, the flag proof’s octahedral paragraph, and a short theorem-proof transition sentence.
+exec
+/bin/zsh -lc 'cp text/tautxy/tautA-codex-01.tex text/tautxy/tautA-02.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+apply patch
+patch: completed
+/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..a974daac5e6edae25a2aaae112cc6faaac75d2e5
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..a974daac5e6edae25a2aaae112cc6faaac75d2e5
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+
+codex
+The first patch created the v02 file and applied the straightforward edits. I spotted that the octahedral sentence still needs to be strengthened beyond the copied wording, so I’m tightening that proof paragraph and checking for leftover wording/typos.
+exec
+/bin/zsh -lc "rg -n \"begin\\{comment\\}|end\\{comment\\}|dismant|checked directly|would requires|\\bK\\b|date\\{|bibliography|bibliographystyle|The case \\\\maxdeg|S\\"'^3|closed '"\\\\"'$3'"\\\\\\"'$-sphere|simplicial and that" text/tautxy/tautA-02.tex' in /Users/doyle/Dropbox/taut
+ exited 2 in 0ms:
+rg: regex parse error:
+    (?:begin\{comment\}|end\{comment\}|dismant|checked directly|would requires|\bK\b|date\{|bibliography|bibliographystyle|The case \maxdeg|S\^3|closed \\$-sphere|simplicial and that)
+                                                                                                                                    ^^
+error: unrecognized escape sequence
+
+exec
+/bin/zsh -lc "sed -n '922,1060p' text/tautxy/tautA-02.tex" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '780,925p' text/tautxy/tautA-02.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+recursive procedure, called \emph{shucking}, that takes $\tau$ apart
+so as to remove $t_1$ last; reversing the shucking order gives the
+shelling.
+
+If $\tau$ consists only of $t_1$, there is nothing to prove.
+If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+$t\ne t_1$, remove that tet and continue with $\tau-t$.
+If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+
+It remains to consider the case where the boundary has no degree-$3$
+vertex.  As in the proof of Theorem \ref{th2}, there are at least
+$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+Choose one, say $t$, whose two boundary faces are disjoint from those of
+$t_1$.
+If removing $t$ leaves one triangulated ball, remove $t$ and continue
+ending with $t_1$.
+If removing $t$ splits the boundary into two conjoined spheres, then
+$\tau-t$ splits into two triangulated balls $\tau_1,\tau_2$ by
+Theorem \ref{th1} and Theorem \ref{th2}.
+Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+the gluing face of $t$.
+Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+$\tau_1$ ending with $t_1$.
+Every removal is the reverse of attaching along one or two faces, so the
+reversed order is the desired shelling.
+\proofend
+
+\section{Flag complex}
+
+A simplicial complex is a \emph{flag complex}
+(or clique complex) if every clique in its $1$-skeleton occurs as a
+simplex.
+A simplicial triangulation $\sigma$ of $S^2$
+is flag exactly when it is prime
+(not the connected sum of smaller complexes)
+and is not the boundary of a tetrahedron.
+
+We can decompose any $\sigma$ as the connected sum of
+prime components $\sigma_i$.
+From the point of view of taut fillings these components are independent:
+any taut filling of $X(\sigma)$ is the union of taut fillings of the
+$X(\sigma_i)$.
+We now prove that, regardless of whether $\sigma$ itself is prime,
+every taut filling is flag.
+
+\begin{theorem}
+If $\sigma$ is a simplicial triangulation of $S^2$,
+any taut filling of $X(\sigma)$ is a flag complex.
+\end{theorem}
+
+\proofstart
+Let $\tau$ be the triangulated ball associated to the taut filling.
+We must rule out the following minimal failures of flagness:
+\begin{enumerate}
+\item
+the three edges of a triangle $\{A,B,C\}$ without the face $ABC$;
+\item
+the six edges of the $K_4$ on $\{A,B,C,D\}$ without the tet $ABCD$;
+\item
+the ten edges of the $K_5$ on $\{A,B,C,D,E\}$.
+\end{enumerate}
+
+If the first two configurations are absent, then the third is absent as
+well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+$3$-ball.
+
+We argue by minimal counterexample.
+If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+with one summand the tetrahedral boundary.
+Removing that summand from $\sigma$ and the corresponding boundary tet
+from $\tau$ gives a smaller counterexample.
+Thus we may assume that $\sigma$ has no degree-$3$ vertex.
+
+Then the eligible-tet count from Theorem \ref{th2} gives at least
+$\maxdeg(\sigma)\geq 4$ eligible tets with pairwise disjoint pairs of
+boundary faces.
+Removing one of them flips an edge of $\sigma$.
+The result is either a smaller triangulation of $S^2$ or a pair of
+triangulated spheres conjoined along the new edge.
+In the conjoined case, any forbidden $K_3$ or $K_4$ that survives lies
+on one side or the other, producing a smaller counterexample there.
+
+For Configuration 1, removing an eligible tet deletes from $\tau$ only
+the edge being flipped.  There are at least four available flips and only
+three edges in the forbidden triangle, so one flip preserves the
+configuration, contradiction.
+
+For Configuration 2, assume Configuration 1 has already been ruled out.
+Then the six edges on $\{A,B,C,D\}$ force all four triangular faces
+$ABC,ABD,ACD,BCD$ to be present in $\tau$.
+At most two of these faces can lie in the boundary $\sigma$, since three
+would make a degree-$3$ boundary vertex.
+We need an eligible flip that does not delete one of the six $K_4$ edges.
+If $\maxdeg(\sigma)\geq 5$, the disjoint eligible-tet family gives at
+least five candidate flips.  At most two candidates use one of the
+boundary faces among $ABC,ABD,ACD,BCD$, and the remaining candidates
+preserve the $K_4$ unless all but one of its six edges lie on the
+boundary.  In that exceptional case, say the interior edge is $AD$;
+then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+two disjoint eligible tets meet them.  A preserving flip remains.
+The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+fillings are checked directly from the same flip alternatives.
+Thus Configuration 2 is impossible.
+\proofend
+
+\bibliography{taut}
+\bibliographystyle{amsplain}
+\end{document}
+
+ succeeded in 0ms:
+minimal.  Let $v,e,f$ count the vertices, edges, and faces of $\sigma$.
+Then $e=3v-6$ and $f=2v-4$.
+The tetrahedral boundary is good, so $v>4$.
+Because taut fillings split under connected sum, we may assume that
+$\sigma$ is prime, meaning not a connected sum along a triangle.
+In particular, $\sigma$ has no vertex of degree $3$.
+
+Call a support tetrahedron $t$ of $M$ \emph{eligible} if two of its
+oriented boundary faces are faces of $X(\sigma)$ with the correct signs.
+It cannot have three such faces, since that would give a degree-$3$
+vertex in $\sigma$.
+By Proposition \ref{maxdeg},
+\[
+|M|=\Zvol(\sigma) \leq f-\maxdeg(\sigma).
+\]
+For each support tetrahedron $u$ of $M$, let $A(u)$ be the set of faces
+of $\sigma$ that occur as correctly oriented boundary faces of $u$.
+Each $A(u)$ has size at most $2$.
+Every face of $\sigma$ occurs in at least one $A(u)$, because its
+coefficient in $\partial M=X(\sigma)$ is nonzero with the prescribed sign.
+List the support tetrahedra of $M$ and reveal the sets $A(u)$ one at a
+time, recording only faces of $\sigma$ not previously seen.
+If $r$ support tetrahedra reveal two new faces, then
+\[
+f \leq |\operatorname{supp} M|+r \leq |M|+r.
+\]
+Thus $r\geq \maxdeg(\sigma)$.
+Consequently there are at least $\maxdeg(\sigma)$ eligible support
+tetrahedra whose pairs of boundary faces are mutually disjoint.
+We will use only the fact that, given any boundary face $s$ and any
+eligible tet $t$, there is another eligible tet whose boundary faces are
+disjoint from those of $t$ and do not include $s$.
+
+Let $t$ be an eligible tet with boundary faces
+$s_1=[a,b,c]$ and $s_2=[b,a,d]$.
+Removing $t$ from $M$ gives a taut filling $M-t$ of the cycle obtained
+from $X(\sigma)$ by replacing $s_1,s_2$ with
+$[c,d,b]$ and $[d,c,a]$.
+At the level of the boundary complex, this flips the edge $ab$ to $cd$.
+There are two cases.
+
+First, if $cd$ was not an edge of $\sigma$, the flipped complex
+$\sigma_t$ is again a simplicial triangulation of $S^2$.
+By minimality, $(\sigma_t,M-t)$ is good.
+Adding $t$ back gives a triangulation of $B^3$ unless the same support
+tetrahedron $t$ was already present in $M-t$, i.e. unless $t$ had
+multiplicity $2$ in $M$.
+If that happened, remove instead an eligible tet $u$ whose boundary faces
+are disjoint from those of $t$.
+Then $M-u$ would still contain the repeated support tetrahedron $t$ and
+could not be simplicial, so $(\sigma_u,M-u)$ would be a smaller bad
+filling pair, a contradiction.
+
+Second, if $cd$ was already an edge of $\sigma$, the flipped cycle is an
+almost disjoint union of two simplicial triangulations
+$\sigma_1,\sigma_2$ of $S^2$, conjoined along the edge $cd$.
+By Theorem \ref{th1}, $M-t$ splits as $M_1+M_2$, where $M_i$ is a taut
+filling of $X(\sigma_i)$.
+By minimality each $(\sigma_i,M_i)$ is good.
+The complex $K(M-t)$ need not be clean as a single complex, because the
+link of the shared edge $cd$ can be disconnected; nevertheless it is the
+union of the two clean pieces $K(M_1)$ and $K(M_2)$.
+Gluing these two triangulated balls to the two sides of $t$ gives a
+triangulated ball, unless $t$ already occurred in $M-t$.
+The same disjoint eligible-tet argument rules out that multiplicity-$2$
+obstruction.
+
+In both post-flip cases, therefore, $M$ is now known to be simplicial.
+We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+triangulation of $B^3$ unless one of the clean-complex conditions fails.
+The remaining conditions are ruled out by the same minimality argument.
+
+\begin{enumerate}
+\item
+$K(M)$ is a pseudomanifold.
+Suppose a $2$-simplex $s$ occurs as a face of more than two support
+tetrahedra of $M$.
+If $s \notin \sigma$, then after removing an eligible tet not needed to
+account for $s$, the same excess occurrence remains in either the
+one-sphere case or in one of the two split pieces in the conjoined case,
+contradicting minimality.
+If $s \in \sigma$, choose an eligible tet not having $s$ as a boundary
+face; the excess boundary incidence again persists, contradicting
+minimality.
+
+\item
+No edge $\{a,b\}$ has disconnected link in $K(M)$.
+The link is a $1$-dimensional complex whose edges correspond to support
+tetrahedra of $M$ containing $\{a,b\}$.
+The only way a component of such a link can have fewer than three
+vertices is for the component to be a single edge $\{c,d\}$,
+corresponding to a tet $\{a,b,c,d\}$.
+Then $\{a,b\}$ is an edge of $\sigma$ and
+$\{a,b,c\},\{a,b,d\}$ are the two boundary faces adjacent along it.
+No other component can also be a single edge.
+If the link were disconnected, removing an eligible tet other than this
+one would leave it disconnected in the one-sphere case or in one split
+piece in the conjoined case, contradicting minimality.
+
+\item
+No vertex has disconnected link in $K(M)$.
+If $\link(\{a\},K(M))$ were disconnected, the only way removing one tet
+could make it connected would be for one component of the link to be a
+single $2$-simplex $\{b,c,d\}$ and for the removed tet to be
+$\{a,b,c,d\}$.
+Then $\{a,b,c\}$, $\{a,b,d\}$, and $\{a,c,d\}$ would all be boundary
+faces of $\sigma$, so $a$ would have degree $3$ in $\sigma$, contrary to
+primality.
+\end{enumerate}
+
+Thus $M$ is clean and $K(M)$ is a simplicial triangulation of $B^3$,
+contradicting that $(\sigma,M)$ was bad.
+\proofend
+
+After Theorem \ref{th2} we will often identify a taut filling $M$ of
+$X(\sigma)$ with the triangulated ball $K(M)$.
+
+\section{Shelling}
+
+A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+is an ordering
+$(t_1,\ldots,t_{|\tau|})$
+of its tetrahedra such that, for each $k$,
+the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+simplicial triangulation of $B^3$.
+For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+faces. Gluing along one face increases the boundary vertex count by $1$;
+gluing along two faces leaves it unchanged; gluing along three faces
+would bury an interior vertex, and so cannot occur in the shellings
+obtained below. Thus the boundary vertex count never decreases.
+Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+the first tet of such a shelling.
+
+\begin{theorem} \label{th3}
+If $\sigma$ is a simplicial triangulation of $S^2$,
+any taut filling of $X(\sigma)$ is a freely shellable
+simplicial triangulation of $B^3$.
+\end{theorem}
+
+\proofstart
+By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
+recursive procedure, called \emph{shucking}, that takes $\tau$ apart
+so as to remove $t_1$ last; reversing the shucking order gives the
+shelling.
+
+
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..a974daac5e6edae25a2aaae112cc6faaac75d2e5
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+
+codex
+The shelling section now uses “shucking” and includes the one/two/three-face vertex-count explanation. I’m making the flag proof’s `S^3` and octahedral cases explicit before building.
+apply patch
+patch: completed
+/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..0dad271af2c38caae2b18bd235b72677dd75d6e6
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+@@ -1007,9 +985,9 @@
+ 
+ If the first two configurations are absent, then the third is absent as
+ well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+-five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+-Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+-$3$-ball.
++five tetrahedra form the boundary of a $4$-simplex, a triangulated
++$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
++triangulated $B^3$.
+ 
+ We argue by minimal counterexample.
+ If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+@@ -1045,8 +1023,13 @@
+ boundary.  In that exceptional case, say the interior edge is $AD$;
+ then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+ two disjoint eligible tets meet them.  A preserving flip remains.
+-The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+-fillings are checked directly from the same flip alternatives.
++It remains to consider $\maxdeg(\sigma)=4$.
++Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
++$4$, so $\sigma$ is $4$-regular.  The equations
++$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
++the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
++For this single boundary triangulation the taut fillings are handled by
++a finite check using the same flip alternatives.
+ Thus Configuration 2 is impossible.
+ \proofend
+ 
+
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..0dad271af2c38caae2b18bd235b72677dd75d6e6
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+@@ -1007,9 +985,9 @@
+ 
+ If the first two configurations are absent, then the third is absent as
+ well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+-five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+-Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+-$3$-ball.
++five tetrahedra form the boundary of a $4$-simplex, a triangulated
++$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
++triangulated $B^3$.
+ 
+ We argue by minimal counterexample.
+ If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+@@ -1045,8 +1023,13 @@
+ boundary.  In that exceptional case, say the interior edge is $AD$;
+ then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+ two disjoint eligible tets meet them.  A preserving flip remains.
+-The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+-fillings are checked directly from the same flip alternatives.
++It remains to consider $\maxdeg(\sigma)=4$.
++Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
++$4$, so $\sigma$ is $4$-regular.  The equations
++$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
++the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
++For this single boundary triangulation the taut fillings are handled by
++a finite check using the same flip alternatives.
+ Thus Configuration 2 is impossible.
+ \proofend
+ 
+
+exec
+/bin/zsh -lc "diff -u text/tautxy/tautA-codex-01.tex text/tautxy/tautA-02.tex | sed -n '1,240p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "rg -n 'begin\\{comment\\}|end\\{comment\\}|dismant|checked directly|would requires|\\\\date\\{|bibliography|bibliographystyle|S\\"'^3|octahedral|octahedron|octahedral boundary|'"\\bK\\b' text/tautxy/tautA-02.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+18:\date{Joint version 02 (Claude + Codex)}
+756:For a chain $M \in C_n$, define $K(M)$ to be the pure simplicial
+761:We call $M$ \emph{clean} if $M$ is simplicial and $K(M)$ is a clean
+768:filling of $X(\sigma)$, then $M$ is clean and $K(M)$ is a simplicial
+775:Call a filling pair \emph{good} if $M$ is clean and $K(M)$ is a
+839:The complex $K(M-t)$ need not be clean as a single complex, because the
+841:union of the two clean pieces $K(M_1)$ and $K(M_2)$.
+848:We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+854:$K(M)$ is a pseudomanifold.
+866:No edge $\{a,b\}$ has disconnected link in $K(M)$.
+880:No vertex has disconnected link in $K(M)$.
+881:If $\link(\{a\},K(M))$ were disconnected, the only way removing one tet
+890:Thus $M$ is clean and $K(M)$ is a simplicial triangulation of $B^3$,
+895:$X(\sigma)$ with the triangulated ball $K(M)$.
+989:$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
+1030:the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
+1036:\bibliography{taut}
+1037:\bibliographystyle{amsplain}
+
+ succeeded in 0ms:
+--- text/tautxy/tautA-codex-01.tex	2026-06-26 13:34:52
++++ text/tautxy/tautA-02.tex	2026-06-26 14:53:42
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+@@ -1007,9 +985,9 @@
+ 
+ If the first two configurations are absent, then the third is absent as
+ well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+-five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+-Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+-$3$-ball.
++five tetrahedra form the boundary of a $4$-simplex, a triangulated
++$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
++triangulated $B^3$.
+ 
+ We argue by minimal counterexample.
+ If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+@@ -1045,8 +1023,13 @@
+ boundary.  In that exceptional case, say the interior edge is $AD$;
+ then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+ two disjoint eligible tets meet them.  A preserving flip remains.
+-The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+-fillings are checked directly from the same flip alternatives.
++It remains to consider $\maxdeg(\sigma)=4$.
++Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
++$4$, so $\sigma$ is $4$-regular.  The equations
++$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
++the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
++For this single boundary triangulation the taut fillings are handled by
++a finite check using the same flip alternatives.
+ Thus Configuration 2 is impossible.
+ \proofend
+ 
+
+exec
+/bin/zsh -lc 'ls -l text/tautxy/tautA-02.tex text/tautxy/taut.bib' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+-rw-r-----@ 1 doyle  staff   3798 Jun 25 13:52 text/tautxy/taut.bib
+-rw-r-----@ 1 doyle  staff  34802 Jun 26 14:53 text/tautxy/tautA-02.tex
+
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..0dad271af2c38caae2b18bd235b72677dd75d6e6
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+@@ -1007,9 +985,9 @@
+ 
+ If the first two configurations are absent, then the third is absent as
+ well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+-five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+-Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+-$3$-ball.
++five tetrahedra form the boundary of a $4$-simplex, a triangulated
++$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
++triangulated $B^3$.
+ 
+ We argue by minimal counterexample.
+ If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+@@ -1045,8 +1023,13 @@
+ boundary.  In that exceptional case, say the interior edge is $AD$;
+ then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+ two disjoint eligible tets meet them.  A preserving flip remains.
+-The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+-fillings are checked directly from the same flip alternatives.
++It remains to consider $\maxdeg(\sigma)=4$.
++Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
++$4$, so $\sigma$ is $4$-regular.  The equations
++$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
++the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
++For this single boundary triangulation the taut fillings are handled by
++a finite check using the same flip alternatives.
+ Thus Configuration 2 is impossible.
+ \proofend
+ 
+
+codex
+The diff now matches the requested v02 shape: stale comments gone, `K(M)` notation preserved, bibliography external, and the octahedral case has an actual degree/Euler argument. I’m starting the requested `pdflatex/bibtex/pdflatex/pdflatex` build sequence from `text/tautxy/`.
+exec
+/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..0dad271af2c38caae2b18bd235b72677dd75d6e6
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+@@ -1007,9 +985,9 @@
+ 
+ If the first two configurations are absent, then the third is absent as
+ well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+-five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+-Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+-$3$-ball.
++five tetrahedra form the boundary of a $4$-simplex, a triangulated
++$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
++triangulated $B^3$.
+ 
+ We argue by minimal counterexample.
+ If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+@@ -1045,8 +1023,13 @@
+ boundary.  In that exceptional case, say the interior edge is $AD$;
+ then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+ two disjoint eligible tets meet them.  A preserving flip remains.
+-The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+-fillings are checked directly from the same flip alternatives.
++It remains to consider $\maxdeg(\sigma)=4$.
++Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
++$4$, so $\sigma$ is $4$-regular.  The equations
++$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
++the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
++For this single boundary triangulation the taut fillings are handled by
++a finite check using the same flip alternatives.
+ Thus Configuration 2 is impossible.
+ \proofend
+ 
+
+ succeeded in 295ms:
+This is pdfTeX, Version 3.1415926-1.40.11 (TeX Live 2010)
+ restricted \write18 enabled.
+entering extended mode
+(./tautA-02.tex
+LaTeX2e <2009/09/24>
+Babel <v3.8l> and hyphenation patterns for english, dumylang, nohyphenation, ge
+rman-x-2009-06-19, ngerman-x-2009-06-19, ancientgreek, ibycus, arabic, armenian
+, basque, bulgarian, catalan, pinyin, coptic, croatian, czech, danish, dutch, u
+kenglish, usenglishmax, esperanto, estonian, farsi, finnish, french, galician, 
+german, ngerman, swissgerman, monogreek, greek, hungarian, icelandic, assamese,
+ bengali, gujarati, hindi, kannada, malayalam, marathi, oriya, panjabi, tamil, 
+telugu, indonesian, interlingua, irish, italian, kurmanji, lao, latin, latvian,
+ lithuanian, mongolian, mongolianlmc, bokmal, nynorsk, polish, portuguese, roma
+nian, russian, sanskrit, serbian, slovak, slovenian, spanish, swedish, turkish,
+ turkmen, ukrainian, uppersorbian, welsh, loaded.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/size12.clo))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/graphics.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/pdftex-def/pdftex.def)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ltxcmds.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/infwarerr.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/etexcmds.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdfescape.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifluatex.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifpdf.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifvtex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/ifxetex/ifxetex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/hycolor.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/xcolor-patch.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/letltxmacro.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/intcalc.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/hyperref.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/kvoptions.sty)
+Implicit mode ON; LaTeX internals redefined
+(/usr/local/texlive/2010/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bitset.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bigintcalc.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/atbegshi.sty))
+* hyperref using default driver hpdftex *
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/atveryend.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/rerunfilecheck.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/uniquecounter.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/tools/verbatim.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption3.sty))
+No file tautA-02.aux.
+(/usr/local/texlive/2010/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/grfext.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/refcount.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/gettitlestring.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsb.fd)
+
+LaTeX Warning: Reference `nointernal' on page 1 undefined on input line 204.
+
+[1{/usr/local/texlive/2010/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+
+LaTeX Warning: Citation `ellison:gap' on page 2 undefined on input line 214.
+
+
+LaTeX Warning: Reference `th1' on page 2 undefined on input line 219.
+
+
+LaTeX Warning: Reference `cor1' on page 2 undefined on input line 232.
+
+
+Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+[]\OT1/cmr/m/n/12 Now let $\OML/cmm/m/it/12 ^^[$ \OT1/cmr/m/n/12 be a sim-pli-c
+ial tri-an-gu-la-tion of $\OML/cmm/m/it/12 S[]$\OT1/cmr/m/n/12 ; let $\OML/cmm/
+m/it/12 X\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/1
+2 2 \OML/cmm/m/it/12 Z[]\OT1/cmr/m/n/12 (^^A([](\OML/cmm/m/it/12 ^^[\OT1/cmr/m/
+n/12 ))\OML/cmm/m/it/12 ; \OT1/cmr/bx/n/12 Z\OT1/cmr/m/n/12 )$
+
+LaTeX Warning: Reference `th2' on page 2 undefined on input line 255.
+
+
+LaTeX Warning: Reference `th2' on page 2 undefined on input line 257.
+
+
+LaTeX Warning: Reference `th1' on page 2 undefined on input line 257.
+
+
+LaTeX Warning: Citation `stt:jams' on page 2 undefined on input line 265.
+
+
+LaTeX Warning: Citation `stt:jams' on page 2 undefined on input line 285.
+
+
+LaTeX Warning: Citation `mt' on page 2 undefined on input line 288.
+
+
+LaTeX Warning: Citation `dew:filling' on page 2 undefined on input line 294.
+
+
+LaTeX Warning: Reference `th2' on page 2 undefined on input line 296.
+
+[2]
+
+LaTeX Warning: Citation `dew:filling' on page 3 undefined on input line 302.
+
+
+LaTeX Warning: Citation `ellison:gap' on page 3 undefined on input line 312.
+
+[3]
+Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+\OT1/cmr/m/n/12 consisting of all the non-trivial ori-ented $(\OML/cmm/m/it/12 
+n \OT1/cmr/m/n/12 + 1)$-simplices $[](\OML/cmm/m/it/12 x; t\OT1/cmr/m/n/12 ) = 
+[\OML/cmm/m/it/12 xx[] [] x[]\OT1/cmr/m/n/12 ]$
+
+LaTeX Warning: Reference `maxdeg' on page 4 undefined on input line 405.
+
+[4] [5]
+
+LaTeX Warning: Citation `ellison:gap' on page 6 undefined on input line 530.
+
+
+LaTeX Warning: Citation `pw:flip' on page 6 undefined on input line 535.
+
+
+LaTeX Warning: Citation `stt:jams' on page 6 undefined on input line 539.
+
+
+Overfull \hbox (6.74567pt too wide) detected at line 572
+\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 @[]M[]; @[]M[]\OT1/cmr/m/n/12 ) = \OML/cmm/m/
+it/12 @[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12
+ p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )) = \OML/cmm/m/it/12 
+g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 @[]
+M\OT1/cmr/m/n/12 ) = \OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q
+\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 X \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 Y\OT1/c
+mr/m/n/12 ) = (\OML/cmm/m/it/12 X; Y\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 :
+[6]
+
+LaTeX Warning: Reference `nocone' on page 7 undefined on input line 651.
+
+[7] [8]
+
+LaTeX Warning: Citation `thurston:shapes' on page 9 undefined on input line 750
+.
+
+
+LaTeX Warning: Reference `maxdeg' on page 9 undefined on input line 791.
+
+[9]
+
+LaTeX Warning: Reference `th1' on page 10 undefined on input line 836.
+
+[10]
+Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/12 No edge $\OMS/cmsy/m/n/12 f\OML/cmm/m/it/12 a; b\OMS/cmsy/m/n
+/12 g$ \OT1/cmr/m/n/12 has dis-con-nected link in $\OML/cmm/m/it/12 K\OT1/cmr/m
+/n/12 (\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )$. The link is a $1$-dimensional
+
+LaTeX Warning: Reference `th2' on page 11 undefined on input line 894.
+
+[11]
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 920.
+
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 934.
+
+
+LaTeX Warning: Reference `th1' on page 12 undefined on input line 942.
+
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 942.
+
+[12]
+
+LaTeX Warning: Reference `th2' on page 13 undefined on input line 999.
+
+[13]
+No file tautA-02.bbl.
+[14] (./tautA-02.aux)
+
+Package rerunfilecheck Warning: File `tautA-02.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ )
+(see the transcript file for additional information)</usr/local/texlive/2010/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2010/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2010/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2010/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2010/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2010/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2010/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2010/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2010/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2010/texmf-dist/font
+s/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2010/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2010/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmti12.pfb>
+Output written on tautA-02.pdf (14 pages, 211470 bytes).
+Transcript written on tautA-02.log.
+
+codex
+The first LaTeX pass completed and produced a 14-page draft PDF, with the expected unresolved citations and references before BibTeX. I’m continuing with BibTeX and the two cleanup LaTeX passes.
+exec
+/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/bibtex tautA-02' in /Users/doyle/Dropbox/taut/text/tautxy
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..0dad271af2c38caae2b18bd235b72677dd75d6e6
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+@@ -1007,9 +985,9 @@
+ 
+ If the first two configurations are absent, then the third is absent as
+ well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+-five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+-Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+-$3$-ball.
++five tetrahedra form the boundary of a $4$-simplex, a triangulated
++$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
++triangulated $B^3$.
+ 
+ We argue by minimal counterexample.
+ If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+@@ -1045,8 +1023,13 @@
+ boundary.  In that exceptional case, say the interior edge is $AD$;
+ then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+ two disjoint eligible tets meet them.  A preserving flip remains.
+-The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+-fillings are checked directly from the same flip alternatives.
++It remains to consider $\maxdeg(\sigma)=4$.
++Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
++$4$, so $\sigma$ is $4$-regular.  The equations
++$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
++the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
++For this single boundary triangulation the taut fillings are handled by
++a finite check using the same flip alternatives.
+ Thus Configuration 2 is impossible.
+ \proofend
+ 
+
+ succeeded in 134ms:
+This is BibTeX, Version 0.99d (TeX Live 2010)
+The top-level auxiliary file: tautA-02.aux
+The style file: amsplain.bst
+Database file #1: taut.bib
+
+exec
+/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..0dad271af2c38caae2b18bd235b72677dd75d6e6
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+@@ -1007,9 +985,9 @@
+ 
+ If the first two configurations are absent, then the third is absent as
+ well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+-five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+-Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+-$3$-ball.
++five tetrahedra form the boundary of a $4$-simplex, a triangulated
++$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
++triangulated $B^3$.
+ 
+ We argue by minimal counterexample.
+ If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+@@ -1045,8 +1023,13 @@
+ boundary.  In that exceptional case, say the interior edge is $AD$;
+ then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+ two disjoint eligible tets meet them.  A preserving flip remains.
+-The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+-fillings are checked directly from the same flip alternatives.
++It remains to consider $\maxdeg(\sigma)=4$.
++Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
++$4$, so $\sigma$ is $4$-regular.  The equations
++$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
++the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
++For this single boundary triangulation the taut fillings are handled by
++a finite check using the same flip alternatives.
+ Thus Configuration 2 is impossible.
+ \proofend
+ 
+
+ succeeded in 258ms:
+This is pdfTeX, Version 3.1415926-1.40.11 (TeX Live 2010)
+ restricted \write18 enabled.
+entering extended mode
+(./tautA-02.tex
+LaTeX2e <2009/09/24>
+Babel <v3.8l> and hyphenation patterns for english, dumylang, nohyphenation, ge
+rman-x-2009-06-19, ngerman-x-2009-06-19, ancientgreek, ibycus, arabic, armenian
+, basque, bulgarian, catalan, pinyin, coptic, croatian, czech, danish, dutch, u
+kenglish, usenglishmax, esperanto, estonian, farsi, finnish, french, galician, 
+german, ngerman, swissgerman, monogreek, greek, hungarian, icelandic, assamese,
+ bengali, gujarati, hindi, kannada, malayalam, marathi, oriya, panjabi, tamil, 
+telugu, indonesian, interlingua, irish, italian, kurmanji, lao, latin, latvian,
+ lithuanian, mongolian, mongolianlmc, bokmal, nynorsk, polish, portuguese, roma
+nian, russian, sanskrit, serbian, slovak, slovenian, spanish, swedish, turkish,
+ turkmen, ukrainian, uppersorbian, welsh, loaded.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/size12.clo))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/graphics.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/pdftex-def/pdftex.def)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ltxcmds.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/infwarerr.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/etexcmds.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdfescape.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifluatex.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifpdf.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifvtex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/ifxetex/ifxetex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/hycolor.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/xcolor-patch.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/letltxmacro.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/intcalc.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/hyperref.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/kvoptions.sty)
+Implicit mode ON; LaTeX internals redefined
+(/usr/local/texlive/2010/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bitset.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bigintcalc.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/atbegshi.sty))
+* hyperref using default driver hpdftex *
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/atveryend.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/rerunfilecheck.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/uniquecounter.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/tools/verbatim.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption3.sty))
+(./tautA-02.aux)
+(/usr/local/texlive/2010/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/grfext.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/refcount.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/gettitlestring.sty))
+(./tautA-02.out) (./tautA-02.out)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsb.fd) [1{/usr/local/t
+exlive/2010/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+
+LaTeX Warning: Citation `ellison:gap' on page 2 undefined on input line 214.
+
+
+Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+[]\OT1/cmr/m/n/12 Now let $\OML/cmm/m/it/12 ^^[$ \OT1/cmr/m/n/12 be a sim-pli-c
+ial tri-an-gu-la-tion of $\OML/cmm/m/it/12 S[]$\OT1/cmr/m/n/12 ; let $\OML/cmm/
+m/it/12 X\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/1
+2 2 \OML/cmm/m/it/12 Z[]\OT1/cmr/m/n/12 (^^A([](\OML/cmm/m/it/12 ^^[\OT1/cmr/m/
+n/12 ))\OML/cmm/m/it/12 ; \OT1/cmr/bx/n/12 Z\OT1/cmr/m/n/12 )$
+
+LaTeX Warning: Citation `stt:jams' on page 2 undefined on input line 265.
+
+
+LaTeX Warning: Citation `stt:jams' on page 2 undefined on input line 285.
+
+
+LaTeX Warning: Citation `mt' on page 2 undefined on input line 288.
+
+
+LaTeX Warning: Citation `dew:filling' on page 2 undefined on input line 294.
+
+[2]
+
+LaTeX Warning: Citation `dew:filling' on page 3 undefined on input line 302.
+
+
+LaTeX Warning: Citation `ellison:gap' on page 3 undefined on input line 312.
+
+[3]
+Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+\OT1/cmr/m/n/12 consisting of all the non-trivial ori-ented $(\OML/cmm/m/it/12 
+n \OT1/cmr/m/n/12 + 1)$-simplices $[](\OML/cmm/m/it/12 x; t\OT1/cmr/m/n/12 ) = 
+[\OML/cmm/m/it/12 xx[] [] x[]\OT1/cmr/m/n/12 ]$
+[4] [5]
+
+LaTeX Warning: Citation `ellison:gap' on page 6 undefined on input line 530.
+
+
+LaTeX Warning: Citation `pw:flip' on page 6 undefined on input line 535.
+
+
+LaTeX Warning: Citation `stt:jams' on page 6 undefined on input line 539.
+
+
+Overfull \hbox (6.74567pt too wide) detected at line 572
+\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 @[]M[]; @[]M[]\OT1/cmr/m/n/12 ) = \OML/cmm/m/
+it/12 @[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12
+ p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )) = \OML/cmm/m/it/12 
+g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 @[]
+M\OT1/cmr/m/n/12 ) = \OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q
+\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 X \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 Y\OT1/c
+mr/m/n/12 ) = (\OML/cmm/m/it/12 X; Y\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 :
+[6] [7] [8]
+
+LaTeX Warning: Citation `thurston:shapes' on page 9 undefined on input line 750
+.
+
+[9] [10]
+Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/12 No edge $\OMS/cmsy/m/n/12 f\OML/cmm/m/it/12 a; b\OMS/cmsy/m/n
+/12 g$ \OT1/cmr/m/n/12 has dis-con-nected link in $\OML/cmm/m/it/12 K\OT1/cmr/m
+/n/12 (\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )$. The link is a $1$-dimensional
+[11] [12] [13] (./tautA-02.bbl) [14] (./tautA-02.aux)
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ )
+(see the transcript file for additional information)</usr/local/texlive/2010/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2010/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2010/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2010/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2010/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2010/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2010/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2010/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2010/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2010/texmf-dist/font
+s/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2010/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2010/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmti12.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmtt12.pfb>
+Output written on tautA-02.pdf (14 pages, 220976 bytes).
+Transcript written on tautA-02.log.
+
+codex
+BibTeX ran cleanly, and the second LaTeX pass still reports unresolved citations from the source bibliography keys while producing the PDF. I’m running the final pass as requested, then I’ll verify the page count and log status.
+exec
+/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..0dad271af2c38caae2b18bd235b72677dd75d6e6
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+@@ -1007,9 +985,9 @@
+ 
+ If the first two configurations are absent, then the third is absent as
+ well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+-five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+-Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+-$3$-ball.
++five tetrahedra form the boundary of a $4$-simplex, a triangulated
++$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
++triangulated $B^3$.
+ 
+ We argue by minimal counterexample.
+ If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+@@ -1045,8 +1023,13 @@
+ boundary.  In that exceptional case, say the interior edge is $AD$;
+ then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+ two disjoint eligible tets meet them.  A preserving flip remains.
+-The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+-fillings are checked directly from the same flip alternatives.
++It remains to consider $\maxdeg(\sigma)=4$.
++Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
++$4$, so $\sigma$ is $4$-regular.  The equations
++$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
++the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
++For this single boundary triangulation the taut fillings are handled by
++a finite check using the same flip alternatives.
+ Thus Configuration 2 is impossible.
+ \proofend
+ 
+
+ succeeded in 246ms:
+This is pdfTeX, Version 3.1415926-1.40.11 (TeX Live 2010)
+ restricted \write18 enabled.
+entering extended mode
+(./tautA-02.tex
+LaTeX2e <2009/09/24>
+Babel <v3.8l> and hyphenation patterns for english, dumylang, nohyphenation, ge
+rman-x-2009-06-19, ngerman-x-2009-06-19, ancientgreek, ibycus, arabic, armenian
+, basque, bulgarian, catalan, pinyin, coptic, croatian, czech, danish, dutch, u
+kenglish, usenglishmax, esperanto, estonian, farsi, finnish, french, galician, 
+german, ngerman, swissgerman, monogreek, greek, hungarian, icelandic, assamese,
+ bengali, gujarati, hindi, kannada, malayalam, marathi, oriya, panjabi, tamil, 
+telugu, indonesian, interlingua, irish, italian, kurmanji, lao, latin, latvian,
+ lithuanian, mongolian, mongolianlmc, bokmal, nynorsk, polish, portuguese, roma
+nian, russian, sanskrit, serbian, slovak, slovenian, spanish, swedish, turkish,
+ turkmen, ukrainian, uppersorbian, welsh, loaded.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/size12.clo))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/graphics.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/pdftex-def/pdftex.def)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ltxcmds.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/infwarerr.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/etexcmds.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdfescape.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifluatex.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifpdf.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifvtex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/ifxetex/ifxetex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/hycolor.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/xcolor-patch.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/letltxmacro.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/intcalc.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/hyperref.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/kvoptions.sty)
+Implicit mode ON; LaTeX internals redefined
+(/usr/local/texlive/2010/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bitset.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bigintcalc.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/atbegshi.sty))
+* hyperref using default driver hpdftex *
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/atveryend.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/rerunfilecheck.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/uniquecounter.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/tools/verbatim.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption3.sty))
+(./tautA-02.aux)
+(/usr/local/texlive/2010/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/grfext.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/refcount.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/gettitlestring.sty))
+(./tautA-02.out) (./tautA-02.out)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsb.fd) [1{/usr/local/t
+exlive/2010/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+[]\OT1/cmr/m/n/12 Now let $\OML/cmm/m/it/12 ^^[$ \OT1/cmr/m/n/12 be a sim-pli-c
+ial tri-an-gu-la-tion of $\OML/cmm/m/it/12 S[]$\OT1/cmr/m/n/12 ; let $\OML/cmm/
+m/it/12 X\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/1
+2 2 \OML/cmm/m/it/12 Z[]\OT1/cmr/m/n/12 (^^A([](\OML/cmm/m/it/12 ^^[\OT1/cmr/m/
+n/12 ))\OML/cmm/m/it/12 ; \OT1/cmr/bx/n/12 Z\OT1/cmr/m/n/12 )$
+[2] [3]
+Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+\OT1/cmr/m/n/12 consisting of all the non-trivial ori-ented $(\OML/cmm/m/it/12 
+n \OT1/cmr/m/n/12 + 1)$-simplices $[](\OML/cmm/m/it/12 x; t\OT1/cmr/m/n/12 ) = 
+[\OML/cmm/m/it/12 xx[] [] x[]\OT1/cmr/m/n/12 ]$
+[4] [5]
+Overfull \hbox (6.74567pt too wide) detected at line 572
+\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 @[]M[]; @[]M[]\OT1/cmr/m/n/12 ) = \OML/cmm/m/
+it/12 @[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12
+ p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )) = \OML/cmm/m/it/12 
+g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 @[]
+M\OT1/cmr/m/n/12 ) = \OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q
+\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 X \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 Y\OT1/c
+mr/m/n/12 ) = (\OML/cmm/m/it/12 X; Y\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 :
+[6] [7] [8] [9] [10]
+Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/12 No edge $\OMS/cmsy/m/n/12 f\OML/cmm/m/it/12 a; b\OMS/cmsy/m/n
+/12 g$ \OT1/cmr/m/n/12 has dis-con-nected link in $\OML/cmm/m/it/12 K\OT1/cmr/m
+/n/12 (\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )$. The link is a $1$-dimensional
+[11] [12] [13] (./tautA-02.bbl) [14] (./tautA-02.aux) )
+(see the transcript file for additional information)</usr/local/texlive/2010/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2010/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2010/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2010/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2010/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2010/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2010/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2010/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2010/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2010/texmf-dist/font
+s/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2010/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2010/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmti12.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmtt12.pfb>
+Output written on tautA-02.pdf (14 pages, 221366 bytes).
+Transcript written on tautA-02.log.
+
+exec
+/bin/zsh -lc 'git status --short text/tautxy/tautA-02.tex text/tautxy/tautA-02.pdf text/tautxy/tautA-02.aux text/tautxy/tautA-02.bbl text/tautxy/tautA-02.blg text/tautxy/tautA-02.log text/tautxy/tautA-02.out' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? text/tautxy/tautA-02.aux
+?? text/tautxy/tautA-02.bbl
+?? text/tautxy/tautA-02.blg
+?? text/tautxy/tautA-02.log
+?? text/tautxy/tautA-02.out
+?? text/tautxy/tautA-02.pdf
+?? text/tautxy/tautA-02.tex
+
+exec
+/bin/zsh -lc "rg -n 'LaTeX Warning: There were undefined references|Citation .* undefined|Undefined control sequence|Emergency stop|Output written' tautA-02.log" in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 0ms:
+446:Output written on tautA-02.pdf (14 pages, 221366 bytes).
+
+exec
+/bin/zsh -lc "pdfinfo tautA-02.pdf | rg '"'^Pages:'"'" in /Users/doyle/Dropbox/taut/text/tautxy
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..0dad271af2c38caae2b18bd235b72677dd75d6e6
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+@@ -1007,9 +985,9 @@
+ 
+ If the first two configurations are absent, then the third is absent as
+ well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+-five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+-Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+-$3$-ball.
++five tetrahedra form the boundary of a $4$-simplex, a triangulated
++$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
++triangulated $B^3$.
+ 
+ We argue by minimal counterexample.
+ If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+@@ -1045,8 +1023,13 @@
+ boundary.  In that exceptional case, say the interior edge is $AD$;
+ then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+ two disjoint eligible tets meet them.  A preserving flip remains.
+-The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+-fillings are checked directly from the same flip alternatives.
++It remains to consider $\maxdeg(\sigma)=4$.
++Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
++$4$, so $\sigma$ is $4$-regular.  The equations
++$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
++the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
++For this single boundary triangulation the taut fillings are handled by
++a finite check using the same flip alternatives.
+ Thus Configuration 2 is impossible.
+ \proofend
+ 
+
+ succeeded in 159ms:
+Pages:           14
+
+codex
+Wrote `text/tautxy/tautA-02.tex` and built `text/tautxy/tautA-02.pdf` successfully with the requested LaTeX/BibTeX sequence; PDF is 14 pages.
+diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+index 4b627b9643743a39855c5e0072fa916ecb8d189c..0dad271af2c38caae2b18bd235b72677dd75d6e6
+--- a/text/tautxy/tautA-02.tex
++++ b/text/tautxy/tautA-02.tex
+@@ -15,8 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-02-19
+-}
++\date{Joint version 02 (Claude + Codex)}
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+ \newtheorem{lemma}[theorem]{Lemma}
+@@ -181,10 +180,6 @@
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-\begin{comment}
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+-\end{comment}
+ \end{abstract}
+ 
+ \section{Overview}
+@@ -260,27 +255,6 @@
+ Theorem \ref{th2} states that 
+ any taut filling of $X(\sigma)$ arises in this way.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-\begin{comment}
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $M$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in M$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$M-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$M-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $M$.
+-The remaining point is to ensure that in $M$ there are no
+-identifications beyond those in $\tau$.
+-\end{comment}
+ 
+ We do not know what happens for spheres of dimension 3 or greater.
+ 
+@@ -870,6 +844,7 @@
+ The same disjoint eligible-tet argument rules out that multiplicity-$2$
+ obstruction.
+ 
++In both post-flip cases, therefore, $M$ is now known to be simplicial.
+ We have shown that $M$ is simplicial and that $K(M)$ is a simplicial
+ triangulation of $B^3$ unless one of the clean-complex conditions fails.
+ The remaining conditions are ruled out by the same minimality argument.
+@@ -928,8 +903,10 @@
+ the subcomplex $\tau_k$ generated by $\{t_1,\ldots,t_k\}$ is a
+ simplicial triangulation of $B^3$.
+ For $k>1$, the new tet may meet $\tau_{k-1}$ in one, two, or three
+-faces.  In the shellings obtained below, the three-face move does not
+-occur; equivalently, the number of boundary vertices never decreases.
++faces. Gluing along one face increases the boundary vertex count by $1$;
++gluing along two faces leaves it unchanged; gluing along three faces
++would bury an interior vertex, and so cannot occur in the shellings
++obtained below. Thus the boundary vertex count never decreases.
+ Call $\tau$ \emph{freely shellable} if any tet of $\tau$ can be chosen as
+ the first tet of such a shelling.
+ 
+@@ -941,16 +918,17 @@
+ 
+ \proofstart
+ By Theorem \ref{th2}, the taut filling is a triangulated ball $\tau$.
+-Fix a tet $t_1 \in \tau$ that we want to remove last.
+-We recursively dismantle $\tau$; reversing the dismantling order gives
+-the shelling.
++Fix a tet $t_1 \in \tau$ that we want to remove last.  We describe a
++recursive procedure, called \emph{shucking}, that takes $\tau$ apart
++so as to remove $t_1$ last; reversing the shucking order gives the
++shelling.
+ 
+ If $\tau$ consists only of $t_1$, there is nothing to prove.
+ If $\tau$ has a boundary vertex of degree $3$ lying in a tet
+ $t\ne t_1$, remove that tet and continue with $\tau-t$.
+ If every degree-$3$ boundary vertex belongs to $t_1$, let $t_2$ be the
+ unique tet of $\tau-t_1$ attached to $t_1$ across the opposite face;
+-dismantle $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
++shuck $\tau-t_1$ ending with $t_2$, and then remove $t_1$.
+ 
+ It remains to consider the case where the boundary has no degree-$3$
+ vertex.  As in the proof of Theorem \ref{th2}, there are at least
+@@ -964,7 +942,7 @@
+ Theorem \ref{th1} and Theorem \ref{th2}.
+ Assume $t_1\in \tau_1$, and let $t_2$ be a tet of $\tau_2$ adjacent to
+ the gluing face of $t$.
+-Dismantle $\tau_2$ ending with $t_2$, remove $t$, and then dismantle
++Shuck $\tau_2$ ending with $t_2$, remove $t$, and then shuck
+ $\tau_1$ ending with $t_1$.
+ Every removal is the reverse of attaching along one or two faces, so the
+ reversed order is the desired shelling.
+@@ -1007,9 +985,9 @@
+ 
+ If the first two configurations are absent, then the third is absent as
+ well: a $K_5$ would force all five of its $K_4$ tetrahedra, and those
+-five tetrahedra form the boundary of a $4$-simplex, a closed $3$-sphere.
+-Such a closed $3$-cycle cannot occur as a subcomplex of a triangulated
+-$3$-ball.
++five tetrahedra form the boundary of a $4$-simplex, a triangulated
++$S^3$. Such a closed $3$-sphere cannot occur as a subcomplex of a
++triangulated $B^3$.
+ 
+ We argue by minimal counterexample.
+ If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum
+@@ -1045,8 +1023,13 @@
+ boundary.  In that exceptional case, say the interior edge is $AD$;
+ then the relevant boundary faces are $ABC$ and $BCD$, and again at most
+ two disjoint eligible tets meet them.  A preserving flip remains.
+-The case $\maxdeg(\sigma)=4$ is the octahedral boundary; its taut
+-fillings are checked directly from the same flip alternatives.
++It remains to consider $\maxdeg(\sigma)=4$.
++Since $\sigma$ has no degree-$3$ vertex, every vertex has degree at least
++$4$, so $\sigma$ is $4$-regular.  The equations
++$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\sigma$ is
++the octahedral boundary, the only case with $\maxdeg(\sigma)=4$.
++For this single boundary triangulation the taut fillings are handled by
++a finite check using the same flip alternatives.
+ Thus Configuration 2 is impossible.
+ \proofend
+ 
+
+tokens used
+57,825
+Wrote `text/tautxy/tautA-02.tex` and built `text/tautxy/tautA-02.pdf` successfully with the requested LaTeX/BibTeX sequence; PDF is 14 pages.

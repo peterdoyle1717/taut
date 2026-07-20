@@ -1,0 +1,2556 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019efcc7-ee9b-7272-8f42-4d7a063b9b5f
+--------
+user
+CODEX CONSULT — design the Lean route for the "hens-and-baskets" twofer-counting bridge.
+
+ROLE: You (Codex) are the proof designer. Decide the exact Lean implementation route. Claude
+coordinates and will dispatch a prover subagent to implement YOUR design. Return concrete Lean
+statements/names, not prose generalities.
+
+REPO: /Users/doyle/Dropbox/taut, Lean 4 + Mathlib, branch clean-anyrooted-stickerball, HEAD 6cb9218.
+Build: `cd lean && lake build` (8273 jobs green). Namespace `Taut`, `variable {V : Type*} [LinearOrder V]`,
+`Chain V := V-indexed Finsupp over ℤ on Finset V`. NO `sorry/admit/axiom/native_decide` allowed.
+
+GOAL: remove the spurious global hypothesis `SimplicialChain M` from the public taut-filling endpoint
+`taut_filling_is_anyrootedStickerball` (Theorem3Clean.lean:3433). The clean route needs the bridge
+  taut_filling_is_simplicialChain :
+    IsSphere2 σ → UnitOn (bdry M) σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M
+where `SimplicialChain M := ∀ t, M t = -1 ∨ M t = 0 ∨ M t = 1` (Theorem2.lean:27).
+
+============================================================================================
+THE MATHEMATICAL ARGUMENT (user-supplied correction; this is the intended proof — do not redesign it,
+design its Lean implementation).
+
+(A) PURE COMBINATORIAL "hens-and-baskets" lemma.
+  - B = finite set of baskets, |B| = n. L = finite list of hens. Each hen h has A(h) ⊆ B with |A(h)| ≤ 2.
+  - Coverage: B ⊆ ⋃_{h ∈ L} A(h). Let m = L.length.
+  - If m ≤ n − k, then ≥ k hens are "twofers": processing hens in list order, ≥ k hens lay eggs in two
+    baskets that were previously empty. For such h, new(h) = A(h) \ (baskets covered by earlier hens)
+    are pairwise-disjoint 2-element subsets of B.
+  - Proof: new(h) pairwise disjoint, union = B. a_h = |new(h)| ≤ 2, Σ a_h = n. r = #{h : a_h = 2}.
+    n = Σ a_h ≤ 2r + 1·(m−r) = m + r, so r ≥ n − m ≥ k.
+
+(B) INSTANTIATION.
+  - B = the boundary triangles of σ that must be hit.
+  - Hens = SUPPORT tetrahedra of M, counted ONCE each (NOT with coefficient multiplicity).
+  - A(u) = boundary triangles of σ that are actual FACES of the support tetrahedron u AND have the
+    required proper orientation "at the support-face level."
+  - |A(u)| ≤ 2 is the local no-degree-3 fact (a tet shares ≤ 2 faces with σ).
+  - Coverage B ⊆ ⋃ A(u) is the ONLY geometric/chain input: every boundary triangle is hit by ≥ 1
+    properly-oriented support face. This is WEAKER than faceCount-one and does NOT say a prescribed
+    pair is realized by one tet.
+  - n − m ≥ maxdeg comes from the existing degree-volume inequality `Zvol_add_deg_le`
+    (support.card + deg v (bdry M) ≤ σ.card).
+  - Conclusion: ≥ maxdeg twofer support tetrahedra whose two newly-covered boundary triangles are
+    mutually disjoint — the disjoint eligible tets for the deletion argument.
+
+  CRITICAL user clarification: coefficients affect the algebraic boundary contribution but do NOT
+  create multiple support faces of one tetrahedron. A tet with coefficient 2 still has each face ONCE
+  as a support face. The coefficient is irrelevant to A(u); A(u) counts actual faces of the support tet.
+
+(C) MINIMAL-COUNTEREXAMPLE DELETION (the bridge proof).
+  - Strong induction on nrm M. Suppose M minimal taut filling of a 2-sphere that is NOT simplicial:
+    some t has |M t| ≥ 2.
+  - Choose a twofer u (from (B)) whose boundary pair is disjoint from t and the local obstruction, so u≠t.
+  - Remove u via the existing removal machinery: M − u is a taut filling of a smaller sphere (or splits),
+    nrm (M − u) < nrm M.
+  - Persistence: coeff (M − u) t = coeff M t ≥ 2 (removing u ≠ t doesn't touch t). So M − u is still
+    NON-simplicial — a smaller counterexample. Contradiction. Hence no t has multiplicity ≥ 2.
+
+DO NOT: prove `taut_boundary_faceCount_one` (taut ⇒ every boundary face singly covered) — user says it
+is false / not the proof. DO NOT count coefficient copies. DO NOT use a vector-sum lemma.
+
+============================================================================================
+EXISTING LEAN INVENTORY (verify exact signatures at the cited file:line; these are Claude's reading).
+
+Predicates / defs:
+  EligibleTet M t        (Theorem2.lean:84) := t.card=4 ∧ t∈M.support ∧ (sharedFaces M t).card=2 ∧
+                            ∀ s∈sharedFaces M t, (bdry M) s = tetContribution M t s   -- "oriented" eligible
+  GeomEligible M t        (Eligible.lean:355) := t.card=4 ∧ t∈M.support ∧ (sharedFaces M t).card=2   -- no orientation
+  ProperBoundaryFaceTet M α t (Eligible.lean:44) := t∈M.support ∧ α∈tetFaces t ∧ (bdry M) α = tetContribution M t α
+  sharedFaces M t := tetFaces t ∩ (bdry M).support ;  exposedFaces M t := tetFaces t \ sharedFaces M t
+  tetFaces t = powersetCard 3 t (the 4 triangular faces) ; tetContribution M t = (M t) • bdryGen t
+  UnitOn X σ := X.support = σ ∧ ∀ s∈σ, X s = 1 ∨ X s = -1 ;  SimplicialChain M := ∀ t, M t ∈ {-1,0,1}
+
+Counting / covering (already built, hS-FREE unless noted):
+  exists_disjoint_geomEligible_family (Eligible.lean:408):
+     UnitOn (bdry M) σ → IsTaut M → (∀ t∈supp, t.card=4) → (∀ t∈supp,(sharedFaces M t).card≤2) → ∀ x,
+       ∃ E ⊆ M.support, (∀ t∈E, GeomEligible M t) ∧ (↑E).PairwiseDisjoint (fun e=>sharedFaces M e)
+         ∧ deg x (bdry M) ≤ E.card
+     -- this IS the twofer-count for the GEOMETRIC covering (B=σ, "some contributing tet"); proof uses
+     -- Finset.card_eq_sum_card_fiberwise + a pointwise fibre≤2 bound + card_support_le_nrm + Zvol_add_deg_le.
+  exists_properBoundaryFaceTet (Eligible.lean:49): SimplicialChain M → hPure → (∂M α=±1) →
+       ∃ t, ProperBoundaryFaceTet M α t                              -- the ORIENTED covering, needs hS
+  exists_properBoundaryFaceTet_of_local_unit (Eligible.lean, UNCOMMITTED in working tree): hPure →
+       (∀ t∈supp, α∈tetFaces t → (M t).natAbs ≤ 1) → (∂M α=±1) → ∃ t, ProperBoundaryFaceTet M α t  -- hS-free
+  aleph_disjoint_eligible_family (Theorem2Aleph.lean:1264): IsSphere2 σ → UnitOn → SimplicialChain M →
+       IsTaut → hPure → NoDegree3Vertex σ → (hv: v∈vertsOf σ) → (hk: k ≤ deg v (bdry M)) →
+       ∃ E, E.card = k ∧ (∀ e∈E, EligibleTet M e) ∧ (↑E).PairwiseDisjoint (sharedFaces M ·)
+     -- the ORIENTED disjoint family, but assumes hS (via exists_properBoundaryFaceTet + aleph_card_gap_deg).
+  card_support_le_nrm (Eligible.lean): M.support.card ≤ nrm M    -- hS-free
+  Zvol_add_deg_le (Zvol.lean:113): bdry X = 0 → Zvol X + deg x X ≤ nrm X
+  UnitOn.nrm_eq (Theorem2.lean:57): UnitOn X σ → nrm X = σ.card   -- (uses only simpliciality of the boundary X)
+  exists_geomEligible_not_mem (Eligible.lean:491), bad_coeff_switch_to_disjoint_eligible (Eligible.lean:509):
+       avoidance — from a forbidden Finset F with F.card < deg x, pick a GeomEligible u ∉ F.
+
+Removal of an ORIENTED eligible tet (Task-1 machinery; takes EligibleTet):
+  removeTet M t := M - single t (M t) ;  removeTet_apply_ne (Theorem2.lean:129): s≠t → removeTet M t s = M s
+  isTaut_removeTet (FlipGeom.lean:56): IsTaut M → IsTaut (removeTet M e)        -- hS-free
+  unitOn_flipBoundary_of_eligible (Theorem2.lean:269): UnitOn (bdry M) σ → SimplicialChain M →
+       EligibleTet M t → UnitOn (bdry (removeTet M t)) ((σ\sharedFaces M t)∪exposedFaces M t)
+       -- its hS is used ONLY via tet_coeff_eq_pm_one_of_eligible (coeff ±1), which EligibleTet+UnitOn give hS-free.
+  isSphere2_flipBoundary_of_eligible (FlipGeom.lean:1546): IsSphere2 σ → UnitOn → SimplicialChain M →
+       EligibleTet M e → exposedFaces M e={f₃,f₄} → f₃≠f₄ → ¬FlipEdgePresent σ f₃ f₄ →
+       IsSphere2 ((σ\sharedFaces M e)∪exposedFaces M e)
+       -- Claude found this hS is VESTIGIAL: 15 uses, all threaded to other flipBoundary_* lemmas, no leaf
+       -- consumer; the flipped boundary depends only on σ and e. So hS here is strippable bookkeeping.
+  Case-2 split: flipEdgePresent_removeTet_support_partition (PrimeStep.lean:203) — partitions the support
+       into two sides; IsTaut.subChain (Zvol.lean:98) gives side-tautness; SubChain.nrm_add_nrm_sub the
+       norm additivity. (These carry hS too.)
+
+Known relationship facts Claude verified (build-checked):
+  - EligibleTet M t + UnitOn (bdry M) σ ⇒ M t = 1 ∨ M t = -1 (the orientation conjunct + unit boundary force ±1).
+  - exists_properBoundaryFaceTet's hS is essential via a {-1,0,1}-sum step that FAILS for non-simplicial M
+    (a face with contributions {+2,-1} sums to +1 but has no properly-oriented contributor). This is why
+    the user's A(u) must be defined at the SUPPORT-FACE level (orientation as a property of the (tet,face)
+    pair), not via "∃ tet whose chain-contribution equals ∂M α".
+
+============================================================================================
+QUESTIONS FOR YOU (CODEX) — return concrete answers:
+
+Q1. The pure Finset/List "hens-and-baskets" lemma: give the exact Lean statement (signature) and the
+    proof skeleton (key Mathlib lemmas: List.foldl/scanl, running-union, card_eq_sum_card_fiberwise or a
+    direct induction). State it so it is reusable and instantiation-agnostic.
+
+Q2. The instantiation A(u): give the exact Lean definition of "the properly-oriented boundary faces of
+    support tet u" at the SUPPORT-FACE level (NOT via chain-contribution = ∂M α, which is the spoiled-face
+    trap). What predicate on (u, face α) is both (i) ≤ 2 per tet, (ii) coverage-true (every boundary
+    triangle is such a face of some support tet), and (iii) strong enough that a twofer u is an
+    `EligibleTet M u` (so the existing removal applies)? If "properly oriented at support-face level" must
+    be a NEW predicate, define it precisely in terms of bdryGen/sgn/tetFaces and ∂M's sign.
+
+Q3. Coverage `B ⊆ ⋃ A(u)`: what is the exact Lean statement, and is it provable hS-free from
+    UnitOn + IsTaut + purity + no-degree-3? Identify the precise lemma. (Claude's worry: a {+2,-1} face
+    has no equal contributor; clarify why support-face-level orientation avoids this — e.g. does "some
+    support face of some tet is properly oriented over α" hold because ∂M α ≠ 0 forces a same-sign
+    contributing tet, and same-sign-at-support-face is the right notion?) THIS is the load-bearing input;
+    be explicit about whether it is true and why.
+
+Q4. The conclusion lemma `exists_disjoint_proper_boundary_pair_tets`: exact statement (E ⊆ support,
+    maxdeg ≤ E.card, each u∈E has two properly-oriented boundary faces, pairs mutually disjoint, and each
+    u∈E is `EligibleTet M u`). Does it reuse `exists_disjoint_geomEligible_family`'s fibre machinery with
+    B=proper-faces instead of σ, or the new hens-and-baskets lemma, or `aleph_disjoint_eligible_family`
+    with hS stripped?
+
+Q5. The removal lemma to reuse/minimally generalize for the deletion: confirm the package (isTaut_removeTet
+    + unitOn_flipBoundary_of_eligible + isSphere2_flipBoundary_of_eligible with hS stripped, + Case-2
+    split) and exactly which hS hypotheses must be removed/replaced (Claude: isSphere2's hS is vestigial;
+    unitOn's hS is coeff-±1, derivable from EligibleTet+UnitOn). Give the target hS-free signatures.
+
+Q6. Packaging the minimal-counterexample contradiction: the bridge statement, the induction measure
+    (nrm), how persistence (removeTet_apply_ne) feeds "M−u still non-simplicial", and how Case-2 (split)
+    is handled (apply IH to the side containing t). Does any current lemma already prove part of this?
+
+Output: for each Q, the exact Lean lemma name(s) + signature(s) + proof route, and a dependency-ordered
+build plan (which lemma to implement first). Flag anything in Claude's reading above that is wrong.
+codex
+I’ll inspect the local Lean files around the cited definitions and lemmas before giving a route. The answer needs to be implementable against this repo, so I’m going to verify signatures and the actual algebraic definitions rather than rely only on the inventory.
+exec
+/bin/zsh -lc 'rg -n "def EligibleTet|def ProperBoundaryFaceTet|def GeomEligible|def sharedFaces|def tetContribution|def SimplicialChain|theorem exists_disjoint_geomEligible_family|lemma exists_disjoint_geomEligible_family|exists_properBoundaryFaceTet|aleph_disjoint_eligible_family|unitOn_flipBoundary_of_eligible|isSphere2_flipBoundary_of_eligible|taut_filling_is_anyrootedStickerball|def bdryGen|def bdry|def sgn" lean -S' in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc 'rg -n "Zvol_add_deg_le|card_support_le_nrm|bad_coeff_switch_to_disjoint_eligible|exists_geomEligible_not_mem|removeTet_apply_ne|isTaut_removeTet|flipEdgePresent_removeTet_support_partition|SubChain.nrm_add_nrm_sub|IsTaut.subChain" lean -S' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Theorem2Aleph.lean:1108:  have hprop := Zvol_add_deg_le v (bdry_bdry M)
+lean/Taut/Theorem2Aleph.lean:1114:/-- Per-vertex degree gap `M.support.card + deg v (bdry M) ≤ σ.card`, from `Zvol_add_deg_le v`
+lean/Taut/Theorem2Aleph.lean:1120:  have hprop := Zvol_add_deg_le v (bdry_bdry M)
+lean/Taut/Eligible.lean:15:* a count + Prop 2 (`Zvol_add_deg_le`) forces a double fiber to exist.
+lean/Taut/Eligible.lean:158:    have h2 := Zvol_add_deg_le x (bdry_bdry M)
+lean/Taut/Eligible.lean:393:lemma card_support_le_nrm (M : Chain V) : M.support.card ≤ nrm M := by
+lean/Taut/Eligible.lean:480:      have h2 := Zvol_add_deg_le x (bdry_bdry M)
+lean/Taut/Eligible.lean:483:      have h3 := card_support_le_nrm M
+lean/Taut/Eligible.lean:491:theorem exists_geomEligible_not_mem {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Eligible.lean:509:theorem bad_coeff_switch_to_disjoint_eligible {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Eligible.lean:515:  obtain ⟨u, hu_supp, hu_elig, hu_notF⟩ := exists_geomEligible_not_mem hU hT hPure hShared2 x F hF
+lean/Taut/Theorem3Clean.lean:1730:  have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
+lean/Taut/Theorem3Clean.lean:3021:  have hTe : IsTaut (removeTet M e) := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:203:theorem flipEdgePresent_removeTet_support_partition {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ A B : Finset V}
+lean/Taut/PrimeStep.lean:275:  have hM't : IsTaut M' := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:1112:  rcases flipEdgePresent_removeTet_support_partition hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd hfaceCover with ⟨hcover, hsep⟩
+lean/Taut/PrimeStep.lean:1213:  have hTR : IsTaut R := isTaut_removeTet hT
+lean/Taut/PrimeStep.lean:1409:    have hTe : IsTaut (removeTet M u) := isTaut_removeTet hT
+lean/Taut/Theorem2.lean:129:lemma removeTet_apply_ne {M : Chain V} {t s : Finset V} (h : s ≠ t) :
+lean/Taut/Theorem2.lean:139:  · simp [removeTet_apply_ne hst, hst]
+lean/Taut/Theorem2.lean:146:  · rw [removeTet_apply_ne hst]; exact hS s
+lean/Taut/Theorem4.lean:285:(`bdry_filter_subset_eq_zero`); Proposition 1 (`IsTaut.subChain`) makes `U` taut, so
+lean/Taut/Theorem4.lean:1441:      exact (IH _ _ _ hnR hσe hUe (bdry_bdry _) rfl (isTaut_removeTet hT)
+lean/Taut/Theorem4.lean:1467:      exact (IH _ _ _ hnR hσe hUe (bdry_bdry _) rfl (isTaut_removeTet hT)
+lean/Taut/FlipGeom.lean:55:(`IsTaut.subChain`, Prop 1); eligibility/simpliciality are not needed. -/
+lean/Taut/FlipGeom.lean:56:theorem isTaut_removeTet {M : Chain V} {e : Finset V} (hT : IsTaut M) :
+lean/Taut/Zvol.lean:9:* Proposition 1 (`IsTaut.subChain`): sub-chains of taut chains are taut.
+lean/Taut/Zvol.lean:10:* Proposition 2 (`Zvol_add_deg_le`): `Zvol X + deg x X ≤ nrm X` for closed
+lean/Taut/Zvol.lean:53:lemma SubChain.nrm_add_nrm_sub {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:98:theorem IsTaut.subChain {M U : Chain V} (hM : IsTaut M) (hU : SubChain U M) :
+lean/Taut/Zvol.lean:113:theorem Zvol_add_deg_le (x : V) {X : Chain V} (hX : bdry X = 0) :
+lean/Taut/Zvol.lean:128:  have h2 := Zvol_add_deg_le x' hW
+
+ succeeded in 0ms:
+lean/Taut/Theorem2.lean:27:def SimplicialChain (M : Chain V) : Prop :=
+lean/Taut/Theorem2.lean:67:noncomputable def tetContribution (M : Chain V) (t : Finset V) : Chain V :=
+lean/Taut/Theorem2.lean:73:noncomputable def sharedFaces (M : Chain V) (t : Finset V) : Finset (Finset V) :=
+lean/Taut/Theorem2.lean:84:def EligibleTet (M : Chain V) (t : Finset V) : Prop :=
+lean/Taut/Theorem2.lean:269:theorem unitOn_flipBoundary_of_eligible {M : Chain V} {σ : Finset (Finset V)} {t : Finset V}
+lean/Taut/Eligible.lean:44:def ProperBoundaryFaceTet (M : Chain V) (α t : Finset V) : Prop :=
+lean/Taut/Eligible.lean:49:lemma exists_properBoundaryFaceTet {M : Chain V} (hS : SimplicialChain M)
+lean/Taut/Eligible.lean:87:`exists_properBoundaryFaceTet` needs only that the tets *incident to `α`* are unit, not global
+lean/Taut/Eligible.lean:90:theorem exists_properBoundaryFaceTet_of_local_unit {M : Chain V}
+lean/Taut/Eligible.lean:146:    exists_properBoundaryFaceTet hS hPure (hU.2 α hα)
+lean/Taut/Eligible.lean:355:def GeomEligible (M : Chain V) (t : Finset V) : Prop :=
+lean/Taut/Eligible.lean:408:theorem exists_disjoint_geomEligible_family {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Theorem2Aleph.lean:1116:consumed by `aleph_disjoint_eligible_family`. -/
+lean/Taut/Theorem2Aleph.lean:1222:    exists_properBoundaryFaceTet hS hPure (hU.2 α hα)
+lean/Taut/Theorem2Aleph.lean:1264:theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Theorem2Aleph.lean:1274:    exists_properBoundaryFaceTet hS hPure (hU.2 α hα)
+lean/Taut/Theorem4.lean:804:  exact aleph_disjoint_eligible_family hσ hU hS hT hPure hNo3 hv hdeg
+lean/Taut/Theorem4.lean:815:  exact aleph_disjoint_eligible_family hσ hU hS hT hPure hNo3 hv hdeg
+lean/Taut/Theorem4.lean:1437:    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
+lean/Taut/Theorem4.lean:1438:      have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+lean/Taut/Theorem4.lean:1463:    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
+lean/Taut/Theorem4.lean:1464:      have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+lean/Taut/FlipGeom.lean:14:unit-chain facts (`support_flipBoundary_of_eligible`, `unitOn_flipBoundary_of_eligible`);
+lean/Taut/FlipGeom.lean:1546:theorem isSphere2_flipBoundary_of_eligible {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Chains.lean:47:def sgn (x : V) (s : Finset V) : ℤ := (-1) ^ cnt x s
+lean/Taut/Chains.lean:121:noncomputable def bdryGen (s : Finset V) : Chain V :=
+lean/Taut/Chains.lean:124:noncomputable def bdry : Chain V →ₗ[ℤ] Chain V :=
+lean/Taut/Theorem3Clean.lean:1052:    unitOn_flipBoundary_of_eligible hUb hS he
+lean/Taut/Theorem3Clean.lean:1728:  have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hNoFlip
+lean/Taut/Theorem3Clean.lean:1729:  have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+lean/Taut/Theorem3Clean.lean:2089:        unitOn_flipBoundary_of_eligible hUb hS he
+lean/Taut/Theorem3Clean.lean:3018:    isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
+lean/Taut/Theorem3Clean.lean:3020:    unitOn_flipBoundary_of_eligible hUb hS he
+lean/Taut/Theorem3Clean.lean:3378:`taut_filling_is_anyrootedStickerball`. -/
+lean/Taut/Theorem3Clean.lean:3433:theorem taut_filling_is_anyrootedStickerball {σ : Finset (Finset V)} {X M : Chain V}
+lean/Taut/Theorem3Clean.lean:3439:boundary — the combinatorial `B³` certificate).  Corollary of `taut_filling_is_anyrootedStickerball`. -/
+lean/Taut/Theorem3Clean.lean:3443:  (taut_filling_is_anyrootedStickerball hσ hU hXc hMX hT hS).toStickerball
+lean/Taut/PrimeStep.lean:228:    exact unitOn_flipBoundary_of_eligible hUb hS he
+lean/Taut/PrimeStep.lean:1275:    simpa only [flipBoundary] using unitOn_flipBoundary_of_eligible hUb hS he
+lean/Taut/PrimeStep.lean:1407:    have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS hu hexp hf₃₄ hFlip
+lean/Taut/PrimeStep.lean:1408:    have hUe := unitOn_flipBoundary_of_eligible hUb hS hu
+lean/Taut/PrimeStep.lean:1447:    unitOn_flipBoundary_of_eligible hUb hS hu
+lean/Taut/PrimeStep.lean:1516:        unitOn_flipBoundary_of_eligible hUb hS he
+
+codex
+I found the relevant files and I’m now reading the concrete definitions/proofs. One important thing I’m checking is whether the proposed “support-face orientation” can actually force `EligibleTet`, since current `EligibleTet` includes an equality against the full chain boundary contribution.
+exec
+/bin/zsh -lc "sed -n '1,160p' lean/Taut/Theorem2.lean && sed -n '1,180p' lean/Taut/Eligible.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Separation
+import Taut.Ball
+
+/-!
+# Theorem 2: a taut filling of a triangulated S² is a stickerball B³
+
+This file builds toward `taut_filling_is_stickerball` by the
+minimal-counterexample induction of the paper (§"Filling a triangulation of the
+2-sphere").
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-- A chain `X` is a *unit chain on `σ`* if it is supported exactly on `σ` with
+every coefficient `±1`. The boundary `X(σ)` of a triangulated sphere is such a
+chain (some choice of orientation); nothing downstream depends on the choice. -/
+def UnitOn (X : Chain V) (σ : Finset (Finset V)) : Prop :=
+  X.support = σ ∧ ∀ s ∈ σ, X s = 1 ∨ X s = -1
+
+/-- A chain is *simplicial* if every coefficient is `-1`, `0`, or `1` — i.e. it
+is a genuine multiset of oriented simplices with no repeats. A taut filling that
+"arises from a triangulation" is such a chain on the tets of a ball. -/
+def SimplicialChain (M : Chain V) : Prop :=
+  ∀ t, M t = -1 ∨ M t = 0 ∨ M t = 1
+
+lemma SimplicialChain.natAbs_eq_one {M : Chain V} (h : SimplicialChain M) {s : Finset V}
+    (hs : s ∈ M.support) : (M s).natAbs = 1 := by
+  have hne : M s ≠ 0 := Finsupp.mem_support_iff.mp hs
+  rcases h s with h1 | h0 | h1
+  · rw [h1]; decide
+  · exact absurd h0 hne
+  · rw [h1]; decide
+
+/-- **The norm/support bridge.** For a simplicial chain the norm `|M|` counts
+its support: `nrm M = #(M.support)`. This is what lets the induction on `|M|`
+(`nrm`) talk to the ball's facet count (`M.support.card`). -/
+lemma nrm_eq_support_card_of_simplicial {M : Chain V} (h : SimplicialChain M) :
+    nrm M = M.support.card := by
+  rw [nrm, Finset.card_eq_sum_ones]
+  exact Finset.sum_congr rfl fun s hs => h.natAbs_eq_one hs
+
+/-- A unit chain on `σ` is simplicial. -/
+lemma UnitOn.simplicialChain {X : Chain V} {σ : Finset (Finset V)} (h : UnitOn X σ) :
+    SimplicialChain X := by
+  intro t
+  by_cases ht : t ∈ X.support
+  · rcases h.2 t (h.1 ▸ ht) with h1 | h1
+    · exact Or.inr (Or.inr h1)
+    · exact Or.inl h1
+  · exact Or.inr (Or.inl (Finsupp.notMem_support_iff.mp ht))
+
+/-- A unit chain on `σ` has `nrm = #σ` (each face carries weight one). -/
+lemma UnitOn.nrm_eq {X : Chain V} {σ : Finset (Finset V)} (h : UnitOn X σ) :
+    nrm X = σ.card := by
+  rw [nrm_eq_support_card_of_simplicial h.simplicialChain, h.1]
+
+/-! ## Tet removal and the edge flip
+
+Removing an *eligible* tet `t` from a simplicial filling `M` flips two boundary
+faces to the tet's other two — the paper's `ab → cd` edge flip. We work over ℤ
+with the canonical-orientation signs of `Chains.lean`. -/
+
+noncomputable def tetContribution (M : Chain V) (t : Finset V) : Chain V :=
+  bdry (Finsupp.single t (M t))
+
+noncomputable def removeTet (M : Chain V) (t : Finset V) : Chain V :=
+  M - Finsupp.single t (M t)
+
+noncomputable def sharedFaces (M : Chain V) (t : Finset V) : Finset (Finset V) :=
+  tetFaces t ∩ (bdry M).support
+
+noncomputable def exposedFaces (M : Chain V) (t : Finset V) : Finset (Finset V) :=
+  tetFaces t \ sharedFaces M t
+
+/-- A tet `t` is *eligible*: a genuine `4`-simplex of `M` with exactly two of its
+faces on the boundary, those two carrying `t`'s own oriented coefficient. The
+other two faces are then absent from the boundary (so removal cannot create a
+`±2` coefficient — this is why eligibility is stronger than "two matching
+faces"). -/
+def EligibleTet (M : Chain V) (t : Finset V) : Prop :=
+  t.card = 4 ∧ t ∈ M.support ∧ (sharedFaces M t).card = 2 ∧
+    ∀ s ∈ sharedFaces M t, (bdry M) s = tetContribution M t s
+
+/-- The flipped edge `cd` is already present in `σ` (the case-2 hook). -/
+def FlipEdgePresent (σ : Finset (Finset V)) (f₃ f₄ : Finset V) : Prop :=
+  f₃ ∩ f₄ ∈ edgesOf σ
+
+/-! ### Tet-face combinatorics -/
+
+lemma card_tetFaces {t : Finset V} (ht : t.card = 4) : (tetFaces t).card = 4 := by
+  rw [tetFaces, Finset.card_powersetCard, ht]; decide
+
+lemma erase_mem_tetFaces {t : Finset V} {x : V} (ht : t.card = 4) (hx : x ∈ t) :
+    t.erase x ∈ tetFaces t := by
+  refine Finset.mem_powersetCard.mpr ⟨?_, ?_⟩
+  · intro y hy; exact Finset.mem_of_mem_erase hy
+  · rw [Finset.card_erase_of_mem hx, ht]
+
+lemma sharedFaces_subset_tetFaces (M : Chain V) (t : Finset V) :
+    sharedFaces M t ⊆ tetFaces t := fun _ hs => (Finset.mem_inter.mp hs).1
+
+lemma exposedFaces_subset_tetFaces (M : Chain V) (t : Finset V) :
+    exposedFaces M t ⊆ tetFaces t := fun _ hs => (Finset.mem_sdiff.mp hs).1
+
+lemma exposedFaces_card_of_eligible {M : Chain V} {t : Finset V} (h : EligibleTet M t) :
+    (exposedFaces M t).card = 2 := by
+  rw [exposedFaces, Finset.card_sdiff_of_subset (sharedFaces_subset_tetFaces M t),
+    card_tetFaces h.1, h.2.2.1]
+
+/-! ### Boundary algebra of removal -/
+
+lemma bdry_sub_single (M : Chain V) (t : Finset V) (c : ℤ) :
+    bdry (M - Finsupp.single t c) = bdry M - c • bdryGen t := by
+  rw [map_sub, bdry_single]
+
+lemma bdry_removeTet (M : Chain V) (t : Finset V) :
+    bdry (removeTet M t) = bdry M - tetContribution M t := by
+  rw [removeTet, tetContribution, map_sub]
+
+/-! ### `removeTet` as a chain -/
+
+@[simp] lemma removeTet_apply_self (M : Chain V) (t : Finset V) : removeTet M t t = 0 := by
+  simp [removeTet, Finsupp.single_eq_same]
+
+lemma removeTet_apply_ne {M : Chain V} {t s : Finset V} (h : s ≠ t) :
+    removeTet M t s = M s := by
+  simp [removeTet, Finsupp.single_eq_of_ne h]
+
+lemma support_removeTet_of_mem {M : Chain V} {t : Finset V} (ht : t ∈ M.support) :
+    (removeTet M t).support = M.support.erase t := by
+  ext s
+  simp only [Finset.mem_erase, Finsupp.mem_support_iff]
+  by_cases hst : s = t
+  · subst hst; simp [removeTet_apply_self]
+  · simp [removeTet_apply_ne hst, hst]
+
+lemma simplicialChain_removeTet {M : Chain V} {t : Finset V} (hS : SimplicialChain M) :
+    SimplicialChain (removeTet M t) := by
+  intro s
+  by_cases hst : s = t
+  · subst hst; rw [removeTet_apply_self]; exact Or.inr (Or.inl rfl)
+  · rw [removeTet_apply_ne hst]; exact hS s
+
+lemma nrm_removeTet_add_one_of_simplicial {M : Chain V} {t : Finset V}
+    (hS : SimplicialChain M) (ht : t ∈ M.support) :
+    nrm (removeTet M t) + 1 = nrm M := by
+  rw [nrm_eq_support_card_of_simplicial (simplicialChain_removeTet hS),
+    nrm_eq_support_card_of_simplicial hS, support_removeTet_of_mem ht,
+    Finset.card_erase_of_mem ht]
+  have : 0 < M.support.card := Finset.card_pos.mpr ⟨t, ht⟩
+  omega
+
+lemma nrm_removeTet_of_simplicial {M : Chain V} {t : Finset V}
+    (hS : SimplicialChain M) (ht : t ∈ M.support) :
+    nrm (removeTet M t) = nrm M - 1 := by
+  have := nrm_removeTet_add_one_of_simplicial hS ht; omega
+import Taut.Theorem2
+
+/-!
+# Eligible tets
+
+For the Theorem-2 induction we need, in a no-degree-3 taut filling, an *eligible*
+tet — one sharing two oriented faces with the boundary.
+The route (paper §"Filling a triangulation of the 2-sphere", the 2-to-1 count):
+
+* every boundary face `α` (`∂M α = ±1`) is a *properly oriented* face of some tet
+  of `M` — `∂M α` is a sum of `{-1,0,1}` tet contributions, so one of them equals
+  `∂M α`. The tet is chosen, not unique;
+* the choice map `σ → M.support` has fibers `⊆ sharedFaces`, hence (no deg-3)
+  `≤ 2`; a *double* fiber is an eligible tet;
+* a count + Prop 2 (`Zvol_add_deg_le`) forces a double fiber to exist.
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+lemma tetContribution_apply (M : Chain V) (t α : Finset V) :
+    tetContribution M t α = M t * bdryGen t α := by
+  rw [tetContribution, bdry_single, Finsupp.smul_apply, smul_eq_mul]
+
+lemma bdryGen_apply_mem_pm (t α : Finset V) :
+    bdryGen t α = -1 ∨ bdryGen t α = 0 ∨ bdryGen t α = 1 := by
+  by_cases h : ∃ x ∈ t, α = t.erase x
+  · obtain ⟨x, hx, rfl⟩ := h
+    rw [bdryGen_apply_erase_of_mem hx]
+    rcases mul_self_eq_one_iff.mp (sgn_mul_self x t) with h1 | h1
+    · exact Or.inr (Or.inr h1)
+    · exact Or.inl h1
+  · push_neg at h
+    refine Or.inr (Or.inl ?_)
+    rw [bdryGen, Finset.sum_apply']
+    refine Finset.sum_eq_zero fun x hx => ?_
+    rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne (h x hx), smul_zero]
+
+/-- `α` is a *properly oriented boundary face* of the tet `t`: a genuine tet of
+`M` whose contribution at `α` accounts for the whole boundary coefficient. -/
+def ProperBoundaryFaceTet (M : Chain V) (α t : Finset V) : Prop :=
+  t ∈ M.support ∧ α ∈ tetFaces t ∧ (bdry M) α = tetContribution M t α
+
+/-- **Every boundary face is properly oriented by some tet.** `∂M α = ±1` is a
+sum of `{-1,0,1}` tet contributions, so one of them equals `∂M α`. -/
+lemma exists_properBoundaryFaceTet {M : Chain V} (hS : SimplicialChain M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) {α : Finset V}
+    (hαpm : (bdry M) α = 1 ∨ (bdry M) α = -1) :
+    ∃ t, ProperBoundaryFaceTet M α t := by
+  have hbound : ∀ t ∈ M.support, M t * bdryGen t α = -1 ∨ M t * bdryGen t α = 0
+      ∨ M t * bdryGen t α = 1 := by
+    intro t _
+    rcases hS t with hm | hm | hm <;> rcases bdryGen_apply_mem_pm t α with hg | hg | hg <;>
+      rw [hm, hg] <;> decide
+  have hsum : bdry M α = ∑ t ∈ M.support, M t * bdryGen t α := bdry_apply_eq_sum M α
+  have hkey : ∃ t ∈ M.support, M t * bdryGen t α = bdry M α := by
+    by_contra hcon
+    push_neg at hcon
+    rcases hαpm with hp | hp
+    · have hle : (∑ t ∈ M.support, M t * bdryGen t α) ≤ 0 := by
+        refine Finset.sum_nonpos fun t ht => ?_
+        rcases hbound t ht with h | h | h
+        · rw [h]; decide
+        · rw [h]
+        · exact absurd (h.trans hp.symm) (hcon t ht)
+      rw [← hsum, hp] at hle; exact absurd hle (by decide)
+    · have hge : (0 : ℤ) ≤ ∑ t ∈ M.support, M t * bdryGen t α := by
+        refine Finset.sum_nonneg fun t ht => ?_
+        rcases hbound t ht with h | h | h
+        · exact absurd (h.trans hp.symm) (hcon t ht)
+        · rw [h]
+        · rw [h]; decide
+      rw [← hsum, hp] at hge; exact absurd hge (by decide)
+  obtain ⟨t, ht, hval⟩ := hkey
+  refine ⟨t, ht, ?_, ?_⟩
+  · have hgne : bdryGen t α ≠ 0 := by
+      intro h0; rw [h0, mul_zero] at hval
+      rcases hαpm with hp | hp <;> rw [hp] at hval <;> exact absurd hval.symm (by decide)
+    obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero hgne
+    exact hαe ▸ erase_mem_tetFaces (hPure t ht) hw
+  · rw [tetContribution_apply, hval]
+
+/-- **Proper boundary face, `SimplicialChain`-free** (route-Y): the orientation argument of
+`exists_properBoundaryFaceTet` needs only that the tets *incident to `α`* are unit, not global
+simpliciality. A spoiled face (no oriented contributor) forces a contribution `|M t · bdryGen t α| ≥ 2`,
+i.e. a high-multiplicity tet on `α`; so off the high-multiplicity supports the covering is `hS`-free. -/
+theorem exists_properBoundaryFaceTet_of_local_unit {M : Chain V}
+    (hPure : ∀ t ∈ M.support, t.card = 4) {α : Finset V}
+    (hunit : ∀ t ∈ M.support, α ∈ tetFaces t → (M t).natAbs ≤ 1)
+    (hαpm : (bdry M) α = 1 ∨ (bdry M) α = -1) :
+    ∃ t, ProperBoundaryFaceTet M α t := by
+  have hbound : ∀ t ∈ M.support, M t * bdryGen t α = -1 ∨ M t * bdryGen t α = 0
+      ∨ M t * bdryGen t α = 1 := by
+    intro t ht
+    by_cases hαt : α ∈ tetFaces t
+    · have hm : M t = -1 ∨ M t = 0 ∨ M t = 1 := by have := hunit t ht hαt; omega
+      rcases hm with hm | hm | hm <;> rcases bdryGen_apply_mem_pm t α with hg | hg | hg <;>
+        rw [hm, hg] <;> decide
+    · have hbg : bdryGen t α = 0 := by
+        by_contra h0
+        obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero h0
+        exact hαt (hαe ▸ erase_mem_tetFaces (hPure t ht) hw)
+      rw [hbg, mul_zero]; exact Or.inr (Or.inl rfl)
+  have hsum : bdry M α = ∑ t ∈ M.support, M t * bdryGen t α := bdry_apply_eq_sum M α
+  have hkey : ∃ t ∈ M.support, M t * bdryGen t α = bdry M α := by
+    by_contra hcon
+    push_neg at hcon
+    rcases hαpm with hp | hp
+    · have hle : (∑ t ∈ M.support, M t * bdryGen t α) ≤ 0 := by
+        refine Finset.sum_nonpos fun t ht => ?_
+        rcases hbound t ht with h | h | h
+        · rw [h]; decide
+        · rw [h]
+        · exact absurd (h.trans hp.symm) (hcon t ht)
+      rw [← hsum, hp] at hle; exact absurd hle (by decide)
+    · have hge : (0 : ℤ) ≤ ∑ t ∈ M.support, M t * bdryGen t α := by
+        refine Finset.sum_nonneg fun t ht => ?_
+        rcases hbound t ht with h | h | h
+        · exact absurd (h.trans hp.symm) (hcon t ht)
+        · rw [h]
+        · rw [h]; decide
+      rw [← hsum, hp] at hge; exact absurd hge (by decide)
+  obtain ⟨t, ht, hval⟩ := hkey
+  refine ⟨t, ht, ?_, ?_⟩
+  · have hgne : bdryGen t α ≠ 0 := by
+      intro h0; rw [h0, mul_zero] at hval
+      rcases hαpm with hp | hp <;> rw [hp] at hval <;> exact absurd hval.symm (by decide)
+    obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero hgne
+    exact hαe ▸ erase_mem_tetFaces (hPure t ht) hw
+  · rw [tetContribution_apply, hval]
+
+/-- **One eligible tet exists**, given the no-degree-3 face bound
+`sharedFaces ≤ 2`. Two boundary faces collide under the face→tet choice map
+(there are more faces than tets, by Prop 2), so their common tet has two shared,
+coefficient-matched faces — an eligible tet. -/
+theorem exists_eligibleTet {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2) :
+    ∃ t, EligibleTet M t := by
+  classical
+  have hcov : ∀ α ∈ σ, ∃ t, ProperBoundaryFaceTet M α t := fun α hα =>
+    exists_properBoundaryFaceTet hS hPure (hU.2 α hα)
+  let f : {α // α ∈ σ} → {t // t ∈ M.support} := fun α =>
+    ⟨Classical.choose (hcov α.1 α.2), (Classical.choose_spec (hcov α.1 α.2)).1⟩
+  have hfspec : ∀ α : {α // α ∈ σ}, ProperBoundaryFaceTet M α.1 (f α).1 := fun α =>
+    Classical.choose_spec (hcov α.1 α.2)
+  -- Prop 2: more boundary faces than tets
+  have hcard : M.support.card < σ.card := by
+    obtain ⟨x, hx⟩ : ∃ x, x ∈ vert (bdry M) := by
+      obtain ⟨s, hs⟩ := hσ.nonempty
+      obtain ⟨y, hy⟩ : s.Nonempty := by rw [← Finset.card_pos, hσ.pure s hs]; omega
+      exact ⟨y, mem_vert.mpr ⟨s, hU.1 ▸ hs, hy⟩⟩
+    have hdeg : 1 ≤ deg x (bdry M) := Nat.pos_of_ne_zero fun h => (deg_eq_zero_iff.mp h) hx
+    have h2 := Zvol_add_deg_le x (bdry_bdry M)
+    rw [← hT, UnitOn.nrm_eq hU, nrm_eq_support_card_of_simplicial hS] at h2
+    omega
+  obtain ⟨α₁, _, α₂, _, hne, heq⟩ :=
+    Finset.exists_ne_map_eq_of_card_lt_of_maps_to
+      (s := (Finset.univ : Finset {α // α ∈ σ}))
+      (t := (Finset.univ : Finset {t // t ∈ M.support})) (f := f)
+      (by rw [Finset.card_univ, Finset.card_univ, Fintype.card_coe, Fintype.card_coe]; exact hcard)
+      (fun a _ => Finset.mem_univ _)
+  have ht : (f α₁).1 ∈ M.support := (f α₁).2
+  have hαne : (α₁ : Finset V) ≠ (α₂ : Finset V) := fun h => hne (Subtype.ext h)
+  have htt : (f α₁).1 = (f α₂).1 := congrArg Subtype.val heq
+  have hα₁sh : (α₁ : Finset V) ∈ sharedFaces M (f α₁).1 :=
+    Finset.mem_inter.mpr ⟨(hfspec α₁).2.1, hU.1 ▸ α₁.2⟩
+  have hα₂sh : (α₂ : Finset V) ∈ sharedFaces M (f α₁).1 :=
+    Finset.mem_inter.mpr ⟨htt ▸ (hfspec α₂).2.1, hU.1 ▸ α₂.2⟩
+  have hsub : ({(α₁ : Finset V), (α₂ : Finset V)} : Finset (Finset V)) ⊆ sharedFaces M (f α₁).1 := by
+    intro s hs; rw [Finset.mem_insert, Finset.mem_singleton] at hs
+    rcases hs with rfl | rfl; exacts [hα₁sh, hα₂sh]
+  have hc2 : (sharedFaces M (f α₁).1).card = 2 := by
+    have hge : 2 ≤ (sharedFaces M (f α₁).1).card :=
+      (Finset.card_pair hαne).symm.le.trans (Finset.card_le_card hsub)
+    have := hShared2 _ ht; omega
+
+exec
+/bin/zsh -lc "sed -n '250,290p' lean/Taut/Theorem2.lean && sed -n '1520,1575p' lean/Taut/FlipGeom.lean && sed -n '190,245p' lean/Taut/PrimeStep.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '380,540p' lean/Taut/Eligible.lean && sed -n '1080,1295p' lean/Taut/Theorem2Aleph.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lemma tet_coeff_eq_pm_one_of_eligible {M : Chain V} {t : Finset V}
+    (hS : SimplicialChain M) (h : EligibleTet M t) : M t = 1 ∨ M t = -1 := by
+  have htM : M t ≠ 0 := Finsupp.mem_support_iff.mp h.2.1
+  rcases hS t with h1 | h0 | h1
+  · exact Or.inr h1
+  · exact absurd h0 htM
+  · exact Or.inl h1
+
+lemma tetContribution_eq_pm_one_of_mem_tetFaces {M : Chain V} {t s : Finset V}
+    (ht : t.card = 4) (hpm : M t = 1 ∨ M t = -1) (hs : s ∈ tetFaces t) :
+    tetContribution M t s = 1 ∨ tetContribution M t s = -1 := by
+  obtain ⟨y, hyt, rfl⟩ := exists_erase_eq_of_mem_tetFaces ht hs
+  rw [tetContribution_apply_erase_of_mem hyt]
+  have hsgn : sgn y t = 1 ∨ sgn y t = -1 := mul_self_eq_one_iff.mp (sgn_mul_self y t)
+  rcases hpm with hm | hm <;> rcases hsgn with hs1 | hs1 <;> rw [hm, hs1] <;> decide
+
+/-- **The flip on unit chains.** If `bdry M` is a unit chain on `σ`, then after
+removing an eligible tet the new boundary is a unit chain on the flipped sphere
+`(σ \ sharedFaces) ∪ exposedFaces`. -/
+theorem unitOn_flipBoundary_of_eligible {M : Chain V} {σ : Finset (Finset V)} {t : Finset V}
+    (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (h : EligibleTet M t) :
+    UnitOn (bdry (removeTet M t)) ((σ \ sharedFaces M t) ∪ exposedFaces M t) := by
+  have ht4 := h.1
+  have hpm := tet_coeff_eq_pm_one_of_eligible hS h
+  refine ⟨by rw [support_flipBoundary_of_eligible h, hU.1], ?_⟩
+  intro s hs
+  rw [Finset.mem_union] at hs
+  rcases hs with hs | hs
+  · rw [Finset.mem_sdiff] at hs
+    have hssupp : s ∈ (bdry M).support := by rw [hU.1]; exact hs.1
+    have hsf : s ∉ tetFaces t := fun hcon =>
+      hs.2 (Finset.mem_inter.mpr ⟨hcon, hssupp⟩)
+    rw [bdry_removeTet, Finsupp.sub_apply, tetContribution_apply_of_not_mem_tetFaces ht4 hsf,
+      sub_zero]
+    exact hU.2 s hs.1
+  · rw [bdry_removeTet, Finsupp.sub_apply, bdry_apply_eq_zero_of_mem_exposedFaces hs, zero_sub]
+    rcases tetContribution_eq_pm_one_of_mem_tetFaces ht4 hpm
+      (exposedFaces_subset_tetFaces M t hs) with h1 | h1 <;> rw [h1] <;> decide
+
+/-! ## The oriented separation bridge
+
+    intro f hfτ
+    dsimp [τ] at hfτ ⊢
+    exact flipBoundary_pure_of_eligible hσ hU hS he hexp hf hNoFlip f hfτ
+  have hclosed : ∀ a ∈ edgesOf τ, edgeDeg τ a = 2 := by
+    intro a ha
+    dsimp [τ] at ha ⊢
+    exact flipBoundary_closed_of_eligible hσ hU hS he hexp hf hNoFlip a ha
+  have hdoubleτ : 3 * τ.card = 2 * (edgesOf τ).card := by
+    exact three_mul_card_faces_of_pure_closed hpure hclosed
+  have hdoubleσ : 3 * σ.card = 2 * (edgesOf σ).card := by
+    exact three_mul_card_faces hσ
+  have hedge : (edgesOf τ).card = (edgesOf σ).card := by
+    omega
+  have hvert : (vertsOf τ).card = (vertsOf σ).card := by
+    dsimp [τ]
+    rw [flipBoundary_verts_eq hσ hU hS he hexp hf hNoFlip]
+  have heulerσ : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2 := by
+    exact hσ.euler
+  dsimp [τ] at hvert hedge hcard hdoubleτ
+  rw [hvert, hcard, hedge]
+  exact heulerσ
+
+
+/-- **The bistellar 2-2 flip preserves the 2-sphere (case 1).** With the flipped edge
+`f₃ ∩ f₄` absent from `σ`, removing an eligible tet leaves a boundary that is again a
+combinatorial 2-sphere. -/
+theorem isSphere2_flipBoundary_of_eligible {M : Chain V} {σ : Finset (Finset V)}
+    {e f₃ f₄ : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
+    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+    IsSphere2 ((σ \ sharedFaces M e) ∪ exposedFaces M e) := by
+  refine ⟨?pure, ?closed, ?linkConn, ?conn, ?euler⟩
+  · exact flipBoundary_pure_of_eligible hσ hU hS he hexp hf hNoFlip
+  · exact flipBoundary_closed_of_eligible hσ hU hS he hexp hf hNoFlip
+  · exact flipBoundary_linkConn_of_eligible hσ hU hS he hexp hf hNoFlip
+  · exact flipBoundary_conn_of_eligible hσ hU hS he hexp hf hNoFlip
+  · exact flipBoundary_euler_of_eligible hσ hU hS he hexp hf hNoFlip
+
+end Taut
+        have hshared_eq := sharedFaces_eq_tetFaces_inter_sigma (M := M) (σ := σ) (e := e) hUb
+        rw [hshared_eq] at hFsh
+        exact (Finset.mem_inter.mp hFsh).2
+      exact mem_edgesOf.mpr ⟨F, hFσ, haF, hacard⟩
+  constructor
+  · exact edges_of_first hf₃₄ hexp hFlip
+  · have hexp_swap : exposedFaces M e = {f₄, f₃} := by
+      rw [hexp, Finset.pair_comm]
+    have hFlip_swap : f₄ ∩ f₃ ∈ edgesOf σ := by
+      rw [Finset.inter_comm]
+      exact hFlip
+    exact edges_of_first (Ne.symm hf₃₄) hexp_swap hFlip_swap
+
+theorem flipEdgePresent_removeTet_support_partition {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ A B : Finset V}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ)
+    (hXc : bdry X = 0)
+    (hMX : bdry M = X)
+    (hT : IsTaut M)
+    (hS : SimplicialChain M)
+    (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄})
+    (hf₃₄ : f₃ ≠ f₄)
+    (hFlip : FlipEdgePresent σ f₃ f₄)
+    (hAB : A ∩ B = f₃ ∩ f₄)
+    (hcd : (f₃ ∩ f₄).card = 2)
+    (hfaceCover : ∀ f ∈ flipBoundary σ M e, f ⊆ A ∨ f ⊆ B) :
+    (∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B) ∧
+      (∀ t ∈ (removeTet M e).support,
+        (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A)) := by
+  classical
+  let M' : Chain V := removeTet M e
+  let τ : Finset (Finset V) := flipBoundary σ M e
+  have hUb : UnitOn (bdry M) σ := by
+    rw [hMX]
+    exact hU
+  have hUτ : UnitOn (bdry M') τ := by
+    dsimp [M', τ, flipBoundary]
+    exact unitOn_flipBoundary_of_eligible hUb hS he
+  have hτ_faces : ∀ f ∈ τ, f.card = 3 := by
+    intro f hf
+    dsimp [τ, flipBoundary] at hf
+    rw [Finset.mem_union] at hf
+    rcases hf with hf_old | hf_exp
+    · exact hσ.pure f (Finset.mem_sdiff.mp hf_old).1
+    · exact (Finset.mem_powersetCard.mp (exposedFaces_subset_tetFaces M e hf_exp)).2
+  have hbdsupp : ∀ s ∈ (bdry M').support, s.card = 3 := by
+    intro s hs
+    have hsτ : s ∈ τ := by
+      rwa [hUτ.1] at hs
+    exact hτ_faces s hsτ
+  have hbd_supp : ∀ s ∈ (bdry M').support, s.card = 3 ∧ (s ⊆ A ∨ s ⊆ B) := by
+    intro s hs
+    have hsτ : s ∈ τ := by
+      rwa [hUτ.1] at hs
+    exact ⟨hτ_faces s hsτ, hfaceCover s (by simpa [τ] using hsτ)⟩
+
+ succeeded in 0ms:
+lemma IsTaut.le_nrm_of_bdry_eq {M N : Chain V} (hM : IsTaut M) (hbd : bdry N = bdry M) :
+    nrm M ≤ nrm N :=
+  calc nrm M = Zvol (bdry M) := hM
+    _ ≤ nrm N := Zvol_le hbd
+
+/-- Contrapositive packaging of `IsTaut.le_nrm_of_bdry_eq`: no strictly-smaller same-boundary fill. -/
+lemma IsTaut.not_nrm_lt_of_bdry_eq {M N : Chain V} (hM : IsTaut M) (hbd : bdry N = bdry M) :
+    ¬ nrm N < nrm M :=
+  fun h => absurd (hM.le_nrm_of_bdry_eq hbd) (not_le.mpr h)
+
+omit [LinearOrder V] in
+/-- The number of distinct support tetrahedra is at most the norm (each contributes `≥ 1`).
+Replaces the `SimplicialChain`-only `nrm = support.card` in the counting argument. -/
+lemma card_support_le_nrm (M : Chain V) : M.support.card ≤ nrm M := by
+  show M.support.card ≤ ∑ s ∈ M.support, (M s).natAbs
+  rw [Finset.card_eq_sum_ones]
+  exact Finset.sum_le_sum fun s hs => Int.natAbs_pos.mpr (Finsupp.mem_support_iff.mp hs)
+
+/-- **The counting lemma** (route-Y, `SimplicialChain`-free): a taut filling of a 2-sphere with no
+degree-3 vertex contains a family `E` of pairwise-disjoint (in shared faces) geometrically-eligible
+support tetrahedra, of cardinality at least `deg x (∂M)` for every vertex `x`.
+
+Construction: each boundary face is covered by some support tet (`bdry M α ≠ 0` forces a contributing
+tet — no orientation/`SimplicialChain` needed); choosing one such tet per face gives `c : σ →
+M.support` with fibres `⊆ sharedFaces`, hence `≤ 2`. The fibre-2 tets are exactly the eligible family:
+their fibre equals their shared faces (so `GeomEligible`, and pairwise-disjoint shared faces since
+fibres of a function are disjoint), and the fibre count `σ.card ≤ E.card + support.card` combines with
+`support.card ≤ nrm M = Zvol(∂M) ≤ σ.card − deg x (∂M)` (Prop 2) to give `deg x (∂M) ≤ E.card`. -/
+theorem exists_disjoint_geomEligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2) (x : V) :
+    ∃ E : Finset (Finset V), E ⊆ M.support ∧ (∀ t ∈ E, GeomEligible M t) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e) ∧
+      deg x (bdry M) ≤ E.card := by
+  classical
+  -- (1) weak covering: every boundary face is a face of some support tet (no orientation needed)
+  have hcov : ∀ α, α ∈ σ → ∃ t, t ∈ M.support ∧ α ∈ tetFaces t := by
+    intro α hα
+    have hαsupp : α ∈ (bdry M).support := by rw [hU.1]; exact hα
+    have hne : (bdry M) α ≠ 0 := Finsupp.mem_support_iff.mp hαsupp
+    rw [bdry_apply_eq_sum] at hne
+    obtain ⟨t, ht, hterm⟩ := Finset.exists_ne_zero_of_sum_ne_zero hne
+    have hbg : bdryGen t α ≠ 0 := fun h => hterm (by rw [h, mul_zero])
+    obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero hbg
+    exact ⟨t, ht, hαe ▸ erase_mem_tetFaces (hPure t ht) hw⟩
+  -- (2) the covering map (total, junk off σ)
+  let f : Finset V → Finset V := fun α => if h : α ∈ σ then (hcov α h).choose else ∅
+  have hf_mem : ∀ α ∈ σ, f α ∈ M.support := fun α hα => by
+    simp only [f, dif_pos hα]; exact (hcov α hα).choose_spec.1
+  have hf_face : ∀ α ∈ σ, α ∈ sharedFaces M (f α) := fun α hα =>
+    Finset.mem_inter.mpr ⟨by simp only [f, dif_pos hα]; exact (hcov α hα).choose_spec.2,
+      by rw [hU.1]; exact hα⟩
+  -- (3) the eligible family = fibre-2 tets
+  set E : Finset (Finset V) :=
+    M.support.filter (fun t => (σ.filter (fun a => f a = t)).card = 2) with hE_def
+  -- fibre ⊆ sharedFaces
+  have hfib_sub : ∀ t, σ.filter (fun a => f a = t) ⊆ sharedFaces M t := by
+    intro t α hα
+    rw [Finset.mem_filter] at hα
+    rw [← hα.2]; exact hf_face α hα.1
+  -- each E-tet: sharedFaces = fibre, and GeomEligible
+  have hElig : ∀ t ∈ E, sharedFaces M t = σ.filter (fun a => f a = t) ∧ GeomEligible M t := by
+    intro t ht
+    rw [hE_def, Finset.mem_filter] at ht
+    obtain ⟨htsupp, htfib2⟩ := ht
+    have hsub := hfib_sub t
+    have hcard2 : (sharedFaces M t).card = 2 := by
+      have h := hShared2 t htsupp
+      have hge : 2 ≤ (sharedFaces M t).card := htfib2 ▸ Finset.card_le_card hsub
+      omega
+    exact ⟨(Finset.eq_of_subset_of_card_le hsub (by rw [hcard2, htfib2])).symm,
+      hPure t htsupp, htsupp, hcard2⟩
+  refine ⟨E, Finset.filter_subset _ _, fun t ht => (hElig t ht).2, ?_, ?_⟩
+  · -- pairwise-disjoint shared faces (fibres of a function are disjoint)
+    intro t₁ h₁ t₂ h₂ hne
+    simp only [Finset.mem_coe] at h₁ h₂
+    show Disjoint (sharedFaces M t₁) (sharedFaces M t₂)
+    rw [(hElig t₁ h₁).1, (hElig t₂ h₂).1, Finset.disjoint_left]
+    intro α hα₁ hα₂
+    rw [Finset.mem_filter] at hα₁ hα₂
+    exact hne (hα₁.2.symm.trans hα₂.2)
+  · -- cardinality: deg x (∂M) ≤ E.card
+    have hsum : σ.card = ∑ t ∈ M.support, (σ.filter (fun a => f a = t)).card :=
+      Finset.card_eq_sum_card_fiberwise hf_mem
+    have hbound : σ.card ≤ E.card + M.support.card := by
+      rw [hsum]
+      have hle : ∑ t ∈ M.support, (σ.filter (fun a => f a = t)).card
+          ≤ ∑ t ∈ M.support, (1 + if (σ.filter (fun a => f a = t)).card = 2 then 1 else 0) := by
+        refine Finset.sum_le_sum fun t ht => ?_
+        have h2 : (σ.filter (fun a => f a = t)).card ≤ 2 :=
+          (Finset.card_le_card (hfib_sub t)).trans (hShared2 t ht)
+        by_cases hc : (σ.filter (fun a => f a = t)).card = 2
+        · simp [hc]
+        · simp only [hc, if_false, add_zero]; omega
+      have heq : ∑ t ∈ M.support, (1 + if (σ.filter (fun a => f a = t)).card = 2 then 1 else 0)
+          = M.support.card + E.card := by
+        rw [Finset.sum_add_distrib, ← Finset.card_eq_sum_ones, ← Finset.card_filter, ← hE_def]
+      omega
+    have hdeg : M.support.card + deg x (bdry M) ≤ σ.card := by
+      have h2 := Zvol_add_deg_le x (bdry_bdry M)
+      rw [UnitOn.nrm_eq hU] at h2
+      have hTeq : nrm M = Zvol (bdry M) := hT
+      have h3 := card_support_le_nrm M
+      omega
+    omega
+
+/-- **Avoidance step** (route-Y steps 1–2): given a forbidden Finset `F` of supports strictly smaller
+than `deg x (∂M)`, the counting family supplies a geometrically-eligible support `u ∉ F`. The caller
+sets `F` to the supports touched by the local cut/flip/removal and chooses `x` of large enough degree.
+This is the source of the backup tet `u` in the minimal-counterexample assembly. -/
+theorem exists_geomEligible_not_mem {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2)
+    (x : V) (F : Finset (Finset V)) (hF : F.card < deg x (bdry M)) :
+    ∃ u, u ∈ M.support ∧ GeomEligible M u ∧ u ∉ F := by
+  obtain ⟨E, hEsub, hElig, _, hcard⟩ := exists_disjoint_geomEligible_family hU hT hPure hShared2 x
+  obtain ⟨u, huE, huF⟩ := exists_mem_not_mem_of_card_lt (lt_of_lt_of_le hF hcard)
+  exact ⟨u, hEsub huE, hElig u huE, huF⟩
+
+/-- **Bad-coefficient escape / active-tet switch** — the `SimplicialChain`-free abstraction of the
+disjoint-pair switch used in `prime_edgeLinkConnected` (`Theorem3Clean.lean:2710`, the
+`rcases … ; key e₀ u₀ … | key u₀ e₀ …` block): to prove any goal `C`, it suffices to prove it from
+*some* geometrically-eligible active support `u` avoiding a forbidden local Finset `F`
+(`F.card < deg x (∂M)`). The active `u` is supplied by counting/avoidance. The per-tet contradiction
+`key` is the parameter — the caller plugs in whatever contradiction the active-tet branch produces.
+Unlike the existing pattern this uses `GeomEligible` (not oriented `EligibleTet`) and assumes no `hS`;
+the orientation/`hS` needed to *remove* `u` cleanly is the caller's obligation inside `key`. -/
+theorem bad_coeff_switch_to_disjoint_eligible {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2)
+    (x : V) (F : Finset (Finset V)) (hF : F.card < deg x (bdry M))
+    {C : Prop} (key : ∀ u, u ∈ M.support → GeomEligible M u → u ∉ F → C) : C := by
+  obtain ⟨u, hu_supp, hu_elig, hu_notF⟩ := exists_geomEligible_not_mem hU hT hPure hShared2 x F hF
+  exact key u hu_supp hu_elig hu_notF
+
+end Taut
+  have hfy_v : v ∈ fy := hvy_fy (Finset.mem_insert_self v _)
+  have hfy_mem : fy ∈ σ.filter (fun g => v ∈ g) :=
+    Finset.mem_filter.mpr ⟨hfy, hfy_v⟩
+  calc
+    3 = ({f, fx, fy} : Finset (Finset V)).card :=
+      (Finset.card_eq_three.mpr ⟨f, fx, fy, hfx_ne_f.symm, hfy_ne_f.symm,
+        hfx_ne_fy, rfl⟩).symm
+    _ ≤ (σ.filter (fun g => v ∈ g)).card := by
+      refine Finset.card_le_card ?_
+      intro g hg
+      rcases Finset.mem_insert.mp hg with rfl | hg
+      · exact hf_mem
+      · rcases Finset.mem_insert.mp hg with rfl | hg
+        · exact hfx_mem
+        · rw [Finset.mem_singleton] at hg
+          exact hg ▸ hfy_mem
+
+open Finset in
+theorem aleph_card_gap_two {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M) :
+    M.support.card + 2 ≤ σ.card := by
+  classical
+  rcases hσ.vertsOf_nonempty with ⟨v, hv⟩
+  have hdeg_card : deg v (bdry M) = (σ.filter (fun s => v ∈ s)).card :=
+    aleph_deg_eq_card_filter_of_unitOn hU v
+  have hdeg_ge : 3 ≤ deg v (bdry M) := by
+    rw [hdeg_card]
+    exact aleph_incident_faces_card_ge_three hσ hv
+  have hprop := Zvol_add_deg_le v (bdry_bdry M)
+  have hvol : Zvol (bdry M) = nrm M := hT.symm
+  have hnrm_bdry : nrm (bdry M) = σ.card := UnitOn.nrm_eq hU
+  have hnrmM : nrm M = M.support.card := nrm_eq_support_card_of_simplicial hS
+  omega
+
+/-- Per-vertex degree gap `M.support.card + deg v (bdry M) ≤ σ.card`, from `Zvol_add_deg_le v`
+(Prop 2) on the closed chain `bdry M` rewritten through `IsTaut`.  Supplies the `deg v` bound
+consumed by `aleph_disjoint_eligible_family`. -/
+theorem aleph_card_gap_deg {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M) (v : V) :
+    M.support.card + deg v (bdry M) ≤ σ.card := by
+  have hprop := Zvol_add_deg_le v (bdry_bdry M)
+  have hvol : Zvol (bdry M) = nrm M := hT.symm
+  have hnrm_bdry : nrm (bdry M) = σ.card := UnitOn.nrm_eq hU
+  have hnrmM : nrm M = M.support.card := nrm_eq_support_card_of_simplicial hS
+  omega
+
+open Finset in
+open scoped BigOperators in
+theorem aleph_two_double_fibers (α β : Type*) [DecidableEq α] [DecidableEq β] (s : Finset α) (t : Finset β) (f : α → β)
+    (hmap : ∀ a ∈ s, f a ∈ t)
+    (hcard : t.card + 2 ≤ s.card)
+    (hfiber_le2 : ∀ b ∈ t, (s.filter (fun a => f a = b)).card ≤ 2) :
+    ∃ b₁ ∈ t, ∃ b₂ ∈ t, b₁ ≠ b₂ ∧
+      (s.filter (fun a => f a = b₁)).card = 2 ∧
+      (s.filter (fun a => f a = b₂)).card = 2 := by
+  classical
+  let g : β → ℕ := fun b => (s.filter (fun a => f a = b)).card
+  let D : Finset β := t.filter (fun b => g b = 2)
+  have hsum : s.card = ∑ b ∈ t, g b := by
+    dsimp [g]
+    exact Finset.card_eq_sum_card_fiberwise (by
+      intro a ha
+      exact hmap a ha)
+  have hterm_le : ∀ b ∈ t, g b ≤ 1 + if g b = 2 then 1 else 0 := by
+    intro b hb
+    have hle2 : g b ≤ 2 := by
+      dsimp [g]
+      exact hfiber_le2 b hb
+    by_cases h2 : g b = 2
+    · simpa [h2]
+    · have hle1 : g b ≤ 1 := by omega
+      simpa [h2] using hle1
+  have hsum_rhs : (∑ b ∈ t, (1 + if g b = 2 then 1 else 0)) = t.card + D.card := by
+    dsimp [D]
+    rw [Finset.sum_add_distrib]
+    rw [Finset.card_eq_sum_ones t]
+    rw [Finset.card_filter]
+  have hsum_le : s.card ≤ t.card + D.card := by
+    calc
+      s.card = ∑ b ∈ t, g b := hsum
+      _ ≤ ∑ b ∈ t, (1 + if g b = 2 then 1 else 0) := by
+        exact Finset.sum_le_sum (by
+          intro b hb
+          exact hterm_le b hb)
+      _ = t.card + D.card := hsum_rhs
+  have hDcard : 2 ≤ D.card := by
+    omega
+  have hDcard_lt : 1 < D.card := by omega
+  obtain ⟨b₁, hb₁D, b₂, hb₂D, hne⟩ := (Finset.one_lt_card.mp hDcard_lt)
+  have hb₁D' : b₁ ∈ t ∧ g b₁ = 2 := by
+    simpa [D] using hb₁D
+  have hb₂D' : b₂ ∈ t ∧ g b₂ = 2 := by
+    simpa [D] using hb₂D
+  rcases hb₁D' with ⟨hb₁t, hb₁eq⟩
+  rcases hb₂D' with ⟨hb₂t, hb₂eq⟩
+  refine ⟨b₁, hb₁t, b₂, hb₂t, hne, ?_, ?_⟩
+  · simpa [g] using hb₁eq
+  · simpa [g] using hb₂eq
+
+
+theorem aleph_k_double_fibers (α β : Type*) [DecidableEq α] [DecidableEq β]
+    (s : Finset α) (t : Finset β) (f : α → β)
+    (hmap : ∀ a ∈ s, f a ∈ t) (k : ℕ) (hcard : t.card + k ≤ s.card)
+    (hfiber_le2 : ∀ b ∈ t, (s.filter (fun a => f a = b)).card ≤ 2) :
+    ∃ D ⊆ t, D.card = k ∧ ∀ b ∈ D, (s.filter (fun a => f a = b)).card = 2 := by
+  classical
+  let g : β → ℕ := fun b => (s.filter (fun a => f a = b)).card
+  let Dall : Finset β := t.filter (fun b => g b = 2)
+  have hsum : s.card = ∑ b ∈ t, g b := by
+    dsimp [g]
+    exact Finset.card_eq_sum_card_fiberwise (fun a ha => hmap a ha)
+  have hterm_le : ∀ b ∈ t, g b ≤ 1 + if g b = 2 then 1 else 0 := by
+    intro b hb
+    have hle2 : g b ≤ 2 := by dsimp [g]; exact hfiber_le2 b hb
+    by_cases h2 : g b = 2
+    · simpa [h2]
+    · have hle1 : g b ≤ 1 := by omega
+      simpa [h2] using hle1
+  have hsum_rhs : (∑ b ∈ t, (1 + if g b = 2 then 1 else 0)) = t.card + Dall.card := by
+    dsimp [Dall]
+    rw [Finset.sum_add_distrib, Finset.card_eq_sum_ones t, Finset.card_filter]
+  have hsum_le : s.card ≤ t.card + Dall.card := by
+    calc s.card = ∑ b ∈ t, g b := hsum
+      _ ≤ ∑ b ∈ t, (1 + if g b = 2 then 1 else 0) := Finset.sum_le_sum hterm_le
+      _ = t.card + Dall.card := hsum_rhs
+  have hk : k ≤ Dall.card := by omega
+  obtain ⟨D, hDsub, hDcard⟩ := Finset.exists_subset_card_eq hk
+  refine ⟨D, hDsub.trans (Finset.filter_subset _ _), hDcard, ?_⟩
+  intro b hbD
+  have hb : b ∈ Dall := hDsub hbD
+  rw [Finset.mem_filter] at hb
+  simpa [g] using hb.2
+
+/-- A no-degree-3 taut filling has two distinct eligible tets whose shared
+boundary-face pairs are disjoint (needed by case-1's multiplicity-2 argument). -/
+theorem aleph_disjoint_eligible_pair {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) :
+    ∃ t₁ t₂, t₁ ≠ t₂ ∧ EligibleTet M t₁ ∧ EligibleTet M t₂ ∧
+      Disjoint (sharedFaces M t₁) (sharedFaces M t₂) := by
+  classical
+  have hcov : ∀ α ∈ σ, ∃ t, ProperBoundaryFaceTet M α t := fun α hα =>
+    exists_properBoundaryFaceTet hS hPure (hU.2 α hα)
+  let f : {α // α ∈ σ} → {t // t ∈ M.support} := fun α =>
+    ⟨Classical.choose (hcov α.1 α.2), (Classical.choose_spec (hcov α.1 α.2)).1⟩
+  have hfspec : ∀ α : {α // α ∈ σ}, ProperBoundaryFaceTet M (α : Finset V) ((f α) : Finset V) := fun α =>
+    Classical.choose_spec (hcov α.1 α.2)
+  have hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2 := by
+    intro t ht
+    exact sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht)
+  have hgap : M.support.card + 2 ≤ σ.card := aleph_card_gap_two hσ hU hS hT
+  have hmap : ∀ a ∈ (Finset.univ : Finset {α // α ∈ σ}), f a ∈ (Finset.univ : Finset {t // t ∈ M.support}) := by
+    intro a ha
+    exact Finset.mem_univ _
+  have hcard : (Finset.univ : Finset {t // t ∈ M.support}).card + 2 ≤ (Finset.univ : Finset {α // α ∈ σ}).card := by
+    rw [Finset.card_univ, Finset.card_univ, Fintype.card_coe, Fintype.card_coe]
+    exact hgap
+  have hfiber_le2 : ∀ b ∈ (Finset.univ : Finset {t // t ∈ M.support}),
+      ((Finset.univ : Finset {α // α ∈ σ}).filter (fun a => f a = b)).card ≤ 2 := by
+    intro b hb
+    have hle_shared : (alephChosenFiber f b).card ≤ (sharedFaces M (b : Finset V)).card :=
+      aleph_chosenFiber_card_le_sharedFaces hU f hfspec b
+    have hle2 : (sharedFaces M (b : Finset V)).card ≤ 2 := hShared2 (b : Finset V) b.property
+    exact le_trans hle_shared hle2
+  rcases aleph_two_double_fibers {α // α ∈ σ} {t // t ∈ M.support}
+      (Finset.univ : Finset {α // α ∈ σ}) (Finset.univ : Finset {t // t ∈ M.support}) f
+      hmap hcard hfiber_le2 with ⟨τ₁, hτ₁mem, τ₂, hτ₂mem, hne, hτ₁card, hτ₂card⟩
+  have hτ₁dbl : (alephChosenFiber f τ₁).card = 2 := by
+    simpa only [alephChosenFiber] using hτ₁card
+  have hτ₂dbl : (alephChosenFiber f τ₂).card = 2 := by
+    simpa only [alephChosenFiber] using hτ₂card
+  rcases aleph_double_fiber_eligible hU hPure hShared2 f hfspec τ₁ hτ₁dbl with ⟨helig₁, hshared₁⟩
+  rcases aleph_double_fiber_eligible hU hPure hShared2 f hfspec τ₂ hτ₂dbl with ⟨helig₂, hshared₂⟩
+  refine ⟨(τ₁ : Finset V), (τ₂ : Finset V), ?_, helig₁, helig₂, ?_⟩
+  · intro hval
+    apply hne
+    exact Subtype.ext hval
+  · rw [hshared₁, hshared₂]
+    exact aleph_chosenFaceFibers_disjoint f hne
+
+
+/-- For any `k ≤ deg v (bdry M)`, a no-degree-3 taut filling has `k` eligible tets whose
+`sharedFaces` are pairwise disjoint, pigeonholed against the per-vertex degree gap
+`aleph_card_gap_deg`. -/
+theorem aleph_disjoint_eligible_family {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hT : IsTaut M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ) {k : ℕ} {v : V}
+    (hv : v ∈ vertsOf σ) (hk : k ≤ deg v (bdry M)) :
+    ∃ E : Finset (Finset V), E.card = k ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint (fun e => sharedFaces M e) := by
+  classical
+  have hcov : ∀ α ∈ σ, ∃ t, ProperBoundaryFaceTet M α t := fun α hα =>
+    exists_properBoundaryFaceTet hS hPure (hU.2 α hα)
+  let f : {α // α ∈ σ} → {t // t ∈ M.support} := fun α =>
+    ⟨Classical.choose (hcov α.1 α.2), (Classical.choose_spec (hcov α.1 α.2)).1⟩
+  have hfspec : ∀ α : {α // α ∈ σ}, ProperBoundaryFaceTet M (α : Finset V) ((f α) : Finset V) := fun α =>
+    Classical.choose_spec (hcov α.1 α.2)
+  have hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2 := by
+    intro t ht
+    exact sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht)
+  have hgap : M.support.card + deg v (bdry M) ≤ σ.card := aleph_card_gap_deg hU hS hT v
+  have hgapk : M.support.card + k ≤ σ.card := by omega
+  have hmap : ∀ a ∈ (Finset.univ : Finset {α // α ∈ σ}), f a ∈ (Finset.univ : Finset {t // t ∈ M.support}) := by
+    intro a _
+    exact Finset.mem_univ _
+  have hcard : (Finset.univ : Finset {t // t ∈ M.support}).card + k ≤ (Finset.univ : Finset {α // α ∈ σ}).card := by
+    rw [Finset.card_univ, Finset.card_univ, Fintype.card_coe, Fintype.card_coe]
+    exact hgapk
+  have hfiber_le2 : ∀ b ∈ (Finset.univ : Finset {t // t ∈ M.support}),
+      ((Finset.univ : Finset {α // α ∈ σ}).filter (fun a => f a = b)).card ≤ 2 := by
+    intro b _
+    have hle_shared : (alephChosenFiber f b).card ≤ (sharedFaces M (b : Finset V)).card :=
+      aleph_chosenFiber_card_le_sharedFaces hU f hfspec b
+    have hle2 : (sharedFaces M (b : Finset V)).card ≤ 2 := hShared2 (b : Finset V) b.property
+
+exec
+/bin/zsh -lc "sed -n '120,140p' lean/Taut/Chains.lean && sed -n '3430,3440p' lean/Taut/Theorem3Clean.lean && sed -n '1380,1425p' lean/Taut/PrimeStep.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+
+noncomputable def bdryGen (s : Finset V) : Chain V :=
+  ∑ x ∈ s, sgn x s • Finsupp.single (s.erase x) 1
+
+noncomputable def bdry : Chain V →ₗ[ℤ] Chain V :=
+  Finsupp.lsum ℤ fun s => LinearMap.toSpanSingleton ℤ (Chain V) (bdryGen s)
+
+@[simp] lemma bdry_single (s : Finset V) (c : ℤ) :
+    bdry (Finsupp.single s c) = c • bdryGen s := by
+  simp [bdry, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+
+/-- Cone of one generator: adjoin `x`, with the sign that sorts `x` into
+place; kill simplices already containing `x`. -/
+noncomputable def coneGen (x : V) (s : Finset V) : Chain V :=
+  if x ∈ s then 0 else sgn x s • Finsupp.single (insert x s) 1
+
+/-- The cone operator `M ↦ x ∗ M`. -/
+noncomputable def cone (x : V) : Chain V →ₗ[ℤ] Chain V :=
+  Finsupp.lsum ℤ fun s => LinearMap.toSpanSingleton ℤ (Chain V) (coneGen x s)
+
+@[simp] lemma cone_single (x : V) (s : Finset V) (c : ℤ) :
+(paper Theorem 2) and the free choice of starting tet (paper Theorem 3): the minimal-counterexample
+induction proves the anyrooted statement directly (`theorem3_clean`), of which the existence form
+(`theorem2_clean`) is the weakening. -/
+theorem taut_filling_is_anyrootedStickerball {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsAnyrootedStickerball M.support σ :=
+  ⟨⟨theorem2_clean hσ hU hXc hMX hT hS, hσ.nonempty⟩, theorem3_clean hσ hU hXc hMX hT hS⟩
+
+/-- A taut filling of a combinatorial 2-sphere is a *stickerball* (shellable clean ball with nonempty
+boundary — the combinatorial `B³` certificate).  Corollary of `taut_filling_is_anyrootedStickerball`. -/
+theorem taut_filling_is_stickerball {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+gluing the two pseudomanifolds with `isPseudomanifold_union_of_sideSep`. -/
+lemma removeTet_isPseudomanifold {σ : Finset (Finset V)} {X M : Chain V} {u : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M) (hu : EligibleTet M u)
+    (IHpm : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      IsPseudomanifold M'.support) :
+    IsPseudomanifold (removeTet M u).support := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  obtain ⟨f₃, f₄, hf₃₄, hexp⟩ := exposedFaces_eq_pair_of_eligible hu
+  by_cases hFlip : FlipEdgePresent σ f₃ f₄
+  · -- case 2: removeTet M u splits into two smaller single-sphere taut fillings
+    obtain ⟨A, B, hAB, hcd, hsph₁, hsph₂, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, _⟩ :=
+      flipEdgePresent_side_sets hσ hU hXc hMX hT hS hu hexp hf₃₄ hFlip
+    obtain ⟨hu₁, hu₂, hc₁, hc₂, hT₁, hT₂, hS₁, hS₂, hsm₁, hsm₂, hen₁, hen₂, hdisj, hsupp⟩ :=
+      flipEdgePresent_side_algebra hσ hU hXc hMX hT hS hu hexp hf₃₄ hFlip hAB hcd hcover hsep
+    have hPM₁ : IsPseudomanifold ((removeTet M u).filter (fun t => t ⊆ A)).support :=
+      IHpm _ (bdry ((removeTet M u).filter (fun t => t ⊆ A)))
+        ((removeTet M u).filter (fun t => t ⊆ A)) hsm₁ hsph₁ hu₁ hc₁ rfl hT₁ hS₁
+    have hPM₂ : IsPseudomanifold ((removeTet M u).filter (fun t => t ⊆ B)).support :=
+      IHpm _ (bdry ((removeTet M u).filter (fun t => t ⊆ B)))
+        ((removeTet M u).filter (fun t => t ⊆ B)) hsm₂ hsph₂ hu₂ hc₂ rfl hT₂ hS₂
+    rw [Finsupp.support_filter] at hPM₁ hPM₂
+    refine isPseudomanifold_union_of_sideSep hcover ?_ hPM₁ hPM₂
+    rw [hAB]; exact hcd.le
+  · -- case 1: removeTet M u is itself a smaller single-sphere taut filling
+    have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS hu hexp hf₃₄ hFlip
+    have hUe := unitOn_flipBoundary_of_eligible hUb hS hu
+    have hTe : IsTaut (removeTet M u) := isTaut_removeTet hT
+    have hSe : SimplicialChain (removeTet M u) := simplicialChain_removeTet hS
+    have hlt : nrm (removeTet M u) < nrm M := by
+      have h := nrm_removeTet_add_one_of_simplicial hS hu.2.1; omega
+    exact IHpm _ (bdry (removeTet M u)) (removeTet M u) hlt hσe hUe (bdry_bdry _) rfl hTe hSe
+
+/-- **LEMMA C (triangle rule-out).** The shared faces of an eligible tet `e` vanish
+when `e` is removed: a shared face `r` lies in NO tet of `removeTet M e`.  If it
+lay in some `w ≠ e`, then removing the disjoint eligible `u` (boundary faces
+disjoint from `e`'s, from `aleph_disjoint_eligible_pair`) keeps both `e` and `w`,
+so `r` lies in ≥ 2 tets of `removeTet M u`; by parity it is ≥ 3, contradicting
+`removeTet M u` being a pseudomanifold (LEMMA B). -/
+lemma faceCount_removeTet_sharedFace_eq_zero {σ : Finset (Finset V)} {X M : Chain V}
+    {e u r : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+
+exec
+/bin/zsh -lc 'rg -n "aleph_double_fiber_eligible|aleph_chosenFiber|chosenFaceFibers|sharedFaces_card_le_two|tetContribution_apply_erase|bdryGen_apply_erase|exists_facet_of_bdryGen_ne_zero|bdry_apply_eq_sum" lean/Taut -S' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Eligible.lean:32:    rw [bdryGen_apply_erase_of_mem hx]
+lean/Taut/Eligible.lean:58:  have hsum : bdry M α = ∑ t ∈ M.support, M t * bdryGen t α := bdry_apply_eq_sum M α
+lean/Taut/Eligible.lean:82:    obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero hgne
+lean/Taut/Eligible.lean:104:        obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero h0
+lean/Taut/Eligible.lean:107:  have hsum : bdry M α = ∑ t ∈ M.support, M t * bdryGen t α := bdry_apply_eq_sum M α
+lean/Taut/Eligible.lean:131:    obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero hgne
+lean/Taut/Eligible.lean:324:lemma sharedFaces_card_le_two_of_noDegree3 {σ : Finset (Finset V)} {M : Chain V}
+lean/Taut/Eligible.lean:340:    (fun t ht => sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht))
+lean/Taut/Eligible.lean:421:    rw [bdry_apply_eq_sum] at hne
+lean/Taut/Eligible.lean:424:    obtain ⟨w, hw, hαe⟩ := exists_facet_of_bdryGen_ne_zero hbg
+lean/Taut/Stickerball.lean:34:  rw [hfe, bdryGen_apply_erase_of_mem hyt]
+lean/Taut/Stickerball.lean:44:  rw [bdry_apply_eq_sum]
+lean/Taut/Stickerball.lean:50:    obtain ⟨w, _, hfe⟩ := exists_facet_of_bdryGen_ne_zero h0
+lean/Taut/Theorem2.lean:164:lemma bdryGen_apply_erase_of_mem {t : Finset V} {x : V} (hx : x ∈ t) :
+lean/Taut/Theorem2.lean:179:lemma tetContribution_apply_erase_of_mem {M : Chain V} {t : Finset V} {x : V} (hx : x ∈ t) :
+lean/Taut/Theorem2.lean:181:  rw [tetContribution, bdry_single, Finsupp.smul_apply, bdryGen_apply_erase_of_mem hx,
+lean/Taut/Theorem2.lean:209:  rw [tetContribution_apply_erase_of_mem hyt]
+lean/Taut/Theorem2.lean:262:  rw [tetContribution_apply_erase_of_mem hyt]
+lean/Taut/Theorem2.lean:301:    rw [bdry_apply_eq_sum]
+lean/Taut/Theorem2.lean:333:      obtain ⟨w, _, hue⟩ := exists_facet_of_bdryGen_ne_zero hbg
+lean/Taut/Splitting.lean:48:lemma exists_facet_of_bdryGen_ne_zero {t s : Finset V}
+lean/Taut/Splitting.lean:58:lemma bdry_apply_eq_sum (M : Chain V) (s : Finset V) :
+lean/Taut/Splitting.lean:68:  rw [Finsupp.mem_support_iff, bdry_apply_eq_sum] at hs
+lean/Taut/Splitting.lean:71:  obtain ⟨w, hw, rfl⟩ := exists_facet_of_bdryGen_ne_zero hgen
+lean/Taut/Splitting.lean:347:          rw [bdry_apply_eq_sum]
+lean/Taut/Splitting.lean:351:          · obtain ⟨w, hw, hsw⟩ := exists_facet_of_bdryGen_ne_zero hgen
+lean/Taut/Splitting.lean:375:        rw [bdry_apply_eq_sum]
+lean/Taut/Splitting.lean:379:        · obtain ⟨w, hw, hsw⟩ := exists_facet_of_bdryGen_ne_zero hgen
+lean/Taut/PrimeStep.lean:1129:    obtain ⟨w, hw, hfw⟩ := exists_facet_of_bdryGen_ne_zero hbg
+lean/Taut/PrimeStep.lean:1144:    rw [bdry_apply_eq_sum]
+lean/Taut/PrimeStep.lean:1150:      obtain ⟨w, hw, hfw⟩ := exists_facet_of_bdryGen_ne_zero hgen
+lean/Taut/Theorem4.lean:276:      obtain ⟨w, hw, hfe⟩ := exists_facet_of_bdryGen_ne_zero hg
+lean/Taut/Theorem4.lean:460:    obtain ⟨w, _, hfew⟩ := exists_facet_of_bdryGen_ne_zero hgent
+lean/Taut/Theorem4.lean:1082:  have hsum : bdry R γ = ∑ t ∈ R.support, R t * bdryGen t γ := bdry_apply_eq_sum R γ
+lean/Taut/Theorem4.lean:1087:  obtain ⟨w, hw, hγt⟩ := exists_facet_of_bdryGen_ne_zero hgen
+lean/Taut/Theorem2Aleph.lean:222:      rwa [bdry_apply_eq_sum] at hbe
+lean/Taut/Theorem2Aleph.lean:225:    obtain ⟨w, hw, he_eq⟩ := exists_facet_of_bdryGen_ne_zero hgenne
+lean/Taut/Theorem2Aleph.lean:240:        obtain ⟨w2, hw2, hes⟩ := exists_facet_of_bdryGen_ne_zero hbg
+lean/Taut/Theorem2Aleph.lean:276:          rw [bdry_apply_eq_sum]
+lean/Taut/Theorem2Aleph.lean:285:            · obtain ⟨w, hw, heq⟩ := exists_facet_of_bdryGen_ne_zero hgen
+lean/Taut/Theorem2Aleph.lean:304:          rw [bdry_apply_eq_sum]
+lean/Taut/Theorem2Aleph.lean:313:            · obtain ⟨w, hw, heq⟩ := exists_facet_of_bdryGen_ne_zero hgen
+lean/Taut/Theorem2Aleph.lean:915:theorem aleph_chosenFaceFibers_disjoint {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Theorem2Aleph.lean:935:theorem aleph_chosenFiber_card_le_sharedFaces {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Theorem2Aleph.lean:965:theorem aleph_double_fiber_eligible {M : Chain V} {σ : Finset (Finset V)}
+lean/Taut/Theorem2Aleph.lean:1229:    exact sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht)
+lean/Taut/Theorem2Aleph.lean:1241:      aleph_chosenFiber_card_le_sharedFaces hU f hfspec b
+lean/Taut/Theorem2Aleph.lean:1251:  rcases aleph_double_fiber_eligible hU hPure hShared2 f hfspec τ₁ hτ₁dbl with ⟨helig₁, hshared₁⟩
+lean/Taut/Theorem2Aleph.lean:1252:  rcases aleph_double_fiber_eligible hU hPure hShared2 f hfspec τ₂ hτ₂dbl with ⟨helig₂, hshared₂⟩
+lean/Taut/Theorem2Aleph.lean:1258:    exact aleph_chosenFaceFibers_disjoint f hne
+lean/Taut/Theorem2Aleph.lean:1281:    exact sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht)
+lean/Taut/Theorem2Aleph.lean:1294:      aleph_chosenFiber_card_le_sharedFaces hU f hfspec b
+lean/Taut/Theorem2Aleph.lean:1305:    exact aleph_double_fiber_eligible hU hPure hShared2 f hfspec b hbdbl
+lean/Taut/Theorem2Aleph.lean:1320:    exact aleph_chosenFaceFibers_disjoint f hbne
+
+exec
+/bin/zsh -lc 'rg -n "def nrm|lemma nrm|theorem nrm|natAbs|removeTet.*nrm|single.*nrm|nrm_sub" lean/Taut -S' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Eligible.lean:92:    (hunit : ∀ t ∈ M.support, α ∈ tetFaces t → (M t).natAbs ≤ 1)
+lean/Taut/Eligible.lean:394:  show M.support.card ≤ ∑ s ∈ M.support, (M s).natAbs
+lean/Taut/Eligible.lean:396:  exact Finset.sum_le_sum fun s hs => Int.natAbs_pos.mpr (Finsupp.mem_support_iff.mp hs)
+lean/Taut/Chains.lean:53:lemma natAbs_sgn (x : V) (s : Finset V) : (sgn x s).natAbs = 1 := by
+lean/Taut/Chains.lean:54:  simp [sgn, Int.natAbs_pow]
+lean/Taut/Chains.lean:423:noncomputable def nrm (M : Chain V) : ℕ := ∑ s ∈ M.support, (M s).natAbs
+lean/Taut/Chains.lean:425:lemma nrm_eq_sum_subset {M : Chain V} {t : Finset (Finset V)}
+lean/Taut/Chains.lean:426:    (h : M.support ⊆ t) : nrm M = ∑ s ∈ t, (M s).natAbs := by
+lean/Taut/Chains.lean:428:  rw [Finsupp.notMem_support_iff.mp hs, Int.natAbs_zero]
+lean/Taut/Chains.lean:430:@[simp] lemma nrm_zero : nrm (0 : Chain V) = 0 := by simp [nrm]
+lean/Taut/Chains.lean:432:lemma nrm_eq_zero_iff {M : Chain V} : nrm M = 0 ↔ M = 0 := by
+lean/Taut/Chains.lean:442:@[simp] lemma nrm_single (s : Finset V) (c : ℤ) :
+lean/Taut/Chains.lean:443:    nrm (Finsupp.single s c) = c.natAbs := by
+lean/Taut/Chains.lean:449:@[simp] lemma nrm_neg (M : Chain V) : nrm (-M) = nrm M := by
+lean/Taut/Chains.lean:453:lemma nrm_add_le (M N : Chain V) : nrm (M + N) ≤ nrm M + nrm N := by
+lean/Taut/Chains.lean:462:  exact Int.natAbs_add_le _ _
+lean/Taut/Chains.lean:464:lemma nrm_filter_add_nrm_filter_neg (p : Finset V → Prop) [DecidablePred p]
+lean/Taut/Chains.lean:475:  · rw [if_pos hp, if_neg (not_not_intro hp), Int.natAbs_zero, add_zero]
+lean/Taut/Chains.lean:476:  · rw [if_neg hp, if_pos hp, Int.natAbs_zero, zero_add]
+lean/Taut/Chains.lean:486:theorem nrm_cone_add_deg (x : V) (M : Chain V) :
+lean/Taut/Chains.lean:521:      Finset.erase_insert (hfree t ht), Int.natAbs_mul, natAbs_sgn, one_mul]
+lean/Taut/Corollary1.lean:138:  rw [intToQChain_apply, Rat.cast_intCast, Nat.cast_natAbs, Int.cast_abs]
+lean/Taut/Zvol.lean:28:  ∀ s, (U s).natAbs + (M s - U s).natAbs = (M s).natAbs
+lean/Taut/Zvol.lean:37:  simp only [Int.natAbs_zero, zero_sub, Int.natAbs_neg] at hh
+lean/Taut/Zvol.lean:38:  exact hs (Int.natAbs_eq_zero.mp (by omega))
+lean/Taut/Zvol.lean:47:  simp only [Int.natAbs_zero, zero_sub, Int.natAbs_neg] at hh
+lean/Taut/Zvol.lean:48:  have : U s = 0 := Int.natAbs_eq_zero.mp (by omega)
+lean/Taut/Zvol.lean:53:lemma SubChain.nrm_add_nrm_sub {U M : Chain V} (h : SubChain U M) :
+lean/Taut/Zvol.lean:66:  · rw [if_pos hp, sub_self, Int.natAbs_zero, add_zero]
+lean/Taut/Zvol.lean:67:  · rw [if_neg hp, Int.natAbs_zero, sub_zero, zero_add]
+lean/Taut/Zvol.lean:106:  have hsplit := hU.nrm_add_nrm_sub
+lean/Taut/Projection.lean:305:lemma nrm_sum_le {α : Type*} (t : Finset α) (f : α → Chain V) :
+lean/Taut/Projection.lean:313:lemma nrm_smul (c : ℤ) (M : Chain V) : nrm (c • M) = c.natAbs * nrm M := by
+lean/Taut/Projection.lean:318:      rw [Finsupp.smul_apply, smul_eq_mul, Int.natAbs_mul]
+lean/Taut/Projection.lean:320:lemma nrm_coneGen_le_one (p : V) (u : Finset V) : nrm (coneGen p u) ≤ 1 := by
+lean/Taut/Projection.lean:324:  · rw [nrm_smul, nrm_single, natAbs_sgn, Int.natAbs_one, mul_one]
+lean/Taut/Projection.lean:326:lemma nrm_KGen_le_one (A : Finset V) (p : V) (s : Finset V) :
+lean/Taut/Projection.lean:330:  · rw [nrm_single, Int.natAbs_one]
+lean/Taut/Projection.lean:334:      rw [hz, Finset.sum_singleton, nrm_smul, natAbs_sgn, one_mul]
+lean/Taut/Projection.lean:345:theorem nrm_Kmap_add_killed_le (A : Finset V) (p : V) (M : Chain V) :
+lean/Taut/Projection.lean:349:      ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:352:      _ = ∑ s ∈ M.support, (M s).natAbs * nrm (KGen A p s) := by
+lean/Taut/Projection.lean:355:            (M s).natAbs * nrm (KGen A p s))
+lean/Taut/Projection.lean:357:            (M s).natAbs * nrm (KGen A p s) := by
+lean/Taut/Projection.lean:360:            (M s).natAbs * nrm (KGen A p s) := by
+lean/Taut/Projection.lean:363:      _ ≤ ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:365:          calc (M s).natAbs * nrm (KGen A p s)
+lean/Taut/Projection.lean:366:              ≤ (M s).natAbs * 1 :=
+lean/Taut/Projection.lean:368:            _ = (M s).natAbs := Nat.mul_one _
+lean/Taut/Projection.lean:370:      ∑ s ∈ M.support.filter (fun s => Kkills A p s), (M s).natAbs := by
+lean/Taut/Projection.lean:375:      (M s).natAbs)
+lean/Taut/Projection.lean:376:      + ∑ s ∈ M.support.filter (fun s => ¬ Kkills A p s), (M s).natAbs := by
+lean/Taut/Theorem1.lean:147:  have h2 := hPM.nrm_add_nrm_sub
+lean/Taut/Theorem1.lean:334:lemma nrm_le_killed_add_killed {A B : Finset V} {p q : V} {M : Chain V}
+lean/Taut/Theorem3Clean.lean:1732:  have hlt : nrm (removeTet M e) < nrm M := by
+lean/Taut/Theorem3Clean.lean:1914:        ((removeTet M u).filter (fun t => t ⊆ A)) hnrmA hsphA hUA hbA rfl hTA hSA
+lean/Taut/Theorem3Clean.lean:1929:        ((removeTet M u).filter (fun t => t ⊆ B)) hnrmB hsphB hUB hbB rfl hTB hSB
+lean/Taut/Theorem3Clean.lean:3023:  have hlt : nrm (removeTet M e) < nrm M := by
+lean/Taut/Theorem2.lean:30:lemma SimplicialChain.natAbs_eq_one {M : Chain V} (h : SimplicialChain M) {s : Finset V}
+lean/Taut/Theorem2.lean:31:    (hs : s ∈ M.support) : (M s).natAbs = 1 := by
+lean/Taut/Theorem2.lean:41:lemma nrm_eq_support_card_of_simplicial {M : Chain V} (h : SimplicialChain M) :
+lean/Taut/Theorem2.lean:44:  exact Finset.sum_congr rfl fun s hs => h.natAbs_eq_one hs
+lean/Taut/Theorem2.lean:148:lemma nrm_removeTet_add_one_of_simplicial {M : Chain V} {t : Finset V}
+lean/Taut/Theorem2.lean:150:    nrm (removeTet M t) + 1 = nrm M := by
+lean/Taut/Theorem2.lean:157:lemma nrm_removeTet_of_simplicial {M : Chain V} {t : Finset V}
+lean/Taut/Theorem2.lean:159:    nrm (removeTet M t) = nrm M - 1 := by
+lean/Taut/Splitting.lean:118:lemma nrm_add_le_killed_add_killed {A B : Finset V} {p q : V} {M : Chain V}
+lean/Taut/Splitting.lean:122:    nrm M + (M t₀).natAbs ≤
+lean/Taut/Splitting.lean:131:  have hsplit : (M t₀).natAbs
+lean/Taut/Splitting.lean:132:      = ∑ s ∈ M.support, if s = t₀ then (M t₀).natAbs else 0 := by
+lean/Taut/Splitting.lean:133:    rw [Finset.sum_ite_eq' M.support t₀ fun _ => (M t₀).natAbs, if_pos ht₀]
+lean/Taut/Splitting.lean:195:  have ht0ne : (M t₀).natAbs ≠ 0 :=
+lean/Taut/Splitting.lean:196:    Int.natAbs_ne_zero.mpr (Finsupp.mem_support_iff.mp ht₀)
+lean/Taut/PrimeStep.lean:1208:      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1209:      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1348:      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1349:      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+lean/Taut/PrimeStep.lean:1411:    have hlt : nrm (removeTet M u) < nrm M := by
+lean/Taut/Theorem4.lean:1439:      have hnR : nrm (removeTet M e) < nrm M := by
+lean/Taut/Theorem4.lean:1465:      have hnR : nrm (removeTet M e) < nrm M := by
+lean/Taut/Theorem2Aleph.lean:180:  have bdryGen_facet_natAbs : ∀ {f e : Finset V}, f.card = 3 → e.card = 2 → e ⊆ f → (bdryGen f e).natAbs = 1 := by
+lean/Taut/Theorem2Aleph.lean:199:    rw [heeq, hb, natAbs_sgn]
+lean/Taut/Theorem2Aleph.lean:264:    have hbdry_single_side : (bdry (cutChain σ W X) e0).natAbs = 1 := by
+lean/Taut/Theorem2Aleph.lean:291:        rw [hval, Int.natAbs_mul]
+lean/Taut/Theorem2Aleph.lean:292:        have hxabs : (X f₁).natAbs = 1 := by rcases hU.2 f₁ hf₁σ with hx | hx <;> rw [hx] <;> rfl
+lean/Taut/Theorem2Aleph.lean:293:        rw [hxabs, bdryGen_facet_natAbs (hσ.pure f₁ hf₁σ) he0card he₁]
+lean/Taut/Theorem2Aleph.lean:319:        rw [hval, Int.natAbs_mul]
+lean/Taut/Theorem2Aleph.lean:320:        have hxabs : (X f₂).natAbs = 1 := by rcases hU.2 f₂ hf₂σ with hx | hx <;> rw [hx] <;> rfl
+lean/Taut/Theorem2Aleph.lean:321:        rw [hxabs, bdryGen_facet_natAbs (hσ.pure f₂ hf₂σ) he0card he₂]
+lean/Taut/Theorem2Aleph.lean:322:    have hgamma_abs : (bdryGen γ e0).natAbs = 1 := bdryGen_facet_natAbs hγ3 he0card he0sub
+lean/Taut/Theorem2Aleph.lean:326:    have hcabs : c.natAbs = 1 := by
+lean/Taut/Theorem2Aleph.lean:327:      rw [heval, Int.natAbs_mul, hgamma_abs, Nat.mul_one] at hbdry_single_side
+
+codex
+There’s a substantive mismatch emerging: current `ProperBoundaryFaceTet` is exactly the “full contribution equals boundary” predicate the prompt warns against. I’m checking whether a new support-level sign predicate can still yield the existing `EligibleTet`; that implication is the critical hinge.
+exec
+/bin/zsh -lc "sed -n '1180,1375p' lean/Taut/PrimeStep.lean && sed -n '1340,1420p' lean/Taut/PrimeStep.lean && sed -n '1400,1480p' lean/Taut/Theorem4.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '150,220p' lean/Taut/Theorem2.lean && sed -n '40,80p' lean/Taut/Splitting.lean && sed -n '900,1010p' lean/Taut/Theorem2Aleph.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    nrm (removeTet M t) + 1 = nrm M := by
+  rw [nrm_eq_support_card_of_simplicial (simplicialChain_removeTet hS),
+    nrm_eq_support_card_of_simplicial hS, support_removeTet_of_mem ht,
+    Finset.card_erase_of_mem ht]
+  have : 0 < M.support.card := Finset.card_pos.mpr ⟨t, ht⟩
+  omega
+
+lemma nrm_removeTet_of_simplicial {M : Chain V} {t : Finset V}
+    (hS : SimplicialChain M) (ht : t ∈ M.support) :
+    nrm (removeTet M t) = nrm M - 1 := by
+  have := nrm_removeTet_add_one_of_simplicial hS ht; omega
+
+/-! ### The edge-flip sign bookkeeping -/
+
+lemma bdryGen_apply_erase_of_mem {t : Finset V} {x : V} (hx : x ∈ t) :
+    bdryGen t (t.erase x) = sgn x t := by
+  rw [bdryGen, Finset.sum_apply']
+  have key : ∀ y ∈ t, y ≠ x →
+      (sgn y t • Finsupp.single (t.erase y) (1 : ℤ)) (t.erase x) = 0 := by
+    intro y hy hyx
+    have hne : t.erase x ≠ t.erase y := by
+      intro hc
+      have hmem : y ∈ t.erase x := Finset.mem_erase.mpr ⟨hyx, hy⟩
+      rw [hc] at hmem
+      exact Finset.notMem_erase y t hmem
+    rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne hne, smul_zero]
+  rw [Finset.sum_eq_single_of_mem x hx key, Finsupp.smul_apply, Finsupp.single_eq_same,
+    smul_eq_mul, mul_one]
+
+lemma tetContribution_apply_erase_of_mem {M : Chain V} {t : Finset V} {x : V} (hx : x ∈ t) :
+    tetContribution M t (t.erase x) = M t * sgn x t := by
+  rw [tetContribution, bdry_single, Finsupp.smul_apply, bdryGen_apply_erase_of_mem hx,
+    smul_eq_mul]
+
+lemma tetContribution_apply_of_not_mem_tetFaces {M : Chain V} {t s : Finset V}
+    (ht : t.card = 4) (hs : s ∉ tetFaces t) : tetContribution M t s = 0 := by
+  have hz : bdryGen t s = 0 := by
+    rw [bdryGen, Finset.sum_apply']
+    apply Finset.sum_eq_zero
+    intro y hy
+    rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne
+      (fun hc => (hc ▸ hs) (erase_mem_tetFaces ht hy)), smul_zero]
+  rw [tetContribution, bdry_single, Finsupp.smul_apply, hz, smul_zero]
+
+lemma exists_erase_eq_of_mem_tetFaces {t s : Finset V} (ht : t.card = 4)
+    (hs : s ∈ tetFaces t) : ∃ y, y ∈ t ∧ s = t.erase y := by
+  obtain ⟨hsub, hcard⟩ := Finset.mem_powersetCard.mp hs
+  have hd : (t \ s).card = 1 := by rw [Finset.card_sdiff_of_subset hsub, ht, hcard]
+  obtain ⟨y, hy⟩ := Finset.card_eq_one.mp hd
+  obtain ⟨hyt, hys⟩ := Finset.mem_sdiff.mp (hy ▸ Finset.mem_singleton_self y)
+  refine ⟨y, hyt, Finset.Subset.antisymm (fun z hz => ?_) (fun z hz => ?_)⟩
+  · exact Finset.mem_erase.mpr ⟨fun hzy => hys (hzy ▸ hz), hsub hz⟩
+  · rw [Finset.mem_erase] at hz
+    by_contra hzs
+    exact hz.1 (by have := hy ▸ Finset.mem_sdiff.mpr ⟨hz.2, hzs⟩; rwa [Finset.mem_singleton] at this)
+
+lemma tetContribution_ne_zero_of_mem_tetFaces {M : Chain V} {t s : Finset V}
+    (ht : t.card = 4) (htM : M t ≠ 0) (hs : s ∈ tetFaces t) : tetContribution M t s ≠ 0 := by
+  obtain ⟨y, hyt, rfl⟩ := exists_erase_eq_of_mem_tetFaces ht hs
+  rw [tetContribution_apply_erase_of_mem hyt]
+  exact mul_ne_zero htM (by rw [sgn]; exact pow_ne_zero _ (by norm_num))
+
+lemma bdry_apply_eq_zero_of_mem_exposedFaces {M : Chain V} {t s : Finset V}
+    (hs : s ∈ exposedFaces M t) : (bdry M) s = 0 := by
+  rw [exposedFaces, Finset.mem_sdiff, sharedFaces, Finset.mem_inter] at hs
+  by_contra h0
+  exact hs.2 ⟨hs.1, Finsupp.mem_support_iff.mpr h0⟩
+
+/-- **The flip on supports.** Removing an eligible tet drops its two shared
+boundary faces and adds its two exposed ones — the paper's `ab → cd` flip. -/
+theorem support_flipBoundary_of_eligible {M : Chain V} {t : Finset V} (h : EligibleTet M t) :
+  rw [hsplit, Finset.card_union_of_disjoint hdisj] at h1
+  omega
+
+lemma bdry_eq_sum (M : Chain V) :
+    bdry M = ∑ t ∈ M.support, M t • bdryGen t := by
+  rw [bdry, Finsupp.lsum_apply, Finsupp.sum]
+  exact Finset.sum_congr rfl fun s _ => LinearMap.toSpanSingleton_apply ..
+
+lemma exists_facet_of_bdryGen_ne_zero {t s : Finset V}
+    (h : bdryGen t s ≠ 0) : ∃ w ∈ t, s = t.erase w := by
+  by_contra hcon
+  push_neg at hcon
+  apply h
+  rw [bdryGen, Finset.sum_apply']
+  refine Finset.sum_eq_zero fun w hw => ?_
+  rw [Finsupp.smul_apply, Finsupp.single_apply,
+    if_neg (fun he => hcon w hw he.symm), smul_zero]
+
+lemma bdry_apply_eq_sum (M : Chain V) (s : Finset V) :
+    bdry M s = ∑ t ∈ M.support, M t * bdryGen t s := by
+  rw [bdry_eq_sum, Finset.sum_apply']
+  exact Finset.sum_congr rfl fun t _ => by
+    rw [Finsupp.smul_apply, smul_eq_mul]
+
+lemma bdry_supp_of_supp {B : Finset V} {k : ℕ} {M : Chain V}
+    (h : ∀ t ∈ M.support, t ⊆ B ∧ t.card = k + 1) :
+    ∀ s ∈ (bdry M).support, s ⊆ B ∧ s.card = k := by
+  intro s hs
+  rw [Finsupp.mem_support_iff, bdry_apply_eq_sum] at hs
+  obtain ⟨t, ht, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hs
+  have hgen : bdryGen t s ≠ 0 := fun h0 => hne (by rw [h0, mul_zero])
+  obtain ⟨w, hw, rfl⟩ := exists_facet_of_bdryGen_ne_zero hgen
+  obtain ⟨h1, h2⟩ := h t ht
+  exact ⟨(Finset.erase_subset w t).trans h1,
+    by rw [Finset.card_erase_of_mem hw, h2]; omega⟩
+
+/-- The closedness of the link: if `U` is supported on simplices
+containing `x` and its boundary has no `x`-part, then `lk x U` is
+closed. -/
+lemma bdry_lk_eq_zero {x : V} {U : Chain V} (hU : nbhd x U = U)
+    (hbU : nbhd x (bdry U) = 0) : bdry (lk x U) = 0 := by
+  intro s hs
+  rw [mem_image] at hs
+  rcases hs with ⟨α, hα, rfl⟩
+  rw [mem_filter] at hα
+  rcases hα with ⟨hαuniv, hαeq⟩
+  rw [sharedFaces]
+  rw [mem_inter]
+  constructor
+  · have hproper := hfspec α
+    rw [hαeq] at hproper
+    exact hproper.2.1
+  · rw [hU.1]
+    exact α.property
+
+open Finset in
+theorem aleph_chosenFaceFibers_disjoint {M : Chain V} {σ : Finset (Finset V)}
+    (f : {α // α ∈ σ} → {t // t ∈ M.support}) {τ₁ τ₂ : {t // t ∈ M.support}}
+    (hne : τ₁ ≠ τ₂) :
+    Disjoint (alephChosenFaceFiber f τ₁) (alephChosenFaceFiber f τ₂) := by
+  rw [Finset.disjoint_left]
+  intro s hs1 hs2
+  unfold alephChosenFaceFiber at hs1 hs2
+  simp only [Finset.mem_image, alephChosenFiber, Finset.mem_filter, Finset.mem_univ, true_and] at hs1 hs2
+  rcases hs1 with ⟨α1, hα1f, hα1s⟩
+  rcases hs2 with ⟨α2, hα2f, hα2s⟩
+  have hsub : α1 = α2 := by
+    apply Subtype.ext
+    exact hα1s.trans hα2s.symm
+  apply hne
+  calc
+    τ₁ = f α1 := hα1f.symm
+    _ = f α2 := by rw [hsub]
+    _ = τ₂ := hα2f
+
+open Finset in
+theorem aleph_chosenFiber_card_le_sharedFaces {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ)
+    (f : {α // α ∈ σ} → {t // t ∈ M.support})
+    (hfspec : ∀ α : {α // α ∈ σ}, ProperBoundaryFaceTet M (α : Finset V) ((f α) : Finset V))
+    (τ : {t // t ∈ M.support}) :
+    (alephChosenFiber f τ).card ≤ (sharedFaces M (τ : Finset V)).card := by
+  have hsub : alephChosenFaceFiber f τ ⊆ sharedFaces M (τ : Finset V) :=
+    aleph_chosenFaceFiber_subset_sharedFaces hU f hfspec τ
+  have hcard : (alephChosenFaceFiber f τ).card = (alephChosenFiber f τ).card := by
+    unfold alephChosenFaceFiber
+    rw [Finset.card_image_of_injective]
+    intro a b h
+    exact Subtype.ext h
+  calc
+    (alephChosenFiber f τ).card = (alephChosenFaceFiber f τ).card := hcard.symm
+    _ ≤ (sharedFaces M (τ : Finset V)).card := Finset.card_le_card hsub
+
+open Finset in
+theorem aleph_deg_eq_card_filter_of_unitOn {X : Chain V} {σ : Finset (Finset V)} (hU : UnitOn X σ) (x : V) :
+    deg x X = (σ.filter (fun s => x ∈ s)).card := by
+  rw [deg]
+  apply UnitOn.nrm_eq
+  refine ⟨?_, ?_⟩
+  · rw [nbhd, Finsupp.support_filter, hU.1]
+  · intro s hs
+    rw [Finset.mem_filter] at hs
+    rw [nbhd_apply, if_pos hs.2]
+    exact hU.2 s hs.1
+
+open Finset in
+theorem aleph_double_fiber_eligible {M : Chain V} {σ : Finset (Finset V)}
+    (hU : UnitOn (bdry M) σ) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2)
+    (f : {α // α ∈ σ} → {t // t ∈ M.support})
+    (hfspec : ∀ α : {α // α ∈ σ}, ProperBoundaryFaceTet M (α : Finset V) ((f α) : Finset V))
+    (τ : {t // t ∈ M.support})
+    (h2 : (alephChosenFiber f τ).card = 2) :
+    EligibleTet M (τ : Finset V) ∧ sharedFaces M (τ : Finset V) = alephChosenFaceFiber f τ := by
+  classical
+  let F := alephChosenFaceFiber f τ
+  have hFsub : F ⊆ sharedFaces M (τ : Finset V) := by
+    dsimp [F]
+    exact aleph_chosenFaceFiber_subset_sharedFaces hU f hfspec τ
+  have hFcard : F.card = 2 := by
+    dsimp [F]
+    rw [alephChosenFaceFiber]
+    rw [Finset.card_image_of_injective]
+    · exact h2
+    · intro a b hab
+      exact Subtype.ext hab
+  have hSharedCardLe : (sharedFaces M (τ : Finset V)).card ≤ F.card := by
+    rw [hFcard]
+    exact hShared2 (τ : Finset V) τ.property
+  have hEqF : F = sharedFaces M (τ : Finset V) := by
+    exact Finset.eq_of_subset_of_card_le hFsub hSharedCardLe
+  have hEq : sharedFaces M (τ : Finset V) = F := hEqF.symm
+  constructor
+  · constructor
+    · exact hPure (τ : Finset V) τ.property
+    · constructor
+      · exact τ.property
+      · constructor
+        · rw [hEq, hFcard]
+        · intro s hs
+          rw [hEq] at hs
+          dsimp [F, alephChosenFaceFiber] at hs
+          rcases Finset.mem_image.mp hs with ⟨α, hαmem, rfl⟩
+          have hfα : f α = τ := by
+            dsimp [alephChosenFiber] at hαmem
+            exact (Finset.mem_filter.mp hαmem).2
+          have hspec := hfspec α
+          rw [hfα] at hspec
+          exact hspec.2.2
+  · exact hEq
+
+open Finset in
+
+ succeeded in 0ms:
+      constructor
+      · intro htR
+        rw [mem_union]
+        rcases hcover t htR with htA | htB
+        · left
+          simp only [Finsupp.support_filter, mem_filter]
+          exact ⟨htR, htA⟩
+        · right
+          simp only [Finsupp.support_filter, mem_filter]
+          exact ⟨htR, htB⟩
+      · intro ht
+        rw [mem_union] at ht
+        rcases ht with htA | htB
+        · simp only [Finsupp.support_filter, mem_filter] at htA
+          exact htA.1
+        · simp only [Finsupp.support_filter, mem_filter] at htB
+          exact htB.1
+    have hins := support_insert_removeTet_of_mem he.2.1
+    rw [← hins]
+    simp only [R] at hR
+    rw [hR]
+
+theorem flipEdgePresent_side_taut_simp_norm {V : Type*} [LinearOrder V] {M : Chain V} {e A B : Finset V}
+    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e) :
+    IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+      e ∉ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧
+      e ∉ ((removeTet M e).filter (fun t => t ⊆ B)).support := by
+  let R := removeTet M e
+  have hTR : IsTaut R := isTaut_removeTet hT
+  have hTA : IsTaut (R.filter (fun t => t ⊆ A)) := hTR.subChain (subChain_filter _ R)
+  have hTB : IsTaut (R.filter (fun t => t ⊆ B)) := hTR.subChain (subChain_filter _ R)
+  have hSR : SimplicialChain R := simplicialChain_removeTet hS
+  have hSA : SimplicialChain (R.filter (fun t => t ⊆ A)) := by
+    intro t
+    rw [Finsupp.filter_apply]
+    by_cases ht : t ⊆ A
+    · simp [ht]
+      exact hSR t
+    · simp [ht]
+  have hSB : SimplicialChain (R.filter (fun t => t ⊆ B)) := by
+    intro t
+    rw [Finsupp.filter_apply]
+    by_cases ht : t ⊆ B
+    · simp [ht]
+      exact hSR t
+    · simp [ht]
+  have hdropR : nrm R < nrm M := by
+    have hEq : nrm R + 1 = nrm M := nrm_removeTet_add_one_of_simplicial hS he.2.1
+    omega
+  have hleA : nrm (R.filter (fun t => t ⊆ A)) ≤ nrm R := by
+    have hsum := nrm_filter_add_nrm_filter_neg (fun t => t ⊆ A) R
+    omega
+  have hleB : nrm (R.filter (fun t => t ⊆ B)) ≤ nrm R := by
+    have hsum := nrm_filter_add_nrm_filter_neg (fun t => t ⊆ B) R
+    omega
+  have hdropA : nrm (R.filter (fun t => t ⊆ A)) < nrm M := lt_of_le_of_lt hleA hdropR
+  have hdropB : nrm (R.filter (fun t => t ⊆ B)) < nrm M := lt_of_le_of_lt hleB hdropR
+  have hsuppR : R.support = M.support.erase e := support_removeTet_of_mem he.2.1
+  have hnotR : e ∉ R.support := by
+    rw [hsuppR]
+    simp
+  have hnotA : e ∉ (R.filter (fun t => t ⊆ A)).support := by
+    intro heA
+    rw [Finsupp.support_filter] at heA
+    exact hnotR ((Finset.mem_filter.mp heA).1)
+  have hnotB : e ∉ (R.filter (fun t => t ⊆ B)).support := by
+    intro heB
+    rw [Finsupp.support_filter] at heB
+    exact hnotR ((Finset.mem_filter.mp heB).1)
+  exact ⟨hTA, hTB, hSA, hSB, hdropA, hdropB, hnotA, hnotB⟩
+
+theorem flipEdgePresent_side_units {V : Type*} [LinearOrder V]
+    {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ A B : Finset V}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ)
+    (hMX : bdry M = X)
+    (hT : IsTaut M)
+    (hS : SimplicialChain M)
+    (he : EligibleTet M e)
+    (hAB : A ∩ B = f₃ ∩ f₄)
+    (hcd : (f₃ ∩ f₄).card = 2)
+    (hsep : ∀ t ∈ (removeTet M e).support,
+      (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A)) :
+    UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ A)))
+        ((flipBoundary σ M e).filter (fun f => f ⊆ A)) ∧
+      UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ B)))
+        ((flipBoundary σ M e).filter (fun f => f ⊆ B)) := by
+  have hUb : UnitOn (bdry M) σ := by
+    simpa only [hMX] using hU
+  have hUflip : UnitOn (bdry (removeTet M e)) (flipBoundary σ M e) := by
+    simpa only [flipBoundary] using unitOn_flipBoundary_of_eligible hUb hS he
+  have hpure : ∀ t ∈ (removeTet M e).support, t.card = 4 := by
+    intro t ht
+    have hMinfo : ∀ t ∈ M.support, t.card = 4 ∧ t ⊆ vertsOf σ :=
+      aleph_base_taut_support_card4_subset_verts hσ hU hMX hT
+    have hR : (removeTet M e).support = M.support.erase e :=
+      support_removeTet_of_mem he.2.1
+    rw [hR] at ht
+    exact (hMinfo t (Finset.mem_of_mem_erase ht)).1
+  have hAB2 : (A ∩ B).card = 2 := by
+    rw [hAB]
+    exact hcd
+  have hbdA : bdry ((removeTet M e).filter (fun t => t ⊆ A)) =
+      (bdry (removeTet M e)).filter (fun f => f ⊆ A) := by
+    exact bdry_filter_eq_filter_bdry_of_side_sep hpure hsep hAB2
+  have hsepBA : ∀ t ∈ (removeTet M e).support,
+      (t ⊆ B ∧ ¬ t ⊆ A) ∨ (t ⊆ A ∧ ¬ t ⊆ B) := by
+    intro t ht
+    rcases hsep t ht with hA | hB
+    · exact Or.inr hA
+    · exact Or.inl hB
+  have hBA2 : (B ∩ A).card = 2 := by
+    rw [Finset.inter_comm]
+    exact hAB2
+  have hbdB : bdry ((removeTet M e).filter (fun t => t ⊆ B)) =
+      (bdry (removeTet M e)).filter (fun f => f ⊆ B) := by
+    exact bdry_filter_eq_filter_bdry_of_side_sep (M := removeTet M e) (A := B) (B := A) hpure hsepBA hBA2
+  constructor
+  · unfold UnitOn
+    constructor
+    · rw [hbdA, Finsupp.support_filter, hUflip.1]
+    · intro s hs
+      rw [Finset.mem_filter] at hs
+      rw [hbdA, Finsupp.filter_apply, if_pos hs.2]
+      exact hUflip.2 s hs.1
+  · unfold UnitOn
+    constructor
+    · rw [hbdB, Finsupp.support_filter, hUflip.1]
+    · intro s hs
+      rw [Finset.mem_filter] at hs
+      rw [hbdB, Finsupp.filter_apply, if_pos hs.2]
+      exact hUflip.2 s hs.1
+
+
+/-- **Case-2 edge split, algebra.** Once the side vertex sets are known with
+coverage and exact-side separation, the filtered side chains are closed, taut,
+simplicial, strictly smaller, disjoint, and decompose the original support. -/
+theorem flipEdgePresent_side_algebra {σ : Finset (Finset V)} {X M : Chain V} {e f₃ f₄ A B : Finset V}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ)
+    (hXc : bdry X = 0)
+    (hMX : bdry M = X)
+    (hT : IsTaut M)
+    (hS : SimplicialChain M)
+    (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄})
+    (hf₃₄ : f₃ ≠ f₄)
+    (hFlip : FlipEdgePresent σ f₃ f₄)
+    (hAB : A ∩ B = f₃ ∩ f₄)
+    (hcd : (f₃ ∩ f₄).card = 2)
+    (hcover : ∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B)
+    (hsep : ∀ t ∈ (removeTet M e).support,
+      (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A)) :
+    UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ A)))
+        ((flipBoundary σ M e).filter (fun f => f ⊆ A)) ∧
+      UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ B)))
+        ((flipBoundary σ M e).filter (fun f => f ⊆ B)) ∧
+      bdry (bdry ((removeTet M e).filter (fun t => t ⊆ A))) = 0 ∧
+      bdry (bdry ((removeTet M e).filter (fun t => t ⊆ B))) = 0 ∧
+      IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+      e ∉ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧
+      e ∉ ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+      Disjoint ((removeTet M e).filter (fun t => t ⊆ A)).support
+        ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+      M.support =
+        insert e
+          (((removeTet M e).filter (fun t => t ⊆ A)).support ∪
+            ((removeTet M e).filter (fun t => t ⊆ B)).support) := by
+  obtain ⟨hUA, hUB⟩ := flipEdgePresent_side_units hσ hU hMX hT hS he hAB hcd hsep
+  obtain ⟨hTA, hTB, hSA, hSB, hnA, hnB, heA, heB⟩ := flipEdgePresent_side_taut_simp_norm (M := M) (e := e) (A := A) (B := B) hT hS he
+  obtain ⟨hdisj, hsupp⟩ := flipEdgePresent_side_supports (M := M) (e := e) (A := A) (B := B) he hcover hsep
+  refine ⟨hUA, hUB, ?_, ?_, hTA, hTB, hSA, hSB, hnA, hnB, heA, heB, hdisj, hsupp⟩
+  · exact bdry_bdry _
+  · exact bdry_bdry _
+
+/-! ## The pseudomanifold carry (LEMMA B + LEMMA C)
+
+Both remaining geometry holes need "a boundary triangle of the smaller filling lies
+in exactly one tet", which is the pseudomanifold property — false for a bare freely
+shellable complex, true once we carry `IsPseudomanifold` through the induction.  The
+two pieces here are the engine: `removeTet_isPseudomanifold` (the smaller filling is a
+pseudomanifold, using the IH on each side of a split) and
+`faceCount_removeTet_sharedFace_eq_zero` (the eligible tet's shared faces vanish on
+removal — the clean-glue input for the prime step). -/
+
+/-- **LEMMA B (removeTet is a pseudomanifold).** For an eligible `u` in a taut
+      UnitOn (bdry ((removeTet M e).filter (fun t => t ⊆ B)))
+        ((flipBoundary σ M e).filter (fun f => f ⊆ B)) ∧
+      bdry (bdry ((removeTet M e).filter (fun t => t ⊆ A))) = 0 ∧
+      bdry (bdry ((removeTet M e).filter (fun t => t ⊆ B))) = 0 ∧
+      IsTaut ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+      IsTaut ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ A)) ∧
+      SimplicialChain ((removeTet M e).filter (fun t => t ⊆ B)) ∧
+      nrm ((removeTet M e).filter (fun t => t ⊆ A)) < nrm M ∧
+      nrm ((removeTet M e).filter (fun t => t ⊆ B)) < nrm M ∧
+      e ∉ ((removeTet M e).filter (fun t => t ⊆ A)).support ∧
+      e ∉ ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+      Disjoint ((removeTet M e).filter (fun t => t ⊆ A)).support
+        ((removeTet M e).filter (fun t => t ⊆ B)).support ∧
+      M.support =
+        insert e
+          (((removeTet M e).filter (fun t => t ⊆ A)).support ∪
+            ((removeTet M e).filter (fun t => t ⊆ B)).support) := by
+  obtain ⟨hUA, hUB⟩ := flipEdgePresent_side_units hσ hU hMX hT hS he hAB hcd hsep
+  obtain ⟨hTA, hTB, hSA, hSB, hnA, hnB, heA, heB⟩ := flipEdgePresent_side_taut_simp_norm (M := M) (e := e) (A := A) (B := B) hT hS he
+  obtain ⟨hdisj, hsupp⟩ := flipEdgePresent_side_supports (M := M) (e := e) (A := A) (B := B) he hcover hsep
+  refine ⟨hUA, hUB, ?_, ?_, hTA, hTB, hSA, hSB, hnA, hnB, heA, heB, hdisj, hsupp⟩
+  · exact bdry_bdry _
+  · exact bdry_bdry _
+
+/-! ## The pseudomanifold carry (LEMMA B + LEMMA C)
+
+Both remaining geometry holes need "a boundary triangle of the smaller filling lies
+in exactly one tet", which is the pseudomanifold property — false for a bare freely
+shellable complex, true once we carry `IsPseudomanifold` through the induction.  The
+two pieces here are the engine: `removeTet_isPseudomanifold` (the smaller filling is a
+pseudomanifold, using the IH on each side of a split) and
+`faceCount_removeTet_sharedFace_eq_zero` (the eligible tet's shared faces vanish on
+removal — the clean-glue input for the prime step). -/
+
+/-- **LEMMA B (removeTet is a pseudomanifold).** For an eligible `u` in a taut
+filling `M` of the sphere `σ`, the smaller filling `removeTet M u` is a
+pseudomanifold, using the strong-induction hypothesis (every strictly smaller
+single-sphere taut filling is a pseudomanifold). The "two pieces joined along an
+edge" case (flip edge present) is handled by applying the IH to each side and
+gluing the two pseudomanifolds with `isPseudomanifold_union_of_sideSep`. -/
+lemma removeTet_isPseudomanifold {σ : Finset (Finset V)} {X M : Chain V} {u : Finset V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M) (hu : EligibleTet M u)
+    (IHpm : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      IsPseudomanifold M'.support) :
+    IsPseudomanifold (removeTet M u).support := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  obtain ⟨f₃, f₄, hf₃₄, hexp⟩ := exposedFaces_eq_pair_of_eligible hu
+  by_cases hFlip : FlipEdgePresent σ f₃ f₄
+  · -- case 2: removeTet M u splits into two smaller single-sphere taut fillings
+    obtain ⟨A, B, hAB, hcd, hsph₁, hsph₂, hcover, hsep, hf₃A, hf₃notB, hf₄B, hf₄notA, _⟩ :=
+      flipEdgePresent_side_sets hσ hU hXc hMX hT hS hu hexp hf₃₄ hFlip
+    obtain ⟨hu₁, hu₂, hc₁, hc₂, hT₁, hT₂, hS₁, hS₂, hsm₁, hsm₂, hen₁, hen₂, hdisj, hsupp⟩ :=
+      flipEdgePresent_side_algebra hσ hU hXc hMX hT hS hu hexp hf₃₄ hFlip hAB hcd hcover hsep
+    have hPM₁ : IsPseudomanifold ((removeTet M u).filter (fun t => t ⊆ A)).support :=
+      IHpm _ (bdry ((removeTet M u).filter (fun t => t ⊆ A)))
+        ((removeTet M u).filter (fun t => t ⊆ A)) hsm₁ hsph₁ hu₁ hc₁ rfl hT₁ hS₁
+    have hPM₂ : IsPseudomanifold ((removeTet M u).filter (fun t => t ⊆ B)).support :=
+      IHpm _ (bdry ((removeTet M u).filter (fun t => t ⊆ B)))
+        ((removeTet M u).filter (fun t => t ⊆ B)) hsm₂ hsph₂ hu₂ hc₂ rfl hT₂ hS₂
+    rw [Finsupp.support_filter] at hPM₁ hPM₂
+    refine isPseudomanifold_union_of_sideSep hcover ?_ hPM₁ hPM₂
+    rw [hAB]; exact hcd.le
+  · -- case 1: removeTet M u is itself a smaller single-sphere taut filling
+    have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS hu hexp hf₃₄ hFlip
+    have hUe := unitOn_flipBoundary_of_eligible hUb hS hu
+    have hTe : IsTaut (removeTet M u) := isTaut_removeTet hT
+    have hSe : SimplicialChain (removeTet M u) := simplicialChain_removeTet hS
+    have hlt : nrm (removeTet M u) < nrm M := by
+      have h := nrm_removeTet_add_one_of_simplicial hS hu.2.1; omega
+    exact IHpm _ (bdry (removeTet M u)) (removeTet M u) hlt hσe hUe (bdry_bdry _) rfl hTe hSe
+
+/-- **LEMMA C (triangle rule-out).** The shared faces of an eligible tet `e` vanish
+when `e` is removed: a shared face `r` lies in NO tet of `removeTet M e`.  If it
+lay in some `w ≠ e`, then removing the disjoint eligible `u` (boundary faces
+disjoint from `e`'s, from `aleph_disjoint_eligible_pair`) keeps both `e` and `w`,
+so `r` lies in ≥ 2 tets of `removeTet M u`; by parity it is ≥ 3, contradicting
+`removeTet M u` being a pseudomanifold (LEMMA B). -/
+    exact Finset.inter_subset_right.trans hf₄t
+
+/-- **Prime (no-degree-3) step of the nrm-induction.** A minimal taut filling whose sphere has
+no degree-3 vertex has neither an empty `K₃` nor an empty `K₄`: pick an eligible flip and split
+on whether its diagonal is already a flip edge of `σ`.  Empty-`K₃` is handled first; empty-`K₄`
+reuses it via `hasEmptyK4_removeTet_of_eligible`. -/
+lemma prime_no_emptyK3K4 (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+    (IH : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+      ¬ HasEmptyK3 M'.support ∧ ¬ HasEmptyK4 M'.support) :
+    ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support := by
+  classical
+  have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  have hPure : ∀ t ∈ M.support, t.card = 4 :=
+    fun t ht => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
+  have hNoK3 : ¬ HasEmptyK3 M.support := by
+    rintro ⟨s, hs3, hsedges, hno⟩
+    obtain ⟨e, g₃, g₄, he, hsh, hg, havoid⟩ :=
+      exists_good_flip_emptyK3 hσ hUb hS hT hPure hNo3 hs3 hsedges
+    obtain ⟨f₃, f₄, hf₃₄, hexp⟩ := exposedFaces_eq_pair_of_eligible he
+    have hR : HasEmptyK3 (removeTet M e).support :=
+      hasEmptyK3_removeTet_of_avoids_sharedEdge he hsh hg hs3 hsedges havoid hno
+    by_cases hFlip : FlipEdgePresent σ f₃ f₄
+    · obtain ⟨A, B, hAB, hcd, hsphA, hsphB, hcover, hsep, hf₃A, hf₃nB, hf₄B, hf₄nA, hfc⟩ :=
+        flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+      obtain ⟨hUA, hUB, hXAc, hXBc, hTA, hTB, hSA, hSB, hnA, hnB, _, _, _, _⟩ :=
+        flipEdgePresent_side_algebra hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd hcover hsep
+      obtain ⟨hbridgeA, hbridgeB⟩ :=
+        side_edge_bridges_of_flip_present he hexp hAB hf₃A hf₄B hUA hUB
+      have hAB2 : (A ∩ B).card = 2 := by rw [hAB]; exact hcd
+      rcases hasEmptyK3_side_of_edge_split hcover hsep hAB2 hbridgeA hbridgeB hR with hA | hB
+      · exact (IH _ _ _ hnA hsphA hUA hXAc rfl hTA hSA).1
+          (by rw [Finsupp.support_filter]; exact hA)
+      · exact (IH _ _ _ hnB hsphB hUB hXBc rfl hTB hSB).1
+          (by rw [Finsupp.support_filter]; exact hB)
+    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
+      have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+      have hnR : nrm (removeTet M e) < nrm M := by
+        have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
+      exact (IH _ _ _ hnR hσe hUe (bdry_bdry _) rfl (isTaut_removeTet hT)
+        (simplicialChain_removeTet hS)).1 hR
+  have hNoK4 : ¬ HasEmptyK4 M.support := by
+    rintro ⟨s, hs4, hsedges, hno⟩
+    obtain ⟨e, u, hne, he, hu, hdisj⟩ :=
+      aleph_disjoint_eligible_pair hσ hUb hS hT hPure hNo3
+    obtain ⟨f₃, f₄, hf₃₄, hexp⟩ := exposedFaces_eq_pair_of_eligible he
+    have hR : HasEmptyK4 (removeTet M e).support :=
+      hasEmptyK4_removeTet_of_eligible hNoK3 hs4 hsedges hno he
+    by_cases hFlip : FlipEdgePresent σ f₃ f₄
+    · obtain ⟨A, B, hAB, hcd, hsphA, hsphB, hcover, hsep, hf₃A, hf₃nB, hf₄B, hf₄nA, hfc⟩ :=
+        flipEdgePresent_side_sets hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip
+      obtain ⟨hUA, hUB, hXAc, hXBc, hTA, hTB, hSA, hSB, hnA, hnB, _, _, _, _⟩ :=
+        flipEdgePresent_side_algebra hσ hU hXc hMX hT hS he hexp hf₃₄ hFlip hAB hcd hcover hsep
+      obtain ⟨hbridgeA, hbridgeB⟩ :=
+        side_edge_bridges_of_flip_present he hexp hAB hf₃A hf₄B hUA hUB
+      have hAB2 : (A ∩ B).card = 2 := by rw [hAB]; exact hcd
+      rcases hasEmptyK4_side_of_edge_split hcover hsep hAB2 hbridgeA hbridgeB hR with hA | hB
+      · exact (IH _ _ _ hnA hsphA hUA hXAc rfl hTA hSA).2
+          (by rw [Finsupp.support_filter]; exact hA)
+      · exact (IH _ _ _ hnB hsphB hUB hXBc rfl hTB hSB).2
+          (by rw [Finsupp.support_filter]; exact hB)
+    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb hS he hexp hf₃₄ hFlip
+      have hUe := unitOn_flipBoundary_of_eligible hUb hS he
+      have hnR : nrm (removeTet M e) < nrm M := by
+        have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
+      exact (IH _ _ _ hnR hσe hUe (bdry_bdry _) rfl (isTaut_removeTet hT)
+        (simplicialChain_removeTet hS)).2 hR
+  exact ⟨hNoK3, hNoK4⟩
+
+/-! ## (6) The induction and the Theorem-4 endpoint -/
+
+/-- **No empty `K₃`/`K₄` in a taut filling of a 2-sphere.** Strong induction on `nrm M`, mirroring
+`taut_isPseudomanifold`: base case (`≤ 4` vertices) by `base_no_emptyK3K4`; a degree-3 vertex by
+`deg3_no_emptyK3K4`; otherwise by `prime_no_emptyK3K4`. -/
+theorem no_emptyK3K4_of_taut {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support := by
+  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+
+codex
+**Q1. Pure Count**
+
+Use a Finset fibre lemma, not `List.scanl`. It is exactly what the instantiation needs and reuses existing proof style.
+
+```lean
+theorem finset_twofer_fibers
+    {β η : Type*} [DecidableEq β] [DecidableEq η]
+    (B : Finset β) (H : Finset η) (f : β → η)
+    (hmap : ∀ b ∈ B, f b ∈ H)
+    (hfiber_le2 : ∀ h ∈ H, (B.filter fun b => f b = h).card ≤ 2)
+    {k : ℕ} (hgap : H.card + k ≤ B.card) :
+    ∃ E : Finset η,
+      E ⊆ H ∧
+      k ≤ E.card ∧
+      (∀ h ∈ E, (B.filter fun b => f b = h).card = 2) ∧
+      (↑E : Set η).PairwiseDisjoint
+        (fun h => B.filter fun b => f b = h)
+```
+
+Proof route:
+- Define `Dall := H.filter fun h => (B.filter fun b => f b = h).card = 2`.
+- Use `Finset.card_eq_sum_card_fiberwise hmap`.
+- For each fibre, `card ≤ 1 + if card = 2 then 1 else 0`.
+- Conclude `B.card ≤ H.card + Dall.card`.
+- `omega` gives `k ≤ Dall.card`.
+- Take `E := Dall` or an exact-card subset if needed.
+- Pairwise disjoint by `Finset.disjoint_left` and equality of `f b`.
+
+This subsumes `aleph_k_double_fibers`; I would either generalize that lemma or add this next to it in `Theorem2Aleph.lean`.
+
+**Q2. Support-Face Orientation**
+
+Do not use current `ProperBoundaryFaceTet`; it is the spoiled-face predicate:
+
+```lean
+def ProperBoundaryFaceTet (M : Chain V) (α t : Finset V) : Prop :=
+  t ∈ M.support ∧ α ∈ tetFaces t ∧ (bdry M) α = tetContribution M t α
+```
+
+Add a new support-level sign predicate:
+
+```lean
+def SameSignSupportFaceTet (M : Chain V) (α t : Finset V) : Prop :=
+  t ∈ M.support ∧
+  α ∈ tetFaces t ∧
+  0 < (bdry M α) * (M t * bdryGen t α)
+```
+
+Then:
+
+```lean
+noncomputable def sameSignFaces (M : Chain V) (σ : Finset (Finset V)) (t : Finset V) :
+    Finset (Finset V) :=
+  σ.filter fun α => SameSignSupportFaceTet M α t
+```
+
+Key lemmas:
+
+```lean
+lemma sameSignFaces_subset_sharedFaces
+    (hU : UnitOn (bdry M) σ) :
+    sameSignFaces M σ t ⊆ sharedFaces M t
+
+lemma sameSignFace_to_proper_of_unit
+    (hUα : bdry M α = 1 ∨ bdry M α = -1)
+    (h : SameSignSupportFaceTet M α t)
+    (hunit : (M t).natAbs = 1) :
+    ProperBoundaryFaceTet M α t
+```
+
+Important correction: `SameSignSupportFaceTet` alone is **not** strong enough to imply `EligibleTet`. If `M t = 2` and the support-face sign is positive over a `+1` boundary face, the predicate holds but `tetContribution M t α = 2`, not `1`. So the route must filter out non-unit support tets before converting twofers to `EligibleTet`.
+
+**Q3. Coverage**
+
+Exact hS-free coverage lemma:
+
+```lean
+lemma exists_sameSignSupportFaceTet
+    {M : Chain V} (hPure : ∀ t ∈ M.support, t.card = 4)
+    {α : Finset V}
+    (hαpm : bdry M α = 1 ∨ bdry M α = -1) :
+    ∃ t, SameSignSupportFaceTet M α t
+```
+
+Proof:
+- Use `bdry_apply_eq_sum M α`.
+- If `bdry M α = 1`, some summand `M t * bdryGen t α` is positive.
+- If `bdry M α = -1`, some summand is negative.
+- In both cases, product with `bdry M α` is positive.
+- Nonzero `bdryGen t α` gives `α ∈ tetFaces t` via `exists_facet_of_bdryGen_ne_zero` and `erase_mem_tetFaces`.
+
+Boundary coverage:
+
+```lean
+lemma sameSignSupportFace_cover
+    (hU : UnitOn (bdry M) σ)
+    (hPure : ∀ t ∈ M.support, t.card = 4) :
+    ∀ α ∈ σ, ∃ t, SameSignSupportFaceTet M α t
+```
+
+This is true hS-free. The `{+2, -1}` case is exactly why this works: the `+2` term is a same-sign support face, even though it is not an equal contributor.
+
+**Q4. Disjoint Eligible Family**
+
+Add the non-unit filter:
+
+```lean
+noncomputable def nonUnitSupport (M : Chain V) : Finset (Finset V) :=
+  M.support.filter fun t => (M t).natAbs ≠ 1
+```
+
+Norm gap lemma:
+
+```lean
+lemma support_card_add_nonUnitSupport_card_le_nrm (M : Chain V) :
+    M.support.card + (nonUnitSupport M).card ≤ nrm M
+```
+
+Main hS-free family:
+
+```lean
+theorem exists_disjoint_eligible_family_noS
+    {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn (bdry M) σ)
+    (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ)
+    (v : V) :
+    ∃ E : Finset (Finset V),
+      E ⊆ M.support ∧
+      deg v (bdry M) ≤ E.card ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint fun e => sharedFaces M e
+```
+
+Proof route:
+- Build choice map `f : {α // α ∈ σ} → {t // t ∈ M.support}` from `sameSignSupportFace_cover`.
+- Apply `finset_twofer_fibers` with `k = deg v (bdry M) + (nonUnitSupport M).card`.
+- Gap:
+  ```lean
+  M.support.card + nonUnitSupport M.card ≤ nrm M
+  nrm M + deg v (bdry M) ≤ σ.card
+  ```
+  using `support_card_add_nonUnitSupport_card_le_nrm`, `hT`, `Zvol_add_deg_le`, `UnitOn.nrm_eq`.
+- Delete `nonUnitSupport M` from the twofer set; at least `deg v` remain.
+- For remaining `e`, `(M e).natAbs = 1`, so same-sign chosen faces become current `ProperBoundaryFaceTet`.
+- Reuse `aleph_double_fiber_eligible` logic, generalized to accept the already-built proper specs for the two chosen faces.
+- Pairwise disjointness is fibre disjointness.
+
+This should replace `aleph_disjoint_eligible_family` for the bridge. Do not strip `aleph_disjoint_eligible_family` directly unless you also add the non-unit deletion step.
+
+**Q5. Removal Package**
+
+Add these hS-free replacements.
+
+```lean
+lemma tet_coeff_eq_pm_one_of_eligible_unitOn
+    {M : Chain V} {σ : Finset (Finset V)} {t : Finset V}
+    (hU : UnitOn (bdry M) σ)
+    (h : EligibleTet M t) :
+    M t = 1 ∨ M t = -1
+```
+
+```lean
+lemma nrm_removeTet_add_one_of_coeff_pm_one
+    {M : Chain V} {t : Finset V}
+    (ht : t ∈ M.support)
+    (hpm : M t = 1 ∨ M t = -1) :
+    nrm (removeTet M t) + 1 = nrm M
+```
+
+```lean
+theorem unitOn_flipBoundary_of_eligible_noS
+    {M : Chain V} {σ : Finset (Finset V)} {t : Finset V}
+    (hU : UnitOn (bdry M) σ)
+    (h : EligibleTet M t) :
+    UnitOn (bdry (removeTet M t))
+      ((σ \ sharedFaces M t) ∪ exposedFaces M t)
+```
+
+```lean
+theorem isSphere2_flipBoundary_of_eligible_noS
+    {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn (bdry M) σ)
+    (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄})
+    (hf : f₃ ≠ f₄)
+    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+    IsSphere2 ((σ \ sharedFaces M e) ∪ exposedFaces M e)
+```
+
+Also strip `hS` from:
+- `flipBoundary_pure_of_eligible`
+- `flipBoundary_closed_of_eligible`
+- `flipBoundary_linkConn_of_eligible`
+- `flipBoundary_conn_of_eligible`
+- `flipBoundary_euler_of_eligible`
+- `flipBoundary_verts_eq`
+
+Case-2 targets:
+
+```lean
+theorem flipEdgePresent_side_taut_norm_noS
+    {M : Chain V} {e A B : Finset V}
+    (hT : IsTaut M)
+    (he : EligibleTet M e)
+    (hpm : M e = 1 ∨ M e = -1) :
+    IsTaut ((removeTet M e).filter fun t => t ⊆ A) ∧
+    IsTaut ((removeTet M e).filter fun t => t ⊆ B) ∧
+    nrm ((removeTet M e).filter fun t => t ⊆ A) < nrm M ∧
+    nrm ((removeTet M e).filter fun t => t ⊆ B) < nrm M
+```
+
+```lean
+theorem flipEdgePresent_side_algebra_noS
+    ... :
+    UnitOn (bdry ((removeTet M e).filter fun t => t ⊆ A))
+      ((flipBoundary σ M e).filter fun f => f ⊆ A) ∧
+    UnitOn (bdry ((removeTet M e).filter fun t => t ⊆ B))
+      ((flipBoundary σ M e).filter fun f => f ⊆ B) ∧
+    bdry (bdry ((removeTet M e).filter fun t => t ⊆ A)) = 0 ∧
+    bdry (bdry ((removeTet M e).filter fun t => t ⊆ B)) = 0 ∧
+    IsTaut ((removeTet M e).filter fun t => t ⊆ A) ∧
+    IsTaut ((removeTet M e).filter fun t => t ⊆ B) ∧
+    nrm ((removeTet M e).filter fun t => t ⊆ A) < nrm M ∧
+    nrm ((removeTet M e).filter fun t => t ⊆ B) < nrm M ∧
+    Disjoint ... ∧
+    M.support = insert e (...)
+```
+
+No `SimplicialChain` outputs in the noS versions.
+
+**Q6. Bridge**
+
+Target:
+
+```lean
+theorem taut_filling_is_simplicialChain
+    {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ)
+    (hXc : bdry X = 0)
+    (hMX : bdry M = X)
+    (hT : IsTaut M) :
+    SimplicialChain M
+```
+
+Use strong induction on `nrm M`.
+
+Need helper:
+
+```lean
+lemma not_simplicial_iff_exists_natAbs_ge_two :
+    ¬ SimplicialChain M ↔ ∃ t, 2 ≤ (M t).natAbs
+```
+
+Induction step:
+1. Assume `¬ SimplicialChain M`; pick `t` with `2 ≤ (M t).natAbs`.
+2. Get `t ∈ M.support`.
+3. Let `hUb : UnitOn (bdry M) σ := by simpa [hMX] using hU`.
+4. Get purity from existing `aleph_base_taut_support_card4_subset_verts`.
+5. Pick `v ∈ vertsOf σ`; use sphere incident-degree lemma to get `3 ≤ deg v (bdry M)`.
+6. Use `exists_disjoint_eligible_family_noS` to get `E.card ≥ deg v`, hence at least three eligible tets.
+7. Pick `u ∈ E` with `u ≠ t`.
+8. Remove `u`.
+
+Case no flip:
+```lean
+have hσu := isSphere2_flipBoundary_of_eligible_noS hσ hUb hu hexp hf₃₄ hNoFlip
+have hUu := unitOn_flipBoundary_of_eligible_noS hUb hu
+have hTu := isTaut_removeTet hT
+have hlt : nrm (removeTet M u) < nrm M := by
+  have hpm := tet_coeff_eq_pm_one_of_eligible_unitOn hUb hu
+  have h := nrm_removeTet_add_one_of_coeff_pm_one hu.2.1 hpm
+  omega
+have hSu := IH ... hlt hσu hUu (bdry_bdry _) rfl hTu
+```
+
+Contradiction by persistence:
+```lean
+have ht_same : removeTet M u t = M t := removeTet_apply_ne (by exact Ne.symm hut)
+```
+
+Case flip present:
+- Use `flipEdgePresent_side_sets_noS` and `flipEdgePresent_side_algebra_noS`.
+- From support decomposition and `t ∈ M.support`, `t ≠ u`, conclude `t` lies in one side support.
+- Apply IH to that side.
+- Use `Finsupp.filter_apply` plus `removeTet_apply_ne` to preserve coefficient at `t`.
+- Contradict `2 ≤ (M t).natAbs`.
+
+Finally update endpoint:
+
+```lean
+theorem taut_filling_is_anyrootedStickerball ...
+    (hT : IsTaut M) : IsAnyrootedStickerball M.support σ := by
+  have hS : SimplicialChain M :=
+    taut_filling_is_simplicialChain hσ hU hXc hMX hT
+  exact ⟨⟨theorem2_clean hσ hU hXc hMX hT hS, hσ.nonempty⟩,
+    theorem3_clean hσ hU hXc hMX hT hS⟩
+```
+
+**Build Order**
+
+1. Add `SameSignSupportFaceTet`, `sameSignFaces`, coverage lemmas.
+2. Add `finset_twofer_fibers`.
+3. Add `nonUnitSupport` and `support_card_add_nonUnitSupport_card_le_nrm`.
+4. Prove `exists_disjoint_eligible_family_noS`.
+5. Add hS-free removal lemmas: coefficient, norm drop, unit boundary flip.
+6. Strip hS from flip geometry and side split/algebra.
+7. Implement `taut_filling_is_simplicialChain`.
+8. Remove `hS` from `taut_filling_is_anyrootedStickerball`.
+
+Flagged issue: Claude’s inventory is mostly right, but the user-supplied claim “coefficient is irrelevant to A(u), and a twofer is strong enough for `EligibleTet`” is false unless the twofer tet is known unit-coefficient. The Lean route must count same-sign support faces, then discard `nonUnitSupport M` before converting to `EligibleTet`.
+tokens used
+52,791
+**Q1. Pure Count**
+
+Use a Finset fibre lemma, not `List.scanl`. It is exactly what the instantiation needs and reuses existing proof style.
+
+```lean
+theorem finset_twofer_fibers
+    {β η : Type*} [DecidableEq β] [DecidableEq η]
+    (B : Finset β) (H : Finset η) (f : β → η)
+    (hmap : ∀ b ∈ B, f b ∈ H)
+    (hfiber_le2 : ∀ h ∈ H, (B.filter fun b => f b = h).card ≤ 2)
+    {k : ℕ} (hgap : H.card + k ≤ B.card) :
+    ∃ E : Finset η,
+      E ⊆ H ∧
+      k ≤ E.card ∧
+      (∀ h ∈ E, (B.filter fun b => f b = h).card = 2) ∧
+      (↑E : Set η).PairwiseDisjoint
+        (fun h => B.filter fun b => f b = h)
+```
+
+Proof route:
+- Define `Dall := H.filter fun h => (B.filter fun b => f b = h).card = 2`.
+- Use `Finset.card_eq_sum_card_fiberwise hmap`.
+- For each fibre, `card ≤ 1 + if card = 2 then 1 else 0`.
+- Conclude `B.card ≤ H.card + Dall.card`.
+- `omega` gives `k ≤ Dall.card`.
+- Take `E := Dall` or an exact-card subset if needed.
+- Pairwise disjoint by `Finset.disjoint_left` and equality of `f b`.
+
+This subsumes `aleph_k_double_fibers`; I would either generalize that lemma or add this next to it in `Theorem2Aleph.lean`.
+
+**Q2. Support-Face Orientation**
+
+Do not use current `ProperBoundaryFaceTet`; it is the spoiled-face predicate:
+
+```lean
+def ProperBoundaryFaceTet (M : Chain V) (α t : Finset V) : Prop :=
+  t ∈ M.support ∧ α ∈ tetFaces t ∧ (bdry M) α = tetContribution M t α
+```
+
+Add a new support-level sign predicate:
+
+```lean
+def SameSignSupportFaceTet (M : Chain V) (α t : Finset V) : Prop :=
+  t ∈ M.support ∧
+  α ∈ tetFaces t ∧
+  0 < (bdry M α) * (M t * bdryGen t α)
+```
+
+Then:
+
+```lean
+noncomputable def sameSignFaces (M : Chain V) (σ : Finset (Finset V)) (t : Finset V) :
+    Finset (Finset V) :=
+  σ.filter fun α => SameSignSupportFaceTet M α t
+```
+
+Key lemmas:
+
+```lean
+lemma sameSignFaces_subset_sharedFaces
+    (hU : UnitOn (bdry M) σ) :
+    sameSignFaces M σ t ⊆ sharedFaces M t
+
+lemma sameSignFace_to_proper_of_unit
+    (hUα : bdry M α = 1 ∨ bdry M α = -1)
+    (h : SameSignSupportFaceTet M α t)
+    (hunit : (M t).natAbs = 1) :
+    ProperBoundaryFaceTet M α t
+```
+
+Important correction: `SameSignSupportFaceTet` alone is **not** strong enough to imply `EligibleTet`. If `M t = 2` and the support-face sign is positive over a `+1` boundary face, the predicate holds but `tetContribution M t α = 2`, not `1`. So the route must filter out non-unit support tets before converting twofers to `EligibleTet`.
+
+**Q3. Coverage**
+
+Exact hS-free coverage lemma:
+
+```lean
+lemma exists_sameSignSupportFaceTet
+    {M : Chain V} (hPure : ∀ t ∈ M.support, t.card = 4)
+    {α : Finset V}
+    (hαpm : bdry M α = 1 ∨ bdry M α = -1) :
+    ∃ t, SameSignSupportFaceTet M α t
+```
+
+Proof:
+- Use `bdry_apply_eq_sum M α`.
+- If `bdry M α = 1`, some summand `M t * bdryGen t α` is positive.
+- If `bdry M α = -1`, some summand is negative.
+- In both cases, product with `bdry M α` is positive.
+- Nonzero `bdryGen t α` gives `α ∈ tetFaces t` via `exists_facet_of_bdryGen_ne_zero` and `erase_mem_tetFaces`.
+
+Boundary coverage:
+
+```lean
+lemma sameSignSupportFace_cover
+    (hU : UnitOn (bdry M) σ)
+    (hPure : ∀ t ∈ M.support, t.card = 4) :
+    ∀ α ∈ σ, ∃ t, SameSignSupportFaceTet M α t
+```
+
+This is true hS-free. The `{+2, -1}` case is exactly why this works: the `+2` term is a same-sign support face, even though it is not an equal contributor.
+
+**Q4. Disjoint Eligible Family**
+
+Add the non-unit filter:
+
+```lean
+noncomputable def nonUnitSupport (M : Chain V) : Finset (Finset V) :=
+  M.support.filter fun t => (M t).natAbs ≠ 1
+```
+
+Norm gap lemma:
+
+```lean
+lemma support_card_add_nonUnitSupport_card_le_nrm (M : Chain V) :
+    M.support.card + (nonUnitSupport M).card ≤ nrm M
+```
+
+Main hS-free family:
+
+```lean
+theorem exists_disjoint_eligible_family_noS
+    {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn (bdry M) σ)
+    (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hNo3 : NoDegree3Vertex σ)
+    (v : V) :
+    ∃ E : Finset (Finset V),
+      E ⊆ M.support ∧
+      deg v (bdry M) ≤ E.card ∧
+      (∀ e ∈ E, EligibleTet M e) ∧
+      (↑E : Set (Finset V)).PairwiseDisjoint fun e => sharedFaces M e
+```
+
+Proof route:
+- Build choice map `f : {α // α ∈ σ} → {t // t ∈ M.support}` from `sameSignSupportFace_cover`.
+- Apply `finset_twofer_fibers` with `k = deg v (bdry M) + (nonUnitSupport M).card`.
+- Gap:
+  ```lean
+  M.support.card + nonUnitSupport M.card ≤ nrm M
+  nrm M + deg v (bdry M) ≤ σ.card
+  ```
+  using `support_card_add_nonUnitSupport_card_le_nrm`, `hT`, `Zvol_add_deg_le`, `UnitOn.nrm_eq`.
+- Delete `nonUnitSupport M` from the twofer set; at least `deg v` remain.
+- For remaining `e`, `(M e).natAbs = 1`, so same-sign chosen faces become current `ProperBoundaryFaceTet`.
+- Reuse `aleph_double_fiber_eligible` logic, generalized to accept the already-built proper specs for the two chosen faces.
+- Pairwise disjointness is fibre disjointness.
+
+This should replace `aleph_disjoint_eligible_family` for the bridge. Do not strip `aleph_disjoint_eligible_family` directly unless you also add the non-unit deletion step.
+
+**Q5. Removal Package**
+
+Add these hS-free replacements.
+
+```lean
+lemma tet_coeff_eq_pm_one_of_eligible_unitOn
+    {M : Chain V} {σ : Finset (Finset V)} {t : Finset V}
+    (hU : UnitOn (bdry M) σ)
+    (h : EligibleTet M t) :
+    M t = 1 ∨ M t = -1
+```
+
+```lean
+lemma nrm_removeTet_add_one_of_coeff_pm_one
+    {M : Chain V} {t : Finset V}
+    (ht : t ∈ M.support)
+    (hpm : M t = 1 ∨ M t = -1) :
+    nrm (removeTet M t) + 1 = nrm M
+```
+
+```lean
+theorem unitOn_flipBoundary_of_eligible_noS
+    {M : Chain V} {σ : Finset (Finset V)} {t : Finset V}
+    (hU : UnitOn (bdry M) σ)
+    (h : EligibleTet M t) :
+    UnitOn (bdry (removeTet M t))
+      ((σ \ sharedFaces M t) ∪ exposedFaces M t)
+```
+
+```lean
+theorem isSphere2_flipBoundary_of_eligible_noS
+    {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn (bdry M) σ)
+    (he : EligibleTet M e)
+    (hexp : exposedFaces M e = {f₃, f₄})
+    (hf : f₃ ≠ f₄)
+    (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
+    IsSphere2 ((σ \ sharedFaces M e) ∪ exposedFaces M e)
+```
+
+Also strip `hS` from:
+- `flipBoundary_pure_of_eligible`
+- `flipBoundary_closed_of_eligible`
+- `flipBoundary_linkConn_of_eligible`
+- `flipBoundary_conn_of_eligible`
+- `flipBoundary_euler_of_eligible`
+- `flipBoundary_verts_eq`
+
+Case-2 targets:
+
+```lean
+theorem flipEdgePresent_side_taut_norm_noS
+    {M : Chain V} {e A B : Finset V}
+    (hT : IsTaut M)
+    (he : EligibleTet M e)
+    (hpm : M e = 1 ∨ M e = -1) :
+    IsTaut ((removeTet M e).filter fun t => t ⊆ A) ∧
+    IsTaut ((removeTet M e).filter fun t => t ⊆ B) ∧
+    nrm ((removeTet M e).filter fun t => t ⊆ A) < nrm M ∧
+    nrm ((removeTet M e).filter fun t => t ⊆ B) < nrm M
+```
+
+```lean
+theorem flipEdgePresent_side_algebra_noS
+    ... :
+    UnitOn (bdry ((removeTet M e).filter fun t => t ⊆ A))
+      ((flipBoundary σ M e).filter fun f => f ⊆ A) ∧
+    UnitOn (bdry ((removeTet M e).filter fun t => t ⊆ B))
+      ((flipBoundary σ M e).filter fun f => f ⊆ B) ∧
+    bdry (bdry ((removeTet M e).filter fun t => t ⊆ A)) = 0 ∧
+    bdry (bdry ((removeTet M e).filter fun t => t ⊆ B)) = 0 ∧
+    IsTaut ((removeTet M e).filter fun t => t ⊆ A) ∧
+    IsTaut ((removeTet M e).filter fun t => t ⊆ B) ∧
+    nrm ((removeTet M e).filter fun t => t ⊆ A) < nrm M ∧
+    nrm ((removeTet M e).filter fun t => t ⊆ B) < nrm M ∧
+    Disjoint ... ∧
+    M.support = insert e (...)
+```
+
+No `SimplicialChain` outputs in the noS versions.
+
+**Q6. Bridge**
+
+Target:
+
+```lean
+theorem taut_filling_is_simplicialChain
+    {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ)
+    (hXc : bdry X = 0)
+    (hMX : bdry M = X)
+    (hT : IsTaut M) :
+    SimplicialChain M
+```
+
+Use strong induction on `nrm M`.
+
+Need helper:
+
+```lean
+lemma not_simplicial_iff_exists_natAbs_ge_two :
+    ¬ SimplicialChain M ↔ ∃ t, 2 ≤ (M t).natAbs
+```
+
+Induction step:
+1. Assume `¬ SimplicialChain M`; pick `t` with `2 ≤ (M t).natAbs`.
+2. Get `t ∈ M.support`.
+3. Let `hUb : UnitOn (bdry M) σ := by simpa [hMX] using hU`.
+4. Get purity from existing `aleph_base_taut_support_card4_subset_verts`.
+5. Pick `v ∈ vertsOf σ`; use sphere incident-degree lemma to get `3 ≤ deg v (bdry M)`.
+6. Use `exists_disjoint_eligible_family_noS` to get `E.card ≥ deg v`, hence at least three eligible tets.
+7. Pick `u ∈ E` with `u ≠ t`.
+8. Remove `u`.
+
+Case no flip:
+```lean
+have hσu := isSphere2_flipBoundary_of_eligible_noS hσ hUb hu hexp hf₃₄ hNoFlip
+have hUu := unitOn_flipBoundary_of_eligible_noS hUb hu
+have hTu := isTaut_removeTet hT
+have hlt : nrm (removeTet M u) < nrm M := by
+  have hpm := tet_coeff_eq_pm_one_of_eligible_unitOn hUb hu
+  have h := nrm_removeTet_add_one_of_coeff_pm_one hu.2.1 hpm
+  omega
+have hSu := IH ... hlt hσu hUu (bdry_bdry _) rfl hTu
+```
+
+Contradiction by persistence:
+```lean
+have ht_same : removeTet M u t = M t := removeTet_apply_ne (by exact Ne.symm hut)
+```
+
+Case flip present:
+- Use `flipEdgePresent_side_sets_noS` and `flipEdgePresent_side_algebra_noS`.
+- From support decomposition and `t ∈ M.support`, `t ≠ u`, conclude `t` lies in one side support.
+- Apply IH to that side.
+- Use `Finsupp.filter_apply` plus `removeTet_apply_ne` to preserve coefficient at `t`.
+- Contradict `2 ≤ (M t).natAbs`.
+
+Finally update endpoint:
+
+```lean
+theorem taut_filling_is_anyrootedStickerball ...
+    (hT : IsTaut M) : IsAnyrootedStickerball M.support σ := by
+  have hS : SimplicialChain M :=
+    taut_filling_is_simplicialChain hσ hU hXc hMX hT
+  exact ⟨⟨theorem2_clean hσ hU hXc hMX hT hS, hσ.nonempty⟩,
+    theorem3_clean hσ hU hXc hMX hT hS⟩
+```
+
+**Build Order**
+
+1. Add `SameSignSupportFaceTet`, `sameSignFaces`, coverage lemmas.
+2. Add `finset_twofer_fibers`.
+3. Add `nonUnitSupport` and `support_card_add_nonUnitSupport_card_le_nrm`.
+4. Prove `exists_disjoint_eligible_family_noS`.
+5. Add hS-free removal lemmas: coefficient, norm drop, unit boundary flip.
+6. Strip hS from flip geometry and side split/algebra.
+7. Implement `taut_filling_is_simplicialChain`.
+8. Remove `hS` from `taut_filling_is_anyrootedStickerball`.
+
+Flagged issue: Claude’s inventory is mostly right, but the user-supplied claim “coefficient is irrelevant to A(u), and a twofer is strong enough for `EligibleTet`” is false unless the twofer tet is known unit-coefficient. The Lean route must count same-sign support faces, then discard `nonUnitSupport M` before converting to `EligibleTet`.

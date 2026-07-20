@@ -1,0 +1,44 @@
+CODEX CONSULT (G3) — verify the NEW sections of a Lean→informal writeup faithfully describe the Lean.
+Be adversarial; cite .tex line and .lean file:line for any problem. You may read the repo.
+
+REPO: /Users/doyle/Dropbox/taut, branch clean-anyrooted-stickerball, HEAD fc1b394. Build green 8273;
+grep over lean/Taut for sorry/admit/axiom/native_decide = ZERO.
+
+FILE: text/tautxy/tautC1.tex ("Version C", a copy of the already-reviewed tautleancc.tex with NEW
+material added). ONLY the new/changed parts need review (the rest is verbatim from tautleancc.tex,
+already Codex-PASSed this session). The new/changed parts:
+- Intro itemization of results (around lines 34-52).
+- §"The rational corollary" (Corollary `cor:rational`) — replaced a one-liner; ~the end of §sec:split.
+- §"Taut fillings are flag complexes" (`sec:flag`): Definition `def:flag`, Theorem `thm:flag`,
+  Lemma `lem:notaboo`, the proof, and a remark — inserted just before §sec:status.
+- Status-table rows for `thm:flag` and `cor:rational`(i)/(ii).
+- A "not Lean-proven here" tag on the PL-ball bridge.
+
+ORACLE (current #check, verbatim; the writeup must not strengthen these):
+- taut_filling_is_flagComplex : IsSphere2 σ → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+    IsFlagComplex M.support      [Theorem4.lean:1511; hS-free, derives hS via taut_filling_is_simplicialChain]
+- IsFlagComplex/SimplexOf/CliqueInOneSkeleton/HasEmptyK3/HasEmptyK4/HasK5Clique/NoTaboo : Theorem4.lean:26-52
+- NoTaboo.to_flag : Theorem4.lean:59 ; no_emptyK3K4_of_taut : Theorem4.lean:1476 ;
+  no_k5Clique_of_no_emptyK4_taut : Theorem4.lean:287 (U := M.filter(·⊆s); bdry_filter_subset_eq_zero:215;
+  IsTaut.subChain : Zvol.lean:98; fourSubset_mem_support closes U≠0).
+- IsQTaut M := ∀ N, Qbdry N = Qbdry M → Qnrm M ≤ Qnrm N   [Corollary1.lean:50, ORDER-OPTIMAL, not "min attained"]
+- Qvol_add_of_almost_disjoint_full : n≥1, |A∩B|≤n+1, ... Qbdry ⇒ Qvol(X+Y)=Qvol X+Qvol Y  [Corollary1.lean:596]
+- IsQTaut.splits_full : n≥2, ... IsQTaut M, Qbdry M = X+Y ⇒ filter-split, both IsQTaut  [Corollary1.lean:347]
+  (proof clears denominators via exists_nat_smul_integral_three : Corollary1.lean:328, then integer
+   IsTaut.splits_full / Zvol_add_of_almost_disjoint_full).
+
+QUESTIONS:
+Q1. Th4 section: do def:flag (SimplexOf/CliqueInOneSkeleton/IsFlagComplex), thm:flag, lem:notaboo, and
+    the proof (NoTaboo.to_flag + no_emptyK3K4_of_taut + the K5 step) match the Lean? Is the K5 closing
+    correct (some 4-subset of s is a tet of M via fourSubset_mem_support ⇒ U≠0; bdry U=0 via
+    triangle-boundedness + bdry_filter_subset_eq_zero; IsTaut.subChain ⇒ U taut ⇒ nrm U = Zvol 0 = 0 ⇒
+    U=0)? Is the remark's hS-free claim + literal signature correct?
+Q2. Cor1: is IsQTaut stated correctly as order-optimal (norm-minimal among same-boundary chains), NOT as
+    "the infimum Qvol is attained"? Are the n≥1 / n≥2 thresholds right? Is the clearing-denominators
+    proof sketch faithful (both endpoints reduce to the integer theorems)? Does the writeup avoid
+    claiming a rational minimiser exists?
+Q3. Does any NEW statement strengthen or misrepresent a Lean endpoint (e.g. calling the flag theorem
+    "triangulates a ball", over-claiming the K5/S³⊄B³ substitution as topological, mis-citing a name)?
+Q4. Any remaining gap that should be flagged "not Lean-proven here" but isn't?
+
+Output per contract: PASS/WARN/BLOCK first, then terse findings with citations.

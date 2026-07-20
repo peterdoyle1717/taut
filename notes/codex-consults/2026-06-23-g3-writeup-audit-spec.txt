@@ -1,0 +1,63 @@
+ADVERSARIAL FAITHFULNESS AUDIT — informal writeup vs. machine-checked Lean.
+
+Target document: notes/taut-lean-proof.tex (an informal math writeup).
+Source of truth: the Lean 4 development in lean/Taut/ (it builds; it is the ONLY oracle).
+
+FRAMING (read carefully):
+Unlike Lean, prose has no typechecker — a statement can read as perfect mathematics and still
+be false or overclaimed. Do NOT judge whether claims "sound correct." For every claim in the
+writeup that cites or depends on a Lean object, OPEN the Lean file, read the EXACT statement of
+that def/theorem/lemma, and check whether the prose says NEITHER MORE NOR LESS than the Lean.
+You are hunting for: prose STRONGER than the Lean (overclaim), WEAKER (underclaim), citing the
+WRONG lemma, omitting a HYPOTHESIS, or misstating a QUANTIFIER (inclusive-or vs exclusive-or,
+"at least one" vs "exactly one", <= vs <, forall vs exists, "the cut form of Theorem X" when the
+Lean proof does not actually invoke theorem X). Plausibility is irrelevant and is exactly the
+failure mode to catch.
+
+Two errors of this class were already found and fixed (use as calibration; confirm the fixes and
+find any others):
+ (1) the additivity proof claimed each generator is "retained by exactly one" kill map, but
+     Kkills_or_Kkills (lean/Taut/Theorem1.lean) is an inclusive OR ("killed by at least one").
+ (2) the prime-step side-split was called "the cut form of Theorem 2.4", but
+     flipEdgePresent_side_algebra (lean/Taut/PrimeStep.lean) does NOT invoke IsTaut.splits;
+     only the degree-3 cut (taut_splits_for_capped_cut, lean/Taut/Theorem2Aleph.lean:842) does.
+
+METHOD: go definition by definition and theorem by theorem through the writeup. For EACH item output:
+ - the writeup claim (short quote);
+ - the Lean object(s) it cites (file:name) and the actual statement (faithful paraphrase or quote);
+ - VERDICT: FAITHFUL / OVERCLAIM / UNDERCLAIM / WRONG-CITATION / MISSING-HYPOTHESIS / QUANTIFIER-ERROR;
+ - if not FAITHFUL: the exact discrepancy and a corrected sentence.
+
+Cover at least, by their writeup labels:
+ - Definitions 1.1 (Zvol, IsTaut), 1.2 (IsSphere2 — does the Lean structure really postulate
+   every-edge-in-exactly-two-triangles, connected vertex links, connected 1-skeleton, and the
+   Euler relation V+F=E+2?), 1.3 (AlmostDisjoint = the hypothesis bundle of
+   Zvol_add_of_almost_disjoint_full / IsTaut.splits_full — check it matches exactly),
+   1.4 (CleanGlueStep — verify the six fields weak/clean/newTet/hpmc/helc/hvlc and that the prose
+   (a)-(c3) render them faithfully), 1.5 (Clean3Complex = Pure3 ∧ TriangleBounded3 ∧ Normal3;
+   Normal3 = EdgeLinkConnected ∧ VertexLinkConnected), 1.6 (IsStickerball, IsAnyrootedStickerball,
+   FreelyCleanShellable).
+ - Lemma 2.1 (range_bd2_eq_ker_bd1 = H1=0; exists_cut), Lemma 2.2 (eq_zero_of_closed_supp_card_eq).
+ - Theorem 2.3 (Zvol_add_of_almost_disjoint_full) — verify the corrected "killed by at least one"
+   and the two norm bounds nrm_Kmap_add_killed_le, nrm_le_killed_add_killed; confirm hn : 1 <= n.
+ - Theorem 2.4 (IsTaut.splits_full) — verify hn : 2 <= n (NOT 1), the no_double_kill / hybrid_structure /
+   no_extreme_hybrid / not_taut_complete_cone chain, and that "retained by exactly one" is legitimate
+   here (taut M, after no_double_kill).
+ - Theorem 3.1 (taut_isPseudomanifold) — verify it concludes ONLY the triangle bound
+   (IsPseudomanifold = every triangle in <= 2 tets), NOT link-connectedness.
+ - Theorems 3.2/3.3 (taut_filling_is_anyrootedStickerball, theorem3_clean, theorem3_core_clean) —
+   verify the discharge by base_free_clean/deg3_step_clean/prime_step_clean and the degree-3 vs prime
+   distinction from errors (1)/(2).
+ - Section 4 status table: each row's identifier exists and is fully proved (no sorry/axiom).
+ - Section 5: that IsStickerball.isClean3Complex really yields pure ∧ triangle-bounded ∧ Normal3
+   (edge- AND vertex-link connected); that clean3Complex_insert / isPseudomanifold_insert /
+   edgeLinkConnected_insert / vertexLinkConnected_insert exist with those meanings; and CRUCIALLY
+   that NO theorem in lean/Taut/ bridges IsStickerball to a topological/PL 3-ball (the writeup
+   claims this bridge is absent — verify by searching).
+
+Also independently re-verify the hypotheses the writeup carries: [Infinite V]; n>=2 for splitting vs
+n>=1 for additivity; (A∩B).card <= n+1; SimplicialChain (coeffs in {-1,0,1}); UnitOn (support = σ,
+coeffs ±1).
+
+END with a numbered list of every discrepancy found (file:line for each), or state "no further
+discrepancies" per section. Be terse and concrete; do not restate the whole document.

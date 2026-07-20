@@ -1,0 +1,1503 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019f0054-242d-7ab0-af3a-d5911c42aa6f
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+CODEX CONSULT (G3) — verify the NEW sections of a Lean→informal writeup faithfully describe the Lean.
+Be adversarial; cite .tex line and .lean file:line for any problem. You may read the repo.
+
+REPO: /Users/doyle/Dropbox/taut, branch clean-anyrooted-stickerball, HEAD fc1b394. Build green 8273;
+grep over lean/Taut for sorry/admit/axiom/native_decide = ZERO.
+
+FILE: text/tautxy/tautC1.tex ("Version C", a copy of the already-reviewed tautleancc.tex with NEW
+material added). ONLY the new/changed parts need review (the rest is verbatim from tautleancc.tex,
+already Codex-PASSed this session). The new/changed parts:
+- Intro itemization of results (around lines 34-52).
+- §"The rational corollary" (Corollary `cor:rational`) — replaced a one-liner; ~the end of §sec:split.
+- §"Taut fillings are flag complexes" (`sec:flag`): Definition `def:flag`, Theorem `thm:flag`,
+  Lemma `lem:notaboo`, the proof, and a remark — inserted just before §sec:status.
+- Status-table rows for `thm:flag` and `cor:rational`(i)/(ii).
+- A "not Lean-proven here" tag on the PL-ball bridge.
+
+ORACLE (current #check, verbatim; the writeup must not strengthen these):
+- taut_filling_is_flagComplex : IsSphere2 σ → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+    IsFlagComplex M.support      [Theorem4.lean:1511; hS-free, derives hS via taut_filling_is_simplicialChain]
+- IsFlagComplex/SimplexOf/CliqueInOneSkeleton/HasEmptyK3/HasEmptyK4/HasK5Clique/NoTaboo : Theorem4.lean:26-52
+- NoTaboo.to_flag : Theorem4.lean:59 ; no_emptyK3K4_of_taut : Theorem4.lean:1476 ;
+  no_k5Clique_of_no_emptyK4_taut : Theorem4.lean:287 (U := M.filter(·⊆s); bdry_filter_subset_eq_zero:215;
+  IsTaut.subChain : Zvol.lean:98; fourSubset_mem_support closes U≠0).
+- IsQTaut M := ∀ N, Qbdry N = Qbdry M → Qnrm M ≤ Qnrm N   [Corollary1.lean:50, ORDER-OPTIMAL, not "min attained"]
+- Qvol_add_of_almost_disjoint_full : n≥1, |A∩B|≤n+1, ... Qbdry ⇒ Qvol(X+Y)=Qvol X+Qvol Y  [Corollary1.lean:596]
+- IsQTaut.splits_full : n≥2, ... IsQTaut M, Qbdry M = X+Y ⇒ filter-split, both IsQTaut  [Corollary1.lean:347]
+  (proof clears denominators via exists_nat_smul_integral_three : Corollary1.lean:328, then integer
+   IsTaut.splits_full / Zvol_add_of_almost_disjoint_full).
+
+QUESTIONS:
+Q1. Th4 section: do def:flag (SimplexOf/CliqueInOneSkeleton/IsFlagComplex), thm:flag, lem:notaboo, and
+    the proof (NoTaboo.to_flag + no_emptyK3K4_of_taut + the K5 step) match the Lean? Is the K5 closing
+    correct (some 4-subset of s is a tet of M via fourSubset_mem_support ⇒ U≠0; bdry U=0 via
+    triangle-boundedness + bdry_filter_subset_eq_zero; IsTaut.subChain ⇒ U taut ⇒ nrm U = Zvol 0 = 0 ⇒
+    U=0)? Is the remark's hS-free claim + literal signature correct?
+Q2. Cor1: is IsQTaut stated correctly as order-optimal (norm-minimal among same-boundary chains), NOT as
+    "the infimum Qvol is attained"? Are the n≥1 / n≥2 thresholds right? Is the clearing-denominators
+    proof sketch faithful (both endpoints reduce to the integer theorems)? Does the writeup avoid
+    claiming a rational minimiser exists?
+Q3. Does any NEW statement strengthen or misrepresent a Lean endpoint (e.g. calling the flag theorem
+    "triangulates a ball", over-claiming the K5/S³⊄B³ substitution as topological, mis-citing a name)?
+Q4. Any remaining gap that should be flagged "not Lean-proven here" but isn't?
+
+Output per contract: PASS/WARN/BLOCK first, then terse findings with citations.
+codex
+I’ll compare only the nominated new `tautC1.tex` sections against the Lean endpoints and cited definitions. I’ll gather line numbers first, then inspect the exact Lean statements/proofs around the oracle locations.
+exec
+/bin/zsh -lc "sed -n '1,75p' lean/Taut/Theorem4.lean && sed -n '270,305p' lean/Taut/Theorem4.lean && sed -n '1460,1520p' lean/Taut/Theorem4.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Theorem3Clean
+
+/-!
+# Theorem 4 (the flag-complex theorem)
+
+Theorem 4 of "Taut fillings": a taut filling of a triangulated `S²` is a *flag complex*.
+The combinatorial notion of "flag" is `IsFlagComplex`: every set `s` whose every edge is a
+simplex of `τ` is itself a simplex of `τ`.
+
+* `no_k5Clique_of_no_emptyK4_taut` replaces the paper's `S³ ⊄ B³` step: a `K₅` of edges in
+  `M.support` would, via pseudomanifoldness, make every triangle inside it a *cancelled*
+  (non-boundary) triangle, so the sub-chain `U := M ↾ s` of the `5` tets is closed;
+  tautness (Prop 1) then forces `U = 0`, contradicting that `U` carries `5` tets.
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-! ## Flag-complex vocabulary -/
+
+/-- `s` is (the vertex set of) a simplex of `τ`: either empty (the `(-1)`-simplex) or
+contained in a facet. -/
+def SimplexOf (τ : Finset (Finset V)) (s : Finset V) : Prop :=
+  s = ∅ ∨ ∃ t ∈ τ, s ⊆ t
+
+/-- `s` is a clique in the 1-skeleton of `τ`: its vertices are vertices of `τ` and each
+of its edges (2-subsets) is a simplex of `τ`. -/
+def CliqueInOneSkeleton (τ : Finset (Finset V)) (s : Finset V) : Prop :=
+  s ⊆ vertsOf τ ∧ ∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e
+
+/-- `τ` is a *flag complex*: every clique of its 1-skeleton spans a simplex. -/
+def IsFlagComplex (τ : Finset (Finset V)) : Prop :=
+  ∀ s, CliqueInOneSkeleton τ s → SimplexOf τ s
+
+/-- An *empty triangle* (`K₃`): three vertices, every edge a simplex, yet not a simplex. -/
+def HasEmptyK3 (τ : Finset (Finset V)) : Prop :=
+  ∃ s : Finset V, s.card = 3 ∧ (∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e) ∧ ¬ SimplexOf τ s
+
+/-- An *empty tetrahedron* (`K₄`): four vertices, every edge a simplex, yet not a simplex. -/
+def HasEmptyK4 (τ : Finset (Finset V)) : Prop :=
+  ∃ s : Finset V, s.card = 4 ∧ (∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e) ∧ ¬ SimplexOf τ s
+
+/-- A `K₅` of edges: five vertices, every edge a simplex (no spanning condition). -/
+def HasK5Clique (τ : Finset (Finset V)) : Prop :=
+  ∃ s : Finset V, s.card = 5 ∧ (∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e)
+
+/-- The three forbidden configurations are all absent. -/
+def NoTaboo (τ : Finset (Finset V)) : Prop :=
+  ¬ HasEmptyK3 τ ∧ ¬ HasEmptyK4 τ ∧ ¬ HasK5Clique τ
+
+/-! ## (1) No taboo ⟹ flag (purely combinatorial) -/
+
+/-- **No taboo configuration ⟹ flag complex.** Given a clique `s`, a case split on
+`s.card` spans `s`: cards `0,1,2` directly; cards `3,4` would otherwise be an empty
+`K₃`/`K₄`; card `≥ 5` produces a `5`-subclique, a forbidden `K₅`. -/
+theorem NoTaboo.to_flag {τ : Finset (Finset V)} (h : NoTaboo τ) :
+    IsFlagComplex τ := by
+  obtain ⟨hK3, hK4, hK5⟩ := h
+  intro s hs
+  obtain ⟨hsub, hedges⟩ := hs
+  by_cases hge5 : 5 ≤ s.card
+  · exfalso
+    obtain ⟨s', hs'sub, hs'card⟩ := Finset.exists_subset_card_eq hge5
+    exact hK5 ⟨s', hs'card, fun e he hec => hedges e (he.trans hs'sub) hec⟩
+  have hge5 : s.card ≤ 4 := by omega
+  interval_cases hc : s.card
+  · exact Or.inl (Finset.card_eq_zero.mp hc)
+  · obtain ⟨v, hv⟩ := Finset.card_eq_one.mp hc
+    have hvmem : v ∈ vertsOf τ := hsub (hv ▸ Finset.mem_singleton_self v)
+    obtain ⟨t, htτ, hvt⟩ := mem_vertsOf.mp hvmem
+    exact Or.inr ⟨t, htτ, by rw [hv]; exact Finset.singleton_subset_iff.mpr hvt⟩
+  · exact hedges s (Finset.Subset.refl s) hc
+      rw [if_neg hns] at this
+      exact (Finsupp.mem_support_iff.mp htU) this
+    have hfs : f ⊆ s := hft.trans htsub
+    have hf3 : f.card ≠ 3 := fun h => hcase ⟨hfs, h⟩
+    have hgen : bdryGen t f = 0 := by
+      by_contra hg
+      obtain ⟨w, hw, hfe⟩ := exists_facet_of_bdryGen_ne_zero hg
+      have : f.card = 3 := by
+        rw [hfe, Finset.card_erase_of_mem hw, hPure t htM]
+      exact hf3 this
+    rw [hgen, mul_zero]
+
+/-- **The K₅ obstruction.** A taut, simplicial, pure filling of a combinatorial
+`2`-sphere `σ` whose support has no empty `K₄` has no `K₅` of edges either.  A `K₅` of
+edges `s` would make the sub-chain `U := M ↾ {t | t ⊆ s}` closed
+(`bdry_filter_subset_eq_zero`); Proposition 1 (`IsTaut.subChain`) makes `U` taut, so
+`nrm U = Zvol 0 = 0` forces `U = 0` — but `U` carries a tet of `s`. -/
+theorem no_k5Clique_of_no_emptyK4_taut
+    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+    (hK4 : ¬ HasEmptyK4 M.support) : ¬ HasK5Clique M.support := by
+  classical
+  rintro ⟨s, hs5, hedges⟩
+  have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
+  set U := M.filter (fun t => t ⊆ s) with hUdef
+  have hbU : bdry U = 0 :=
+    bdry_filter_subset_eq_zero hU hMX hS hPure hPM hK4 hedges hs5
+  have hsub : SubChain U M := subChain_filter _ M
+  have hTU : IsTaut U := hT.subChain hsub
+  have hZ0 : Zvol (0 : Chain V) = 0 := Nat.le_zero.mp (by
+    simpa using Zvol_le (show bdry (0 : Chain V) = 0 by simp))
+  have hnrmU : nrm U = 0 := by rw [IsTaut] at hTU; rw [hTU, hbU, hZ0]
+  have hU0 : U = 0 := nrm_eq_zero_iff.mp hnrmU
+  obtain ⟨q, hqs, hq4⟩ := Finset.exists_subset_card_eq (show 4 ≤ s.card by omega)
+  have hqM : q ∈ M.support := fourSubset_mem_support hPure hK4 hedges hqs hq4
+          (by rw [Finsupp.support_filter]; exact hA)
+      · exact (IH _ _ _ hnB hsphB hUB hXBc rfl hTB hSB).2
+          (by rw [Finsupp.support_filter]; exact hB)
+    · have hσe := isSphere2_flipBoundary_of_eligible hσ hUb he hexp hf₃₄ hFlip
+      have hUe := unitOn_flipBoundary_of_eligible hUb he
+      have hnR : nrm (removeTet M e) < nrm M := by
+        have h := nrm_removeTet_add_one_of_simplicial hS he.2.1; omega
+      exact (IH _ _ _ hnR hσe hUe (bdry_bdry _) rfl (isTaut_removeTet hT)
+        (simplicialChain_removeTet hS)).2 hR
+  exact ⟨hNoK3, hNoK4⟩
+
+/-! ## (6) The induction and the Theorem-4 endpoint -/
+
+/-- **No empty `K₃`/`K₄` in a taut filling of a 2-sphere.** Strong induction on `nrm M`, mirroring
+`taut_isPseudomanifold`: base case (`≤ 4` vertices) by `base_no_emptyK3K4`; a degree-3 vertex by
+`deg3_no_emptyK3K4`; otherwise by `prime_no_emptyK3K4`. -/
+theorem no_emptyK3K4_of_taut {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support := by
+  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+      ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support by
+    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N IH =>
+    intro σ X M hN hσ hU hXc hMX hT hS
+    by_cases hv : (vertsOf σ).card ≤ 4
+    · exact base_no_emptyK3K4 hσ hU hMX hT hv
+    · push_neg at hv
+      by_cases hd3 : HasDegree3Vertex σ
+      · refine deg3_no_emptyK3K4 σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+        refine prime_no_emptyK3K4 σ X M hσ hU hXc hMX hT hS hno3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+
+/-- **Theorem 4 (the flag-complex theorem).** Any taut filling `M` of a combinatorial 2-sphere `σ` is a
+flag complex: every clique of its 1-skeleton spans a simplex.  Combines `no_emptyK3K4_of_taut` (the
+minimal-counterexample / edge-flip induction) with `theorem4_flag_from_no_emptyK3K4` (which adds the
+`K₅` obstruction). -/
+theorem theorem4_flag {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+    (hS : SimplicialChain M) : IsFlagComplex M.support :=
+  let ⟨hK3, hK4⟩ := no_emptyK3K4_of_taut hσ hU hXc hMX hT hS
+  theorem4_flag_from_no_emptyK3K4 hσ hU hXc hMX hT hS hK3 hK4
+
+/-- **Public endpoint (mathematically named): a taut filling of a combinatorial 2-sphere is a flag
+complex** — every clique of its 1-skeleton spans a simplex.  *No `SimplicialChain` hypothesis*: like
+the stickerball endpoint `taut_filling_is_anyrootedStickerball`, simpliciality is **derived** from
+tautness via the bridge `taut_filling_is_simplicialChain` and fed to the internal hS-taking
+`theorem4_flag`. -/
+theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsFlagComplex M.support :=
+  theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)
+
+end Taut
+
+exec
+/bin/zsh -lc "sed -n '1,90p' text/tautxy/tautC1.tex && sed -n '250,420p' text/tautxy/tautC1.tex && sed -n '420,560p' text/tautxy/tautC1.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[T1]{fontenc}
+\setlength{\emergencystretch}{3em}
+\sloppy
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\newcommand{\Zvol}{\operatorname{Zvol}}
+\newcommand{\Qvol}{\operatorname{Qvol}}
+\newcommand{\Qnrm}{\operatorname{Qnrm}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\bd}{\partial}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\card}[1]{\lvert #1\rvert}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+
+\title{Splitting, Stickerballs, and Flag Complexes for Taut Fillings\\[2pt]
+\large What the Lean development \code{lean/Taut} proves}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent
+This document states, as ordinary mathematics, \emph{exactly} what the Lean development
+\code{lean/Taut} proves about taut fillings --- no strengthening inferred from prose. The
+results are:
+\begin{itemize}
+\item[(1)] taut fillings of almost-disjoint cycles \emph{split}, and their filling volumes
+\emph{add} (\S\ref{sec:split}), with a rational analogue (Corollary~\ref{cor:rational});
+\item[(2)] a taut filling of a combinatorial $2$-sphere is automatically simplicial, pure, and
+triangle-bounded, and forms an \emph{AnyRootedStickerball} --- a clean-shellable complex that
+can be shelled starting from any tetrahedron (\S\ref{sec:main});
+\item[(3)] the same filling is a \emph{flag complex} (\S\ref{sec:flag}).
+\end{itemize}
+Almost-disjoint splitting is the engine; the stickerball and flag-complex theorems are
+inductions on the size of the filling driven by it. Typewriter names are the exact Lean
+identifiers, listed with their status in \S\ref{sec:status}; everything labelled a theorem or
+lemma is fully formalized with no \code{sorry} and no project axioms. Where a notion is weaker
+than its classical namesake, or a classical bridge is \emph{not} formalized, this is stated
+explicitly and flagged in the text as ``not Lean-proven here'' (\S\ref{sec:status}--\ref{sec:classical}).
+
+%==========================================================================
+\section{Definitions}\label{sec:defs}
+
+Fix a linearly ordered vertex set $V$. A simplex is a finite subset $s\subseteq V$; if
+$\card{s}=k+1$ we call it a $k$-simplex. A \emph{chain} is a finitely supported function
+$M$ from simplices to $\Z$ (\code{Chain V}), written $M=\sum_s M(s)\,s$, with orientations
+fixed by the vertex order. The boundary $\bd$ is the usual signed face operator
+(\code{bdry}); $\bd\bd=0$. The \emph{norm} is $\norm{M}=\sum_s\card{M(s)}$ (\code{nrm}); a
+chain is \emph{simplicial} if every coefficient lies in $\{-1,0,1\}$
+(\code{SimplicialChain}), and then $\norm{M}$ is the number of simplices in its support. (For a
+taut filling of a $2$-sphere, simpliciality is automatic --- Theorem~\ref{thm:simpl} --- and is
+nowhere assumed.)
+
+\begin{definition}[Filling volume; taut filling]\label{def:taut}
+The \emph{filling volume} of a chain $X$ is $\Zvol(X)=\inf\{\norm{M}:\bd M=X\}$ (\code{Zvol},
+literally an $\inf$ over $\mathbb N$). For a cycle ($\bd X=0$) the cone over any vertex is a filling
+(\code{bdry\_cone\_of\_closed}), so the $\inf$ is attained and
+\[
+\Zvol(X)=\min\{\norm{M}:\bd M=X\}\qquad(\code{exists\_fill\_eq\_Zvol}).
+\]
+(\code{Zvol} is defined for every chain; it is used below only on cycles.)
+A chain $M$ is a \emph{taut filling} of $X$ if $\bd M=X$ and $\norm{M}=\Zvol(X)$, i.e.\ $M$
+is a norm-minimal filling of its own boundary (\code{IsTaut}).
+\end{definition}
+
+Tautness contributes exactly three things to the proofs, all consequences of minimality:
+\begin{itemize}
+\item[(T1)] \emph{Boundary control:} $\bd M=X$ holds on the nose.
+\item[(T2)] \emph{Purity / no junk:} the generators of a taut filling of an $n$-cycle are
+all $(n{+}1)$-simplices (\code{IsTaut.dim\_pure}), and every vertex of $M$ lies on the
+boundary (\code{IsTaut.vert\_subset}, via \code{IsTaut.no\_internal\_vertex}).
+\item[(T3)] \emph{No extraneous cancellation:} a taut chain contains no \emph{nontrivial}
+complete cone $\operatorname{cone} x\,W$ as a subchain --- $W$ closed ($\bd W=0$), the apex $x$
+absent from $W$ ($\deg_x W=0$), and some vertex $x'$ present in $W$ ($\deg_{x'} W\neq 0$)
+(\code{not\_taut\_complete\_cone}); such a cone could be
+\begin{proof}
+Tautness enters precisely here, turning Theorem~\ref{thm:add} into rigidity. Since $M$ is
+taut, $\norm{M}=\Zvol(X+Y)=\Zvol X+\Zvol Y$, while
+$\norm{M}\ge\norm{K_{A,p}M}+\norm{K_{B,q}M}\ge\Zvol X+\Zvol Y$. So all inequalities are
+equalities, with two consequences.
+
+\emph{No double kill} (\code{no\_double\_kill}): if some generator were retained by neither
+operator, the middle sum would be strictly smaller than $\norm M$. Hence every generator is
+retained by exactly one side, and $K_{A,p}M,K_{B,q}M$ are \emph{taut} fillings of $X,Y$.
+
+\emph{No straddling simplex} (\code{no\_extreme\_hybrid}). The three-part decomposition
+leaves, besides pure generators ($\subseteq A$ or $\subseteq B$), only ``extreme hybrids'':
+a single vertex $y_0$ on the far side and none in $A\cap B$. If such hybrids existed,
+collect those through a fixed $y_0$; their faces opposite $y_0$ form a nonempty cycle $L$.
+That $L$ is closed is \emph{not} the $\F_2$ cut: a coefficient computation shows that $\bd U$
+carries no face through $y_0$ (such faces lie in neither $X$ nor $Y$), and \code{bdry\_lk\_eq\_zero}
+then converts this into $\bd L=0$. So $M$ would contain the complete cone $y_0\ast L$,
+contradicting (T3). This is the only place $n\ge 2$ is used:
+the opposite faces need $\ge 2$ vertices for $L$ to be a genuine cycle.
+
+Thus every generator of $M$ is $\subseteq A$ or $\subseteq B$, so the literal restrictions give
+$M=M_A+M_B$. The identity $\bd M_A=X$ follows by applying $K_{A,p}$ to $\bd M_A+\bd M_B=X+Y$
+(\code{Kmap\_eq\_self} on the $A$-part, \code{Kmap\_eq\_zero\_of\_closed} on the closed $B$-part);
+then $\bd M_B=Y$ by cancellation. Tautness of the pieces follows from $\norm{M_A}+\norm{M_B}=\norm M$,
+additivity, and $\norm{M_A}\ge\Zvol X$, $\norm{M_B}\ge\Zvol Y$.
+\end{proof}
+
+\begin{remark}[Why exactly AlmostDisjoint]
+The proof uses the separation hypothesis only through Lemma~\ref{lem:smallsupp}, which needs
+nothing beyond $\card{A\cap B}\le n+1$. There is no appeal to any geometric or topological
+transversality; AlmostDisjointness is the exact combinatorial content that makes the cross
+terms vanish.
+\end{remark}
+
+\subsection*{The rational corollary}
+
+The integer theory transfers to rational chains. A \emph{rational chain} is a finitely supported
+$M\colon\{\text{simplices}\}\to\Q$ (\code{QChain}), with the same boundary (\code{Qbdry}) and
+cone (\code{Qcone}); its norm $\Qnrm M=\sum_s\card{M(s)}$ and filling volume
+$\Qvol(X)=\inf\{\Qnrm M:\bd M=X\}$ are real-valued. The Lean notion of rational tautness is
+\emph{order-optimal}: $M$ is \code{IsQTaut} if $\Qnrm M\le\Qnrm N$ for \emph{every} rational
+chain $N$ with $\bd N=\bd M$ --- norm-minimal among co-boundary competitors. This is the exact
+Lean definition; it does \emph{not} assert that the infimum $\Qvol$ is attained, so no
+linear-programming or integrality theorem is needed.
+
+\begin{corollary}[Rational additivity and splitting]\label{cor:rational}
+Let $X,Y$ be rational cycles, AlmostDisjoint over $(A,B)$ (the same hypothesis bundle as
+Definition~\ref{def:ad}, now over $\Q$).
+\begin{itemize}
+\item[\rm(i)] If $n\ge 1$ then $\Qvol(X+Y)=\Qvol X+\Qvol Y$
+(\code{Qvol\_add\_of\_almost\_disjoint\_full}).
+\item[\rm(ii)] If $n\ge 2$ and $M$ is an order-optimal (\code{IsQTaut}) rational filling of
+$X+Y$, then $M=M_A+M_B$ with $\bd M_A=X$ and $\bd M_B=Y$, and each piece is again order-optimal
+(\code{IsQTaut.splits\_full}).
+\end{itemize}
+\end{corollary}
+
+\begin{proof}
+Clearing denominators, a rational chain scales by some $q\in\mathbb N$ to an integer chain
+(\code{exists\_nat\_smul\_integral\_three}). Scaling $M,X,Y$ by a common $q$, applying the integer
+Theorem~\ref{thm:add} (for (i)) or Theorem~\ref{thm:split} (for (ii)) to the integer chains, and
+dividing back by $q$ gives the rational statements; order-optimality transfers because $\Qnrm$ is
+homogeneous under positive scaling.
+\end{proof}
+
+%==========================================================================
+\section{Taut fillings are AnyRootedStickerballs}\label{sec:main}
+
+We now prove the main theorem by induction on the number of tetrahedra, using
+Theorem~\ref{thm:split} (in its $2$-sphere ``cut'' form) to produce the smaller taut
+fillings. The same reduction first pays off a debt in the hypotheses: a taut filling of a
+$2$-sphere is \emph{automatically} simplicial, so ``simplicial'' is a conclusion, not an
+assumption.
+
+\subsection*{Simpliciality is automatic}
+
+\begin{theorem}[Simpliciality is automatic]\label{thm:simpl}
+Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$, and $M$ a taut
+filling with $\bd M=X$. Then every tetrahedron coefficient of $M$ lies in $\{-1,0,1\}$ --- $M$
+is simplicial (\code{taut\_filling\_is\_simplicialChain}). \emph{No simpliciality is assumed.}
+\end{theorem}
+
+This discharges the only hypothesis of the main theorem that is not already part of ``$M$ is a
+taut filling of the simplicial $2$-sphere $\sigma$.'' The proof is a minimal-counterexample
+deletion driven by a counting engine that produces removable tetrahedra \emph{without} knowing
+the coefficients are $\pm1$ --- the point at which a naive argument would be circular.
+
+\begin{lemma}[Disjoint eligible family, simpliciality-free]\label{lem:family}
+Let $\sigma$ have no degree-$3$ vertex, and let $M$ be a taut filling whose boundary $\bd M$ is
+the $\pm1$ cycle on $\sigma$ and whose generators are all tetrahedra. Then for every vertex
+$v$ there are at least $\deg_v(\bd M)$ generators of $M$, pairwise disjoint in their boundary
+faces, each sharing exactly two faces with $\bd M$ in proper orientation --- i.e.\ at least
+$\deg_v(\bd M)$ disjoint \emph{eligible} tetrahedra
+(\code{exists\_disjoint\_eligible\_family\_noS}). (Under the unit boundary an eligible
+tetrahedron necessarily has coefficient $\pm1$,
+\code{tet\_coeff\_eq\_pm\_one\_of\_eligible\_unitOn}; this is what makes it removable below.)
+\end{lemma}
+
+\begin{proof}
+Call a triangle $\alpha\in\sigma$ a \emph{same-sign support face} of a generator $t$ if
+$\alpha$ is a face of $t$ whose chain contribution carries the sign of $\bd M$ there, i.e.\
+$\bd M(\alpha)\cdot M(t)\cdot\operatorname{sgn}(t,\alpha)>0$
+(\code{SameSignSupportFaceTet}). Every boundary triangle is a same-sign support face of
+\emph{some} generator (\code{sameSignSupportFace\_cover}); this --- strictly weaker than ``each
+boundary triangle lies on a unique tetrahedron'' --- is the \emph{only} geometric input, and
+it uses only that $\bd M$ is the unit cycle and that generators are tetrahedra, \emph{not} that
+their coefficients are $\pm1$. Pick one such generator for each of the $\card\sigma$ boundary
+triangles; since no vertex has degree $3$, each generator is picked by at most two triangles
+(\code{sharedFaces\_card\_le\_two\_of\_noDegree3}).
+
+Now count. Let $s=\card{\supp M}$ be the number of generators and $z$ the number of them with
+$\card{M(t)}\ge 2$. The norm budget $s+z\le\norm M$
+(\code{support\_card\_add\_nonUnitSupport\_card\_le\_nrm}; each non-unit generator costs
+$\ge 2$), tautness $\norm M=\Zvol(\bd M)$, and the degree--volume inequality
+$\Zvol(\bd M)+\deg_v(\bd M)\le\norm{\bd M}=\card\sigma$ (\code{Zvol\_add\_deg\_le},
+\code{UnitOn.nrm\_eq}) combine to
+\[
+s+z+\deg_v(\bd M)\ \le\ \card\sigma .
+\]
+A map from the $\card\sigma$ triangles \emph{into} the $s$ generators with every fibre of size
+$\le 2$ therefore has at least $z+\deg_v(\bd M)$ \emph{twofer} targets --- generators picked by
+exactly two triangles --- with pairwise-disjoint assigned pairs (\code{finset\_twofer\_fibers}: a
+fibred map with $s+k\le\card\sigma$ has $\ge k$ size-$2$ fibres). Discard the $\le z$ non-unit
+twofers; at least $\deg_v(\bd M)$ \emph{unit} twofers remain. A unit twofer has coefficient
+$\pm1$ and two same-sign boundary faces, which on a unit tetrahedron are \emph{properly
+oriented} (\code{sameSignFace\_to\_proper\_of\_unit}); it is therefore eligible, and disjoint
+assigned pairs make the family boundary-face disjoint.
+\end{proof}
+
+\begin{remark}
+The discard is the one place coefficients re-enter, and it is essential. Counting same-sign
+faces is insensitive to multiplicity --- a generator of coefficient $2$ still has each face
+once --- so the twofer count runs with no simpliciality; but only a \emph{unit} twofer is
+removable as an eligible tetrahedron. The norm budget pays the discard exactly: each non-unit
+generator contributes the $\ge 2$ to $\norm M$ that the count demanded as surplus.
+\end{remark}
+
+\begin{proof}[Proof of Theorem~\ref{thm:simpl}]
+Strong induction on $\norm M$, by the same trichotomy on $\sigma$ as in the main induction
+below. If some generator $t_0$ has $\card{M(t_0)}\ge 2$
+(\code{not\_simplicialChain\_iff\_exists\_natAbs\_ge\_two}), we produce a strictly smaller taut
+filling of a $2$-sphere in which $t_0$ keeps its coefficient --- still non-simplicial,
+contradicting the inductive hypothesis.
+\begin{itemize}
+\item \emph{Base} ($\card{\sigma}\le 4$): $M$ is a single tetrahedron, necessarily of
+coefficient $\pm1$, so there is no defect (\code{base\_simplicialChain}).
+\item \emph{Degree-$3$ vertex}: the capped cut (Lemma~\ref{lem:cut}) splits $M=M_L+M_R$ into
+two strictly smaller taut fillings of the two capped spheres
+(\code{taut\_splits\_for\_capped\_cut}), and $t_0$ lies on one side carrying its full
+coefficient.
+\item \emph{No degree-$3$ vertex}: applied at any vertex (every vertex of a $2$-sphere has
+$\deg_v(\bd M)\ge 3$), Lemma~\ref{lem:family} supplies at least three eligible tetrahedra ---
+in particular two distinct ones, so one is $u\neq t_0$. Remove $u$; $t_0$ persists with
+coefficient $M(t_0)$
+(\code{removeTet\_apply\_ne}). If $u$'s flip edge is absent, $M-u$ is a taut filling of the
+flipped $2$-sphere (\code{isSphere2\_flipBoundary\_of\_eligible},
+\code{isTaut\_removeTet}); if present, $M-u$ splits along that edge into two taut sub-fillings
+on smaller spheres (\code{flipEdgePresent\_side\_sets\_noS},
+\code{flipEdgePresent\_side\_algebra\_noS}), and $t_0$ lies on one.
+\end{itemize}
+In every case the smaller filling is simplicial by induction, forcing $\card{M(t_0)}\le 1$ ---
+a contradiction. Hence $M$ is simplicial.
+\end{proof}
+
+\subsection*{The induction}
+
+With simpliciality established (Theorem~\ref{thm:simpl}) we use it freely below: the Lean
+lemmas \code{taut\_isPseudomanifold} and \code{theorem3\_clean} carry \code{SimplicialChain M}
+as an explicit hypothesis, discharged once and for all by that theorem. First, the engine that
+gives the filling its $3$-dimensional shape.
+
+
+\begin{theorem}[Taut fillings are pure and triangle-bounded]\label{thm:pm}
+Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$
+(\code{UnitOn X $\sigma$}), and $M$ a taut filling with $\bd M=X$. Then every
+generator of $M$ is a tetrahedron and every triangle lies in at most two of them
+(\code{taut\_isPseudomanifold}, simpliciality from Theorem~\ref{thm:simpl}; purity from
+\code{IsTaut.dim\_pure}).
+\end{theorem}
+
+\begin{proof}
+Purity is (T2): $X$ is $2$-dimensional, so a taut filling is $3$-dimensional.
+Triangle-boundedness is a strong induction on the number of tetrahedra, by the trichotomy
+used again below. \emph{Base} ($\sigma$ has $\le 4$ vertices): $M$ is a single tetrahedron.
+\emph{Degree-$3$ vertex}: cut its star (Lemma~\ref{lem:cut}), apply the inductive
+hypothesis to the smaller filling, re-glue. \emph{No degree-$3$ vertex}: take two disjoint
+tetrahedra $e,u$ each meeting the boundary in exactly two faces
+(\code{aleph\_disjoint\_eligible\_pair}), remove $e$, apply the inductive hypothesis, re-glue;
+the key point is the \emph{triangle rule-out} (\code{faceCount\_removeTet\_sharedFace\_eq\_zero}):
+a shared face of $e$ cannot reappear after removing $e$, since the disjoint witness $u$ would
+otherwise force that triangle's incidence to $3$ in the inductively triangle-bounded filling
+$M-u$.
+\end{proof}
+
+\begin{theorem}[Main]\label{thm:anyrooted}
+Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$, and $M$ a taut
+filling with $\bd M=X$. Then the set of tetrahedra of $M$ is an
+\emph{AnyRootedStickerball} with boundary $\sigma$
+(\code{taut\_filling\_is\_anyrootedStickerball}). \emph{Simpliciality is not assumed}: the
+endpoint derives it internally by Theorem~\ref{thm:simpl}.
+\end{theorem}
+
+By Theorem~\ref{thm:pm} the support consists of tetrahedra; $\sigma\neq\varnothing$ gives
+nonempty boundary. The content is that every tetrahedron is a root:
+
+\begin{theorem}\label{thm:freely}
+Under the hypotheses of Theorem~\ref{thm:anyrooted}, for every tetrahedron $t_\star$ of $M$
+there is a clean shelling of $M$ beginning with $t_\star$ (\code{theorem3\_clean}, simpliciality
+from Theorem~\ref{thm:simpl}, via the induction skeleton \code{theorem3\_core\_clean} with cases
+\code{base\_free\_clean}, \code{deg3\_step\_clean}, \code{prime\_step\_clean}).
+\end{theorem}
+
+\begin{proof}
+Strong induction on the number $N$ of tetrahedra of $M$. The inductive invariant is exactly
+the AnyRooted statement: a clean shelling beginning at \emph{any} prescribed $t_\star$. The
+cases are a trichotomy on $\sigma$. In each non-base case the cut (Lemma~\ref{lem:cut})
+supplies strictly smaller taut fillings of smaller spheres to which the inductive hypothesis
+applies --- by Theorem~\ref{thm:split} itself in the degree-$3$ case, and by a separate
+side-decomposition resting on the same cut in the prime case.
+
+\medskip
+\noindent\textbf{Base ($\sigma$ has $\le 4$ vertices).} Then $\sigma$ is a tetrahedron
+boundary and $M$ is a single tetrahedron $T$; the one-term shelling starts at $T$ and is
+vacuously clean.
+
+\medskip
+\noindent\textbf{Degree-$3$ vertex $v$.} The link of $v$ is a triangle $\gamma$, and the
+star of $v$ is one tetrahedron $T=v\ast\gamma$. Since $\card{\sigma}\ge 5$, $\gamma$ is a
+non-face triangle whose edges lie in $\sigma$, so by Lemma~\ref{lem:cut} replacing the three
+triangles at $v$ by $\gamma$ yields a $2$-sphere $\sigma'$ with one fewer vertex. Restricting
+$M$ to the non-star side is a \emph{direct instance of Theorem~\ref{thm:split}}, with the two
+capped vertex-sets as $A,B$ (their overlap is exactly $\gamma$, so $\card{A\cap B}=n{+}1=3$):
+the lemma \code{taut\_splits\_for\_capped\_cut} invokes \code{IsTaut.splits} verbatim. It
+produces a \emph{taut} filling $M'$ of $\sigma'$ with strictly fewer tetrahedra, so by
+induction $M'$ is an AnyRootedStickerball. Two facts let $T$ be glued cleanly: $\gamma$ is a boundary
+triangle of $M'$ lying in a \emph{unique} remainder tetrahedron $t_0$ (tautness pins it,
+$\text{faceCount}(\gamma)=1$; \code{degree3\_hanchor}), and $v$ is a vertex absent from $M'$
+(\code{degree3\_apex\_notMem\_*}), so adjoining $T$ along the single face $\gamma$ satisfies
+(a)--(c3) (the apex $v$ is new, so its link certificates are vacuous). Now assemble, given
+$t_\star$:
+\begin{itemize}
+\item if $t_\star\neq T$: take a clean shelling of $M'$ rooted at $t_\star$ (induction) and
+append $T$ last;
+\item if $t_\star=T$: start with $T$, then a clean shelling of $M'$ rooted at the anchor
+$t_0$ (induction), which glues to $T$ along $\gamma$.
+\end{itemize}
+Either way $M$ has a clean shelling rooted at $t_\star$.
+
+\medskip
+\noindent\textbf{No degree-$3$ vertex ($\card{\sigma}\ge 5$).} Pick a tetrahedron $e$ of $M$
+with exactly two faces on $\sigma$ (its existence is a count: with no degree-$3$ vertex there
+are more boundary triangles than tetrahedra; \code{exists\_eligibleTet}). Let $f_3,f_4$ be its
+two interior faces and $f_3\cap f_4$ its \emph{flip edge}. Remove $e$.
+\begin{itemize}
+\item \emph{Flip edge absent.} Exposing $f_3,f_4$ is a $2$--$2$ flip of the boundary: the new
+boundary is again a $2$-sphere $\sigma'$ on the same vertices
+(\code{isSphere2\_flipBoundary\_of\_eligible}) and $M-e$ is a taut filling of it with fewer
+tetrahedra. By induction $M-e$ is an AnyRootedStickerball; re-gluing $e$ (two shared faces)
+is a clean glue step, its shared faces clean by the rule-out of Theorem~\ref{thm:pm}.
+\item \emph{Flip edge present.} Then $f_3\cap f_4\in\sigma$, and $\sigma$ separates along this
+edge into two $2$-spheres $\sigma_1,\sigma_2$; correspondingly $M-e$ splits along this edge into
+two taut sub-fillings $M_1,M_2$ with fewer tetrahedra (\code{flipEdgePresent\_side\_sets},
+\code{flipEdgePresent\_side\_algebra}). This is a decomposition of the same filter-by-side shape
+as Theorem~\ref{thm:split}, but a \emph{separate} argument: it is built directly on the cut
+(Lemma~\ref{lem:cut}/\code{exists\_cut}), not through \code{IsTaut.splits}.
+By induction each is an AnyRootedStickerball; concatenate their clean shellings --- rooting
+the second at the tetrahedron adjacent to the bridge --- and insert $e$ to bridge them
+(\code{glueStep\_bridge\_left}, \code{glueStep\_bridge\_right}).
+\end{itemize}
+In both sub-cases, choosing the root of the smaller piece(s) appropriately (and, if
+$t_\star=e$, starting with $e$) yields a clean shelling of $M$ rooted at $t_\star$.
+
+\medskip
+This proves the inductive invariant for $M$, completing the induction.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:anyrooted}]
+Theorem~\ref{thm:freely} gives a clean shelling rooted at each tetrahedron; with nonempty
+boundary this is the AnyRootedStickerball conclusion. Each re-gluing above is a clean glue
+step, so the link certificates (c1)--(c3) hold at every step; the assembled shelling is
+therefore a genuine clean shelling and the rooted structure is preserved through the
+assembly.
+\end{proof}
+
+\begin{remark}[Where each ingredient is used]
+The recursion always lands on strictly smaller taut fillings of strictly smaller spheres,
+so the induction terminates. Tautness is used (i) to make every cut-restriction again taut,
+so the inductive hypothesis applies (Theorem~\ref{thm:split} for the degree-$3$ cut, the
+analogous side-decomposition for the prime case); (ii) through
+Theorem~\ref{thm:pm} to keep every intermediate complex triangle-bounded, which the prime
+rule-out needs; and (iii) to pin boundary triangles into unique tetrahedra, giving the
+gluing anchors. The rooted structure is preserved because every assembly step is a
+\emph{clean} glue step.
+\end{remark}
+
+%==========================================================================
+\section{Taut fillings are flag complexes}\label{sec:flag}
+
+A simplicial complex is a \emph{flag complex} when every clique of its $1$-skeleton already
+spans a face: if a set of vertices has all of its edges present, the whole set is a simplex. A
+taut filling inherits this.
+
+\begin{definition}[Simplex, clique, flag complex]\label{def:flag}
+For a set $\tau$ of tetrahedra, a vertex set $s$ is a \emph{simplex} of $\tau$ if $s=\varnothing$
+or $s\subseteq t$ for some $t\in\tau$ (\code{SimplexOf}). It is a \emph{clique} of the
+$1$-skeleton if $s\subseteq\operatorname{verts}\tau$ and every $2$-subset of $s$ is a simplex
+(\code{CliqueInOneSkeleton}). Then $\tau$ is a \emph{flag complex} (\code{IsFlagComplex}) if
+every clique is a simplex.
+\end{definition}
+
+\begin{theorem}[Flag complex]\label{thm:flag}
+Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$, and $M$ a taut
+
+exec
+/bin/zsh -lc "sed -n '40,65p' lean/Taut/Corollary1.lean && sed -n '320,365p' lean/Taut/Corollary1.lean && sed -n '588,604p' lean/Taut/Corollary1.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+
+noncomputable def Qnrm (M : QChain V) : ℝ := ∑ s ∈ M.support, |(M s : ℝ)|
+
+noncomputable def QvolSet (X : QChain V) : Set ℝ :=
+  {r | ∃ M : QChain V, Qbdry M = X ∧ Qnrm M = r}
+
+noncomputable def Qvol (X : QChain V) : ℝ := sInf (QvolSet X)
+
+/-- `M` is order-optimal, NOT `Qnrm = Qvol` — this avoids needing rational
+minimisers to exist. -/
+def IsQTaut (M : QChain V) : Prop := ∀ N : QChain V, Qbdry N = Qbdry M → Qnrm M ≤ Qnrm N
+
+def QChain.IsIntegral (M : QChain V) : Prop := ∀ s, ∃ z : ℤ, M s = (z : ℚ)
+
+/-- **Clearing denominators.** Every rational chain becomes integral after
+scaling by a positive natural number (the lcm of its coefficients'
+denominators). -/
+lemma exists_nat_smul_integral (M : QChain V) :
+    ∃ q : ℕ, 0 < q ∧ QChain.IsIntegral ((q : ℚ) • M) := by
+  classical
+  refine ⟨M.support.lcm (fun s => (M s).den), ?_, ?_⟩
+  · refine Nat.pos_of_ne_zero ?_
+    rw [Finset.lcm_ne_zero_iff]
+    intro s _
+    exact (M s).den_ne_zero
+  · intro s
+  have hrw : (((r * q : ℕ) : ℚ) • M) s = (r : ℚ) * (((q : ℚ) • M) s) := by
+    simp only [Finsupp.smul_apply, smul_eq_mul]
+    push_cast
+    ring
+  rw [hrw, hz]
+  push_cast
+  ring
+
+lemma exists_nat_smul_integral_three (M X Y : QChain V) :
+    ∃ q : ℕ, 0 < q ∧ QChain.IsIntegral ((q : ℚ) • M) ∧
+      QChain.IsIntegral ((q : ℚ) • X) ∧ QChain.IsIntegral ((q : ℚ) • Y) := by
+  obtain ⟨qM, hqM, hM⟩ := exists_nat_smul_integral M
+  obtain ⟨qX, hqX, hX⟩ := exists_nat_smul_integral X
+  obtain ⟨qY, hqY, hY⟩ := exists_nat_smul_integral Y
+  refine ⟨qM * qX * qY, by positivity, ?_, ?_, ?_⟩
+  · have := hM.nat_mul_smul (qX * qY)
+    rwa [show qX * qY * qM = qM * qX * qY by ring] at this
+  · have := hX.nat_mul_smul (qM * qY)
+    rwa [show qM * qY * qX = qM * qX * qY by ring] at this
+  · have := hY.nat_mul_smul (qM * qX)
+    rwa [show qM * qX * qY = qM * qX * qY from rfl] at this
+
+/-- **Rational splitting (Corollary 1, step 6 endpoint).** A taut rational
+filling `M` of a sum `X + Y` (with `X` supported on `A`, `Y` on `B`, both cycles,
+and a small intersection) splits along the predicate `· ⊆ A` into a taut filling
+of `X` and a taut filling of `Y`.  Proved by clearing denominators to the
+committed integer endpoint `IsTaut.splits_full` and dividing back. -/
+theorem IsQTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 2 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : QChain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : Qbdry X = 0) (hYc : Qbdry Y = 0)
+    {M : QChain V} (hMt : IsQTaut M) (hM1 : Qbdry M = X + Y) :
+    Qbdry (M.filter fun t => t ⊆ A) = X ∧ Qbdry (M.filter fun t => ¬ t ⊆ A) = Y ∧
+    IsQTaut (M.filter fun t => t ⊆ A) ∧ IsQTaut (M.filter fun t => ¬ t ⊆ A) ∧
+    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+  classical
+  obtain ⟨q, hq, hMint, hXint, hYint⟩ := exists_nat_smul_integral_three M X Y
+  have hqQ : (q : ℚ) ≠ 0 := by exact_mod_cast hq.ne'
+  set K : Chain V := QChain.toInt ((q : ℚ) • M) hMint with hKdef
+  set KX : Chain V := QChain.toInt ((q : ℚ) • X) hXint with hKXdef
+  set KY : Chain V := QChain.toInt ((q : ℚ) • Y) hYint with hKYdef
+  have hKM : intToQChain K = (q : ℚ) • M := intToQChain_toInt _ hMint
+  have hKX : intToQChain KX = (q : ℚ) • X := intToQChain_toInt _ hXint
+  have hKY : intToQChain KY = (q : ℚ) • Y := intToQChain_toInt _ hYint
+/-- **Rational additivity of the filling volume (Corollary 1, final endpoint).**
+For almost-disjoint cycles `X` (supported on `A`) and `Y` (supported on `B`),
+the rational filling volume is additive: `Qvol (X + Y) = Qvol X + Qvol Y`.
+
+Proved by antisymmetry.  The `≤` direction is inf-subadditivity (any pair of
+fillings of `X` and `Y` sums to a filling of `X + Y`).  The `≥` direction clears
+denominators to the committed integer endpoint `Zvol_add_of_almost_disjoint_full`
+and divides back. -/
+theorem Qvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+    {A B : Finset V} {n : ℕ} (hn : 1 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+    {X Y : QChain V}
+    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+    (hXc : Qbdry X = 0) (hYc : Qbdry Y = 0) :
+    Qvol (X + Y) = Qvol X + Qvol Y := by
+  classical
+  have hXYc : Qbdry (X + Y) = 0 := by rw [map_add, hXc, hYc, add_zero]
+
+exec
+/bin/zsh -lc 'rg -n "rational|flag|NoTaboo|not Lean-proven|PL-ball|IsQTaut|taut_filling_is_flagComplex|cor:rational|def:flag|thm:flag|lem:notaboo|status" text/tautxy/tautC1.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+43:\emph{add} (\S\ref{sec:split}), with a rational analogue (Corollary~\ref{cor:rational});
+47:\item[(3)] the same filling is a \emph{flag complex} (\S\ref{sec:flag}).
+49:Almost-disjoint splitting is the engine; the stickerball and flag-complex theorems are
+51:identifiers, listed with their status in \S\ref{sec:status}; everything labelled a theorem or
+54:explicitly and flagged in the text as ``not Lean-proven here'' (\S\ref{sec:status}--\ref{sec:classical}).
+284:\subsection*{The rational corollary}
+286:The integer theory transfers to rational chains. A \emph{rational chain} is a finitely supported
+289:$\Qvol(X)=\inf\{\Qnrm M:\bd M=X\}$ are real-valued. The Lean notion of rational tautness is
+290:\emph{order-optimal}: $M$ is \code{IsQTaut} if $\Qnrm M\le\Qnrm N$ for \emph{every} rational
+295:\begin{corollary}[Rational additivity and splitting]\label{cor:rational}
+296:Let $X,Y$ be rational cycles, AlmostDisjoint over $(A,B)$ (the same hypothesis bundle as
+301:\item[\rm(ii)] If $n\ge 2$ and $M$ is an order-optimal (\code{IsQTaut}) rational filling of
+303:(\code{IsQTaut.splits\_full}).
+308:Clearing denominators, a rational chain scales by some $q\in\mathbb N$ to an integer chain
+311:dividing back by $q$ gives the rational statements; order-optimality transfers because $\Qnrm$ is
+545:\section{Taut fillings are flag complexes}\label{sec:flag}
+547:A simplicial complex is a \emph{flag complex} when every clique of its $1$-skeleton already
+551:\begin{definition}[Simplex, clique, flag complex]\label{def:flag}
+555:(\code{CliqueInOneSkeleton}). Then $\tau$ is a \emph{flag complex} (\code{IsFlagComplex}) if
+559:\begin{theorem}[Flag complex]\label{thm:flag}
+561:filling with $\bd M=X$. Then the tetrahedra of $M$ form a flag complex
+562:(\code{taut\_filling\_is\_flagComplex}). \emph{Simpliciality is not assumed}: the public endpoint
+568:\begin{lemma}[No taboo $\Rightarrow$ flag]\label{lem:notaboo}
+571:if they carry all ten edges. If $\tau$ has none of the three, it is a flag complex
+572:(\code{NoTaboo.to\_flag}): a clique of size $0,1,2$ is a simplex outright, size $3$ or $4$ would
+576:\begin{proof}[Proof of Theorem~\ref{thm:flag}]
+577:By Lemma~\ref{lem:notaboo} it suffices to rule out the three taboos for a taut filling.
+596:substitute is what is Lean-proven. The internal lemmas (\code{theorem4\_flag},
+598:their own induction --- but the public endpoint \code{taut\_filling\_is\_flagComplex} supplies it
+599:from Theorem~\ref{thm:simpl}, so the flag-complex theorem itself carries \emph{no} simpliciality
+605:\section{Lean correspondence and status}\label{sec:status}
+624:Thm~\ref{thm:flag} (flag complex) & \code{taut\_filling\_is\_flagComplex} & fully proved\\
+625:Cor~\ref{cor:rational}(i) (rational additivity) & \code{Qvol\_add\_of\_almost\_disjoint\_full} & fully proved\\
+626:Cor~\ref{cor:rational}(ii) (rational splitting) & \code{IsQTaut.splits\_full} & fully proved\\
+671:Bj\"orner. This bridge is \textbf{not Lean-proven here}: no theorem from \code{IsStickerball} to
+
+codex
+The rational endpoint text is mostly aligned: it uses `IsQTaut` as order-optimal and the thresholds match the Lean signatures. I’m checking whether the flag proof prose quietly adds hypotheses or changes the K5 argument.
+exec
+/bin/zsh -lc "nl -ba text/tautxy/tautC1.tex | sed -n '30,56p;284,314p;545,604p;618,628p;664,674p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem4.lean | sed -n '26,62p;210,292p;1468,1514p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    30	\large What the Lean development \code{lean/Taut} proves}
+    31	\author{}
+    32	\date{}
+    33	
+    34	\begin{document}
+    35	\maketitle
+    36	
+    37	\noindent
+    38	This document states, as ordinary mathematics, \emph{exactly} what the Lean development
+    39	\code{lean/Taut} proves about taut fillings --- no strengthening inferred from prose. The
+    40	results are:
+    41	\begin{itemize}
+    42	\item[(1)] taut fillings of almost-disjoint cycles \emph{split}, and their filling volumes
+    43	\emph{add} (\S\ref{sec:split}), with a rational analogue (Corollary~\ref{cor:rational});
+    44	\item[(2)] a taut filling of a combinatorial $2$-sphere is automatically simplicial, pure, and
+    45	triangle-bounded, and forms an \emph{AnyRootedStickerball} --- a clean-shellable complex that
+    46	can be shelled starting from any tetrahedron (\S\ref{sec:main});
+    47	\item[(3)] the same filling is a \emph{flag complex} (\S\ref{sec:flag}).
+    48	\end{itemize}
+    49	Almost-disjoint splitting is the engine; the stickerball and flag-complex theorems are
+    50	inductions on the size of the filling driven by it. Typewriter names are the exact Lean
+    51	identifiers, listed with their status in \S\ref{sec:status}; everything labelled a theorem or
+    52	lemma is fully formalized with no \code{sorry} and no project axioms. Where a notion is weaker
+    53	than its classical namesake, or a classical bridge is \emph{not} formalized, this is stated
+    54	explicitly and flagged in the text as ``not Lean-proven here'' (\S\ref{sec:status}--\ref{sec:classical}).
+    55	
+    56	%==========================================================================
+   284	\subsection*{The rational corollary}
+   285	
+   286	The integer theory transfers to rational chains. A \emph{rational chain} is a finitely supported
+   287	$M\colon\{\text{simplices}\}\to\Q$ (\code{QChain}), with the same boundary (\code{Qbdry}) and
+   288	cone (\code{Qcone}); its norm $\Qnrm M=\sum_s\card{M(s)}$ and filling volume
+   289	$\Qvol(X)=\inf\{\Qnrm M:\bd M=X\}$ are real-valued. The Lean notion of rational tautness is
+   290	\emph{order-optimal}: $M$ is \code{IsQTaut} if $\Qnrm M\le\Qnrm N$ for \emph{every} rational
+   291	chain $N$ with $\bd N=\bd M$ --- norm-minimal among co-boundary competitors. This is the exact
+   292	Lean definition; it does \emph{not} assert that the infimum $\Qvol$ is attained, so no
+   293	linear-programming or integrality theorem is needed.
+   294	
+   295	\begin{corollary}[Rational additivity and splitting]\label{cor:rational}
+   296	Let $X,Y$ be rational cycles, AlmostDisjoint over $(A,B)$ (the same hypothesis bundle as
+   297	Definition~\ref{def:ad}, now over $\Q$).
+   298	\begin{itemize}
+   299	\item[\rm(i)] If $n\ge 1$ then $\Qvol(X+Y)=\Qvol X+\Qvol Y$
+   300	(\code{Qvol\_add\_of\_almost\_disjoint\_full}).
+   301	\item[\rm(ii)] If $n\ge 2$ and $M$ is an order-optimal (\code{IsQTaut}) rational filling of
+   302	$X+Y$, then $M=M_A+M_B$ with $\bd M_A=X$ and $\bd M_B=Y$, and each piece is again order-optimal
+   303	(\code{IsQTaut.splits\_full}).
+   304	\end{itemize}
+   305	\end{corollary}
+   306	
+   307	\begin{proof}
+   308	Clearing denominators, a rational chain scales by some $q\in\mathbb N$ to an integer chain
+   309	(\code{exists\_nat\_smul\_integral\_three}). Scaling $M,X,Y$ by a common $q$, applying the integer
+   310	Theorem~\ref{thm:add} (for (i)) or Theorem~\ref{thm:split} (for (ii)) to the integer chains, and
+   311	dividing back by $q$ gives the rational statements; order-optimality transfers because $\Qnrm$ is
+   312	homogeneous under positive scaling.
+   313	\end{proof}
+   314	
+   545	\section{Taut fillings are flag complexes}\label{sec:flag}
+   546	
+   547	A simplicial complex is a \emph{flag complex} when every clique of its $1$-skeleton already
+   548	spans a face: if a set of vertices has all of its edges present, the whole set is a simplex. A
+   549	taut filling inherits this.
+   550	
+   551	\begin{definition}[Simplex, clique, flag complex]\label{def:flag}
+   552	For a set $\tau$ of tetrahedra, a vertex set $s$ is a \emph{simplex} of $\tau$ if $s=\varnothing$
+   553	or $s\subseteq t$ for some $t\in\tau$ (\code{SimplexOf}). It is a \emph{clique} of the
+   554	$1$-skeleton if $s\subseteq\operatorname{verts}\tau$ and every $2$-subset of $s$ is a simplex
+   555	(\code{CliqueInOneSkeleton}). Then $\tau$ is a \emph{flag complex} (\code{IsFlagComplex}) if
+   556	every clique is a simplex.
+   557	\end{definition}
+   558	
+   559	\begin{theorem}[Flag complex]\label{thm:flag}
+   560	Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$, and $M$ a taut
+   561	filling with $\bd M=X$. Then the tetrahedra of $M$ form a flag complex
+   562	(\code{taut\_filling\_is\_flagComplex}). \emph{Simpliciality is not assumed}: the public endpoint
+   563	derives it internally from Theorem~\ref{thm:simpl}, exactly as the stickerball endpoint does.
+   564	\end{theorem}
+   565	
+   566	The proof isolates three forbidden ``taboo'' configurations and rules each out.
+   567	
+   568	\begin{lemma}[No taboo $\Rightarrow$ flag]\label{lem:notaboo}
+   569	Call three vertices an \emph{empty $K_3$} if they carry all their edges yet do not span a
+   570	simplex; four vertices an \emph{empty $K_4$} likewise; and five vertices a \emph{$K_5$ of edges}
+   571	if they carry all ten edges. If $\tau$ has none of the three, it is a flag complex
+   572	(\code{NoTaboo.to\_flag}): a clique of size $0,1,2$ is a simplex outright, size $3$ or $4$ would
+   573	be an empty $K_3$ or $K_4$, and size $\ge 5$ contains a $K_5$ of edges.
+   574	\end{lemma}
+   575	
+   576	\begin{proof}[Proof of Theorem~\ref{thm:flag}]
+   577	By Lemma~\ref{lem:notaboo} it suffices to rule out the three taboos for a taut filling.
+   578	
+   579	\emph{No empty $K_3$ or $K_4$} (\code{no\_emptyK3K4\_of\_taut}): a strong induction on $\norm M$
+   580	by the same base / degree-$3$ / prime trichotomy as \S\ref{sec:main}. Each reduction (a
+   581	degree-$3$ peel or an eligible-tet flip) lands on a strictly smaller taut filling; an empty
+   582	$K_3$ or $K_4$ would persist into it, contradicting the inductive hypothesis.
+   583	
+   584	\emph{No $K_5$ of edges} (\code{no\_k5Clique\_of\_no\_emptyK4\_taut}). This is the combinatorial
+   585	substitute for the paper's ``$S^3\not\subseteq B^3$.'' Suppose five vertices $s$ carry all ten
+   586	edges. Because there is no empty $K_4$, some $4$-subset of $s$ is an actual tetrahedron of $M$
+   587	(\code{fourSubset\_mem\_support}), so the subchain $U=M\!\restriction_{\,\subseteq s}$ is
+   588	nonzero. But with triangle-boundedness (Theorem~\ref{thm:pm}) every triangle inside $s$ is
+   589	interior, so $\bd U=0$ (\code{bdry\_filter\_subset\_eq\_zero}); and a subchain of a taut chain is
+   590	taut (\code{IsTaut.subChain}), forcing $\norm U=\Zvol(0)=0$, i.e.\ $U=0$ --- a contradiction.
+   591	\end{proof}
+   592	
+   593	\begin{remark}
+   594	The $K_5$ step is where ``a taut filling has no nonzero closed subchain'' replaces the paper's
+   595	appeal to $S^3\not\subseteq B^3$; the project carries no topology, and this combinatorial
+   596	substitute is what is Lean-proven. The internal lemmas (\code{theorem4\_flag},
+   597	\code{no\_emptyK3K4\_of\_taut}) still take \code{SimplicialChain M} as data --- threaded through
+   598	their own induction --- but the public endpoint \code{taut\_filling\_is\_flagComplex} supplies it
+   599	from Theorem~\ref{thm:simpl}, so the flag-complex theorem itself carries \emph{no} simpliciality
+   600	hypothesis (its signature is \code{IsSphere2 $\sigma$ $\to$ UnitOn X $\sigma$ $\to$ $\bd$X${=}0$
+   601	$\to$ $\bd$M${=}$X $\to$ IsTaut M $\to$ IsFlagComplex M.support}).
+   602	\end{remark}
+   603	
+   604	%==========================================================================
+   618	Thm~\ref{thm:add} (additivity) & \code{Zvol\_add\_of\_almost\_disjoint\_full} & fully proved\\
+   619	Thm~\ref{thm:split} (splitting) & \code{IsTaut.splits\_full} & fully proved\\
+   620	Thm~\ref{thm:simpl} (simpliciality automatic) & \code{taut\_filling\_is\_simplicialChain} & fully proved\\
+   621	Thm~\ref{thm:pm} (pure, triangle-bounded) & \code{taut\_isPseudomanifold} & fully proved\\
+   622	Thm~\ref{thm:freely} (rooted at each tet) & \code{theorem3\_clean} & fully proved\\
+   623	Thm~\ref{thm:anyrooted} (AnyRootedStickerball) & \code{taut\_filling\_is\_anyrootedStickerball} & fully proved\\
+   624	Thm~\ref{thm:flag} (flag complex) & \code{taut\_filling\_is\_flagComplex} & fully proved\\
+   625	Cor~\ref{cor:rational}(i) (rational additivity) & \code{Qvol\_add\_of\_almost\_disjoint\_full} & fully proved\\
+   626	Cor~\ref{cor:rational}(ii) (rational splitting) & \code{IsQTaut.splits\_full} & fully proved\\
+   627	\hline
+   628	\end{tabular}
+   664	(triangle bound), edge-link connectedness, vertex-link connectedness, and nonempty boundary
+   665	are all \emph{Lean-proved} consequences of the conclusion; the corresponding corollaries are
+   666	\code{taut\_filling\_is\_clean3Complex} and \code{taut\_filling\_is\_shellable}.
+   667	
+   668	\paragraph{Missing bridge: stickerball $\Rightarrow$ topological/PL $3$-ball.}
+   669	The statement ``a clean-shellable normal $3$-pseudomanifold with nonempty boundary is
+   670	(PL-)homeomorphic to the $3$-ball'' is the classical shelling theorem of Danaraj--Klee /
+   671	Bj\"orner. This bridge is \textbf{not Lean-proven here}: no theorem from \code{IsStickerball} to
+   672	a topological or PL ball appears in the development (it is recorded only as a docstring remark).
+   673	Any classical reading of Theorem~\ref{thm:anyrooted} as ``$M$ triangulates a $3$-ball'' must
+   674	invoke that external theorem explicitly. In the present, fully formalized terms the conclusion is exactly:
+
+ succeeded in 0ms:
+    26	def SimplexOf (τ : Finset (Finset V)) (s : Finset V) : Prop :=
+    27	  s = ∅ ∨ ∃ t ∈ τ, s ⊆ t
+    28	
+    29	/-- `s` is a clique in the 1-skeleton of `τ`: its vertices are vertices of `τ` and each
+    30	of its edges (2-subsets) is a simplex of `τ`. -/
+    31	def CliqueInOneSkeleton (τ : Finset (Finset V)) (s : Finset V) : Prop :=
+    32	  s ⊆ vertsOf τ ∧ ∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e
+    33	
+    34	/-- `τ` is a *flag complex*: every clique of its 1-skeleton spans a simplex. -/
+    35	def IsFlagComplex (τ : Finset (Finset V)) : Prop :=
+    36	  ∀ s, CliqueInOneSkeleton τ s → SimplexOf τ s
+    37	
+    38	/-- An *empty triangle* (`K₃`): three vertices, every edge a simplex, yet not a simplex. -/
+    39	def HasEmptyK3 (τ : Finset (Finset V)) : Prop :=
+    40	  ∃ s : Finset V, s.card = 3 ∧ (∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e) ∧ ¬ SimplexOf τ s
+    41	
+    42	/-- An *empty tetrahedron* (`K₄`): four vertices, every edge a simplex, yet not a simplex. -/
+    43	def HasEmptyK4 (τ : Finset (Finset V)) : Prop :=
+    44	  ∃ s : Finset V, s.card = 4 ∧ (∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e) ∧ ¬ SimplexOf τ s
+    45	
+    46	/-- A `K₅` of edges: five vertices, every edge a simplex (no spanning condition). -/
+    47	def HasK5Clique (τ : Finset (Finset V)) : Prop :=
+    48	  ∃ s : Finset V, s.card = 5 ∧ (∀ e, e ⊆ s → e.card = 2 → SimplexOf τ e)
+    49	
+    50	/-- The three forbidden configurations are all absent. -/
+    51	def NoTaboo (τ : Finset (Finset V)) : Prop :=
+    52	  ¬ HasEmptyK3 τ ∧ ¬ HasEmptyK4 τ ∧ ¬ HasK5Clique τ
+    53	
+    54	/-! ## (1) No taboo ⟹ flag (purely combinatorial) -/
+    55	
+    56	/-- **No taboo configuration ⟹ flag complex.** Given a clique `s`, a case split on
+    57	`s.card` spans `s`: cards `0,1,2` directly; cards `3,4` would otherwise be an empty
+    58	`K₃`/`K₄`; card `≥ 5` produces a `5`-subclique, a forbidden `K₅`. -/
+    59	theorem NoTaboo.to_flag {τ : Finset (Finset V)} (h : NoTaboo τ) :
+    60	    IsFlagComplex τ := by
+    61	  obtain ⟨hK3, hK4, hK5⟩ := h
+    62	  intro s hs
+   210	
+   211	/-- **The sub-chain on the `5`-clique is closed.** `U := M ↾ {t | t ⊆ s}` carries
+   212	exactly the (five) tets of `s`.  At a triangle `f ⊆ s` it agrees with `M` on the
+   213	two bounding tets (both `⊆ s`), so `bdry U f = bdry M f = 0`; at every other face the
+   214	local sum is empty.  Hence `bdry U = 0`. -/
+   215	private lemma bdry_filter_subset_eq_zero {V : Type*} [LinearOrder V]
+   216	    {σ : Finset (Finset V)} {X M : Chain V} {s : Finset V}
+   217	    (hU : UnitOn X σ) (hMX : bdry M = X)
+   218	    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+   219	    (hPM : IsPseudomanifold M.support)
+   220	    (hK4 : ¬ HasEmptyK4 M.support)
+   221	    (hedges : ∀ e, e ⊆ s → e.card = 2 → SimplexOf M.support e)
+   222	    (hs5 : s.card = 5) :
+   223	    bdry (M.filter (fun t => t ⊆ s)) = 0 := by
+   224	  classical
+   225	  set U := M.filter (fun t => t ⊆ s) with hUdef
+   226	  have hUapp : ∀ t, U t = if t ⊆ s then M t else 0 := by
+   227	    intro t; rw [hUdef, Finsupp.filter_apply]
+   228	  have hUsupp : U.support ⊆ M.support := by
+   229	    rw [hUdef, Finsupp.support_filter]; exact Finset.filter_subset _ _
+   230	  ext f
+   231	  rw [Finsupp.coe_zero, Pi.zero_apply]
+   232	  by_cases hcase : f ⊆ s ∧ f.card = 3
+   233	  · obtain ⟨hfs, hf3⟩ := hcase
+   234	    have hcont : ∀ t ∈ M.support, f ⊆ t → t ⊆ s :=
+   235	      tet_containing_subset hPure hPM hK4 hedges hs5 hfs hf3
+   236	    have hsumU : bdry U f = ∑ t ∈ U.support.filter (fun t => f ⊆ t), U t * bdryGen t f :=
+   237	      bdry_eq_sum_facets
+   238	    have hsumM : bdry M f = ∑ t ∈ M.support.filter (fun t => f ⊆ t), M t * bdryGen t f :=
+   239	      bdry_eq_sum_facets
+   240	    have hfilteq : U.support.filter (fun t => f ⊆ t) =
+   241	        M.support.filter (fun t => f ⊆ t) := by
+   242	      apply Finset.ext; intro t
+   243	      simp only [Finset.mem_filter]
+   244	      constructor
+   245	      · rintro ⟨htU, hft⟩; exact ⟨hUsupp htU, hft⟩
+   246	      · rintro ⟨htM, hft⟩
+   247	        have htsub : t ⊆ s := hcont t htM hft
+   248	        have hUt : U t = M t := by rw [hUapp, if_pos htsub]
+   249	        refine ⟨?_, hft⟩
+   250	        rw [Finsupp.mem_support_iff, hUt]
+   251	        exact Finsupp.mem_support_iff.mp htM
+   252	    rw [hsumU, hfilteq]
+   253	    have hterms : ∀ t ∈ M.support.filter (fun t => f ⊆ t),
+   254	        U t * bdryGen t f = M t * bdryGen t f := by
+   255	      intro t ht
+   256	      rw [Finset.mem_filter] at ht
+   257	      have htsub : t ⊆ s := hcont t ht.1 ht.2
+   258	      rw [hUapp, if_pos htsub]
+   259	    rw [Finset.sum_congr rfl hterms, ← hsumM]
+   260	    exact bdry_eq_zero_of_triangle hU hMX hS hPure hPM hK4 hedges hs5 hfs hf3
+   261	  · rw [show bdry U f = ∑ t ∈ U.support.filter (fun t => f ⊆ t), U t * bdryGen t f from
+   262	      bdry_eq_sum_facets]
+   263	    refine Finset.sum_eq_zero fun t ht => ?_
+   264	    rw [Finset.mem_filter] at ht
+   265	    obtain ⟨htU, hft⟩ := ht
+   266	    have htM : t ∈ M.support := hUsupp htU
+   267	    have htsub : t ⊆ s := by
+   268	      have := hUapp t
+   269	      by_contra hns
+   270	      rw [if_neg hns] at this
+   271	      exact (Finsupp.mem_support_iff.mp htU) this
+   272	    have hfs : f ⊆ s := hft.trans htsub
+   273	    have hf3 : f.card ≠ 3 := fun h => hcase ⟨hfs, h⟩
+   274	    have hgen : bdryGen t f = 0 := by
+   275	      by_contra hg
+   276	      obtain ⟨w, hw, hfe⟩ := exists_facet_of_bdryGen_ne_zero hg
+   277	      have : f.card = 3 := by
+   278	        rw [hfe, Finset.card_erase_of_mem hw, hPure t htM]
+   279	      exact hf3 this
+   280	    rw [hgen, mul_zero]
+   281	
+   282	/-- **The K₅ obstruction.** A taut, simplicial, pure filling of a combinatorial
+   283	`2`-sphere `σ` whose support has no empty `K₄` has no `K₅` of edges either.  A `K₅` of
+   284	edges `s` would make the sub-chain `U := M ↾ {t | t ⊆ s}` closed
+   285	(`bdry_filter_subset_eq_zero`); Proposition 1 (`IsTaut.subChain`) makes `U` taut, so
+   286	`nrm U = Zvol 0 = 0` forces `U = 0` — but `U` carries a tet of `s`. -/
+   287	theorem no_k5Clique_of_no_emptyK4_taut
+   288	    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+   289	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+   290	    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+   291	    (hK4 : ¬ HasEmptyK4 M.support) : ¬ HasK5Clique M.support := by
+   292	  classical
+  1468	        (simplicialChain_removeTet hS)).2 hR
+  1469	  exact ⟨hNoK3, hNoK4⟩
+  1470	
+  1471	/-! ## (6) The induction and the Theorem-4 endpoint -/
+  1472	
+  1473	/-- **No empty `K₃`/`K₄` in a taut filling of a 2-sphere.** Strong induction on `nrm M`, mirroring
+  1474	`taut_isPseudomanifold`: base case (`≤ 4` vertices) by `base_no_emptyK3K4`; a degree-3 vertex by
+  1475	`deg3_no_emptyK3K4`; otherwise by `prime_no_emptyK3K4`. -/
+  1476	theorem no_emptyK3K4_of_taut {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+  1477	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+  1478	    (hS : SimplicialChain M) : ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support := by
+  1479	  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+  1480	      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+  1481	      ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support by
+  1482	    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+  1483	  intro N
+  1484	  induction N using Nat.strong_induction_on with
+  1485	  | _ N IH =>
+  1486	    intro σ X M hN hσ hU hXc hMX hT hS
+  1487	    by_cases hv : (vertsOf σ).card ≤ 4
+  1488	    · exact base_no_emptyK3K4 hσ hU hMX hT hv
+  1489	    · push_neg at hv
+  1490	      by_cases hd3 : HasDegree3Vertex σ
+  1491	      · refine deg3_no_emptyK3K4 σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+  1492	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+  1493	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+  1494	      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+  1495	        refine prime_no_emptyK3K4 σ X M hσ hU hXc hMX hT hS hno3 ?_
+  1496	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+  1497	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+  1498	
+  1499	/-- **Theorem 4 (the flag-complex theorem).** Any taut filling `M` of a combinatorial 2-sphere `σ` is a
+  1500	flag complex: every clique of its 1-skeleton spans a simplex.  Combines `no_emptyK3K4_of_taut` (the
+  1501	minimal-counterexample / edge-flip induction) with `theorem4_flag_from_no_emptyK3K4` (which adds the
+  1502	`K₅` obstruction). -/
+  1503	theorem theorem4_flag {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+  1504	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+  1505	    (hS : SimplicialChain M) : IsFlagComplex M.support :=
+  1506	  let ⟨hK3, hK4⟩ := no_emptyK3K4_of_taut hσ hU hXc hMX hT hS
+  1507	  theorem4_flag_from_no_emptyK3K4 hσ hU hXc hMX hT hS hK3 hK4
+  1508	
+  1509	/-- **Public endpoint (mathematically named): a taut filling of a combinatorial 2-sphere is a flag
+  1510	complex** — every clique of its 1-skeleton spans a simplex.  *No `SimplicialChain` hypothesis*: like
+  1511	the stickerball endpoint `taut_filling_is_anyrootedStickerball`, simpliciality is **derived** from
+  1512	tautness via the bridge `taut_filling_is_simplicialChain` and fed to the internal hS-taking
+  1513	`theorem4_flag`. -/
+  1514	theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Corollary1.lean | sed -n '48,52p;328,356p;596,604p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    48	/-- `M` is order-optimal, NOT `Qnrm = Qvol` — this avoids needing rational
+    49	minimisers to exist. -/
+    50	def IsQTaut (M : QChain V) : Prop := ∀ N : QChain V, Qbdry N = Qbdry M → Qnrm M ≤ Qnrm N
+    51	
+    52	def QChain.IsIntegral (M : QChain V) : Prop := ∀ s, ∃ z : ℤ, M s = (z : ℚ)
+   328	lemma exists_nat_smul_integral_three (M X Y : QChain V) :
+   329	    ∃ q : ℕ, 0 < q ∧ QChain.IsIntegral ((q : ℚ) • M) ∧
+   330	      QChain.IsIntegral ((q : ℚ) • X) ∧ QChain.IsIntegral ((q : ℚ) • Y) := by
+   331	  obtain ⟨qM, hqM, hM⟩ := exists_nat_smul_integral M
+   332	  obtain ⟨qX, hqX, hX⟩ := exists_nat_smul_integral X
+   333	  obtain ⟨qY, hqY, hY⟩ := exists_nat_smul_integral Y
+   334	  refine ⟨qM * qX * qY, by positivity, ?_, ?_, ?_⟩
+   335	  · have := hM.nat_mul_smul (qX * qY)
+   336	    rwa [show qX * qY * qM = qM * qX * qY by ring] at this
+   337	  · have := hX.nat_mul_smul (qM * qY)
+   338	    rwa [show qM * qY * qX = qM * qX * qY by ring] at this
+   339	  · have := hY.nat_mul_smul (qM * qX)
+   340	    rwa [show qM * qX * qY = qM * qX * qY from rfl] at this
+   341	
+   342	/-- **Rational splitting (Corollary 1, step 6 endpoint).** A taut rational
+   343	filling `M` of a sum `X + Y` (with `X` supported on `A`, `Y` on `B`, both cycles,
+   344	and a small intersection) splits along the predicate `· ⊆ A` into a taut filling
+   345	of `X` and a taut filling of `Y`.  Proved by clearing denominators to the
+   346	committed integer endpoint `IsTaut.splits_full` and dividing back. -/
+   347	theorem IsQTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+   348	    {A B : Finset V} {n : ℕ} (hn : 2 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+   349	    {X Y : QChain V}
+   350	    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+   351	    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+   352	    (hXc : Qbdry X = 0) (hYc : Qbdry Y = 0)
+   353	    {M : QChain V} (hMt : IsQTaut M) (hM1 : Qbdry M = X + Y) :
+   354	    Qbdry (M.filter fun t => t ⊆ A) = X ∧ Qbdry (M.filter fun t => ¬ t ⊆ A) = Y ∧
+   355	    IsQTaut (M.filter fun t => t ⊆ A) ∧ IsQTaut (M.filter fun t => ¬ t ⊆ A) ∧
+   356	    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+   596	theorem Qvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+   597	    {A B : Finset V} {n : ℕ} (hn : 1 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+   598	    {X Y : QChain V}
+   599	    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+   600	    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+   601	    (hXc : Qbdry X = 0) (hYc : Qbdry Y = 0) :
+   602	    Qvol (X + Y) = Qvol X + Qvol Y := by
+   603	  classical
+   604	  have hXYc : Qbdry (X + Y) = 0 := by rw [map_add, hXc, hYc, add_zero]
+
+exec
+/bin/zsh -lc 'rg -n "theorem4_flag_from_no_emptyK3K4|bdry_filter_subset_eq_zero|fourSubset_mem_support|IsTaut.subChain|Zvol_add_of_almost_disjoint_full|theorem IsTaut.splits_full|def IsTaut|def Zvol|exists_fill_eq_Zvol" lean/Taut lean' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Corollary1.lean:594:denominators to the committed integer endpoint `Zvol_add_of_almost_disjoint_full`
+lean/Taut/Corollary1.lean:657:      Zvol_add_of_almost_disjoint_full hn hC hX' hY' hKXc hKYc
+lean/Taut/Zvol.lean:9:* Proposition 1 (`IsTaut.subChain`): sub-chains of taut chains are taut.
+lean/Taut/Zvol.lean:75:noncomputable def Zvol (X : Chain V) : ℕ :=
+lean/Taut/Zvol.lean:79:def IsTaut (M : Chain V) : Prop := nrm M = Zvol (bdry M)
+lean/Taut/Zvol.lean:98:theorem IsTaut.subChain {M U : Chain V} (hM : IsTaut M) (hU : SubChain U M) :
+lean/Taut/Theorem2.lean:367:lemma bdry_filter_subset_eq_zero_of_inter_card_two {X : Chain V} {A B : Finset V}
+lean/Taut/Corollary1.lean:594:denominators to the committed integer endpoint `Zvol_add_of_almost_disjoint_full`
+lean/Taut/Corollary1.lean:657:      Zvol_add_of_almost_disjoint_full hn hC hX' hY' hKXc hKYc
+lean/Taut/Zvol.lean:9:* Proposition 1 (`IsTaut.subChain`): sub-chains of taut chains are taut.
+lean/Taut/Zvol.lean:75:noncomputable def Zvol (X : Chain V) : ℕ :=
+lean/Taut/Zvol.lean:79:def IsTaut (M : Chain V) : Prop := nrm M = Zvol (bdry M)
+lean/Taut/Zvol.lean:98:theorem IsTaut.subChain {M U : Chain V} (hM : IsTaut M) (hU : SubChain U M) :
+lean/Taut/Theorem1.lean:325:lemma exists_fill_eq_Zvol {X : Chain V} (W : Chain V) (hW : bdry W = X) :
+lean/Taut/Theorem1.lean:368:  obtain ⟨Mx, hMx, hMxn⟩ := exists_fill_eq_Zvol (cone p X) (bdry_cone_of_closed hXc)
+lean/Taut/Theorem1.lean:369:  obtain ⟨My, hMy, hMyn⟩ := exists_fill_eq_Zvol (cone p Y) (bdry_cone_of_closed hYc)
+lean/Taut/Theorem1.lean:371:    exists_fill_eq_Zvol (cone p (X + Y)) (bdry_cone_of_closed hXYc)
+lean/Taut/Theorem1.lean:430:theorem Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+lean/Taut/Theorem4.lean:83:private lemma fourSubset_mem_support {V : Type*} [LinearOrder V]
+lean/Taut/Theorem4.lean:122:    fourSubset_mem_support hPure hK4 hedges hsuba hca
+lean/Taut/Theorem4.lean:124:    fourSubset_mem_support hPure hK4 hedges hsubb hcb
+lean/Taut/Theorem4.lean:215:private lemma bdry_filter_subset_eq_zero {V : Type*} [LinearOrder V]
+lean/Taut/Theorem4.lean:285:(`bdry_filter_subset_eq_zero`); Proposition 1 (`IsTaut.subChain`) makes `U` taut, so
+lean/Taut/Theorem4.lean:297:    bdry_filter_subset_eq_zero hU hMX hS hPure hPM hK4 hedges hs5
+lean/Taut/Theorem4.lean:305:  have hqM : q ∈ M.support := fourSubset_mem_support hPure hK4 hedges hqs hq4
+lean/Taut/Theorem4.lean:316:theorem theorem4_flag_from_no_emptyK3K4
+lean/Taut/Theorem4.lean:1501:minimal-counterexample / edge-flip induction) with `theorem4_flag_from_no_emptyK3K4` (which adds the
+lean/Taut/Theorem4.lean:1507:  theorem4_flag_from_no_emptyK3K4 hσ hU hXc hMX hT hS hK3 hK4
+lean/Taut/Theorem2.lean:367:lemma bdry_filter_subset_eq_zero_of_inter_card_two {X : Chain V} {A B : Finset V}
+lean/Taut/Theorem4.lean:83:private lemma fourSubset_mem_support {V : Type*} [LinearOrder V]
+lean/Taut/Theorem4.lean:122:    fourSubset_mem_support hPure hK4 hedges hsuba hca
+lean/Taut/Theorem4.lean:124:    fourSubset_mem_support hPure hK4 hedges hsubb hcb
+lean/Taut/Theorem4.lean:215:private lemma bdry_filter_subset_eq_zero {V : Type*} [LinearOrder V]
+lean/Taut/Theorem4.lean:285:(`bdry_filter_subset_eq_zero`); Proposition 1 (`IsTaut.subChain`) makes `U` taut, so
+lean/Taut/Theorem4.lean:297:    bdry_filter_subset_eq_zero hU hMX hS hPure hPM hK4 hedges hs5
+lean/Taut/Theorem4.lean:305:  have hqM : q ∈ M.support := fourSubset_mem_support hPure hK4 hedges hqs hq4
+lean/Taut/Theorem4.lean:316:theorem theorem4_flag_from_no_emptyK3K4
+lean/Taut/Theorem4.lean:1501:minimal-counterexample / edge-flip induction) with `theorem4_flag_from_no_emptyK3K4` (which adds the
+lean/Taut/Theorem4.lean:1507:  theorem4_flag_from_no_emptyK3K4 hσ hU hXc hMX hT hS hK3 hK4
+lean/Taut/Splitting.lean:510:theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+lean/Taut/Splitting.lean:510:theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+lean/Taut/Theorem1.lean:325:lemma exists_fill_eq_Zvol {X : Chain V} (W : Chain V) (hW : bdry W = X) :
+lean/Taut/Theorem1.lean:368:  obtain ⟨Mx, hMx, hMxn⟩ := exists_fill_eq_Zvol (cone p X) (bdry_cone_of_closed hXc)
+lean/Taut/Theorem1.lean:369:  obtain ⟨My, hMy, hMyn⟩ := exists_fill_eq_Zvol (cone p Y) (bdry_cone_of_closed hYc)
+lean/Taut/Theorem1.lean:371:    exists_fill_eq_Zvol (cone p (X + Y)) (bdry_cone_of_closed hXYc)
+lean/Taut/Theorem1.lean:430:theorem Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+lean/Taut/PrimeStep.lean:252:    exact bdry_filter_subset_eq_zero_of_inter_card_two (X := bdry M') (A := A) (B := B)
+lean/Taut/PrimeStep.lean:252:    exact bdry_filter_subset_eq_zero_of_inter_card_two (X := bdry M') (A := A) (B := B)
+lean/Taut/FlipGeom.lean:55:(`IsTaut.subChain`, Prop 1); eligibility/simpliciality are not needed. -/
+lean/Taut/FlipGeom.lean:55:(`IsTaut.subChain`, Prop 1); eligibility/simpliciality are not needed. -/
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem4.lean | sed -n '292,330p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   292	  classical
+   293	  rintro ⟨s, hs5, hedges⟩
+   294	  have hPM : IsPseudomanifold M.support := taut_isPseudomanifold hσ hU hXc hMX hT hS
+   295	  set U := M.filter (fun t => t ⊆ s) with hUdef
+   296	  have hbU : bdry U = 0 :=
+   297	    bdry_filter_subset_eq_zero hU hMX hS hPure hPM hK4 hedges hs5
+   298	  have hsub : SubChain U M := subChain_filter _ M
+   299	  have hTU : IsTaut U := hT.subChain hsub
+   300	  have hZ0 : Zvol (0 : Chain V) = 0 := Nat.le_zero.mp (by
+   301	    simpa using Zvol_le (show bdry (0 : Chain V) = 0 by simp))
+   302	  have hnrmU : nrm U = 0 := by rw [IsTaut] at hTU; rw [hTU, hbU, hZ0]
+   303	  have hU0 : U = 0 := nrm_eq_zero_iff.mp hnrmU
+   304	  obtain ⟨q, hqs, hq4⟩ := Finset.exists_subset_card_eq (show 4 ≤ s.card by omega)
+   305	  have hqM : q ∈ M.support := fourSubset_mem_support hPure hK4 hedges hqs hq4
+   306	  have hUq : U q = M q := by rw [hUdef, Finsupp.filter_apply, if_pos hqs]
+   307	  have hMq : M q ≠ 0 := Finsupp.mem_support_iff.mp hqM
+   308	  rw [hU0] at hUq
+   309	  simp only [Finsupp.coe_zero, Pi.zero_apply] at hUq
+   310	  exact hMq hUq.symm
+   311	
+   312	/-- Once `HasEmptyK3` / `HasEmptyK4` are ruled out for a taut filling `M` of a 2-sphere `σ`, the
+   313	support is a flag complex.  Composes `NoTaboo.to_flag` with `no_k5Clique_of_no_emptyK4_taut`
+   314	(which supplies `¬ HasK5Clique` from `¬ HasEmptyK4`), deriving purity from
+   315	`aleph_base_taut_support_card4_subset_verts`. -/
+   316	theorem theorem4_flag_from_no_emptyK3K4
+   317	    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+   318	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+   319	    (hS : SimplicialChain M)
+   320	    (hK3 : ¬ HasEmptyK3 M.support) (hK4 : ¬ HasEmptyK4 M.support) :
+   321	    IsFlagComplex M.support := by
+   322	  have hPure : ∀ t ∈ M.support, t.card = 4 := fun t ht =>
+   323	    (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
+   324	  have hK5 : ¬ HasK5Clique M.support :=
+   325	    no_k5Clique_of_no_emptyK4_taut hσ hU hXc hMX hT hS hPure hK4
+   326	  exact NoTaboo.to_flag ⟨hK3, hK4, hK5⟩
+   327	
+   328	/-! ### Persistence of the taboo configurations under removing a tet
+   329	
+   330	In the minimal-counterexample induction (`no_emptyK3K4_of_taut`) we remove a tet — a degree-3
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem1.lean | sed -n '430,443p' && nl -ba lean/Taut/Splitting.lean | sed -n '510,523p' && nl -ba lean/Taut/Zvol.lean | sed -n '75,104p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   430	theorem Zvol_add_of_almost_disjoint_full {V : Type*} [LinearOrder V] [Infinite V]
+   431	    {A B : Finset V} {n : ℕ} (hn : 1 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+   432	    {X Y : Chain V}
+   433	    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+   434	    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+   435	    (hXc : bdry X = 0) (hYc : bdry Y = 0) :
+   436	    Zvol (X + Y) = Zvol X + Zvol Y := by
+   437	  classical
+   438	  by_cases h2 : 2 ≤ (A ∩ B).card
+   439	  · obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.mp h2
+   440	    exact Zvol_add_of_almost_disjoint hn hp hq hpq hC hX hY hXc hYc
+   441	  · push_neg at h2
+   442	    -- `|A ∩ B| ≤ 1`: enlarge both sides by `F`, a fresh set capping the
+   443	    -- intersection to exactly two shared vertices.
+   510	theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
+   511	    {A B : Finset V} {n : ℕ} (hn : 2 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
+   512	    {X Y : Chain V}
+   513	    (hX : ∀ s ∈ X.support, s ⊆ A ∧ s.card = n + 1)
+   514	    (hY : ∀ s ∈ Y.support, s ⊆ B ∧ s.card = n + 1)
+   515	    (hXc : bdry X = 0) (hYc : bdry Y = 0)
+   516	    {M : Chain V} (hMt : IsTaut M) (hM1 : bdry M = X + Y) :
+   517	    bdry (M.filter (fun t => t ⊆ A)) = X ∧
+   518	    bdry (M.filter (fun t => ¬ t ⊆ A)) = Y ∧
+   519	    IsTaut (M.filter (fun t => t ⊆ A)) ∧
+   520	    IsTaut (M.filter (fun t => ¬ t ⊆ A)) ∧
+   521	    M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
+   522	  classical
+   523	  by_cases h2 : 2 ≤ (A ∩ B).card
+    75	noncomputable def Zvol (X : Chain V) : ℕ :=
+    76	  sInf {n | ∃ M : Chain V, bdry M = X ∧ nrm M = n}
+    77	
+    78	/-- `M` is an optimal filling of its own boundary. -/
+    79	def IsTaut (M : Chain V) : Prop := nrm M = Zvol (bdry M)
+    80	
+    81	lemma Zvol_le {X M : Chain V} (h : bdry M = X) : Zvol X ≤ nrm M :=
+    82	  Nat.sInf_le ⟨M, h, rfl⟩
+    83	
+    84	lemma bdry_cone_of_closed {x : V} {X : Chain V} (hX : bdry X = 0) :
+    85	    bdry (cone x X) = X := by
+    86	  have h := bdry_cone_add_cone_bdry x X
+    87	  rw [hX, map_zero, add_zero] at h
+    88	  exact h
+    89	
+    90	lemma exists_optimal_fill (W : Chain V) :
+    91	    ∃ M : Chain V, bdry M = bdry W ∧ nrm M = Zvol (bdry W) := by
+    92	  have hne : {n | ∃ M : Chain V, bdry M = bdry W ∧ nrm M = n}.Nonempty :=
+    93	    ⟨nrm W, W, rfl, rfl⟩
+    94	  obtain ⟨M, hM, hn⟩ := Nat.sInf_mem hne
+    95	  exact ⟨M, hM, hn⟩
+    96	
+    97	/-- Proposition 1 (subtaut): a sub-chain of a taut chain is taut. -/
+    98	theorem IsTaut.subChain {M U : Chain V} (hM : IsTaut M) (hU : SubChain U M) :
+    99	    IsTaut U := by
+   100	  obtain ⟨W, hW, hWn⟩ := exists_optimal_fill U
+   101	  have hbd : bdry (M - U + W) = bdry M := by
+   102	    rw [map_add, map_sub, hW]
+   103	    abel
+   104	  have hle : Zvol (bdry M) ≤ nrm (M - U) + nrm W :=
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem4.lean | sed -n '120,210p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "rg -n \"not Lean-proven|triangulates|PL|homeomorphic|ball|S\\"'^3|S'"\\"'$'"\\"'^3|classical" text/tautxy/tautC1.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   120	  have hsubb : insert b f ⊆ s := Finset.insert_subset hbs hfs
+   121	  have hmemA : insert a f ∈ M.support :=
+   122	    fourSubset_mem_support hPure hK4 hedges hsuba hca
+   123	  have hmemB : insert b f ∈ M.support :=
+   124	    fourSubset_mem_support hPure hK4 hedges hsubb hcb
+   125	  have hneq : insert a f ≠ insert b f := by
+   126	    intro heq
+   127	    have : a ∈ insert b f := heq ▸ Finset.mem_insert_self a f
+   128	    rcases Finset.mem_insert.mp this with h | h
+   129	    · exact hab h
+   130	    · exact haf h
+   131	  exact ⟨a, b, has, hbs, haf, hbf, hab, hmemA, hmemB, hneq⟩
+   132	
+   133	/-- For a triangle `f ⊆ s` (card 3) of the `5`-clique `s`, every tet of `M.support`
+   134	that contains `f` is `⊆ s`.  `f` lies in two tets `insert a f, insert b f` both `⊆ s`,
+   135	and pseudomanifoldness (`hPM`) caps the count at two. -/
+   136	private lemma tet_containing_subset {V : Type*} [LinearOrder V]
+   137	    {M : Chain V} {s f : Finset V}
+   138	    (hPure : ∀ t ∈ M.support, t.card = 4)
+   139	    (hPM : IsPseudomanifold M.support)
+   140	    (hK4 : ¬ HasEmptyK4 M.support)
+   141	    (hedges : ∀ e, e ⊆ s → e.card = 2 → SimplexOf M.support e)
+   142	    (hs5 : s.card = 5) (hfs : f ⊆ s) (hf3 : f.card = 3) :
+   143	    ∀ t ∈ M.support, f ⊆ t → t ⊆ s := by
+   144	  obtain ⟨a, b, has, hbs, _, _, _, hmemA, hmemB, hneq⟩ :=
+   145	    two_tets_of_triangle hPure hK4 hedges hs5 hfs hf3
+   146	  have hsuba : insert a f ⊆ s := Finset.insert_subset has hfs
+   147	  have hsubb : insert b f ⊆ s := Finset.insert_subset hbs hfs
+   148	  set F := M.support.filter (fun t => f ⊆ t) with hF
+   149	  have hAF : insert a f ∈ F := by
+   150	    rw [hF, Finset.mem_filter]; exact ⟨hmemA, Finset.subset_insert a f⟩
+   151	  have hBF : insert b f ∈ F := by
+   152	    rw [hF, Finset.mem_filter]; exact ⟨hmemB, Finset.subset_insert b f⟩
+   153	  have hpairsub : ({insert a f, insert b f} : Finset (Finset V)) ⊆ F := by
+   154	    intro x hx
+   155	    rcases Finset.mem_insert.mp hx with h | h
+   156	    · rw [h]; exact hAF
+   157	    · rw [Finset.mem_singleton.mp h]; exact hBF
+   158	  have hpaircard : ({insert a f, insert b f} : Finset (Finset V)).card = 2 := by
+   159	    rw [Finset.card_insert_of_notMem (by simp [hneq]), Finset.card_singleton]
+   160	  have hFcard : F.card ≤ 2 := hPM f hf3
+   161	  have hFeq : F = ({insert a f, insert b f} : Finset (Finset V)) :=
+   162	    (Finset.eq_of_subset_of_card_le hpairsub (by rw [hpaircard]; exact hFcard)).symm
+   163	  intro t htM hft
+   164	  have htF : t ∈ F := by rw [hF, Finset.mem_filter]; exact ⟨htM, hft⟩
+   165	  rw [hFeq] at htF
+   166	  rcases Finset.mem_insert.mp htF with h | h
+   167	  · rw [h]; exact hsuba
+   168	  · rw [Finset.mem_singleton.mp h]; exact hsubb
+   169	
+   170	/-- **A triangle inside the `5`-clique is a cancelled (non-boundary) face.** Having
+   171	two bounding tets makes `faceCount = 2`; a `±1` boundary value is impossible there
+   172	(`faceCount_ne_two_of_boundary`), and `UnitOn X σ` then forces the boundary
+   173	coefficient to `0` (the face is off `σ`, so off `X.support`). -/
+   174	private lemma bdry_eq_zero_of_triangle {V : Type*} [LinearOrder V]
+   175	    {σ : Finset (Finset V)} {X M : Chain V} {s f : Finset V}
+   176	    (hU : UnitOn X σ) (hMX : bdry M = X)
+   177	    (hS : SimplicialChain M) (hPure : ∀ t ∈ M.support, t.card = 4)
+   178	    (hPM : IsPseudomanifold M.support)
+   179	    (hK4 : ¬ HasEmptyK4 M.support)
+   180	    (hedges : ∀ e, e ⊆ s → e.card = 2 → SimplexOf M.support e)
+   181	    (hs5 : s.card = 5) (hfs : f ⊆ s) (hf3 : f.card = 3) :
+   182	    bdry M f = 0 := by
+   183	  obtain ⟨a, b, _, _, _, _, _, hmemA, hmemB, hneq⟩ :=
+   184	    two_tets_of_triangle hPure hK4 hedges hs5 hfs hf3
+   185	  have hfc2 : faceCount M.support f = 2 := by
+   186	    have hpairsub : ({insert a f, insert b f} : Finset (Finset V)) ⊆
+   187	        M.support.filter (fun t => f ⊆ t) := by
+   188	      intro x hx
+   189	      rcases Finset.mem_insert.mp hx with h | h
+   190	      · rw [h, Finset.mem_filter]; exact ⟨hmemA, Finset.subset_insert a f⟩
+   191	      · rw [Finset.mem_singleton.mp h, Finset.mem_filter]
+   192	        exact ⟨hmemB, Finset.subset_insert b f⟩
+   193	    have hpaircard : ({insert a f, insert b f} : Finset (Finset V)).card = 2 := by
+   194	      rw [Finset.card_insert_of_notMem (by simp [hneq]), Finset.card_singleton]
+   195	    have hge : 2 ≤ faceCount M.support f := by
+   196	      unfold faceCount; rw [← hpaircard]; exact Finset.card_le_card hpairsub
+   197	    have hle : faceCount M.support f ≤ 2 := hPM f hf3
+   198	    omega
+   199	  have hne : bdry M f ≠ 1 ∧ bdry M f ≠ -1 := by
+   200	    constructor <;> intro hb
+   201	    · exact faceCount_ne_two_of_boundary hS hPure hf3 (Or.inl hb) hfc2
+   202	    · exact faceCount_ne_two_of_boundary hS hPure hf3 (Or.inr hb) hfc2
+   203	  have hXf : X f = 0 := by
+   204	    by_contra hXf0
+   205	    have hfσ : f ∈ σ := hU.1 ▸ Finsupp.mem_support_iff.mpr hXf0
+   206	    rcases hU.2 f hfσ with h | h
+   207	    · exact hne.1 (by rw [hMX, h])
+   208	    · exact hne.2 (by rw [hMX, h])
+   209	  rw [hMX]; exact hXf
+   210	
+
+ succeeded in 0ms:
+29:\title{Splitting, Stickerballs, and Flag Complexes for Taut Fillings\\[2pt]
+45:triangle-bounded, and forms an \emph{AnyRootedStickerball} --- a clean-shellable complex that
+49:Almost-disjoint splitting is the engine; the stickerball and flag-complex theorems are
+53:than its classical namesake, or a classical bridge is \emph{not} formalized, this is stated
+54:explicitly and flagged in the text as ``not Lean-proven here'' (\S\ref{sec:status}--\ref{sec:classical}).
+117:For the stickerball theorem we build complexes of tetrahedra one at a time. Let $\tau$ be a
+147:\begin{definition}[Stickerball; root; RootedStickerball; AnyRootedStickerball]\label{def:sb}
+148:A set $\tau$ of tetrahedra is a \emph{stickerball} with boundary $B$ if it admits a clean
+149:shelling ending at $B$ and $B\neq\varnothing$ (\code{IsStickerball}).
+150:A \emph{root} of a stickerball is a tetrahedron $t\in\tau$ at which some clean shelling can
+151:\emph{begin}. ``Rooted at $t$'' (\emph{RootedStickerball}) is not a standalone Lean predicate; it
+152:names the existence clause for that $t$ inside \code{FreelyCleanShellable}. The stickerball is an
+153:\emph{AnyRootedStickerball} if every tetrahedron of $\tau$ is a root: in Lean,
+154:\code{IsAnyrootedStickerball} $=$ \code{IsStickerball} together with \code{FreelyCleanShellable},
+159:``RootedStickerball'' and ``AnyRootedStickerball'' are stated in Lean-backed terms. The
+160:clean shelling certifies normality (\S\ref{sec:classical}); we do not silently upgrade
+161:``stickerball'' to ``shellable ball'' or ``$3$-ball'' --- the proved bridge and the missing
+162:bridge are stated in \S\ref{sec:classical}.
+316:\section{Taut fillings are AnyRootedStickerballs}\label{sec:main}
+446:\emph{AnyRootedStickerball} with boundary $\sigma$
+447:(\code{taut\_filling\_is\_anyrootedStickerball}). \emph{Simpliciality is not assumed}: the
+483:induction $M'$ is an AnyRootedStickerball. Two facts let $T$ be glued cleanly: $\gamma$ is a boundary
+506:tetrahedra. By induction $M-e$ is an AnyRootedStickerball; re-gluing $e$ (two shared faces)
+514:By induction each is an AnyRootedStickerball; concatenate their clean shellings --- rooting
+527:boundary this is the AnyRootedStickerball conclusion. Each re-gluing above is a clean glue
+563:derives it internally from Theorem~\ref{thm:simpl}, exactly as the stickerball endpoint does.
+585:substitute for the paper's ``$S^3\not\subseteq B^3$.'' Suppose five vertices $s$ carry all ten
+595:appeal to $S^3\not\subseteq B^3$; the project carries no topology, and this combinatorial
+623:Thm~\ref{thm:anyrooted} (AnyRootedStickerball) & \code{taut\_filling\_is\_anyrootedStickerball} & fully proved\\
+631:\noindent\emph{Definitions weaker than their classical namesakes.}
+638:\S\ref{sec:classical}). Theorem~\ref{thm:pm} proves the triangle bound only.
+645:\section{Relation to the classical statement; remaining bridges}\label{sec:classical}
+648:(AnyRootedStickerball). Two questions separate this from a classical ``shellable normal
+649:$3$-ball'' statement.
+651:\paragraph{Proved bridge: AnyRootedStickerball $\Rightarrow$ normal $3$-pseudomanifold.}
+652:The development proves that a stickerball is a clean $3$-complex:
+654:\code{IsStickerball.isClean3Complex}\colon\quad
+655:\text{stickerball}\ \Longrightarrow\ \text{pure}\ \wedge\ \text{triangle-bounded}\ \wedge\
+659:(\code{IsAnyrootedStickerball.isClean3Complex} for the AnyRooted form). This is proved by
+668:\paragraph{Missing bridge: stickerball $\Rightarrow$ topological/PL $3$-ball.}
+670:(PL-)homeomorphic to the $3$-ball'' is the classical shelling theorem of Danaraj--Klee /
+671:Bj\"orner. This bridge is \textbf{not Lean-proven here}: no theorem from \code{IsStickerball} to
+672:a topological or PL ball appears in the development (it is recorded only as a docstring remark).
+673:Any classical reading of Theorem~\ref{thm:anyrooted} as ``$M$ triangulates a $3$-ball'' must
+676:AnyRootedStickerball --- a clean-shellable normal $3$-pseudomanifold, with boundary the given
+
+codex
+PASS
+
+Verdict: the new sections faithfully match the cited Lean endpoints. No strengthening found.
+
+Recommended patch shape: none required. Optional cosmetic edit only: in `text/tautxy/tautC1.tex:307-312`, split the rational proof sketch into additivity vs splitting to avoid mentioning `M` for part (i), but this is not a correctness blocker.
+
+Files to edit: none required.
+
+Local lemmas/endpoints checked:
+- Flag vocabulary: `SimplexOf`, `CliqueInOneSkeleton`, `IsFlagComplex`, taboo predicates at `lean/Taut/Theorem4.lean:26-52`.
+- `NoTaboo.to_flag`: `lean/Taut/Theorem4.lean:59`.
+- K5 closure: `bdry_filter_subset_eq_zero`, `fourSubset_mem_support`, `IsTaut.subChain`, `no_k5Clique_of_no_emptyK4_taut` at `lean/Taut/Theorem4.lean:83,215,287-310`; `IsTaut.subChain` at `lean/Taut/Zvol.lean:98`.
+- Flag endpoint: `theorem4_flag_from_no_emptyK3K4`, `theorem4_flag`, `taut_filling_is_flagComplex` at `lean/Taut/Theorem4.lean:316-326,1503-1514`.
+- Rational tautness and thresholds: `IsQTaut` at `lean/Taut/Corollary1.lean:50`; `IsQTaut.splits_full` at `lean/Taut/Corollary1.lean:347-356`; `Qvol_add_of_almost_disjoint_full` at `lean/Taut/Corollary1.lean:596-602`.
+
+Q1: yes. `def:flag`, `thm:flag`, `lem:notaboo`, the K5 contradiction, and the hS-free public signature match Lean. The K5 proof in `text/tautxy/tautC1.tex:584-590` is faithful to `Theorem4.lean:292-310`.
+
+Q2: yes. `IsQTaut` is correctly stated as order-optimal, not attainment of `Qvol`; the `n≥1` and `n≥2` thresholds match `Corollary1.lean:596-602` and `347-356`; no rational minimizer existence is claimed.
+
+Q3: no new overclaim found. The flag theorem is not described as triangulating a ball, and the `S^3 ⊄ B^3` replacement is explicitly combinatorial at `text/tautxy/tautC1.tex:584-596`.
+
+Q4: no missing “not Lean-proven here” tag found. The PL/topological ball bridge is correctly flagged at `text/tautxy/tautC1.tex:668-674`.
+
+Blockers: none.
+tokens used
+39,139
+PASS
+
+Verdict: the new sections faithfully match the cited Lean endpoints. No strengthening found.
+
+Recommended patch shape: none required. Optional cosmetic edit only: in `text/tautxy/tautC1.tex:307-312`, split the rational proof sketch into additivity vs splitting to avoid mentioning `M` for part (i), but this is not a correctness blocker.
+
+Files to edit: none required.
+
+Local lemmas/endpoints checked:
+- Flag vocabulary: `SimplexOf`, `CliqueInOneSkeleton`, `IsFlagComplex`, taboo predicates at `lean/Taut/Theorem4.lean:26-52`.
+- `NoTaboo.to_flag`: `lean/Taut/Theorem4.lean:59`.
+- K5 closure: `bdry_filter_subset_eq_zero`, `fourSubset_mem_support`, `IsTaut.subChain`, `no_k5Clique_of_no_emptyK4_taut` at `lean/Taut/Theorem4.lean:83,215,287-310`; `IsTaut.subChain` at `lean/Taut/Zvol.lean:98`.
+- Flag endpoint: `theorem4_flag_from_no_emptyK3K4`, `theorem4_flag`, `taut_filling_is_flagComplex` at `lean/Taut/Theorem4.lean:316-326,1503-1514`.
+- Rational tautness and thresholds: `IsQTaut` at `lean/Taut/Corollary1.lean:50`; `IsQTaut.splits_full` at `lean/Taut/Corollary1.lean:347-356`; `Qvol_add_of_almost_disjoint_full` at `lean/Taut/Corollary1.lean:596-602`.
+
+Q1: yes. `def:flag`, `thm:flag`, `lem:notaboo`, the K5 contradiction, and the hS-free public signature match Lean. The K5 proof in `text/tautxy/tautC1.tex:584-590` is faithful to `Theorem4.lean:292-310`.
+
+Q2: yes. `IsQTaut` is correctly stated as order-optimal, not attainment of `Qvol`; the `n≥1` and `n≥2` thresholds match `Corollary1.lean:596-602` and `347-356`; no rational minimizer existence is claimed.
+
+Q3: no new overclaim found. The flag theorem is not described as triangulating a ball, and the `S^3 ⊄ B^3` replacement is explicitly combinatorial at `text/tautxy/tautC1.tex:584-596`.
+
+Q4: no missing “not Lean-proven here” tag found. The PL/topological ball bridge is correctly flagged at `text/tautxy/tautC1.tex:668-674`.
+
+Blockers: none.

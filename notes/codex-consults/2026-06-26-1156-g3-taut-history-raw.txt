@@ -1,0 +1,2104 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019f04a5-807e-7af2-93ce-ab6165879921
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+CODEX CONSULT (G3) — red-team a draft-history analysis before I report it. You may read the files.
+Be adversarial about the JUDGMENTS and the RECOMMENDATION; the raw facts are md5/line-verified.
+
+CONTEXT. Reconstructed the revision history of a math paper taut.tex (from a read-only git repo on a
+remote host). Drafts extracted to /Users/doyle/Dropbox/taut/drafts_by_date/. The report is
+`drafts_by_date/taut-history-report.md`. Key files there:
+- tauty = `save_taut1100.tex` (1031 lines)   [md5 41534feb = local text/tautxy/tauty.tex]
+- tautx = `taut_2026-WORKINGTREE_uncommitted.tex` (1042 lines)  [md5 42d2a51f = local text/tautxy/tautx.tex]
+- diffs: `diff_tauty_to_tautx.diff`, `diff_key_transition.diff`.
+
+VERIFIED FACTS (I checked these by reading the exact lines; spot-check if you doubt):
+- tautx lines 689-788: the whole `\section{Triangulations}` is inside `\begin{comment}...\end{comment}`
+  (so clean/link/pseudomanifold/simplicial-triangulation defs do NOT render).
+- tauty:791-792 "We'll call $Y$ clean if it is simplicial and the associated simplicial complex is clean."
+  is absent from tautx live text.
+- Theorem 2: tauty "Then $Y$ is clean, and arises from a simplicial triangulation of $B^3$" →
+  tautx "Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$" (drops "is clean").
+- tautx typos: 802 `$X$` should be `$M$`; 870-871 dropped the `(\sigma_2,M_2)` clause; 817 "that"→"than".
+
+QUESTIONS (answer concretely, cite file:line):
+Q1. Is the tauty/tautx identification sound (md5-exact), and is the report's claim that tautx = the gauss
+    *uncommitted working tree* (a later state than HEAD c658823) correct to emphasize?
+Q2. The report's HEADLINE loss is "tautx commented out the entire Triangulations section, stranding the
+    core definitions (clean/link/pseudomanifold) which the live text still uses." Read tautx around
+    689-795 and the flag section (943+): is this fair, or does tautx in fact redefine these terms
+    elsewhere in live text (which would weaken the claim)? Specifically: does any LIVE tautx text define
+    "clean", "pseudomanifold", "link", or "simplicial triangulation"?
+Q3. Theorem 2: is calling the change a "de-scoping / accidental loss" fair, or is "arises from a
+    simplicial triangulation of B^3" actually equivalent (does a B^3 triangulation already entail clean,
+    making the dropped word harmless)? Give your read.
+Q4. The RECOMMENDATION is: base version A on tauty's definitional scaffolding, adopt tautx's notation
+    (Ω, M, X/Y), and graft tautx's four proof improvements (eligible-tet pigeonhole, conjoined edge-flip
+    case split, shucking proof of Thm 3, K5/octahedron flag repair); do NOT start from tautx. Is this the
+    right call given the goal (a paper-style draft, no Lean terminology), or would starting from tautx and
+    re-inserting the definitions be less work / lower-risk? Push back if you disagree.
+Q5. Any overclaim, mislabeled "improvement vs loss", or missed item (e.g. is "monotone shelling" really a
+    loss, or is it redundant with "type-3 gluing creates an interior vertex")?
+
+Output per contract: PASS/WARN/BLOCK first, then concrete answers.
+codex
+I’ll verify the report against the draft files directly, then red-team the recommendation rather than taking the report’s framing at face value.
+exec
+/bin/zsh -lc 'md5 drafts_by_date/save_taut1100.tex drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex text/tautxy/tauty.tex text/tautxy/tautx.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+MD5 (drafts_by_date/save_taut1100.tex) = 41534febd13a72126ac931e624f80732
+MD5 (drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex) = 42d2a51fbf8948043be6ebdbf8cdabc9
+MD5 (text/tautxy/tauty.tex) = 41534febd13a72126ac931e624f80732
+MD5 (text/tautxy/tautx.tex) = 42d2a51fbf8948043be6ebdbf8cdabc9
+
+exec
+/bin/zsh -lc 'git status --short && git rev-parse HEAD && git log --oneline -5' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? SHELLING-CONSULT.md
+?? drafts_by_date/
+?? notes/codex-consults/2026-06-15-g1-archfix-output.txt
+?? notes/codex-consults/2026-06-15-g1-assembly-output.txt
+?? notes/codex-consults/2026-06-15-g1-case2-impl-output.txt
+?? notes/codex-consults/2026-06-15-g1-case2-split-output.txt
+?? notes/codex-consults/2026-06-15-g1-deg3starfix-output.txt
+?? notes/codex-consults/2026-06-15-g1-deg3step-output.txt
+?? notes/codex-consults/2026-06-15-g1-final2-output.txt
+?? notes/codex-consults/2026-06-15-g1-hanchor-output.txt
+?? notes/codex-consults/2026-06-15-g1-hanchorfix2-output.txt
+?? notes/codex-consults/2026-06-15-g1-loosefix-output.txt
+?? notes/codex-consults/2026-06-15-g1-papervnotmr-output.txt
+?? notes/codex-consults/2026-06-15-g1-sidedata-output.txt
+?? notes/codex-consults/2026-06-15-g1-vnotmr-output.txt
+?? notes/codex-consults/2026-06-18-g3-h2bridge-output.txt
+?? notes/codex-consults/2026-06-18-g3-h2bridge-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-audit-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-audit-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit2-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit2-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit3-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit3-spec.txt
+?? notes/codex-consults/2026-06-25-1005-g3-writeup-simpl-raw.txt
+?? notes/codex-consults/2026-06-25-1005-g3-writeup-simpl-summary.txt
+?? notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt
+?? notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-summary.txt
+?? notes/codex-consults/2026-06-25-1428-g1-th4-hs-mismatch-raw.txt
+?? notes/codex-consults/2026-06-25-1428-g1-th4-hs-mismatch-summary.txt
+?? notes/codex-consults/2026-06-25-1549-g3-tautC1-th4-cor1-raw.txt
+?? notes/codex-consults/2026-06-25-1549-g3-tautC1-th4-cor1-summary.txt
+?? notes/codex-consults/2026-06-25-g1-th4-hs-mismatch-spec.txt
+?? notes/codex-consults/2026-06-25-g3-tautC1-th4-cor1-spec.txt
+?? notes/codex-consults/2026-06-25-g3-tautxy-pdfs-spec.txt
+?? notes/codex-consults/2026-06-25-g3-writeup-simpl-spec.txt
+?? notes/codex-consults/2026-06-26-1156-g3-taut-history-raw.txt
+?? notes/codex-consults/2026-06-26-g3-taut-history-spec.txt
+?? notes/simpliciality-hypothesis-repair.md
+?? notes/stickerball-state-2026-06-24.md
+?? notes/taut-clean/
+?? notes/taut-lean-proof-claude-scratch.tex
+?? notes/taut-lean-proof.pdf
+?? notes/th1-CCXY-kmap-audit.md
+?? text/
+fc1b394c38975024b61438cbe447c003196da4cc
+fc1b394 Th4: drop external SimplicialChain from the public flag endpoint
+a8f4566 M-SB8: the bridge taut => simplicial; remove SimplicialChain from the endpoint
+1afee5c M-SB7: hS-free Case-1 eligible-tet removal machinery (step 5)
+c0c1f25 M-SB6: hS-free disjoint oriented eligible family (hens-and-baskets, steps 1-4)
+6cb9218 M-SB4: bad_coeff_switch_to_disjoint_eligible (active-tet switch abstraction)
+
+exec
+/bin/zsh -lc "pwd && rg --files drafts_by_date | sort | sed -n '1,80p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+/Users/doyle/Dropbox/taut
+drafts_by_date/diff_key_transition.diff
+drafts_by_date/diff_tauty_to_tautx.diff
+drafts_by_date/save_taut1100.tex
+drafts_by_date/save_taut1200.tex
+drafts_by_date/taut-history-report.md
+drafts_by_date/taut_2025-12-21_002292e.tex
+drafts_by_date/taut_2025-12-21_90b4d91.tex
+drafts_by_date/taut_2025-12-21_f3369c3.tex
+drafts_by_date/taut_2026-02-18_7f2fa65.tex
+drafts_by_date/taut_2026-02-19_8a48526.tex
+drafts_by_date/taut_2026-02-20_2b2e846.tex
+drafts_by_date/taut_2026-02-24_9a0f851.tex
+drafts_by_date/taut_2026-02-25_1d2af40.tex
+drafts_by_date/taut_2026-02-25_6a70a92.tex
+drafts_by_date/taut_2026-02-26_2bb1aef.tex
+drafts_by_date/taut_2026-03-09_731a296.tex
+drafts_by_date/taut_2026-03-15_c658823.tex
+drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex
+
+codex
+The md5 identity checks out locally for both aliases. I’m now checking whether the “stranded definitions” claim survives a live-text search, because that is the main place the recommendation could be overstated.
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex | sed -n '680,815p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex | sed -n '930,1015p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   930	we have at least $\maxdeg \geq 4$ disjointly eligible tets.
+   931	Pick one such tet $t$ that shares no face with $t_1$.
+   932	If $\tau-t$ doesn't fall apart,
+   933	remove $t$ and shuck $\tau-t$ ending with $t_1$.
+   934	If $\tau-t$ falls apart
+   935	into the almost disjoint union of $\tau_1$ and $\tau_2$,
+   936	assume $t \in \tau_1$;
+   937	let $t_2$ be the tet where $t$ attaches to $\tau_2$;
+   938	shuck $\tau_2$ ending with $t_2$;
+   939	remove $t$;
+   940	shuck $\tau_1$ ending with $t_1$.
+   941	\proofend
+   942	
+   943	\section{Flag complex}
+   944	
+   945	A simplicial complex is a \emph{flag complex}
+   946	if every clique in
+   947	its $1$-skeleton occurs as a simplex.
+   948	(Through gritted teeth we say that the complex `is flag'.)
+   949	A simplicial triangulation $\sigma$ of $S^2$
+   950	is flag just if it is \emph{prime} 
+   951	(not the connected sum of smaller complexes)
+   952	and not the boundary of a tetrahedron.
+   953	
+   954	We can decompose any $\sigma$ as the connected sum of
+   955	prime components $\sigma_i$.
+   956	(Of course, to reconstruct $\sigma$ we need more than this, we need to know
+   957	just how they are connected.)
+   958	From the point of taut fillings these components are independent:
+   959	Any taut filling $\tau$ of $\sigma$ is a union of taut fillings $\tau_i$.
+   960	
+   961	Now we want to show that, whether or not $\sigma$ itself is prime, 
+   962	any taut filling of $\sigma$ is a flag complex.
+   963	
+   964	\begin{theorem}
+   965	If $\sigma$ is a simplicial triangulation of $S^2$,
+   966	any taut filling $\tau$ of $\sigma$
+   967	is a flag complex.
+   968	\end{theorem}
+   969	
+   970	\proofstart
+   971	The goal here is to show that none of these
+   972	three taboo configurations occurs
+   973	in $\tau$:
+   974	\begin{enumerate}
+   975	\item
+   976	The three edges of triangle $\{A,B,C\}$ without the 2-simplex $ABC$.
+   977	\item
+   978	The six edges of the $K_4$ $\{A,B,C,D\}$ without the 3-simplex $ABCD$.
+   979	\item
+   980	The ten edges of the $K_5$ $\{A,B,C,D,E\}$.
+   981	\end{enumerate}
+   982	
+   983	If we can rule out 1 and 2 then 3 will follow, because
+   984	along with the $K_5$ we would have the five associated 3-simplices:
+   985	Together these would form an $S^3$, which is not possible as a subcomplex
+   986	of the topological 3-ball $\tau$.
+   987	
+   988	To rule out 1 and 2,
+   989	the strategy will be to consider a minimal counterexample,
+   990	and find a modification that would produce a smaller counterexample.
+   991	
+   992	If $\sigma$ has a vertex of degree 3,
+   993	it is a connected sum with one summand a single tetrahedron.
+   994	We can pull off the vertex from $\sigma$, while removing the associated
+   995	tet from $\tau$, to produce a smaller counterexample.
+   996	
+   997	If $\sigma$ has no vertex of degree 3.
+   998	there are at least $\maxdeg \geq 4$ disjointly eligible tet.
+   999	Removing any one of these tets performs an `edge flip' on the boundary
+  1000	$\sigma$,
+  1001	which either (a) remains a triangulation of the 2-sphere,
+  1002	or (b) becomes an almost disjoint union where
+  1003	two such triangulations are joined along an edge.
+  1004	We will show that some choice for the flip does not remove the taboo
+  1005	configuration.
+  1006	In case (a) we have a smaller counterexample already.
+  1007	In case (b) the key is that if a $K_3$ or $K_4$ occurs
+  1008	in the almost disjoint union, it occurs on one side or the other,
+  1009	also giving a counterexample.
+  1010	
+  1011	Configuration 1:
+  1012	When we remove an eligible tet from $\tau$ to flip an edge of $\sigma$,
+  1013	the only edge that disappears from $\tau$ is the edge that gets flipped.
+  1014	There are at least four choices of the edge to flip, and three edges we must
+  1015	avoid flipping to preserve the taboo $K_3$.
+
+ succeeded in 0ms:
+   680	Either way, we have:
+   681	
+   682	\begin{corollary} \label{cor1}
+   683	$\Qvol$ adds under almost disjoint union,
+   684	and for $n \geq 2$
+   685	taut $\QQ$-fillings split.
+   686	\proofend
+   687	\end{corollary}
+   688	
+   689	\begin{comment}
+   690	\section{Triangulations}
+   691	
+   692	We turn now to filling simplicial triangulations of $S^2$.
+   693	Let's begin by establishing terminology.
+   694	
+   695	An \emph{$n$-simplex} $s$ is simply a set of size $n+1$.
+   696	Its \emph{faces} are its subsets,
+   697	which are $k$-simplices with $-1 \leq k \leq n$,
+   698	$-1$ being the dimension of the empty simplex.
+   699	A \emph{simplicial complex} $\sigma$ is a finite collection of simplices
+   700	closed under taking faces:
+   701	If $t \subset s \in \sigma$ then $t \in \sigma$.
+   702	
+   703	For any $k$-simplex $s \in \sigma$ define the \emph{link}
+   704	\[
+   705	\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+   706	.
+   707	\]
+   708	This is a simplicial complex, but
+   709	(except for $\link(\emptyset,\sigma)=\sigma$)
+   710	it is not a subcomplex of $\sigma$,
+   711	because we are taking simplices in $\sigma$ and knocking down
+   712	their dimension by $k+1$.
+   713	
+   714	We are interested in particularly nice simplicial complexes
+   715	called normal pseudomanifolds, or as we will prefer to say,
+   716	\emph{clean $n$-complexes}.
+   717	
+   718	\begin{enumerate}
+   719	\item
+   720	To start with,
+   721	a clean complex must be \emph{pure},
+   722	meaning that every simplex of $\sigma$ belongs to some $n$-simplex in $\sigma$.
+   723	To determine $\sigma$ we can specify its $n$-simplices,
+   724	and then throw in all their subsets.
+   725	So we can confound a pure complex with the set of its $n$-simplices.
+   726	
+   727	\item
+   728	A clean complex is a \emph{pseudomanifold}:
+   729	Every $n$-simplex abuts at most one other $n$-simplex
+   730	across any given $n-1$-simplex.
+   731	Another way to say this is that
+   732	the link $\link(s,\sigma)$ of any $n-1$-simplex $s$
+   733	consists of either a single point 
+   734	(in which case $s \in \del \sigma$ is a \emph{boundary simplex}),
+   735	or two points
+   736	($s \in \sigma \setminus \del \sigma$ is an \emph{interior simplex}.)
+   737	
+   738	\item
+   739	A clean complex is \emph{normal}:
+   740	For any simplex $s$ of dimension $0,\ldots,n-2$,
+   741	$\link(s,\sigma)$ is connected.
+   742	(Some definitions extend this requirement
+   743	to the empty simplex of dimension $-1$;
+   744	this forces $\sigma$ to be connected.)
+   745	Being normal means that $\sigma$ is just what you get by gluing its 
+   746	$n$-simplices along shared faces,
+   747	without extra identifications. This rules out, for example,
+   748	an icosahedron with a pair of opposite vertices identified.
+   749	\end{enumerate}
+   750	
+   751	If $\sigma$ is clean, 
+   752	$\link(s,\sigma)$ is clean.
+   753	The boundary $\del \sigma$ of $\sigma$ is clean,
+   754	and closed:
+   755	$\del \del \sigma = \{\emptyset\}$.
+   756	
+   757	If $M$ is an $n$-manifold,
+   758	say that a simplicial complex $\sigma$
+   759	is a \emph{simplicial triangulation} of $M$
+   760	if the geometric carrier of $\sigma$ is homeomorphic to $S^2$.
+   761	In this case $\sigma$ is necessarily a clean complex.
+   762	Secretly we imagine that we've prescribed a specific homeomorphism,
+   763	at least up to the point of picking out one particular orientation
+   764	$X(\sigma) \in C_n$ if $M$ is oriented,
+   765	but we don't insist upon this because nothing will depend on which
+   766	orientation we pick.
+   767	
+   768	This notion of triangulation is not as general as you might want
+   769	for some purposes.
+   770	The double cover of a triangle is not a simplicial triangulation
+   771	of $S^2$,
+   772	because that would requires two distinct
+   773	$2$-simplices to have the same three edges.
+   774	Nor can any $2$-simplex have two of its edges
+   775	glued to one another.
+   776	Thurston
+   777	\cite{thurston:shapes}
+   778	allows such triangulations,
+   779	but it is unclear how important these are to
+   780	his theory of shapes of surfaces.
+   781	We don't allow them.
+   782	
+   783	We continue to think of a chain $M \in C_n$ as a multiset of
+   784	oriented $n$-simplices.
+   785	If this is only nominally a multiset (all multiplicites are $1$)
+   786	we'll call $M$ \emph{simplicial},
+   787	and view it as arising from a pure simplicial complex.
+   788	\end{comment}
+   789	
+   790	\section{Filling a triangulation of the 2-sphere}
+   791	
+   792	\begin{theorem} \label{th2}
+   793	Let $\sigma$ be a simplicial triangulation of $S^2$.
+   794	Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$.
+   795	\end{theorem}
+   796	
+   797	\proofstart
+   798	
+   799	Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial triangulation
+   800	of $S^2$ with $M$ a taut filling of $\sigma$.
+   801	Call a filling pair \emph{good}
+   802	if $X$ arises from a simplicial triangulation of $B^3$.
+   803	We aim to show that all filling pairs are good.
+   804	
+   805	We will argue by contradiction.
+   806	Let $(\sigma,M)$ be a bad filling pair for which
+   807	$|M|$ is minimal over all filling pairs.
+   808	Let $v,e=3v-6,f=2v-4$ count vertices, edges, and faces of $\sigma$.
+   809	Obviously $v>4$.
+   810	Because taut fillings split under connected sum,
+   811	we can assume that $\sigma$ is prime
+   812	(not a connected sum along a triangle),
+   813	and in particular (this is all we will need) that there is no
+   814	vertex of degree $3$.
+   815	
+
+exec
+/bin/zsh -lc 'rg -n "clean|pseudomanifold|link|simplicial triangulation|triangulation|monotone|shell|type-3|type 3" drafts_by_date/save_taut1100.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+134:\newcommand{\link}{\kw{link}}
+168:Let $\sigma$ be a simplicial triangulation of the 2-sphere,
+176:This complex is shellable, and
+239:Now let $\sigma$ be a simplicial triangulation of $S^2$;
+244:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+263:where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+264:or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+265:In the first case induction yields a triangulation of $B^3$,
+269:by induction both give triangulations of $B^3$, which we
+271:So we wind up with some kind of triangulation $\tau$ of $B^3$,
+285:triangulation $\sigma$
+311:must arise from a triangulation of the ball.
+315:we describe triangulations of $S^2$ with $\Qvol < \Zvol$.
+692:We turn now to filling simplicial triangulations of $S^2$.
+703:For any $k$-simplex $s \in \sigma$ define the \emph{link}
+705:\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+709:(except for $\link(\emptyset,\sigma)=\sigma$)
+715:called normal pseudomanifolds, or as we will prefer to say,
+716:\emph{clean $n$-complexes}.
+721:a clean complex must be \emph{pure},
+728:A clean complex is a \emph{pseudomanifold}:
+732:the link $\link(s,\sigma)$ of any $n-1$-simplex $s$
+739:A clean complex is \emph{normal}:
+741:$\link(s,\sigma)$ is connected.
+751:If $\sigma$ is clean, 
+752:$\link(s,\sigma)$ is clean.
+753:The boundary $\del \sigma$ of $\sigma$ is clean,
+759:is a \emph{simplicial triangulation} of $M$
+761:In this case $\sigma$ is necessarily a clean complex.
+768:This notion of triangulation is not as general as you might want
+770:The double cover of a triangle is not a simplicial triangulation
+778:allows such triangulations,
+791:We'll call $Y$ \emph{clean} if it is simplicial
+792:and the associated simplicial complex is clean.
+794:\section{Filling a triangulation of the 2-sphere}
+797:Let $\sigma$ be a simplicial triangulation of $S^2$,
+799:Then $Y$ is clean, and arises from
+800:a simplicial triangulation of $B^3$.
+838:where $\sigma^\prime$ is either (1) a triangulation of $S^2$,
+840:two triangulations $\sigma_1,\sigma_2$ of $S^2$
+844:$Y-t$ is actually clean,
+849:a clean taut filling of $\sigma_i$.
+850:In this case $Y-t$ isn't clean, because the link of the common
+854:The crux here is to show that $Y$ is clean.
+867:$Y$ is a pseudomanifold.
+882:$Y$ has no edge $\{a,b\}$ whose link
+884:For the link is a 1-dimensional complex whose edges correspond to
+886:The only way a component of the link can have fewer than three
+893:so no other component of the link can reduce to a single edge.
+894:If the link is disconnected, removing any eligible tet
+899:$Y$ has no vertex whose link is disconnected:
+900:For if $\link(\{a\},Y)$ is not connected,
+902:can render the link connected
+903:is if one component of the link has a single $2$-simplex
+909:\item Hence $Y$ is clean.
+915:a taut filling of $\sigma$ `is' a simplicial triangulation
+920:A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+924:gluing on one at a time maintains a triangulation of $B^3$,
+927:by $\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B_3$.
+931:Call the shelling \emph{monotone}
+933:Call $\tau$ \emph{freely monotone shellable} if any $t \in \tau$
+934:can serve as the initial tet of a monotone shelling.
+937:If $\sigma$ is a simplicial triangulation of $S^2$,
+939:is a freely monotone shellable
+940:simplicial triangulation of $B^3$.
+952:For a simplicial triangulation $\sigma$ of $S^2$,
+967:That each of these is freely shellable implies the same of the union.
+973:If $\sigma$ is a simplicial triangulation of $S^2$,
+1000:which either (a) remains a triangulation of the 2-sphere,
+1002:two such triangulations are joined along an edge.
+
+exec
+/bin/zsh -lc "rg -n \"\\\\begin\\{comment\\}|\\\\end\\{comment\\}|clean|pseudomanifold|link|simplicial triangulation|triangulation|monotone|shell|type-3|type 3\" drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex" in /Users/doyle/Dropbox/taut
+ exited 2 in 0ms:
+rg: regex parse error:
+    (?:\begin\{comment\}|\end\{comment\}|clean|pseudomanifold|link|simplicial triangulation|triangulation|monotone|shell|type-3|type 3)
+                         ^^
+error: unrecognized escape sequence
+
+codex
+The live Triangulations section is indeed commented out in tautx. I’m also checking the earlier introduction and the flag section because those could contain informal substitutes that reduce the severity from “undefined” to “defined elsewhere.”
+exec
+/bin/zsh -lc "rg -n -F \"\\begin{comment}\" drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex && rg -n -F \"\\end{comment}\" drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex && rg -n \"clean|pseudomanifold|link|simplicial triangulation|triangulation|monotone|shell|type-3|type 3|eligible|flag\" drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+689:\begin{comment}
+788:\end{comment}
+134:\newcommand{\link}{\kw{link}}
+170:given a triangulation $\sigma$ of the 2-sphere,
+172:extend $\sigma$ to a triangulation of the ball?
+182:a shellable simplicial complex homeomorphic to the 3-ball.
+183:This complex is a flag complex:
+247:Now let $\sigma$ be a simplicial triangulation of $S^2$;
+253:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+265:we get that $\tau$ is a shellable flag complex:
+277:triangulation $\sigma$
+308:must arise from a triangulation of the ball.
+312:we described triangulations of $S^2$ with $\Qvol < \Zvol$.
+692:We turn now to filling simplicial triangulations of $S^2$.
+703:For any $k$-simplex $s \in \sigma$ define the \emph{link}
+705:\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+709:(except for $\link(\emptyset,\sigma)=\sigma$)
+715:called normal pseudomanifolds, or as we will prefer to say,
+716:\emph{clean $n$-complexes}.
+721:a clean complex must be \emph{pure},
+728:A clean complex is a \emph{pseudomanifold}:
+732:the link $\link(s,\sigma)$ of any $n-1$-simplex $s$
+739:A clean complex is \emph{normal}:
+741:$\link(s,\sigma)$ is connected.
+751:If $\sigma$ is clean, 
+752:$\link(s,\sigma)$ is clean.
+753:The boundary $\del \sigma$ of $\sigma$ is clean,
+759:is a \emph{simplicial triangulation} of $M$
+761:In this case $\sigma$ is necessarily a clean complex.
+768:This notion of triangulation is not as general as you might want
+770:The double cover of a triangle is not a simplicial triangulation
+778:allows such triangulations,
+790:\section{Filling a triangulation of the 2-sphere}
+793:Let $\sigma$ be a simplicial triangulation of $S^2$.
+794:Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$.
+799:Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial triangulation
+802:if $X$ arises from a simplicial triangulation of $B^3$.
+816:Call a tet $t \in M$ \emph{eligible} if it shares two of its oriented faces
+830:giving us at least $\maxdeg$ disjointly eligible tets,
+831:meaning eligible tets  whose pairs of boundary faces
+835:Consider an eligible tet $t$ with boundary faces
+844:$\sigma_t$ is a triangulation of $S^2$.
+847:$\sigma_t$ is the almost disjoint union of two triangulations
+853:so $M-t$ arises from a triangulation of $B^3$.
+856:doesn't produce a non-simplicial triangulation.
+859:Here's where we use the fact that we can choose an eligible tet $u$
+865:arise from a simplicial triangulation, whether of $B^3$ of anything else.
+866:So $2t$ doesn't belong to $M$; $M=(M-t)+t$ arises from a triangulation of $B^3$;
+872:So both $M_1$ and $M_2$ arise from simplicial triangulations of $B^3$,
+873:and $M$ arises from the complex obtained by gluing these triangulations
+875:This is a simplicial triangulation of $B^3$,
+880:a taut filling of $\sigma$ `is' a simplicial triangulation
+885:We want to show that any taut filling $\tau$ of a triangulation $\sigma$
+886:of $S^2$ is \emph{shellable}.
+888:A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+892:gluing on one at a time maintains a triangulation of $B^3$,
+895:by $\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B_3$.
+901:Call $\tau$ \emph{freely shellable} if any $t \in \tau$
+902:can serve as the initial tet of a shelling.
+905:If $\sigma$ is a simplicial triangulation of $S^2$,
+907:is a freely shellable
+908:simplicial triangulation of $B^3$.
+914:Let $t_1 \in \tau$ be the designated intial tet of the shelling.
+930:we have at least $\maxdeg \geq 4$ disjointly eligible tets.
+945:A simplicial complex is a \emph{flag complex}
+948:(Through gritted teeth we say that the complex `is flag'.)
+949:A simplicial triangulation $\sigma$ of $S^2$
+950:is flag just if it is \emph{prime} 
+962:any taut filling of $\sigma$ is a flag complex.
+965:If $\sigma$ is a simplicial triangulation of $S^2$,
+967:is a flag complex.
+998:there are at least $\maxdeg \geq 4$ disjointly eligible tet.
+1001:which either (a) remains a triangulation of the 2-sphere,
+1003:two such triangulations are joined along an edge.
+1012:When we remove an eligible tet from $\tau$ to flip an edge of $\sigma$,
+1033:If an eligible tet contains neither of these as one of its two boundary faces,
+1035:But at most two of our disjointly eligible tets
+
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/save_taut1100.tex | sed -n '785,925p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   785	If this is only nominally a multiset (all multiplicites are $1$)
+   786	we'll call $Y$ \emph{simplicial},
+   787	and view it as a pure simplicial complex.
+   788	(To stickle, in doing this
+   789	we are viewing oriented simplices as a subclass of simplices,
+   790	and confounding a set of $n$-simplices with a pure $n$-complex.)
+   791	We'll call $Y$ \emph{clean} if it is simplicial
+   792	and the associated simplicial complex is clean.
+   793	
+   794	\section{Filling a triangulation of the 2-sphere}
+   795	
+   796	\begin{theorem} \label{th2}
+   797	Let $\sigma$ be a simplicial triangulation of $S^2$,
+   798	and $Y$ a taut filling of $\sigma$.
+   799	Then $Y$ is clean, and arises from
+   800	a simplicial triangulation of $B^3$.
+   801	\end{theorem}
+   802	
+   803	\proofstart
+   804	
+   805	Let $v,e,f$  count the vertices, edges, and faces of $\sigma$.
+   806	We have
+   807	$e=3v-6$, $f=2v-4$.
+   808	(Check: $3f=2e$, $v-e+f=2$.)
+   809	
+   810	Consider a counterexample pair $(\sigma,Y)$ for which
+   811	$\Zvol(\sigma)=|Y|$ is minimal.
+   812	Obviously $v>4$.
+   813	We can assume that $\sigma$ is prime
+   814	(not a connected sum along a triangle),
+   815	and in particular (this is all we will need) that there is no
+   816	vertex of degree $3$.
+   817	
+   818	Call a tet $t \in Y$ \emph{eligible} if it shares two faces 
+   819	with $\sigma$. (It can't share more, since $\sigma$ has no vertex of
+   820	degree $3$.)
+   821	Since
+   822	\[
+   823	|Y| = \Zvol(\sigma) \leq f-\maxdeg(\sigma) 
+   824	\]
+   825	there must be at least $\maxdeg(\sigma)$ disjointly eligible tets,
+   826	but we'll only need two:
+   827	One with faces $s_1,s_2 \in \sigma$,
+   828	the other with disjoint faces $s_3,s_4 \in \sigma$.
+   829	The $s_3,s_4$ tet can't also have $s_1$ or $s_2$ as a face,
+   830	as then there would be a degree-$3$  vertex in $\sigma$.
+   831	So for any face $s$ of $\sigma$
+   832	there is an eligible tet without $s$ as a face.
+   833	
+   834	Now as indicated in the introduction above, 
+   835	when we remove an eligible tet $t$,
+   836	we get a taut filling $Y-t$ of
+   837	$\sigma^\prime$,
+   838	where $\sigma^\prime$ is either (1) a triangulation of $S^2$,
+   839	or (2) the almost disjoint union of
+   840	two triangulations $\sigma_1,\sigma_2$ of $S^2$
+   841	that are joined along an edge of $t$.
+   842	We claim $Y-t$ is simplicial:
+   843	In the case (1)
+   844	$Y-t$ is actually clean,
+   845	by minimality of $|Y|$.
+   846	In case (2)
+   847	$Y-t$ is a taut filling of an almost disjoint union,
+   848	and as such splits $Y-t=Y_1+Y_2$ where $Y_i$ is
+   849	a clean taut filling of $\sigma_i$.
+   850	In this case $Y-t$ isn't clean, because the link of the common
+   851	edge shared by $\sigma_1$ and $\sigma_2$ is disconnected,
+   852	but $Y-t$ is still simplicial.
+   853	
+   854	The crux here is to show that $Y$ is clean.
+   855	For starters, $Y$ is simplicial.
+   856	The only way $Y$ could fail to be simplicial is if $t$ has multiplicity
+   857	$2$.
+   858	But then $Y-t^\prime$ wouldn't be simplicial for eligible $t^\prime$
+   859	distinct from $t$,
+   860	contradiction.
+   861	
+   862	Now, then:
+   863	
+   864	\begin{enumerate}
+   865	
+   866	\item
+   867	$Y$ is a pseudomanifold.
+   868	For suppose some $2$-simplex $s$ occurs more than twice as the boundary
+   869	of a $3$-simplex of $Y$.
+   870	If $s \notin \sigma$,
+   871	it must occur at least twice plus and twice minus;
+   872	after removing any eligible tet it
+   873	still occurs either twice plus or twice minus in $Y-t$ in case (1),
+   874	or in one or the other of $Y_1,Y_2$ in case (2),
+   875	contradicting minimality.
+   876	If $s \in \sigma$,
+   877	it occurs at least twice plus in $Y$:
+   878	Remove some eligible tet that does not have $s$ as a face
+   879	to get a contradiction.
+   880	
+   881	\item
+   882	$Y$ has no edge $\{a,b\}$ whose link
+   883	is disconnected.
+   884	For the link is a 1-dimensional complex whose edges correspond to
+   885	tets of $Y$ that contain $\{a,b\}$.
+   886	The only way a component of the link can have fewer than three
+   887	vertices is if consists of a single edge $\{c,d\}$, corresponding
+   888	to a tet $t=\{a,b,c,d\} \in Y$.
+   889	In this case $\{a,b\}$ must be an edge of $\sigma$,
+   890	and $\{a,b,c\},\{a,b,d\}$ the faces of $\sigma$
+   891	that are adjacent along $\{a,b\}$.
+   892	These are the only faces of $\sigma$ that contain $\{a,b\}$,
+   893	so no other component of the link can reduce to a single edge.
+   894	If the link is disconnected, removing any eligible tet
+   895	other than $t$ will
+   896	leave it disconnected, contradicting minimality.
+   897	
+   898	\item
+   899	$Y$ has no vertex whose link is disconnected:
+   900	For if $\link(\{a\},Y)$ is not connected,
+   901	the only way removing a single tet $t$
+   902	can render the link connected
+   903	is if one component of the link has a single $2$-simplex
+   904	$\{b,c,d\}$ and $t=\{a,b,c,d\}$.
+   905	In this case $\{a,b,c\}$, $\{a,b,d\}$, $\{a,c,d\}$ must
+   906	all be faces of $\sigma$,
+   907	making $a$ a vertex of $\sigma$ of degree $3$, contradiction.
+   908	
+   909	\item Hence $Y$ is clean.
+   910	\proofend
+   911	
+   912	\end{enumerate}
+   913	
+   914	Thanks to this theorem, we may take the liberty of saying that
+   915	a taut filling of $\sigma$ `is' a simplicial triangulation
+   916	$\tau$ of $B^3$.
+   917	
+   918	\section{Shelling}
+   919	
+   920	A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+   921	is an ordering 
+   922	$(t_1,\ldots,t_{|\tau|})$
+   923	of its tets such that
+   924	gluing on one at a time maintains a triangulation of $B^3$,
+   925	i.e., 
+
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex | sed -n '130,330p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   130	\newcommand{\flipdist}{\kw{flipdist}}
+   131	\newcommand{\tetbar}{\kw{homvol}}
+   132	\newcommand{\vsa}{\kw{vsa}}
+   133	\newcommand{\cone}{\kw{cone}}
+   134	\newcommand{\link}{\kw{link}}
+   135	\newcommand{\maxdeg}{\kw{maxdeg}}
+   136	\newcommand{\mindeg}{\kw{mindeg}}
+   137	\newcommand{\vertices}{\kw{Vert}}
+   138	\newcommand{\carrier}{\kw{carrier}}
+   139	\newcommand{\nbhd}{\kw{nbhd}}
+   140	\newcommand{\adj}{\kw{adj}}
+   141	\newcommand{\taut}{\kw{taut}}
+   142	\newcommand{\net}{\kw{net}}
+   143	
+   144	\newcommand{\Zvol}{\kw{Zvol}}
+   145	\newcommand{\Qvol}{\kw{Qvol}}
+   146	\newcommand{\Rvol}{\kw{Rvol}}
+   147	\newcommand{\tetvol}{\kw{tetvol}}
+   148	\newcommand{\hash}{\#}
+   149	\newcommand{\ms}{[}
+   150	\newcommand{\msend}{]}
+   151	
+   152	\newcommand{\kwstyle}{\bf}
+   153	\newcommand{\IF}{{\ \kwstyle{if}\ }}
+   154	\newcommand{\ELSE}{{\ \kwstyle{else}\ }}
+   155	\newcommand{\WHILE}{{\kwstyle{while}\ }}
+   156	\newcommand{\DO}{{\ \kwstyle{do}\ }}
+   157	\newcommand{\RETURN}{{\kwstyle{return}\ }}
+   158	\newcommand{\direct}{\oplus}
+   159	\newcommand{\pls}{\mathord{+}}
+   160	\newcommand{\mns}{\mathord{-}}
+   161	
+   162	
+   163	
+   164	\begin{document}
+   165	
+   166	\maketitle
+   167	
+   168	\begin{abstract}
+   169	Sleator, Tarjan, and Thurston asked:
+   170	given a triangulation $\sigma$ of the 2-sphere,
+   171	what is the minimum number of tetrahedra needed to 
+   172	extend $\sigma$ to a triangulation of the ball?
+   173	Call this minimum $\tetvol(\sigma)$.
+   174	Let $X$ be the associated integral 2-cycle,
+   175	and let $\Zvol(\sigma)$ be the minimum $L_1$-norm
+   176	of an integral 3-chain $M$
+   177	with $\del M = X$.
+   178	Certainly $\tetvol(\sigma) \geq \Zvol(\sigma)$.
+   179	We show here that equality holds, and in fact
+   180	any optimal filling $M$ 
+   181	arises from an extension of $\sigma$ to
+   182	a shellable simplicial complex homeomorphic to the 3-ball.
+   183	This complex is a flag complex:
+   184	every clique in its 1-skeleton occurs as a simplex.
+   185	The key to the proof is the general
+   186	fact that any optimal filling of an integral $n$-cycle
+   187	splits under disjoint union, connected sum, and more generally
+   188	what we call almost disjoint union,
+   189	where summands are supported on sets that overlap in at most $n+1$ vertices.
+   190	\end{abstract}
+   191	
+   192	\section{Overview}
+   193	Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
+   194	with vertices $\Omega$,
+   195	viewed as the abstract simplicial complex consisting of all subsets of
+   196	$\Omega$.
+   197	Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
+   198	and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
+   199	be its integral $n$-chains and $n$-cycles.
+   200	A \emph{filling} of an $n$-cycle $X \in Z_n$ is any
+   201	$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
+   202	(Here and throughout we'll assume $n\geq 1$.)
+   203	Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
+   204	Call $M \in C_{n+1}$ \emph{taut} if it is an optimal filling
+   205	of its boundary, i.e., if $|M|=\Zvol(\del M)$,
+   206	
+   207	For $X \in C_n$ let
+   208	$\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+   209	to which $X$ assigns non-$0$ weight.
+   210	For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+   211	(Cf.\ Proposition \ref{nointernal} below.)
+   212	This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+   213	
+   214	Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+   215	\[
+   216	|\vertices(X) \cap \vertices(Y)| \leq n+1
+   217	.
+   218	\]
+   219	This notion generalizes both disjoint union and connected sum
+   220	along an $n$-simplex.
+   221	Ellison \cite{ellison:gap}
+   222	showed the $\Zvol$ adds under almost disjoint union:
+   223	$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
+   224	This means that \emph{some} taut filling $M$ of $X$ splits into a sum
+   225	$M=M_X+M_Y$ of taut fillings of $X,Y$.
+   226	Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+   227	that when $n \geq 2$, \emph{any} taut filling of $X+Y$ splits.
+   228	
+   229	In place of integral chains we can use chains with
+   230	coefficients in $\QQ$ or $\RR$.
+   231	Evidently $\Rvol \leq \Qvol$.
+   232	But computing $\Rvol$ is
+   233	a linear programming problem with rational coefficients,
+   234	so in fact $\Qvol = \Rvol$.
+   235	Ellison used LP duality to prove that
+   236	$\Qvol$ adds under almost
+   237	disjoint union.
+   238	Now for $n \geq 2$ we get the stronger result
+   239	(Corollary \ref{cor1})
+   240	that taut $\QQ$-fillings split:
+   241	Multiplying a taut
+   242	$\QQ$-filling $M$ of $X$ by a common denominator $q$
+   243	yields a taut $\ZZ$-filling $qM$ of $qX$:
+   244	Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
+   245	of the $\QQ$-filling $M$.
+   246	
+   247	Now let $\sigma$ be a simplicial triangulation of $S^2$;
+   248	let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
+   249	be either one of the 2-cycles
+   250	that arises from $\sigma$ by orienting its $2$-simplices;
+   251	and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+   252	Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+   253	required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+   254	We will show that
+   255	\[
+   256	\Zvol(\sigma) = \tetvol(\sigma)
+   257	.
+   258	\]
+   259	Certainly $\Zvol \leq \tetvol$,
+   260	because any extension $\tau$ induces a filling
+   261	of $X(\sigma)$.
+   262	Theorem \ref{th2} states that 
+   263	any taut filling $\tau$ of $X(\sigma)$ arises in this way.
+   264	As corollaries,
+   265	we get that $\tau$ is a shellable flag complex:
+   266	It can be assembled one simplex at a time,
+   267	and any clique in its 1-skeleton occurs as a simplex.
+   268	The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+   269	
+   270	\section{Background}
+   271	
+   272	Our interest in $\Zvol$ stems from the work
+   273	of Sleator, Tarjan, and Thurston
+   274	\cite{stt:jams}.
+   275	They observed that coning from a vertex of maximal degree
+   276	shows that a $v$-vertex
+   277	triangulation $\sigma$
+   278	of $S^2$ has $\tetvol \leq 2v-4-\maxdeg(\sigma)$.
+   279	If $v\geq13$ $\maxdeg(\sigma) \geq 6$, so $\tetvol \leq 2v-10$.
+   280	They
+   281	produced examples for which $\tetvol = 2v-10$, provided
+   282	$v$ is larger than some unspecified bound,
+   283	and conjectured that such examples should exist for any $v \geq 13$.
+   284	Their approach was to 
+   285	realize $\sigma$ as an ideal hyperbolic polyhedron
+   286	with volume $2v V_0-O(\log(v))$,
+   287	where $V_0$ is the volume of an
+   288	equilateral ideal tetrahedron,
+   289	which is maximal.
+   290	This implies $\tetvol \geq 2v-O(\log(v))$.
+   291	From there they bootstrapped their way up to showing
+   292	that $\tetvol=2v-10$.
+   293	They suggested
+   294	\cite[p. 697]{stt:jams}
+   295	that in fact $\Qvol= 2v-10$,
+   296	which would immediately imply $\tetvol=2v-10$.
+   297	Mathieu and Thurston \cite{mt}
+   298	produced a class of examples,
+   299	different from the examples of Sleator, Tarjan, and Thurston,
+   300	for which they could show that $\Qvol = 2v-10$,
+   301	still under the assumption that $v$
+   302	is sufficiently large.
+   303	In \cite{dew:filling} we produced examples for any $v \geq 13$ with
+   304	$\Qvol=2v-10$, confirming the conjecture of Sleator, Tarjan, and Thurston.
+   305	Theorem \ref{th2} here
+   306	tells us that whenever we have $\Qvol=2v-10$,
+   307	or just $\Zvol=2v-10$, any taut filling
+   308	must arise from a triangulation of the ball.
+   309	
+   310	About $\Qvol$ versus $\Zvol$.
+   311	In \cite{dew:filling}
+   312	we described triangulations of $S^2$ with $\Qvol < \Zvol$.
+   313	In all such examples that we know of
+   314	with $\maxdeg \leq 6$, the gap between $\Qvol$ and $\Zvol$ is $<1$,
+   315	so that
+   316	$\lceil \Qvol \rceil = \Zvol$.
+   317	Since $\Qvol$ and $\Zvol$
+   318	add under connected sum,
+   319	the gap between them can be arbitrarily
+   320	large
+   321	(Ellison \cite{ellison:gap}),
+   322	but taking the connected sum pushes $\maxdeg$ above $6$.
+   323	
+   324	
+   325	
+   326	\section{Taut fillings}
+   327	
+   328	We can think of an $n$-chain $X \in C_n$ as a multiset of
+   329	non-cancelling oriented simplices:
+   330	\[
+
+exec
+/bin/zsh -lc 'md5 drafts_by_date/taut_2026-03-15_c658823.tex drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex && diff -q drafts_by_date/taut_2026-03-15_c658823.tex drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex || true' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+MD5 (drafts_by_date/taut_2026-03-15_c658823.tex) = 51f3572956d6a93bb1ccce8a4bd53e76
+MD5 (drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex) = 42d2a51fbf8948043be6ebdbf8cdabc9
+Files drafts_by_date/taut_2026-03-15_c658823.tex and drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex differ
+
+exec
+/bin/zsh -lc "diff -u drafts_by_date/taut_2026-03-15_c658823.tex drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex | sed -n '1,220p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/taut-history-report.md | sed -n '1,220p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+--- drafts_by_date/taut_2026-03-15_c658823.tex	2026-06-26 11:46:08
++++ drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex	2026-06-26 11:46:09
+@@ -15,7 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version dated 2026-03-13
++\date{Version dated 2026-03-20
+ }
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+@@ -166,7 +166,7 @@
+ \maketitle
+ 
+ \begin{abstract}
+-Sleater, Tarjan, and Thurston asked,
++Sleator, Tarjan, and Thurston asked:
+ given a triangulation $\sigma$ of the 2-sphere,
+ what is the minimum number of tetrahedra needed to 
+ extend $\sigma$ to a triangulation of the ball?
+@@ -296,7 +296,7 @@
+ which would immediately imply $\tetvol=2v-10$.
+ Mathieu and Thurston \cite{mt}
+ produced a class of examples,
+-different from the examples of STT,
++different from the examples of Sleator, Tarjan, and Thurston,
+ for which they could show that $\Qvol = 2v-10$,
+ still under the assumption that $v$
+ is sufficiently large.
+@@ -545,7 +545,7 @@
+ \cite{pw:flip}
+ about flip paths.
+ Like theirs, our proof uses a variation on the normalization technique
+-of STT
++of Sleator, Tarjan, and Thurston
+ \cite[Lemma 7]{stt:jams}.
+ It would be nice to fit these results under one roof.
+ \medskip
+@@ -981,7 +981,7 @@
+ \end{enumerate}
+ 
+ If we can rule out 1 and 2 then 3 will follow, because
+-along with the $K_5$ we would the five associated 3-simplices:
++along with the $K_5$ we would have the five associated 3-simplices:
+ Together these would form an $S^3$, which is not possible as a subcomplex
+ of the topological 3-ball $\tau$.
+ 
+@@ -1026,10 +1026,10 @@
+ By treating the octahedron separately as a special case,
+ we can assume $\maxdeg \geq 5$,
+ so we have at least five boundary edges we can flip.
+-The only potential problem is if five of the six $K_5$ edges are
++The only potential problem is if five of the six $K_4$ edges are
+ on the boundary.
+-Say the interior edge is $AE$,
+-so that the $K_5$ includes the faces $ABC,BCD$.
++Say the interior edge is $AD$,
++so that the $K_4$ includes the faces $ABC,BCD$.
+ If an eligible tet contains neither of these as one of its two boundary faces,
+ we are fine.
+ But at most two of our disjointly eligible tets
+
+ succeeded in 0ms:
+     1	# `taut.tex` draft history — reconstruction & tauty→tautx analysis
+     2	
+     3	Source repository (read-only, **not modified**): `gauss:/home/doyle/public_html/docs/taut/x` (`.git`, single
+     4	branch `master`, HEAD `c658823` 2026-03-15). `taut.tex` was never renamed (`git log --follow` shows no
+     5	rename). The working tree on gauss is **dirty** (`M taut.tex` etc.) — the uncommitted `taut.tex` is a
+     6	distinct, later state than HEAD.
+     7	
+     8	Extracted drafts live in **`/Users/doyle/Dropbox/taut/drafts_by_date/`** (this local repo). Each committed
+     9	`taut.tex` was streamed with `git show <hash>:taut.tex`; nothing was written into the gauss repo.
+    10	
+    11	## Identification (by exact md5 — not inference)
+    12	
+    13	| label | file in `drafts_by_date/` | md5 | matches |
+    14	|---|---|---|---|
+    15	| **tauty** | `save_taut1100.tex` | `41534feb…` | **byte-identical** to local `text/tautxy/tauty.tex` |
+    16	| **tautx** | `taut_2026-WORKINGTREE_uncommitted.tex` | `42d2a51f…` | **byte-identical** to local `text/tautxy/tautx.tex` (= gauss *uncommitted* working tree) |
+    17	| (also) | `save_taut1200.tex` | `f71e5b66…` | byte-identical to commit `90b4d91` (2025-12-21) |
+    18	
+    19	`tautx_pass1_minimal.tex` and `tautxy_formalizable.tex` (local) match **no** gauss draft — they are
+    20	local-only derivatives downstream of tautx, not part of this history.
+    21	
+    22	## Table of extracted drafts (chronological)
+    23	
+    24	| date | hash | file | lines | note |
+    25	|---|---|---|---|---|
+    26	| (pre-Dec) | taut1100 | `save_taut1100.tex` | 1031 | **= tauty.** Clique-complex, monotone shelling, `Y` filling, `V` vertices, "clean" defined & live |
+    27	| 2025-12-21 | `90b4d91` | `taut_2025-12-21_90b4d91.tex` | 1032 | = `save_taut1200`; "save …-1201" |
+    28	| 2025-12-21 | `002292e` | `taut_2025-12-21_002292e.tex` | 1029 | "Fixed error on support of taut filling, … overloading" |
+    29	| 2025-12-21 | `f3369c3` | `taut_2025-12-21_f3369c3.tex` | 1028 | "finished the fix" — last tauty-era state |
+    30	| 2026-02-18 | `7f2fa65` | `taut_2026-02-18_7f2fa65.tex` | 1033 | still tauty-like (churn 23 from Dec) |
+    31	| 2026-02-19 | `8a48526` | `taut_2026-02-19_8a48526.tex` | 1055 | **big rewrite begins (churn 228)** — Ω, `M`, flag terminology enter |
+    32	| 2026-02-20 | `2b2e846` | `taut_2026-02-20_2b2e846.tex` | 1054 | notation rewrite continues (churn 151) |
+    33	| 2026-02-24 | `9a0f851` | `taut_2026-02-24_9a0f851.tex` | 1051 | (churn 131) |
+    34	| 2026-02-25 | `1d2af40` | `taut_2026-02-25_1d2af40.tex` | **1070** | **content max.** eligible=13, clean=13, monotone live; Triangulations already `\begin{comment}`-wrapped |
+    35	| 2026-02-25 | `6a70a92` | `taut_2026-02-25_6a70a92.tex` | 1026 | **−44 (churn 194)** — first big cut |
+    36	| 2026-02-26 | `2bb1aef` | `taut_2026-02-26_2bb1aef.tex` | **989** | **−37 (churn 137)** — Shelling→"Tree-shelling", monotone/freely & eligible over-count deleted |
+    37	| 2026-03-09 | `731a296` | `taut_2026-03-09_731a296.tex` | 998 | partial restore (churn 67) |
+    38	| 2026-03-15 | `c658823` | `taut_2026-03-15_c658823.tex` | 1042 | HEAD; "Tree-shelling"→"Shelling"+shucking proof (churn 126) |
+    39	| (uncommitted) | working tree | `taut_2026-WORKINGTREE_uncommitted.tex` | 1042 | **= tautx.** flag Config-2 octahedron expansion; abstract opens with STT question |
+    40	
+    41	15 draft files extracted (12 distinct committed `taut.tex` versions + the uncommitted working tree +
+    42	`save/taut1100`, `save/taut1200`). Diffs: `diff_tauty_to_tautx.diff` (full), `diff_key_transition.diff`
+    43	(`1d2af40`→`2bb1aef`, the Feb-25→26 content cut).
+    44	
+    45	---
+    46	
+    47	## Major structural changes
+    48	
+    49	The section skeleton is **stable** (Overview, Background, Taut fillings, Coning, Almost disjoint unions,
+    50	Triangulations, Filling a triangulation of the 2-sphere, Shelling, Flag/Clique complex). The change is a
+    51	deep *within-section* rewrite (tauty→tautx: 322 lines removed, 333 added). Three structural events:
+    52	
+    53	1. **Feb 19–24 notation rewrite** (churn 228+151+131): `V→Ω` (ambient vertex set), filling chain `Y→M`,
+    54	   split pieces `Z_X,Z_Y→M_X,M_Y`, summand cycles `X_1,X_2→X,Y`, and **`\section{Triangulations}` wrapped
+    55	   in `\begin{comment}`** (disabled, not deleted).
+    56	2. **Feb 25→26 content cut** (`diff_key_transition.diff`): `\section{Shelling}`+monotone replaced by
+    57	   `\section{Tree-shelling}`; the eligible-tet over-counting paragraph and the "dimension 3" limitation
+    58	   remarks deleted.
+    59	3. **Mar 9–20 restore/polish**: "Tree-shelling"→`\section{Shelling}` with a real **shucking** proof;
+    60	   flag-complex Configuration 2 expanded (octahedron special case, K₅); abstract rewritten.
+    61	
+    62	---
+    63	
+    64	## Changes from tauty to tautx
+    65	
+    66	Verified directly against `save_taut1100.tex` (tauty) and `taut_2026-WORKINGTREE_uncommitted.tex` (tautx).
+    67	
+    68	- **Vertex set `V`→Ω.** tauty:188 `Let $\Delta$ be the abstract $|V|-1$-simplex with vertices $V$`;
+    69	  tautx:193 `Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex with vertices $\Omega$`. The
+    70	  `\vertices` macro also changed to print `Vert` (tautx:137).
+    71	- **Filling chain `Y`→`M`; `Y` repurposed as the 2nd summand cycle.** tauty Theorem 1 used `Z,Z_X,Z_Y`
+    72	  and summands `X_1,X_2`; tautx uses `M,M_X,M_Y` and summands `X,Y` (tautx:214 `Call an $n$-cycle $X+Y$…`).
+    73	- **Theorem 2 de-scoped.** tauty:798–800 `Then $Y$ is clean, and arises from a simplicial triangulation of
+    74	  $B^3$`; tautx:793–794 `Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$`.
+    75	  The explicit cleanness verification (pseudomanifold + edge-/vertex-link connectivity, tauty:864–908) is
+    76	  dropped; the new proof (tautx:797–877) uses a "good filling pair" contradiction and never re-derives clean.
+    77	- **Eligible-tet count improved.** tauty:822–826 merely asserts "there must be at least `\maxdeg`
+    78	  disjointly eligible tets, but we'll only need two"; tautx:825–830 justifies it ("associate to every
+    79	  2-simplex … some element of `M` of which it is a properly oriented face … at most 2-to-1 … at least
+    80	  `\maxdeg` … disjointly eligible tets"). *But* the longer Feb-25 over-counting paragraph was cut at Feb 26.
+    81	- **Edge-flip case split made concrete + "conjoined".** tautx:843–848 names the flip edge `cd` and whether
+    82	  it was already in σ (case 1 = one S², case 2 = two S² "conjoined along edge `cd`"); tauty:838–842 just
+    83	  states the two cases without the flip mechanics.
+    84	- **Shelling: monotone dropped, real proof added.** tauty Theorem 3 = "freely **monotone** shellable" with a
+    85	  one-line non-proof; tautx Theorem 3 = "freely shellable" with a **shucking** recursion (tautx:911–941).
+    86	- **Clique complex → Flag complex, with a genuine repair.** tautx adds the **K₅** taboo + the
+    87	  "S³ can't embed in B³" argument (tautx:980,983) and expands Configuration 2 (octahedron special case,
+    88	  `\maxdeg ≥ 5`, interior edge `AD`) — closing gaps tauty's two-configuration / "two choices suffice"
+    89	  argument left open.
+    90	
+    91	---
+    92	
+    93	## Material lost from tauty (accidental)
+    94	
+    95	**These are regressions to fix in version A:**
+    96	
+    97	1. **The entire `\section{Triangulations}` is commented out in tautx** (`tautx:689 \begin{comment}` …
+    98	   `788 \end{comment}`). The live paper therefore has **no rendered definition** of *simplicial
+    99	   triangulation of S²*, *link*, *pure*, *pseudomanifold*, *normal*, or *clean complex* — yet Theorem 2,
+   100	   the eligible-tet argument, and the flag section all use these words. **This is the single largest loss.**
+   101	2. **The convention "a chain is *clean* iff simplicial and its complex is clean" is deleted entirely.**
+   102	   tauty:791–792 `We'll call $Y$ \emph{clean} if it is simplicial and the associated simplicial complex is
+   103	   clean.` — absent from tautx live text (the "simplicial" half survives only inside the comment block).
+   104	   This was the definitional bridge from a chain to clean-complex vocabulary.
+   105	3. **Theorem 2 no longer claims `Y`/`M` is clean.** The word "clean" appears in *no live tautx text*; the
+   106	   constructive cleanness proof (the three link-connectivity checks, tauty:864–908) is gone, not relocated.
+   107	4. **The "monotone" shelling refinement** ("never glue along three faces, so `v` never decreases";
+   108	   "freely monotone shellable") is dropped. tautx:899 keeps the underlying fact ("type 3 … would produce an
+   109	   interior vertex") but the *named, stronger* property in Theorem 3 is downgraded to "freely shellable".
+   110	5. **Minor:** the Whitney–Hamiltonian citation in the flag section; the honest "dimension 3 / we don't know
+   111	   what happens in higher dimension" limitation remarks (cut at Feb 26).
+   112	
+   113	## Material added or improved in tautx (keep)
+   114	
+   115	1. **Modernized, disambiguated notation** — Ω for ambient vertices, `M` for the 3-chain, `X,Y` for the two
+   116	   summand cycles, `M_X,M_Y` for the split, explicit `\Delta(\Omega)` = all subsets of Ω.
+   117	2. **Justified eligible-tet disjointness** via the at-most-2-to-1 pigeonhole (tauty only asserted it).
+   118	3. **Concrete edge-flip case analysis** with the "conjoined along `cd`" two-sphere case.
+   119	4. **A real proof of Theorem 3** (shucking), replacing tauty's self-admitted non-proof.
+   120	5. **A repaired, stronger flag-complex theorem** — K₅ taboo + S³-non-embedding + octahedron / `\maxdeg ≥ 5`
+   121	   Configuration-2 count.
+   122	6. **A more inviting abstract** opening with the Sleator–Tarjan–Thurston motivating question.
+   123	7. One bad meta-joke removed (tauty:944 "insists on being called a separate theorem").
+   124	
+   125	## tautx-specific defects (new, fix in version A)
+   126	
+   127	- **tautx:802** `if $X$ arises from a simplicial triangulation of $B^3$` — should be **`M`**; `X` is the
+   128	  boundary 2-cycle and cannot triangulate `B^3`.
+   129	- **tautx:870–871** incomplete sentence — `…splits into $M_1+M_2$, with the filling pairs $(\sigma_1,M_1)$
+   130	  and / both good…` — the `(\sigma_2,M_2)` clause was dropped (Feb-26 had it correct).
+   131	- **tautx:817** "It can't share more **that** 2 faces" → "**than**".
+   132	- **tautx:998** "at least `$\maxdeg \geq 4$` disjointly eligible **tet**" → "tets".
+   133	- **tautx:205–206** "taut … `$|M|=\Zvol(\del M)$,`" ends with a comma, not a period.
+   134	- Casual asides retained (candidates for removal in a formal draft): tautx:355 "let's drag it out";
+   135	  tautx:416–417 "long-winded way of saying…"; tautx:948 "(Through gritted teeth we say … `is flag'.)".
+   136	
+   137	---
+   138	
+   139	## Recommendations for version A
+   140	
+   141	Goal: a paper-style draft, **no Lean-facing terminology** (note: both tauty and tautx are already
+   142	Lean-free — Lean vocabulary lives only in the local `tautleancc`/`tautxy_formalizable` derivatives, not here).
+   143	
+   144	**Base version A on tauty's *definitional scaffolding*, then graft tautx's *proof improvements*** — i.e. the
+   145	user's reverse strategy is correct: tautx is *not* uniformly better; it silently stranded the paper's core
+   146	definitions. Concretely:
+   147	
+   148	1. **Start from tauty's live definitional spine** (the `\section{Triangulations}` with *clean complex*,
+   149	   *pseudomanifold*, *normal*, *link*, and the **"clean iff simplicial and K clean"** convention). Or,
+   150	   equivalently, **un-comment tautx's Triangulations block** and reinstate the deleted "clean" sentence.
+   151	2. **Restore Theorem 2's full conclusion** — "the filling is clean **and** arises from a triangulation of
+   152	   B³" — with tauty's explicit cleanness verification, *modernized to tautx notation*.
+   153	3. **Adopt tautx's notation throughout** (Ω, `M`, `X,Y`, `M_X,M_Y`) — apply it to the restored tauty
+   154	   material so the whole draft is consistent.
+   155	4. **Graft tautx's genuine advances:** the eligible-tet 2-to-1 pigeonhole; the concrete edge-flip /
+   156	   "conjoined" case split; the shucking proof of Theorem 3; the flag-complex K₅ + octahedron repair.
+   157	5. **Decide on "monotone":** either reinstate "freely monotone shellable" as the Theorem-3 conclusion
+   158	   (stronger) or keep "freely shellable" but state explicitly that gluing along three faces never occurs.
+   159	6. **Fix the typos** (tautx:802 `X`→`M`; 870–871 restore `(σ₂,M₂)`; 817 that→than; 998 tet→tets; 205 comma).
+   160	7. **Trim the jokes** (tautx:355, 416–417, 948) for a formal draft.
+   161	
+   162	**Recommended base:** **tauty** (`save_taut1100.tex`) as the structural/definitional base, updated to tautx
+   163	notation and with tautx's four proof improvements (items 4) merged in. Do **not** start from tautx and try to
+   164	recover the definitions piecemeal — the missing material is large (a whole commented section + the cleanness
+   165	proof) and is cleaner to carry forward from tauty than to reverse-engineer back into tautx.
+
+exec
+/bin/zsh -lc "diff -u drafts_by_date/save_taut1100.tex drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex | sed -n '1,260p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+--- drafts_by_date/save_taut1100.tex	2026-06-26 11:46:09
++++ drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex	2026-06-26 11:46:09
+@@ -15,7 +15,7 @@
+ Zili Wang is supported by
+ the National Natural Science Foundation of China (Grant No. 12301432)
+ }}
+-\date{Version 1.1 dated 28 May 2025
++\date{Version dated 2026-03-20
+ }
+ \newtheorem{theorem}{Theorem}
+ \newtheorem{prop}{Proposition}
+@@ -134,7 +134,7 @@
+ \newcommand{\link}{\kw{link}}
+ \newcommand{\maxdeg}{\kw{maxdeg}}
+ \newcommand{\mindeg}{\kw{mindeg}}
+-\newcommand{\vertices}{\kw{vertices}}
++\newcommand{\vertices}{\kw{Vert}}
+ \newcommand{\carrier}{\kw{carrier}}
+ \newcommand{\nbhd}{\kw{nbhd}}
+ \newcommand{\adj}{\kw{adj}}
+@@ -156,74 +156,82 @@
+ \newcommand{\DO}{{\ \kwstyle{do}\ }}
+ \newcommand{\RETURN}{{\kwstyle{return}\ }}
+ \newcommand{\direct}{\oplus}
++\newcommand{\pls}{\mathord{+}}
++\newcommand{\mns}{\mathord{-}}
+ 
+ 
+ 
+-
+ \begin{document}
+ 
+ \maketitle
+ 
+ \begin{abstract}
+-Let $\sigma$ be a simplicial triangulation of the 2-sphere,
+-$X$ the associated integral 2-cycle.
+-A filling of $X$ is an integral 3-chain $Y$
+-with $\del Y = X$;
+-a taut filling is one with minimal $L_1$-norm.
+-We show that any taut filling 
++Sleator, Tarjan, and Thurston asked:
++given a triangulation $\sigma$ of the 2-sphere,
++what is the minimum number of tetrahedra needed to 
++extend $\sigma$ to a triangulation of the ball?
++Call this minimum $\tetvol(\sigma)$.
++Let $X$ be the associated integral 2-cycle,
++and let $\Zvol(\sigma)$ be the minimum $L_1$-norm
++of an integral 3-chain $M$
++with $\del M = X$.
++Certainly $\tetvol(\sigma) \geq \Zvol(\sigma)$.
++We show here that equality holds, and in fact
++any optimal filling $M$ 
+ arises from an extension of $\sigma$ to
+-a simplicial complex homeomorphic to the 3-ball.
+-This complex is shellable, and
++a shellable simplicial complex homeomorphic to the 3-ball.
++This complex is a flag complex:
+ every clique in its 1-skeleton occurs as a simplex.
+ The key to the proof is the general
+-fact that any taut filling of an $n$-cycle
++fact that any optimal filling of an integral $n$-cycle
+ splits under disjoint union, connected sum, and more generally
+ what we call almost disjoint union,
+ where summands are supported on sets that overlap in at most $n+1$ vertices.
+-Despite the generality of this result, we have nothing to say about
+-optimal fillings of spheres of dimension 3 or higher.
+ \end{abstract}
+ 
+ \section{Overview}
+-Let $\Delta$ be the abstract $|V|-1$-simplex with vertices $V$,
+-viewed as a simplicial complex.
+-Let $C_n$ and $Z_n$ be its integral $n$-chains and $n$-cycles.
+-Here and throughout we'll take $n \geq 1$.
++Let $\Delta = \Delta(\Omega)$ be the $|\Omega|\mns 1$-simplex
++with vertices $\Omega$,
++viewed as the abstract simplicial complex consisting of all subsets of
++$\Omega$.
++Let $C_n=C_n(\Omega)=C_n(\Delta(\Omega),\ZZ)$
++and $Z_n=Z_n(\Omega)=Z_n(\Delta(\Omega),\ZZ)$
++be its integral $n$-chains and $n$-cycles.
+ A \emph{filling} of an $n$-cycle $X \in Z_n$ is any
+-$n+1$-chain $Y \in C_{n+1}$ with $\del Y = X$.
+-Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$,
+-and call $Y$ \emph{taut} if $|Y|=\Zvol(\del Y)$.
++$n\pls 1$-chain $M \in C_{n+1}$ with $\del M = X$.
++(Here and throughout we'll assume $n\geq 1$.)
++Let $\Zvol(X)$ be the minimum $L_1$-norm of a filling of $X$.
++Call $M \in C_{n+1}$ \emph{taut} if it is an optimal filling
++of its boundary, i.e., if $|M|=\Zvol(\del M)$,
+ 
+ For $X \in C_n$ let
+ $\vertices(X)$ be the set of all the vertices of all the $n$-simplices
+ to which $X$ assigns non-$0$ weight.
+-For a taut filling $Y$ of $X$ we have $\vertices(Y) = \vertices(X)$,
+-because projecting $V$ onto $\vertices(X)$ by mapping
+-$V \setminus \vertices(X)$ to an arbitrary $x \in \vertices(X)$
+-will push any filling with an internal vertex to a smaller filling.
++For any taut filling $M$ of $X$ we have $\vertices(M) = \vertices(X)$.
+ (Cf.\ Proposition \ref{nointernal} below.)
+-This is why we write $C_n$ and $Z_n$ without reference to $V$.
++This is why we write $C_n$ and $Z_n$ without reference to $\Omega$.
+ 
+-Call an $n$-cycle $X=X_1+X_2 \in Z_n$ an \emph{almost disjoint union} if
++Call an $n$-cycle $X+Y \in Z_n$ an \emph{almost disjoint union} if
+ \[
+-|\vertices(X_1) \cap \vertices(X_2)| \leq n+1
++|\vertices(X) \cap \vertices(Y)| \leq n+1
+ .
+ \]
+ This notion generalizes both disjoint union and connected sum
+ along an $n$-simplex.
+ Ellison \cite{ellison:gap}
+ showed the $\Zvol$ adds under almost disjoint union:
+-$\Zvol(X) = \Zvol(X_1) + \Zvol(X_2)$.
+-This means that \emph{some} taut filling $Y$ of $X$ splits into a sum
+-$Y=Y_1+Y_2$ of taut fillings of $X_1,X_2$.
++$\Zvol(X+Y) = \Zvol(X) + \Zvol(Y)$.
++This means that \emph{some} taut filling $M$ of $X$ splits into a sum
++$M=M_X+M_Y$ of taut fillings of $X,Y$.
+ Here we amplify Ellison's Corollary 2 to show (Theorem \ref{th1})
+-that when $n \geq 2$, \emph{any} taut filling of $X$ splits.
++that when $n \geq 2$, \emph{any} taut filling of $X+Y$ splits.
+ 
+ In place of integral chains we can use chains with
+ coefficients in $\QQ$ or $\RR$.
+-Evidently $\Rvol=\Qvol$.
+-Computing $\Rvol$ is a linear programming problem with rational coefficients,
+-so $\Qvol = \Rvol$.
++Evidently $\Rvol \leq \Qvol$.
++But computing $\Rvol$ is
++a linear programming problem with rational coefficients,
++so in fact $\Qvol = \Rvol$.
+ Ellison used LP duality to prove that
+ $\Qvol$ adds under almost
+ disjoint union.
+@@ -231,13 +239,14 @@
+ (Corollary \ref{cor1})
+ that taut $\QQ$-fillings split:
+ Multiplying a taut
+-$\QQ$-filling $Y$ of $X$ by a common denominator $q$
+-yields a taut $\ZZ$-filling $qY$ of $qX$:
+-Split the $\ZZ$-filling $qY$ and divide by $q$ to get a splitting
+-of the $\QQ$-filling $Y$.
++$\QQ$-filling $M$ of $X$ by a common denominator $q$
++yields a taut $\ZZ$-filling $qM$ of $qX$:
++Split the $\ZZ$-filling $qM$ and divide by $q$ to get a splitting
++of the $\QQ$-filling $M$.
+ 
+ Now let $\sigma$ be a simplicial triangulation of $S^2$;
+-let $X(\sigma) \in Z_2$ be either one of the 2-cycles
++let $X(\sigma) \in Z_2(\Delta(\vertices(\sigma)),\ZZ)$
++be either one of the 2-cycles
+ that arises from $\sigma$ by orienting its $2$-simplices;
+ and write $\Zvol(\sigma) = \Zvol(X(\sigma))$.
+ Let $\tetvol(\sigma)$ be the minimum number of $3$-simplices
+@@ -247,34 +256,17 @@
+ \Zvol(\sigma) = \tetvol(\sigma)
+ .
+ \]
+-Certainly $\Zvol \leq \tetvol$, because any extension $\tau$ induces a filling
++Certainly $\Zvol \leq \tetvol$,
++because any extension $\tau$ induces a filling
+ of $X(\sigma)$.
+ Theorem \ref{th2} states that 
+-any taut filling of $X(\sigma)$ arises in this way.
+-
++any taut filling $\tau$ of $X(\sigma)$ arises in this way.
++As corollaries,
++we get that $\tau$ is a shellable flag complex:
++It can be assembled one simplex at a time,
++and any clique in its 1-skeleton occurs as a simplex.
+ The proof of Theorem \ref{th2} relies on Theorem \ref{th1}.
+-We use induction, with base case $\sigma$ a tetrahedron.
+-In any taut filling $Y$ of $X(\sigma)$,
+-thought of as a multiset of oriented $3$-simplices,
+-some $t \in Y$ meets $\sigma$ in at least two faces.
+-Ignoring the base case,
+-$Y-t$ is a taut filling of
+-$X(\sigma) - \del t = X(\sigma^\prime)$,
+-where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+-or two such triangulations $\sigma_1,\sigma_2$ fused along an edge.
+-In the first case induction yields a triangulation of $B^3$,
+-and we glue on $t$.
+-In the second case by Theorem \ref{th1}
+-$Y-t$ splits into taut fillings of $X(\sigma_1),X(\sigma_2)$;
+-by induction both give triangulations of $B^3$, which we
+-glue onto $t$.
+-So we wind up with some kind of triangulation $\tau$ of $B^3$,
+-built from the simplices of $Y$.
+-The wrinkle is that we need to ensure that in $Y$ there are no
+-identifications beyond those in $\tau$.
+ 
+-We don't know what happens for spheres of dimension 3 or greater.
+-
+ \section{Background}
+ 
+ Our interest in $\Zvol$ stems from the work
+@@ -283,53 +275,57 @@
+ They observed that coning from a vertex of maximal degree
+ shows that a $v$-vertex
+ triangulation $\sigma$
+-of $S^2$ has $\tetvol \leq 2v-10$.
+-They then
++of $S^2$ has $\tetvol \leq 2v-4-\maxdeg(\sigma)$.
++If $v\geq13$ $\maxdeg(\sigma) \geq 6$, so $\tetvol \leq 2v-10$.
++They
+ produced examples for which $\tetvol = 2v-10$, provided
+ $v$ is larger than some unspecified bound,
+ and conjectured that such examples should exist for any $v \geq 13$.
+ Their approach was to 
+ realize $\sigma$ as an ideal hyperbolic polyhedron
+-with volume $2v-O(\log(v))$ when measured in bushels,
+-a \emph{bushel} being volume of an equilateral ideal tetrahedron,
++with volume $2v V_0-O(\log(v))$,
++where $V_0$ is the volume of an
++equilateral ideal tetrahedron,
+ which is maximal.
+ This implies $\tetvol \geq 2v-O(\log(v))$.
+-From there they worked their way up to showing
++From there they bootstrapped their way up to showing
+ that $\tetvol=2v-10$.
+ They suggested
+ \cite[p. 697]{stt:jams}
+ that in fact $\Qvol= 2v-10$,
+ which would immediately imply $\tetvol=2v-10$.
+ Mathieu and Thurston \cite{mt}
+-produced a different class of examples
+-with $\Qvol = 2v-10$, still under the assumption that $v$
++produced a class of examples,
++different from the examples of Sleator, Tarjan, and Thurston,
++for which they could show that $\Qvol = 2v-10$,
++still under the assumption that $v$
+ is sufficiently large.
+ In \cite{dew:filling} we produced examples for any $v \geq 13$ with
+ $\Qvol=2v-10$, confirming the conjecture of Sleator, Tarjan, and Thurston.
+-Theorem \ref{th2} here now
+-tells us that whenever we have $\Qvol=2v-10$, any taut filling
++Theorem \ref{th2} here
++tells us that whenever we have $\Qvol=2v-10$,
++or just $\Zvol=2v-10$, any taut filling
+ must arise from a triangulation of the ball.
+ 
+ About $\Qvol$ versus $\Zvol$.
+ In \cite{dew:filling}
+-we describe triangulations of $S^2$ with $\Qvol < \Zvol$.
++we described triangulations of $S^2$ with $\Qvol < \Zvol$.
++In all such examples that we know of
++with $\maxdeg \leq 6$, the gap between $\Qvol$ and $\Zvol$ is $<1$,
++so that
++$\lceil \Qvol \rceil = \Zvol$.
+ Since $\Qvol$ and $\Zvol$
+-add under connected sum, the gap between them can be arbitrarily
++add under connected sum,
++the gap between them can be arbitrarily
+ large
+-(Ellison \cite{ellison:gap}).
+-Some examples with a gap have $\maxdeg =6$,
+-but in all such examples that we have seen,
+-the gap is $<1$, so that
+
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex | sed -n '910,1045p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/taut_2026-03-15_c658823.tex | sed -n '1018,1040p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  1018	Now there are six edges we must avoid flipping.
+  1019	Having dealt with configuration 1,
+  1020	we know that along with the six edges of $\{A,B,C,D\}$,
+  1021	$\tau$ must contain all four of the unoriented faces
+  1022	$ABC$, $ABD$, $ACD$, $BCD$.
+  1023	At most two of these can be boundary faces, because
+  1024	$\sigma$ has no vertex of degree 3.
+  1025	So at most five of the $K_5$ edges are on the boundary.
+  1026	By treating the octahedron separately as a special case,
+  1027	we can assume $\maxdeg \geq 5$,
+  1028	so we have at least five boundary edges we can flip.
+  1029	The only potential problem is if five of the six $K_5$ edges are
+  1030	on the boundary.
+  1031	Say the interior edge is $AE$,
+  1032	so that the $K_5$ includes the faces $ABC,BCD$.
+  1033	If an eligible tet contains neither of these as one of its two boundary faces,
+  1034	we are fine.
+  1035	But at most two of our disjointly eligible tets
+  1036	can contain one of the faces $ABC,BCD$,
+  1037	leaving us at least $\maxdeg-2$ other flipping options.
+  1038	\proofend
+  1039	
+  1040	\bibliography{taut}
+
+ succeeded in 0ms:
+   910	
+   911	\proofstart
+   912	This is a corollary of the proof of Theorem \ref{th2}.
+   913	
+   914	Let $t_1 \in \tau$ be the designated intial tet of the shelling.
+   915	Instead of thinking of how to build $\tau$ starting with $t_1$,
+   916	consider a recursive procedure---let's call it `shucking'---for
+   917	pulling $\tau$ apart so as to remove $t_1$ last.
+   918	
+   919	The base case is when $\tau$ consists only of $t_1$.
+   920	
+   921	If $\tau$ has a vertex of degree 3 that belongs to a tet $t$
+   922	other than $t_1$, remove $t$ and shuck $\tau-t$ ending with $t_1$.
+   923	
+   924	If $\tau$ has a vertex of degree 3 that belongs to $t_1$,
+   925	let $t_2$ be the tet of $\tau-t_1$ to which $t_1$ is attached;
+   926	shuck $\tau-t_1$ ending with $t_2$;
+   927	remove $t_1$.
+   928	
+   929	If there is no vertex of degree 3,
+   930	we have at least $\maxdeg \geq 4$ disjointly eligible tets.
+   931	Pick one such tet $t$ that shares no face with $t_1$.
+   932	If $\tau-t$ doesn't fall apart,
+   933	remove $t$ and shuck $\tau-t$ ending with $t_1$.
+   934	If $\tau-t$ falls apart
+   935	into the almost disjoint union of $\tau_1$ and $\tau_2$,
+   936	assume $t \in \tau_1$;
+   937	let $t_2$ be the tet where $t$ attaches to $\tau_2$;
+   938	shuck $\tau_2$ ending with $t_2$;
+   939	remove $t$;
+   940	shuck $\tau_1$ ending with $t_1$.
+   941	\proofend
+   942	
+   943	\section{Flag complex}
+   944	
+   945	A simplicial complex is a \emph{flag complex}
+   946	if every clique in
+   947	its $1$-skeleton occurs as a simplex.
+   948	(Through gritted teeth we say that the complex `is flag'.)
+   949	A simplicial triangulation $\sigma$ of $S^2$
+   950	is flag just if it is \emph{prime} 
+   951	(not the connected sum of smaller complexes)
+   952	and not the boundary of a tetrahedron.
+   953	
+   954	We can decompose any $\sigma$ as the connected sum of
+   955	prime components $\sigma_i$.
+   956	(Of course, to reconstruct $\sigma$ we need more than this, we need to know
+   957	just how they are connected.)
+   958	From the point of taut fillings these components are independent:
+   959	Any taut filling $\tau$ of $\sigma$ is a union of taut fillings $\tau_i$.
+   960	
+   961	Now we want to show that, whether or not $\sigma$ itself is prime, 
+   962	any taut filling of $\sigma$ is a flag complex.
+   963	
+   964	\begin{theorem}
+   965	If $\sigma$ is a simplicial triangulation of $S^2$,
+   966	any taut filling $\tau$ of $\sigma$
+   967	is a flag complex.
+   968	\end{theorem}
+   969	
+   970	\proofstart
+   971	The goal here is to show that none of these
+   972	three taboo configurations occurs
+   973	in $\tau$:
+   974	\begin{enumerate}
+   975	\item
+   976	The three edges of triangle $\{A,B,C\}$ without the 2-simplex $ABC$.
+   977	\item
+   978	The six edges of the $K_4$ $\{A,B,C,D\}$ without the 3-simplex $ABCD$.
+   979	\item
+   980	The ten edges of the $K_5$ $\{A,B,C,D,E\}$.
+   981	\end{enumerate}
+   982	
+   983	If we can rule out 1 and 2 then 3 will follow, because
+   984	along with the $K_5$ we would have the five associated 3-simplices:
+   985	Together these would form an $S^3$, which is not possible as a subcomplex
+   986	of the topological 3-ball $\tau$.
+   987	
+   988	To rule out 1 and 2,
+   989	the strategy will be to consider a minimal counterexample,
+   990	and find a modification that would produce a smaller counterexample.
+   991	
+   992	If $\sigma$ has a vertex of degree 3,
+   993	it is a connected sum with one summand a single tetrahedron.
+   994	We can pull off the vertex from $\sigma$, while removing the associated
+   995	tet from $\tau$, to produce a smaller counterexample.
+   996	
+   997	If $\sigma$ has no vertex of degree 3.
+   998	there are at least $\maxdeg \geq 4$ disjointly eligible tet.
+   999	Removing any one of these tets performs an `edge flip' on the boundary
+  1000	$\sigma$,
+  1001	which either (a) remains a triangulation of the 2-sphere,
+  1002	or (b) becomes an almost disjoint union where
+  1003	two such triangulations are joined along an edge.
+  1004	We will show that some choice for the flip does not remove the taboo
+  1005	configuration.
+  1006	In case (a) we have a smaller counterexample already.
+  1007	In case (b) the key is that if a $K_3$ or $K_4$ occurs
+  1008	in the almost disjoint union, it occurs on one side or the other,
+  1009	also giving a counterexample.
+  1010	
+  1011	Configuration 1:
+  1012	When we remove an eligible tet from $\tau$ to flip an edge of $\sigma$,
+  1013	the only edge that disappears from $\tau$ is the edge that gets flipped.
+  1014	There are at least four choices of the edge to flip, and three edges we must
+  1015	avoid flipping to preserve the taboo $K_3$.
+  1016	
+  1017	Configuration 2:
+  1018	Now there are six edges we must avoid flipping.
+  1019	Having dealt with configuration 1,
+  1020	we know that along with the six edges of $\{A,B,C,D\}$,
+  1021	$\tau$ must contain all four of the unoriented faces
+  1022	$ABC$, $ABD$, $ACD$, $BCD$.
+  1023	At most two of these can be boundary faces, because
+  1024	$\sigma$ has no vertex of degree 3.
+  1025	So at most five of the $K_5$ edges are on the boundary.
+  1026	By treating the octahedron separately as a special case,
+  1027	we can assume $\maxdeg \geq 5$,
+  1028	so we have at least five boundary edges we can flip.
+  1029	The only potential problem is if five of the six $K_4$ edges are
+  1030	on the boundary.
+  1031	Say the interior edge is $AD$,
+  1032	so that the $K_4$ includes the faces $ABC,BCD$.
+  1033	If an eligible tet contains neither of these as one of its two boundary faces,
+  1034	we are fine.
+  1035	But at most two of our disjointly eligible tets
+  1036	can contain one of the faces $ABC,BCD$,
+  1037	leaving us at least $\maxdeg-2$ other flipping options.
+  1038	\proofend
+  1039	
+  1040	\bibliography{taut}
+  1041	\bibliographystyle{amsplain}
+  1042	\end{document}
+
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex | sed -n '816,910p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   816	Call a tet $t \in M$ \emph{eligible} if it shares two of its oriented faces
+   817	with $\sigma$. (It can't share more that 2 faces,
+   818	since $\sigma$ has no vertex of
+   819	degree $3$.)
+   820	By Proposition \ref{maxdeg}
+   821	\[
+   822	|M| = \Zvol(\sigma) \leq f-\maxdeg(\sigma) 
+   823	.
+   824	\]
+   825	Regarding $M$ as a multiset of tets, associate to every 2-simplex $\alpha$ of
+   826	$\sigma$ some element of $M$ of which $\alpha$ is a properly oriented face.
+   827	This map is at most 2-to-1, because no tet of $M$ has more than two faces
+   828	on the boundary,
+   829	so there must be at least $\maxdeg$ elements of $M$ where this map is 2-to-1,
+   830	giving us at least $\maxdeg$ disjointly eligible tets,
+   831	meaning eligible tets  whose pairs of boundary faces
+   832	are mutually disjoint.
+   833	For the nonce we will only need two such tets.
+   834	
+   835	Consider an eligible tet $t$ with boundary faces
+   836	$s_1=[a,b,c],s_2=[b,a,d]$.
+   837	Removing $t$ from $M$ produces a filling $M-t$
+   838	of a 2-complex $\sigma_t$, where the faces $s_1,s_2$ have been replaced
+   839	by faces $[c,d,b],[d,c,a]$,
+   840	with the unoriented edge $ab$ having been `flipped' to become edge $cd$.
+   841	There are two possibilities for the simplicial complex $\sigma_t$:
+   842	
+   843	(1) Edge $cd$ was not an edge of $\sigma$;
+   844	$\sigma_t$ is a triangulation of $S^2$.
+   845	
+   846	(2) Edge $cd$ was an edge of $\sigma$;
+   847	$\sigma_t$ is the almost disjoint union of two triangulations
+   848	$\sigma_1,\sigma_2$ of $S^2$, conjoined along the edge $cd$.
+   849	
+   850	
+   851	In case (1), by minimality of $|M|$
+   852	$(\sigma_t,M-t)$ is a good filling pair,
+   853	so $M-t$ arises from a triangulation of $B^3$.
+   854	The same will be true of $M = (M-t) + t$,
+   855	providing that adding the tet $t$ back in
+   856	doesn't produce a non-simplicial triangulation.
+   857	That would happen just if $t$ occurs in $M-t$, which is to say that
+   858	$t$ occurs with multiplicity 2 in $M$.
+   859	Here's where we use the fact that we can choose an eligible tet $u$
+   860	whose boundary faces are disjoint from $t$.
+   861	(Really we only need that it not be a clone of $t$, it could have 
+   862	one of its boundary faces in common with $t$.)
+   863	In this case $(\sigma_u, M-u)$ is bad filling pair,
+   864	because the presence of $2t$ in $M-u$ means that $M-u$ does not
+   865	arise from a simplicial triangulation, whether of $B^3$ of anything else.
+   866	So $2t$ doesn't belong to $M$; $M=(M-t)+t$ arises from a triangulation of $B^3$;
+   867	$(\sigma,M)$ is a good filling pair; and we have a contradiction.
+   868	
+   869	Case (2) is simpler.
+   870	$M-t$ splits into $M_1+M_2$, with the filling pairs $(\sigma_1,M_1)$ and
+   871	both good by minimality of $|M|$.
+   872	So both $M_1$ and $M_2$ arise from simplicial triangulations of $B^3$,
+   873	and $M$ arises from the complex obtained by gluing these triangulations
+   874	together with $t$ between them.
+   875	This is a simplicial triangulation of $B^3$,
+   876	contradiction.
+   877	\proofend
+   878	
+   879	Thanks to this theorem, we may take the liberty of saying that
+   880	a taut filling of $\sigma$ `is' a simplicial triangulation
+   881	$\tau$ of $B^3$.
+   882	
+   883	\section{Shelling}
+   884	
+   885	We want to show that any taut filling $\tau$ of a triangulation $\sigma$
+   886	of $S^2$ is \emph{shellable}.
+   887	
+   888	A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+   889	is an ordering 
+   890	$(t_1,\ldots,t_{|\tau|})$
+   891	of its tets such that
+   892	gluing on one at a time maintains a triangulation of $B^3$,
+   893	i.e., 
+   894	so that for $k=1,\ldots,|\tau|$ the subcomplex $\tau_k$ generated
+   895	by $\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B_3$.
+   896	For $k>1$ we distinguish the type of $t_k$ according to the number of
+   897	faces it shares with $\tau_{k-1}$.
+   898	In general the type can be any of $1,2,3$, but in our application
+   899	type $3$ is ruled out because it would produce an interior vertex.
+   900	
+   901	Call $\tau$ \emph{freely shellable} if any $t \in \tau$
+   902	can serve as the initial tet of a shelling.
+   903	
+   904	\begin{theorem} \label{th3}
+   905	If $\sigma$ is a simplicial triangulation of $S^2$,
+   906	any taut filling $\tau$ of $\sigma$
+   907	is a freely shellable
+   908	simplicial triangulation of $B^3$.
+   909	\end{theorem}
+   910	
+
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/taut_2026-02-25_1d2af40.tex | sed -n '905,960p' && nl -ba drafts_by_date/taut_2026-02-26_2bb1aef.tex | sed -n '880,925p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   905	still occurs either twice plus or twice minus in $M-t$ in case (1),
+   906	or in one or the other of $M_1,M_2$ in case (2),
+   907	contradicting minimality.
+   908	If $s \in \sigma$,
+   909	it occurs at least twice plus in $M$:
+   910	Remove some eligible tet that does not have $s$ as a face
+   911	to get a contradiction.
+   912	
+   913	\item
+   914	$M$ has no edge $\{a,b\}$ whose link
+   915	is disconnected.
+   916	For the link is a 1-dimensional complex whose edges correspond to
+   917	tets of $M$ that contain $\{a,b\}$.
+   918	The only way a component of the link can have fewer than three
+   919	vertices is if consists of a single edge $\{c,d\}$, corresponding
+   920	to a tet $t=\{a,b,c,d\} \in M$.
+   921	In this case $\{a,b\}$ must be an edge of $\sigma$,
+   922	and $\{a,b,c\},\{a,b,d\}$ the faces of $\sigma$
+   923	that are adjacent along $\{a,b\}$.
+   924	These are the only faces of $\sigma$ that contain $\{a,b\}$,
+   925	so no other component of the link can reduce to a single edge.
+   926	If the link is disconnected, removing any eligible tet
+   927	other than $t$ will
+   928	leave it disconnected, contradicting minimality.
+   929	
+   930	\item
+   931	$M$ has no vertex whose link is disconnected:
+   932	For if $\link(\{a\},M)$ is not connected,
+   933	the only way removing a single tet $t$
+   934	can render the link connected
+   935	is if one component of the link has a single $2$-simplex
+   936	$\{b,c,d\}$ and $t=\{a,b,c,d\}$.
+   937	In this case $\{a,b,c\}$, $\{a,b,d\}$, $\{a,c,d\}$ must
+   938	all be faces of $\sigma$,
+   939	making $a$ a vertex of $\sigma$ of degree $3$, contradiction.
+   940	
+   941	\item Hence $M$ is clean.
+   942	\proofend
+   943	
+   944	\end{enumerate}
+   945	
+   946	Thanks to this theorem, we may take the liberty of saying that
+   947	a taut filling of $\sigma$ `is' a simplicial triangulation
+   948	$\tau$ of $B^3$.
+   949	
+   950	\section{Shelling}
+   951	
+   952	A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+   953	is an ordering 
+   954	$(t_1,\ldots,t_{|\tau|})$
+   955	of its tets such that
+   956	gluing on one at a time maintains a triangulation of $B^3$,
+   957	i.e., 
+   958	so that for $k=1,\ldots,|\tau|$ the subcomplex $\tau_k$ generated
+   959	by $\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B_3$.
+   960	Each new tet will be glued on along one face ($v$ increases by $1$);
+   880	Take any tet $t$ of $M$ that meets the boundary in two, or three, or four faces;
+   881	remove it; recursively assemble the one or two resulting pieces; attach to $t$.
+   882	
+   883	Choosing to build up instead if tearing down, $M$ may be obtained by
+   884	a `tree-shelling' process.
+   885	In a standard shelling of $M$, you would start with a single tet,
+   886	and at each step glue on to the existing complex a new tet $t$
+   887	along one or two (or three) of it boundary faces.
+   888	In a tree shelling it's the same, only you're allowed to glue along
+   889	$0$ faces, meaning you introduce $t$ as a new seed tet, and you
+   890	may glue two or more existing complexes to $t$ along disjoint subsets
+   891	of its faces.
+   892	
+   893	We forego discussion of whether our tree-shellable $M$
+   894	may actually be shellable in the
+   895	standard linear sense ---
+   896	and whether we will be better off if this turns out to be the case.
+   897	
+   898	
+   899	\section{Flag complex}
+   900	
+   901	A simplicial complex is a \emph{flag complex}
+   902	if every clique in
+   903	its $1$-skeleton occurs as a simplex.
+   904	(Through gritted teeth we say that it `is flag'.)
+   905	A simplicial triangulation $\sigma$ of $S^2$
+   906	is flag just if it is \emph{prime} 
+   907	(not the connected sum of smaller complexes)
+   908	and not the boundary of a tetrahedron.
+   909	
+   910	We can decompose any $\sigma$ as the connected sum of
+   911	prime components $\sigma_i$.
+   912	(Of course, to reconstruct $\sigma$ we need more than this, we need to know
+   913	just how they are connected.)
+   914	From the point of taut fillings these components are independent:
+   915	Any taut filling $\tau$ of $\sigma$ is a union of taut fillings $\tau_i$.
+   916	
+   917	Now we want to show that, whether or not $\sigma$ itself is prime, 
+   918	any taut filling of $\sigma$ is a flag complex.
+   919	
+   920	\begin{theorem}
+   921	If $\sigma$ is a simplicial triangulation of $S^2$,
+   922	any taut filling $\tau$ of $\sigma$
+   923	is a flag complex.
+   924	\end{theorem}
+   925	
+
+codex
+There is one nuance: tautx’s theorem conclusion “arises from a simplicial triangulation of B^3” probably implies cleanness if that definition is live, but tautx’s proof no longer proves the chain-to-complex bridge in the same explicit way. That affects how I’d phrase the loss.
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/taut_2026-02-25_1d2af40.tex | sed -n '780,850p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "nl -ba drafts_by_date/taut_2026-02-25_1d2af40.tex | sed -n '950,990p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   780	at least up to the point of picking out one particular orientation
+   781	$X(\sigma) \in C_n$ if $M$ is oriented,
+   782	but we don't insist upon this because nothing will depend on which
+   783	orientation we pick.
+   784	
+   785	This notion of triangulation is not as general as you might want
+   786	for some purposes.
+   787	The double cover of a triangle is not a simplicial triangulation
+   788	of $S^2$,
+   789	because that would requires two distinct
+   790	$2$-simplices to have the same three edges.
+   791	Nor can any $2$-simplex have two of its edges
+   792	glued to one another.
+   793	Thurston
+   794	\cite{thurston:shapes}
+   795	allows such triangulations,
+   796	but it is unclear how important these are to
+   797	his theory of shapes of surfaces.
+   798	We don't allow them.
+   799	
+   800	We continue to think of a chain $M \in C_n$ as a multiset of
+   801	oriented $n$-simplices.
+   802	If this is only nominally a multiset (all multiplicites are $1$)
+   803	we'll call $M$ \emph{simplicial},
+   804	and view it as arising from a pure simplicial complex.
+   805	\end{comment}
+   806	
+   807	\section{Filling a triangulation of the 2-sphere}
+   808	
+   809	\begin{theorem} \label{th2}
+   810	Let $\sigma$ be a simplicial triangulation of $S^2$.
+   811	Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$.
+   812	\end{theorem}
+   813	
+   814	\proofstart
+   815	
+   816	Let $v,e,f$  count the vertices, edges, and faces of $\sigma$.
+   817	We have
+   818	$e=3v-6$, $f=2v-4$.
+   819	(Check: $3f=2e$, $v-e+f=2$.)
+   820	
+   821	Consider a counterexample pair $(\sigma,M)$ for which
+   822	$\Zvol(\sigma)=|M|$ is minimal.
+   823	Obviously $v>4$.
+   824	Because taut fillings split under connected sum,
+   825	we can assume that $\sigma$ is prime
+   826	(not a connected sum along a triangle),
+   827	and in particular (this is all we will need) that there is no
+   828	vertex of degree $3$.
+   829	
+   830	Call a tet $t \in M$ \emph{eligible} if it shares two of its oriented faces
+   831	with $\sigma$. (It can't share more that 2 faces,
+   832	since $\sigma$ has no vertex of
+   833	degree $3$.)
+   834	Since
+   835	\[
+   836	|M| = \Zvol(\sigma) \leq f-\maxdeg(\sigma) 
+   837	\]
+   838	there must be at least $\maxdeg$ eligible tets.
+   839	In fact there must a set of at least $\maxdeg$ eligible tets
+   840	whose boundary faces pairs
+   841	are mutually disjoint.
+   842	A priori eligible tets may have have overlapping boundary faces,
+   843	and two eligible tets might even be identical,
+   844	because at this point $M$ is just a multiset, not
+   845	known to be a set -- that's part of what we're trying to prove.
+   846	But our at-most $f-\maxdeg$  tets have to collectively
+   847	produce the $f$ distinct oriented boundary faces of $\sigma$.
+   848	If two eligible tets overlap in a face $[abc]$,
+   849	they've failed to account for one extra boundary face apiece,
+   850	because $[abc]$ occurs only once in $\del \sigma$, so together
+
+ succeeded in 0ms:
+   950	\section{Shelling}
+   951	
+   952	A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+   953	is an ordering 
+   954	$(t_1,\ldots,t_{|\tau|})$
+   955	of its tets such that
+   956	gluing on one at a time maintains a triangulation of $B^3$,
+   957	i.e., 
+   958	so that for $k=1,\ldots,|\tau|$ the subcomplex $\tau_k$ generated
+   959	by $\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B_3$.
+   960	Each new tet will be glued on along one face ($v$ increases by $1$);
+   961	two faces ($v$ stays the same);
+   962	or three faces ($v$ decreases by $1$).
+   963	Call the shelling \emph{monotone}
+   964	if you never glue along three faces, so that $v$ never decreases.
+   965	Call $\tau$ \emph{freely monotone shellable} if any $t \in \tau$
+   966	can serve as the initial tet of a monotone shelling.
+   967	
+   968	\begin{theorem} \label{th3}
+   969	If $\sigma$ is a simplicial triangulation of $S^2$,
+   970	any taut filling $\tau$ of $\sigma$
+   971	is a freely monotone shellable
+   972	simplicial triangulation of $B^3$.
+   973	\end{theorem}
+   974	
+   975	\proofstart
+   976	This is a corollary of the proof of Theorem \ref{th2}
+   977	that insists on being called a separate theorem.
+   978	\proofend
+   979	
+   980	\section{Flag complex}
+   981	
+   982	A simplicial complex is a \emph{flag complex}
+   983	if every clique in
+   984	its $1$-skeleton occurs as a simplex.
+   985	(Through gritted teeth we say that it `is flag'.)
+   986	A simplicial triangulation $\sigma$ of $S^2$
+   987	is flag just if it is \emph{prime} 
+   988	(not the connected sum of smaller complexes)
+   989	and not the boundary of a tetrahedron.
+   990	
+
+exec
+/bin/zsh -lc 'rg -n "clean|pseudomanifold|link|simplicial triangulation|monotone|Tree-shelling|tree-shell|type 3|type $3|interior vertex" drafts_by_date/taut_2026-02-25_1d2af40.tex drafts_by_date/taut_2026-02-26_2bb1aef.tex drafts_by_date/taut_2026-03-15_c658823.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:134:\newcommand{\link}{\kw{link}}
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:169:Let $\sigma$ be a simplicial triangulation of the 2-sphere,
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:241:Now let $\sigma$ be a simplicial triangulation of $S^2$;
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:247:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:586:Say that a tet $t \in M$ has type $CCXY$ if $t= \pm[c_1c_2x_1y_1]$
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:682:We turn now to filling simplicial triangulations of $S^2$.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:693:For any $k$-simplex $s \in \sigma$ define the \emph{link}
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:695:\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:699:(except for $\link(\emptyset,\sigma)=\sigma$)
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:705:called normal pseudomanifolds, or as we will prefer to say,
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:706:\emph{clean $n$-complexes}.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:711:a clean complex must be \emph{pure},
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:718:A clean complex is a \emph{pseudomanifold}:
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:722:the link $\link(s,\sigma)$ of any $n-1$-simplex $s$
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:729:A clean complex is \emph{normal}:
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:731:$\link(s,\sigma)$ is connected.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:741:If $\sigma$ is clean, 
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:742:$\link(s,\sigma)$ is clean.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:743:The boundary $\del \sigma$ of $\sigma$ is clean,
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:749:is a \emph{simplicial triangulation} of $M$
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:751:In this case $\sigma$ is necessarily a clean complex.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:760:The double cover of a triangle is not a simplicial triangulation
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:783:Let $\sigma$ be a simplicial triangulation of $S^2$.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:784:Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:789:Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial triangulation
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:792:if $X$ arises from a simplicial triangulation of $B^3$.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:844:doesn't produce a non-simplicial triangulation.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:853:arise from a simplicial triangulation, whether of $B^3$ of anything else.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:861:both $M_1$ and $M_2$ arise from simplicial triangulations of $B^3$,
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:864:This is a simplicial triangulation of $B^3$,
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:869:a taut filling of $\sigma$ `is' a simplicial triangulation
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:874:\section{Tree-shelling}
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:884:a `tree-shelling' process.
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:893:We forego discussion of whether our tree-shellable $M$
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:905:A simplicial triangulation $\sigma$ of $S^2$
+drafts_by_date/taut_2026-02-26_2bb1aef.tex:921:If $\sigma$ is a simplicial triangulation of $S^2$,
+drafts_by_date/taut_2026-03-15_c658823.tex:134:\newcommand{\link}{\kw{link}}
+drafts_by_date/taut_2026-03-15_c658823.tex:247:Now let $\sigma$ be a simplicial triangulation of $S^2$;
+drafts_by_date/taut_2026-03-15_c658823.tex:253:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+drafts_by_date/taut_2026-03-15_c658823.tex:596:Say that a tet $t \in M$ has type $CCXY$ if $t= \pm[c_1c_2x_1y_1]$
+drafts_by_date/taut_2026-03-15_c658823.tex:692:We turn now to filling simplicial triangulations of $S^2$.
+drafts_by_date/taut_2026-03-15_c658823.tex:703:For any $k$-simplex $s \in \sigma$ define the \emph{link}
+drafts_by_date/taut_2026-03-15_c658823.tex:705:\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+drafts_by_date/taut_2026-03-15_c658823.tex:709:(except for $\link(\emptyset,\sigma)=\sigma$)
+drafts_by_date/taut_2026-03-15_c658823.tex:715:called normal pseudomanifolds, or as we will prefer to say,
+drafts_by_date/taut_2026-03-15_c658823.tex:716:\emph{clean $n$-complexes}.
+drafts_by_date/taut_2026-03-15_c658823.tex:721:a clean complex must be \emph{pure},
+drafts_by_date/taut_2026-03-15_c658823.tex:728:A clean complex is a \emph{pseudomanifold}:
+drafts_by_date/taut_2026-03-15_c658823.tex:732:the link $\link(s,\sigma)$ of any $n-1$-simplex $s$
+drafts_by_date/taut_2026-03-15_c658823.tex:739:A clean complex is \emph{normal}:
+drafts_by_date/taut_2026-03-15_c658823.tex:741:$\link(s,\sigma)$ is connected.
+drafts_by_date/taut_2026-03-15_c658823.tex:751:If $\sigma$ is clean, 
+drafts_by_date/taut_2026-03-15_c658823.tex:752:$\link(s,\sigma)$ is clean.
+drafts_by_date/taut_2026-03-15_c658823.tex:753:The boundary $\del \sigma$ of $\sigma$ is clean,
+drafts_by_date/taut_2026-03-15_c658823.tex:759:is a \emph{simplicial triangulation} of $M$
+drafts_by_date/taut_2026-03-15_c658823.tex:761:In this case $\sigma$ is necessarily a clean complex.
+drafts_by_date/taut_2026-03-15_c658823.tex:770:The double cover of a triangle is not a simplicial triangulation
+drafts_by_date/taut_2026-03-15_c658823.tex:793:Let $\sigma$ be a simplicial triangulation of $S^2$.
+drafts_by_date/taut_2026-03-15_c658823.tex:794:Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$.
+drafts_by_date/taut_2026-03-15_c658823.tex:799:Call $(\sigma,M)$ a \emph{filling pair} if $\sigma$ is a simplicial triangulation
+drafts_by_date/taut_2026-03-15_c658823.tex:802:if $X$ arises from a simplicial triangulation of $B^3$.
+drafts_by_date/taut_2026-03-15_c658823.tex:856:doesn't produce a non-simplicial triangulation.
+drafts_by_date/taut_2026-03-15_c658823.tex:865:arise from a simplicial triangulation, whether of $B^3$ of anything else.
+drafts_by_date/taut_2026-03-15_c658823.tex:872:So both $M_1$ and $M_2$ arise from simplicial triangulations of $B^3$,
+drafts_by_date/taut_2026-03-15_c658823.tex:875:This is a simplicial triangulation of $B^3$,
+drafts_by_date/taut_2026-03-15_c658823.tex:880:a taut filling of $\sigma$ `is' a simplicial triangulation
+drafts_by_date/taut_2026-03-15_c658823.tex:888:A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+drafts_by_date/taut_2026-03-15_c658823.tex:895:by $\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B_3$.
+drafts_by_date/taut_2026-03-15_c658823.tex:896:For $k>1$ we distinguish the type of $t_k$ according to the number of
+drafts_by_date/taut_2026-03-15_c658823.tex:898:In general the type can be any of $1,2,3$, but in our application
+drafts_by_date/taut_2026-03-15_c658823.tex:899:type $3$ is ruled out because it would produce an interior vertex.
+drafts_by_date/taut_2026-03-15_c658823.tex:905:If $\sigma$ is a simplicial triangulation of $S^2$,
+drafts_by_date/taut_2026-03-15_c658823.tex:908:simplicial triangulation of $B^3$.
+drafts_by_date/taut_2026-03-15_c658823.tex:949:A simplicial triangulation $\sigma$ of $S^2$
+drafts_by_date/taut_2026-03-15_c658823.tex:965:If $\sigma$ is a simplicial triangulation of $S^2$,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:134:\newcommand{\link}{\kw{link}}
+drafts_by_date/taut_2026-02-25_1d2af40.tex:169:Let $\sigma$ be a simplicial triangulation of the 2-sphere,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:245:Now let $\sigma$ be a simplicial triangulation of $S^2$;
+drafts_by_date/taut_2026-02-25_1d2af40.tex:251:required to extend $\sigma$ to a simplicial triangulation $\tau$ of $B^3$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:271:where $\sigma^\prime$ is either a simplicial triangulation of $S^2$,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:613:Say that a tet $t \in M$ has type $CCXY$ if $t= \pm[c_1c_2x_1y_1]$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:709:We turn now to filling simplicial triangulations of $S^2$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:720:For any $k$-simplex $s \in \sigma$ define the \emph{link}
+drafts_by_date/taut_2026-02-25_1d2af40.tex:722:\link(s,\sigma) = \{t: t \cap s = \emptyset, s \cup t \in \sigma \}
+drafts_by_date/taut_2026-02-25_1d2af40.tex:726:(except for $\link(\emptyset,\sigma)=\sigma$)
+drafts_by_date/taut_2026-02-25_1d2af40.tex:732:called normal pseudomanifolds, or as we will prefer to say,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:733:\emph{clean $n$-complexes}.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:738:a clean complex must be \emph{pure},
+drafts_by_date/taut_2026-02-25_1d2af40.tex:745:A clean complex is a \emph{pseudomanifold}:
+drafts_by_date/taut_2026-02-25_1d2af40.tex:749:the link $\link(s,\sigma)$ of any $n-1$-simplex $s$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:756:A clean complex is \emph{normal}:
+drafts_by_date/taut_2026-02-25_1d2af40.tex:758:$\link(s,\sigma)$ is connected.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:768:If $\sigma$ is clean, 
+drafts_by_date/taut_2026-02-25_1d2af40.tex:769:$\link(s,\sigma)$ is clean.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:770:The boundary $\del \sigma$ of $\sigma$ is clean,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:776:is a \emph{simplicial triangulation} of $M$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:778:In this case $\sigma$ is necessarily a clean complex.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:787:The double cover of a triangle is not a simplicial triangulation
+drafts_by_date/taut_2026-02-25_1d2af40.tex:810:Let $\sigma$ be a simplicial triangulation of $S^2$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:811:Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:882:the taut fillings $M_1,M_2$ arise from clean complexes,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:883:so $M$ arises from the clean complex obtained by attaching these
+drafts_by_date/taut_2026-02-25_1d2af40.tex:888:$M-t$ arises from a clean 3-complex with boundary $\sigma^\prime$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:889:The only thing that can prevent $M$ from arising from a clean complex
+drafts_by_date/taut_2026-02-25_1d2af40.tex:899:$M$ is a pseudomanifold.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:914:$M$ has no edge $\{a,b\}$ whose link
+drafts_by_date/taut_2026-02-25_1d2af40.tex:916:For the link is a 1-dimensional complex whose edges correspond to
+drafts_by_date/taut_2026-02-25_1d2af40.tex:918:The only way a component of the link can have fewer than three
+drafts_by_date/taut_2026-02-25_1d2af40.tex:925:so no other component of the link can reduce to a single edge.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:926:If the link is disconnected, removing any eligible tet
+drafts_by_date/taut_2026-02-25_1d2af40.tex:931:$M$ has no vertex whose link is disconnected:
+drafts_by_date/taut_2026-02-25_1d2af40.tex:932:For if $\link(\{a\},M)$ is not connected,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:934:can render the link connected
+drafts_by_date/taut_2026-02-25_1d2af40.tex:935:is if one component of the link has a single $2$-simplex
+drafts_by_date/taut_2026-02-25_1d2af40.tex:941:\item Hence $M$ is clean.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:947:a taut filling of $\sigma$ `is' a simplicial triangulation
+drafts_by_date/taut_2026-02-25_1d2af40.tex:952:A \emph{shelling} of a simplicial triangulation $\tau$ of $B^3$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:959:by $\{t_1,\ldots,t_k\}$ is a simplicial triangulation of $B_3$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:963:Call the shelling \emph{monotone}
+drafts_by_date/taut_2026-02-25_1d2af40.tex:965:Call $\tau$ \emph{freely monotone shellable} if any $t \in \tau$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:966:can serve as the initial tet of a monotone shelling.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:969:If $\sigma$ is a simplicial triangulation of $S^2$,
+drafts_by_date/taut_2026-02-25_1d2af40.tex:971:is a freely monotone shellable
+drafts_by_date/taut_2026-02-25_1d2af40.tex:972:simplicial triangulation of $B^3$.
+drafts_by_date/taut_2026-02-25_1d2af40.tex:986:A simplicial triangulation $\sigma$ of $S^2$
+drafts_by_date/taut_2026-02-25_1d2af40.tex:1003:If $\sigma$ is a simplicial triangulation of $S^2$,
+
+codex
+WARN
+
+Verdict: facts mostly support the report, but the recommendation overstates “do not start from tautx.” Lower-risk patch is probably tautx as base plus targeted restoration, not tauty plus wholesale forward-port.
+
+Q1: md5 identification is sound locally: `save_taut1100.tex` = `text/tautxy/tauty.tex` md5 `41534feb...`; `taut_2026-WORKINGTREE_uncommitted.tex` = `text/tautxy/tautx.tex` md5 `42d2a51f...`. The report’s uncommitted-working-tree claim is stated at `drafts_by_date/taut-history-report.md:13-17`; tautx also differs from HEAD `c658823` (`taut_2026-03-15_c658823.tex` md5 `51f357...`), with post-HEAD date/content changes visible in the diff. It is correct to emphasize “later than HEAD,” assuming the gauss extraction log is trusted.
+
+Q2: headline loss is fair. In tautx the Triangulations section is inside `comment`: `taut_2026-WORKINGTREE_uncommitted.tex:689-788`. Live tautx does not define `clean`, `pseudomanifold`, `link`, or `simplicial triangulation`; it only uses them. The only live nearby definition is flag complex at `:943-948`. `\link` is merely a macro at `:134`, not a definition.
+
+Q3: call this a presentation/proof loss, not necessarily a mathematical de-scoping. If “simplicial triangulation of B^3” is restored as in `:757-761`, then cleanness is entailed. So “dropped clean is harmless mathematically once definitions are live” is a defensible reading. The real loss is that tautx suppresses the definitions and deletes the explicit chain-to-clean verification from tauty `save_taut1100.tex:864-909`.
+
+Q4: I would revise the recommendation. Do not start from tauty unless you want a broad re-merge. Start from tautx and reinsert the missing scaffolding: tautx already has Ω/M notation, abstract, shucking proof, conjoined flip split, and flag repair integrated. The patch surface is smaller: uncomment/repair Triangulations, add the clean-chain convention, fix Theorem 2 phrasing/proof bridge, and fix tautx typos.
+
+Q5: overclaims/missed items:
+- “Theorem 2 de-scoped” is too strong; say “cleanness conclusion/proof made implicit and definitions hidden.”
+- “Monotone shelling loss” is probably not a major loss. tautx keeps the substantive type-3 exclusion at `:896-899`; the named “freely monotone” property from `taut_2026-02-25_1d2af40.tex:960-972` is mostly packaging unless you need that exact stronger theorem statement.
+- Flag repair is real, but note tautx only partially fixes post-HEAD wording: HEAD has K5/AE errors at `taut_2026-03-15_c658823.tex:1025-1032`; tautx changes them to K4/AD at `taut_2026-WORKINGTREE_uncommitted.tex:1025-1032`.
+
+Recommended patch shape:
+1. Use `drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex` / `text/tautxy/tautx.tex` as base.
+2. Remove `\begin{comment}` / `\end{comment}` around `:689-788`.
+3. Fix Triangulations typo: `:759-760` should say carrier homeomorphic to `M`, not `S^2`.
+4. Add after `:783-787`: chain `M` is clean iff simplicial and associated complex is clean.
+5. Restore Theorem 2 wording to “Any taut filling `M` ... is clean and arises ...”, or explicitly state cleanness follows from the restored definition.
+6. Fix tautx defects: `:802` `X`→`M`; `:817` that→than; `:870-871` restore `(\sigma_2,M_2)`; `:998` tet→tets; `:205-206` comma.
+7. Optionally rename theorem 3 to “freely monotone shellable” only if the proof explicitly records no type-3 steps.
+
+Files to edit:
+- `text/tautxy/tautx.tex` or the chosen version-A `.tex`.
+- Optionally update `drafts_by_date/taut-history-report.md` to soften the recommendation and Theorem 2 wording.
+
+Local lemmas needed:
+- Simplicial triangulation of a manifold is clean.
+- A chain arising from a simplicial triangulation is simplicial/clean.
+- Gluing the two case-(2) triangulated balls to `t` gives a simplicial triangulation of `B^3`.
+- Shucking removes only type-1/type-2 tets, hence gives monotone shelling if that term is restored.
+
+Blockers: none factual. Main decision is strategic: tautx-base targeted repair vs tauty-base re-merge.
+tokens used
+60,128
+WARN
+
+Verdict: facts mostly support the report, but the recommendation overstates “do not start from tautx.” Lower-risk patch is probably tautx as base plus targeted restoration, not tauty plus wholesale forward-port.
+
+Q1: md5 identification is sound locally: `save_taut1100.tex` = `text/tautxy/tauty.tex` md5 `41534feb...`; `taut_2026-WORKINGTREE_uncommitted.tex` = `text/tautxy/tautx.tex` md5 `42d2a51f...`. The report’s uncommitted-working-tree claim is stated at `drafts_by_date/taut-history-report.md:13-17`; tautx also differs from HEAD `c658823` (`taut_2026-03-15_c658823.tex` md5 `51f357...`), with post-HEAD date/content changes visible in the diff. It is correct to emphasize “later than HEAD,” assuming the gauss extraction log is trusted.
+
+Q2: headline loss is fair. In tautx the Triangulations section is inside `comment`: `taut_2026-WORKINGTREE_uncommitted.tex:689-788`. Live tautx does not define `clean`, `pseudomanifold`, `link`, or `simplicial triangulation`; it only uses them. The only live nearby definition is flag complex at `:943-948`. `\link` is merely a macro at `:134`, not a definition.
+
+Q3: call this a presentation/proof loss, not necessarily a mathematical de-scoping. If “simplicial triangulation of B^3” is restored as in `:757-761`, then cleanness is entailed. So “dropped clean is harmless mathematically once definitions are live” is a defensible reading. The real loss is that tautx suppresses the definitions and deletes the explicit chain-to-clean verification from tauty `save_taut1100.tex:864-909`.
+
+Q4: I would revise the recommendation. Do not start from tauty unless you want a broad re-merge. Start from tautx and reinsert the missing scaffolding: tautx already has Ω/M notation, abstract, shucking proof, conjoined flip split, and flag repair integrated. The patch surface is smaller: uncomment/repair Triangulations, add the clean-chain convention, fix Theorem 2 phrasing/proof bridge, and fix tautx typos.
+
+Q5: overclaims/missed items:
+- “Theorem 2 de-scoped” is too strong; say “cleanness conclusion/proof made implicit and definitions hidden.”
+- “Monotone shelling loss” is probably not a major loss. tautx keeps the substantive type-3 exclusion at `:896-899`; the named “freely monotone” property from `taut_2026-02-25_1d2af40.tex:960-972` is mostly packaging unless you need that exact stronger theorem statement.
+- Flag repair is real, but note tautx only partially fixes post-HEAD wording: HEAD has K5/AE errors at `taut_2026-03-15_c658823.tex:1025-1032`; tautx changes them to K4/AD at `taut_2026-WORKINGTREE_uncommitted.tex:1025-1032`.
+
+Recommended patch shape:
+1. Use `drafts_by_date/taut_2026-WORKINGTREE_uncommitted.tex` / `text/tautxy/tautx.tex` as base.
+2. Remove `\begin{comment}` / `\end{comment}` around `:689-788`.
+3. Fix Triangulations typo: `:759-760` should say carrier homeomorphic to `M`, not `S^2`.
+4. Add after `:783-787`: chain `M` is clean iff simplicial and associated complex is clean.
+5. Restore Theorem 2 wording to “Any taut filling `M` ... is clean and arises ...”, or explicitly state cleanness follows from the restored definition.
+6. Fix tautx defects: `:802` `X`→`M`; `:817` that→than; `:870-871` restore `(\sigma_2,M_2)`; `:998` tet→tets; `:205-206` comma.
+7. Optionally rename theorem 3 to “freely monotone shellable” only if the proof explicitly records no type-3 steps.
+
+Files to edit:
+- `text/tautxy/tautx.tex` or the chosen version-A `.tex`.
+- Optionally update `drafts_by_date/taut-history-report.md` to soften the recommendation and Theorem 2 wording.
+
+Local lemmas needed:
+- Simplicial triangulation of a manifold is clean.
+- A chain arising from a simplicial triangulation is simplicial/clean.
+- Gluing the two case-(2) triangulated balls to `t` gives a simplicial triangulation of `B^3`.
+- Shucking removes only type-1/type-2 tets, hence gives monotone shelling if that term is restored.
+
+Blockers: none factual. Main decision is strategic: tautx-base targeted repair vs tauty-base re-merge.

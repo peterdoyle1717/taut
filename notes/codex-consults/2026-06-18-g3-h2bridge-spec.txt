@@ -1,0 +1,60 @@
+H2 (flipEdgePresent_side_bridge) — case-2 RelShelling bridge construction consult.
+
+Lean 4 + Mathlib, Taut project. Closing the LAST sorry: the case-2 bridge. Need the exact
+construction of the two RelShellings. Be concrete and Lean-specific.
+
+=== H2 TARGET (PrimeStep.lean:1664) ===
+theorem flipEdgePresent_side_bridge {σ} {X M} {e f₃ f₄ A B}
+  (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+  (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+  (hexp : exposedFaces M e = {f₃, f₄}) (hf₃₄ : f₃ ≠ f₄) (hFlip : FlipEdgePresent σ f₃ f₄)
+  (hAB : A ∩ B = f₃ ∩ f₄) (hcd : (f₃ ∩ f₄).card = 2)
+  (hsphere₁ : IsSphere2 ((flipBoundary σ M e).filter (· ⊆ A)))     -- σ₁
+  (hsphere₂ : IsSphere2 ((flipBoundary σ M e).filter (· ⊆ B)))     -- σ₂
+  (hfree₁ : FreelyShellable ((removeTet M e).filter (· ⊆ A)).support ((flipBoundary σ M e).filter (· ⊆ A)))
+  (hfree₂ : FreelyShellable ((removeTet M e).filter (· ⊆ B)).support ((flipBoundary σ M e).filter (· ⊆ B)))
+  (hf₃A : f₃ ⊆ A) (hf₃notB : ¬ f₃ ⊆ B) (hf₄B : f₄ ⊆ B) (hf₄notA : ¬ f₄ ⊆ A)
+  (hcover : ∀ t ∈ (removeTet M e).support, t ⊆ A ∨ t ⊆ B)
+  (hsep   : ∀ t ∈ (removeTet M e).support, (t ⊆ A ∧ ¬ t ⊆ B) ∨ (t ⊆ B ∧ ¬ t ⊆ A)) :
+  ∃ Bmid₁₂ Bmid₂₁,
+    GlueStep e σ₁ Bmid₁₂ ∧ GlueStep e σ₂ Bmid₂₁ ∧
+    RelShelling side₂.support Bmid₁₂ σ ∧ RelShelling side₁.support Bmid₂₁ σ
+where σ₁ = (flipBoundary σ M e).filter(·⊆A), σ₂ = ...filter(·⊆B),
+      side₁ = (removeTet M e).filter(·⊆A), side₂ = ...filter(·⊆B).
+
+=== MACHINERY (Ball.lean) ===
+def RelShelling τ B₀ B := ∃ l, l.toFinset = τ ∧ l.Nodup ∧ ShellFrom B₀ l B
+ShellFrom B₀ [] B := (B = B₀);  ShellFrom B₀ (t::l) B := ∃ B₁, GlueStep t B₀ B₁ ∧ ShellFrom B₁ l B
+structure GlueStep t B B' := card4 : t.card=4; shared : (tetFaces t ∩ B).card = 1 ∨ = 2;
+                            newBdry : B' = (B \ tetFaces t) ∪ (tetFaces t \ B)
+lemma ShellFrom_union_disjoint : ShellFrom B₀ l B → (∀ t∈l, Disjoint (tetFaces t) K) → ShellFrom (B₀∪K) l (B∪K)
+lemma GlueStep.union_disjoint  : GlueStep t B B' → Disjoint (tetFaces t) K → GlueStep t (B∪K) (B'∪K)
+def FreelyShellable τ B := ∀ t∈τ, ∃ l, l.head? = some t ∧ l.toFinset=τ ∧ l.Nodup ∧ IsShelling l B
+IsShelling (t::l) B := t.card=4 ∧ ShellFrom (tetFaces t) l B    -- seed tet t, then ShellFrom from tetFaces t
+flipBoundary σ M e := (σ \ sharedFaces M e) ∪ exposedFaces M e
+tetFaces t := t.powersetCard 3.   faceCount τ f := (τ.filter (f ⊆ ·)).card.
+
+=== HOW THE OUTPUT IS CONSUMED (exists_shelling_prime_case2) ===
+obtain ⟨l₂, _, _, hsf₂⟩ := rel₂_over₁    -- hsf₂ : ShellFrom Bmid₁₂ l₂ σ, l₂ over ALL side₂ tets
+exact IsShelling_append (IsShelling_snoc (side₁ shelling to σ₁) glue₁₂) hsf₂
+So rel₂_over₁ = ShellFrom Bmid₁₂ l₂ σ over the FULL side₂ support; the FIRST tet of l₂ glues onto Bmid₁₂.
+
+=== THE CRUX / QUESTION ===
+hfree₂ supplies a free shelling of side₂ as `IsShelling (head₂::tail₂) σ₂ = (head₂.card=4 ∧
+ShellFrom (tetFaces head₂) tail₂ σ₂)` — head₂ is a SEED (its faces are the initial boundary).
+But RelShelling needs `ShellFrom Bmid₁₂ (head₂::tail₂) σ` — head₂ GLUES onto the ambient Bmid₁₂.
+`ShellFrom_union_disjoint` transports the SAME list (so it acts on tail₂), keeping head₂ as a seed.
+
+Please specify, concretely and Lean-specifically:
+1. K (the ambient piece) in terms of σ/σ₂/Bmid₁₂/e/sides. (Is K = Bmid₁₂ \ σ₂? or the side₁+e faces?)
+2. The exact identities: `Bmid₁₂ = ?? ∪ K` and `σ = σ₂ ∪ K` — are these correct, and how proved from
+   A∩B card 2 + hcover/hsep + GlueStep e σ₁ Bmid₁₂?
+3. The first glue: `GlueStep head₂ Bmid₁₂ (tetFaces head₂ ∪ K)` — is re-rooting side₂ at a bridge-
+   adjacent head₂ required, and how is that GlueStep obtained? Or is the whole list transported and
+   the head handled differently?
+4. Is a MISSING helper lemma needed (a "free shelling over σ₂ ⟹ relative shelling over σ₂∪K toward
+   σ" bridge)? If so give its exact Lean statement.
+5. Is the H2 hypothesis set SUFFICIENT, or is a hypothesis missing (e.g. about the bridge tet's
+   adjacency to e, or about how σ₂ sits inside σ)? Note: A∩B = cd (edge, card 2) ⟹ no shared
+   TRIANGLE between sides.
+6. Does the construction need IsPseudomanifold, or ONLY the edge-join (A∩B card 2) disjointness?

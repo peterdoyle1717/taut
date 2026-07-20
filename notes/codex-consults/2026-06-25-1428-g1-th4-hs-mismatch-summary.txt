@@ -1,0 +1,131 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1428-g1-th4-hs-mismatch-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1428-g1-th4-hs-mismatch-summary.txt
+
+=== raw size ===
+     461   28207 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1428-g1-th4-hs-mismatch-raw.txt
+
+=== extracted markers ===
+390:PASS
+427:PASS
+
+=== final tail ===
+ exited 1 in 954ms:
+<stdin>:1:0: error: unknown module prefix 'Taut'
+
+No directory 'Taut' or file 'Taut.olean' in the search path entries:
+/Users/doyle/.elan/toolchains/leanprover--lean4---v4.31.0/lib/lean
+/Users/doyle/.elan/toolchains/leanprover--lean4---v4.31.0/lib/lean
+
+codex
+The direct stdin check failed before typechecking because `lake env` did not expose the package module search path from this repository root. I’m checking the repo layout rather than drawing conclusions from that failed import.
+exec
+/bin/zsh -lc "rg --files -g 'lakefile*' -g 'lean-toolchain' -g 'lake-manifest.json' -g 'Taut.lean' -g 'Theorem4.lean'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/lakefile.lean
+lean/Taut/Theorem4.lean
+lean/Taut.lean
+lean/lake-manifest.json
+lean/lean-toolchain
+
+exec
+/bin/zsh -lc ls in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+LICENSE
+NEXT-CLAUDE.md
+RECOVERY.md
+SHELLING-CONSULT.md
+STATUS.md
+TEAMWORK.md
+THEOREM4-START.md
+lean
+notes
+scripts
+taut
+taut.pdf
+text
+
+codex
+The Lean project root is `lean/`, so I’m rerunning the syntax/type probe from there against the actual modules.
+exec
+/bin/zsh -lc "printf '%s
+' 'import Taut.Theorem4' '' 'namespace Taut' '' 'open Finset' '' 'variable {V : Type*} [LinearOrder V]' '' '#check fun {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)' '    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) =>' '  theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)' '' 'end Taut' | lake env lean --stdin" in /Users/doyle/Dropbox/taut/lean
+ succeeded in 26437ms:
+fun {σ} {X M} hσ hU hXc hMX hT =>
+  theorem4_flag hσ hU hXc hMX hT
+    (taut_filling_is_simplicialChain hσ hU hXc hMX
+      hT) : ∀ {σ : Finset (Finset V)} {X M : Chain V},
+  IsSphere2 σ → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → IsFlagComplex M.support
+
+codex
+PASS
+
+**Verdict**
+Q1 confirmed. `theorem4_flag` and `taut_filling_is_flagComplex` both require external `hS : SimplicialChain M` at [lean/Taut/Theorem4.lean:1503](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1503) and [lean/Taut/Theorem4.lean:1511](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1511). `Theorem4.lean` imports `Taut.Theorem3Clean` at [line 1](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1), but never calls `taut_filling_is_simplicialChain`.
+
+The mismatch is real: stickerball public endpoint derives `hS` internally at [lean/Taut/Theorem3Clean.lean:3636](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3636), using the bridge at [line 3639](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3639).
+
+**Exact Recommended Patch Shape**
+Edit only the public wrapper:
+
+```lean
+theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsFlagComplex M.support :=
+  theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)
+```
+
+Keep `theorem4_flag` unchanged as the internal hS-taking theorem.
+
+**Files To Edit**
+`lean/Taut/Theorem4.lean`, replacing [lines 1511-1514](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1511).
+
+**Local Lemmas Needed**
+Only existing lemmas:
+`taut_filling_is_simplicialChain` at [lean/Taut/Theorem3Clean.lean:3462](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3462), whose hypotheses exactly match `hσ hU hXc hMX hT` and conclusion is `SimplicialChain M`.
+`theorem4_flag` at [lean/Taut/Theorem4.lean:1503](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1503).
+
+I also ran a Lean `#check` from `lean/`; the proposed wrapper expression typechecks and has the desired hS-free type.
+
+**Blockers**
+None. No apparent axiom impact: this is a definitional wrapper composing existing theorems.
+
+Q3: no obstruction found. The lower induction still takes and threads `hS` internally at [lean/Taut/Theorem4.lean:1476](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1476), with recursive sub-filling `hS'` passed through at [lines 1492-1497](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1492). The public wrapper only supplies the top-level `hS`.
+
+Q4: yes. With this wrapper, the writeup can faithfully state Theorem 4 hS-free and say simpliciality is supplied by the bridge / Theorems 2-3, matching the public endpoint style.
+tokens used
+20,210
+PASS
+
+**Verdict**
+Q1 confirmed. `theorem4_flag` and `taut_filling_is_flagComplex` both require external `hS : SimplicialChain M` at [lean/Taut/Theorem4.lean:1503](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1503) and [lean/Taut/Theorem4.lean:1511](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1511). `Theorem4.lean` imports `Taut.Theorem3Clean` at [line 1](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1), but never calls `taut_filling_is_simplicialChain`.
+
+The mismatch is real: stickerball public endpoint derives `hS` internally at [lean/Taut/Theorem3Clean.lean:3636](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3636), using the bridge at [line 3639](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3639).
+
+**Exact Recommended Patch Shape**
+Edit only the public wrapper:
+
+```lean
+theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsFlagComplex M.support :=
+  theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)
+```
+
+Keep `theorem4_flag` unchanged as the internal hS-taking theorem.
+
+**Files To Edit**
+`lean/Taut/Theorem4.lean`, replacing [lines 1511-1514](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1511).
+
+**Local Lemmas Needed**
+Only existing lemmas:
+`taut_filling_is_simplicialChain` at [lean/Taut/Theorem3Clean.lean:3462](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3462), whose hypotheses exactly match `hσ hU hXc hMX hT` and conclusion is `SimplicialChain M`.
+`theorem4_flag` at [lean/Taut/Theorem4.lean:1503](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1503).
+
+I also ran a Lean `#check` from `lean/`; the proposed wrapper expression typechecks and has the desired hS-free type.
+
+**Blockers**
+None. No apparent axiom impact: this is a definitional wrapper composing existing theorems.
+
+Q3: no obstruction found. The lower induction still takes and threads `hS` internally at [lean/Taut/Theorem4.lean:1476](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1476), with recursive sub-filling `hS'` passed through at [lines 1492-1497](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1492). The public wrapper only supplies the top-level `hS`.
+
+Q4: yes. With this wrapper, the writeup can faithfully state Theorem 4 hS-free and say simpliciality is supplied by the bridge / Theorems 2-3, matching the public endpoint style.

@@ -1,0 +1,1133 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019f0699-93d1-7940-b06e-ddc48fb0cd72
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+Follow-up: you BLOCKed sign-off on text/tautxy/tautA-02.tex pending three source-line patches. All three
+have now been applied VERBATIM as you specified, and the PDF rebuilds cleanly (14 pages, no errors/undefined
+refs). The applied changes:
+- tautA-02.tex:595 — removed the duplicated "are": now "The remaining cases to check are / the pure cases ...".
+- tautA-02.tex:645 — now reads: "Because $s$ is a mixed $XXy_0$ face, it is not a face of $X+Y$, so its
+  signed multiplicity in $\del M = X+Y$ vanishes; hence it also vanishes in $\del U$, ...".
+- tautA-02.tex:663 — bracket fixed to $[x_0x_1y_0]$.
+
+Re-read those three spots (and rebuild if you wish). Do you now sign off on tautA-02.tex as the joint
+Claude+Codex version A? First line: PASS or BLOCK. If BLOCK, give the exact remaining blocker.
+codex
+I’ll re-check the three patched locations directly in `tautA-02.tex` and do a quick build/status check only if the local setup makes that cheap.
+exec
+/bin/zsh -lc "sed -n '588,668p' text/tautxy/tautA-02.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+Similarly for types $XXXX$, $CXXX$, $CXXY$, $XXXY$, etc.
+The first two are pure $X$ cases, meaning that they live in $C_3(A)$;
+the last two are hybrid cases.
+
+Any $XX..$ tet dies in $M_Y$;
+any $YY..$ tet dies in $M_X$.
+
+The remaining cases to check are
+the pure cases $CCCX$, $CCCY$,
+and the hybrid case $CCXY$.
+A $CCCX$ tet $t=\pm[c_1c_2c_3x_1]$ dies in $M_Y$ because
+$K_3(B,q)(t)=[c_1c_2c_3q]$,
+which vanishes because $q \in C = \{c_1,c_2,c_3\}$ produces a repeated vertex.
+Likewise a $CCCY$ tet dies in $M_X$.
+The more interesting case is $CCXY$:
+The key is that since $|C|=3$, $\{c_1,c_2\}$ cannot be disjoint from $\{p,q\}$,
+so it dies on one side or the other.
+
+So 
+\[
+|M| = |M_X(p,q)| + |M_Y(p,q)|,
+\]
+and $\Zvol$ adds.
+Note how we're now emphasizing the possible dependence of $M_X,M_Y$ on $p,q$.
+When $n=1$ the choice of $p,q$ can indeed make a difference:
+We can get a different pair $(M_X,M_Y)$ if we switch
+$p$ and $q$.
+(Think about the connected sum of two cycle graphs.)
+
+But when $n \geq 2$ we will now show that all tets are pure $X$ or pure $Y$,
+so $M_X$ consists of all the pure $X$ tets, and ditto for $M_Y$.
+This will make
+$M = M_X + M_Y$ with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+
+Again our test case is $n=2$.
+
+The key observation is that, now that we know that every tet dies on
+one side or the other, we know that no tet can die on both sides,
+because that would make $|M| > \Zvol(X) + \Zvol(Y)$.
+
+An $XXYY$ tet would die on both sides, so there can be none of these.
+
+Any $pqXY$, $pXXY$, or $qXYY$ would die on both sides, and $p,q$ are arbitrary,
+so this rules out all $CCXY,CXXY,CXYY$.
+
+The only remaining hybrids are $XXXY$ and $XYYY$.
+Let's rule out $XXXY$, leaving $XYYY$ to symmetry.
+
+Fix any $y_0 \in B \setminus C$, and suppose there is
+some $XXXy_0$ tet in $M$.
+Let $U \subset M$ consist of all such $XXXy_0$ tets.
+We claim that $y_0 \notin \vertices(\del U)$.
+For let $s$ be any 2-simplex of the form $XXy_0$,
+the only kind of 2-simplex containing $y_0$ that could belong
+to $\del U$.
+Any $t \in M$ of which $s$ or $-s$ is a face must be a hybrid tet,
+and the only possibility is $XXXy_0$, so $t \in U$.
+Because $s$ is a mixed $XXy_0$ face, it is not a face of $X+Y$, so its
+signed multiplicity in $\del M = X+Y$ vanishes;
+hence it also vanishes in $\del U$,
+because the tets of $M$ with $\pm s$ as a face all belong to $U$.
+So $y_0 \notin \vertices(\del U)$,
+making $U$ a complete cone on $y_0$,
+contradicting \ref{nocone}.
+So there is no such $XXXy_0$ tet, ruling out $XXXY$,
+and with it $XYYY$.
+
+So there are no hybrid tets, meaning that $M$ splits, as claimed.
+\proofend
+
+The splitting of taut fillings depends on the assumption $n\geq 2$.
+Let's consider what goes wrong when $n=1$.
+Here the hybrid types are $CXY$, $XXY$, $XYY$.
+Neither $pXY$ nor $qXY$ dies on both sides, so we cannot rule out $CXY$.
+Failing that, the $XXy_0$ tets needn't form a complete cone,
+because $[x_0x_1y_0]$ can continue across $[x_1 y_0]$ to $-[p x_1 y_0]$,
+so we cannot rule out $XXY$ either.
+
+The foregoing proof works equally well over $\QQ$, providing we
+permit ourselves to work with fractional multisets.
+Alternatively, we can clear denominators as in the introduction
+
+exec
+/bin/zsh -lc 'git diff -- text/tautxy/tautA-02.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+exec
+/bin/zsh -lc 'ls text/tautxy' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+taut.bib
+tautA-01.zip
+tautA-02.pdf
+tautA-02.tex
+tautA-claude-01-report.md
+tautA-claude-01.pdf
+tautA-claude-01.tex
+tautA-codex-01-report.md
+tautA-codex-01.pdf
+tautA-codex-01.tex
+tautA-comparison-claude.md
+tautA-comparison-codex.md
+tautA-gpt-01-report.md
+tautA-gpt-01.pdf
+tautA-gpt-01.tex
+tautA2.pdf
+tautA2.tex
+tautC1.pdf
+tautC1.tex
+tautleancc.pdf
+tautleancc.tex
+tautx.pdf
+tautx.tex
+tautx_pass1_minimal.pdf
+tautx_pass1_minimal.tex
+tautxy_formalizable.pdf
+tautxy_formalizable.tex
+tauty.pdf
+tauty.tex
+
+codex
+The three source spots now match the requested text. I’m checking the available TeX build path next so I can avoid guessing about the rebuild command.
+exec
+/bin/zsh -lc 'git status --short' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? SHELLING-CONSULT.md
+?? drafts_by_date/
+?? notes/codex-consults/2026-06-15-g1-archfix-output.txt
+?? notes/codex-consults/2026-06-15-g1-assembly-output.txt
+?? notes/codex-consults/2026-06-15-g1-case2-impl-output.txt
+?? notes/codex-consults/2026-06-15-g1-case2-split-output.txt
+?? notes/codex-consults/2026-06-15-g1-deg3starfix-output.txt
+?? notes/codex-consults/2026-06-15-g1-deg3step-output.txt
+?? notes/codex-consults/2026-06-15-g1-final2-output.txt
+?? notes/codex-consults/2026-06-15-g1-hanchor-output.txt
+?? notes/codex-consults/2026-06-15-g1-hanchorfix2-output.txt
+?? notes/codex-consults/2026-06-15-g1-loosefix-output.txt
+?? notes/codex-consults/2026-06-15-g1-papervnotmr-output.txt
+?? notes/codex-consults/2026-06-15-g1-sidedata-output.txt
+?? notes/codex-consults/2026-06-15-g1-vnotmr-output.txt
+?? notes/codex-consults/2026-06-18-g3-h2bridge-output.txt
+?? notes/codex-consults/2026-06-18-g3-h2bridge-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-audit-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-audit-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit2-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit2-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit3-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit3-spec.txt
+?? notes/codex-consults/2026-06-25-1005-g3-writeup-simpl-raw.txt
+?? notes/codex-consults/2026-06-25-1005-g3-writeup-simpl-summary.txt
+?? notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt
+?? notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-summary.txt
+?? notes/codex-consults/2026-06-25-1428-g1-th4-hs-mismatch-raw.txt
+?? notes/codex-consults/2026-06-25-1428-g1-th4-hs-mismatch-summary.txt
+?? notes/codex-consults/2026-06-25-1549-g3-tautC1-th4-cor1-raw.txt
+?? notes/codex-consults/2026-06-25-1549-g3-tautC1-th4-cor1-summary.txt
+?? notes/codex-consults/2026-06-25-g1-th4-hs-mismatch-spec.txt
+?? notes/codex-consults/2026-06-25-g3-tautC1-th4-cor1-spec.txt
+?? notes/codex-consults/2026-06-25-g3-tautxy-pdfs-spec.txt
+?? notes/codex-consults/2026-06-25-g3-writeup-simpl-spec.txt
+?? notes/codex-consults/2026-06-26-1156-g3-taut-history-raw.txt
+?? notes/codex-consults/2026-06-26-1156-g3-taut-history-summary.txt
+?? notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt
+?? notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt
+?? notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt
+?? notes/codex-consults/2026-06-26-g3-taut-history-spec.txt
+?? notes/codex-consults/2026-06-26-g3-tautA02-reconfirm-spec.txt
+?? notes/codex-consults/2026-06-26-g3-tautA02-signoff-spec.txt
+?? notes/codex-consults/2026-06-26-tautA-codex-gen.log
+?? notes/codex-consults/2026-06-26-tautA-compare.log
+?? notes/codex-consults/2026-06-26-tautA-v02-build.log
+?? notes/simpliciality-hypothesis-repair.md
+?? notes/stickerball-state-2026-06-24.md
+?? notes/taut-clean/
+?? notes/taut-lean-proof-claude-scratch.tex
+?? notes/taut-lean-proof.pdf
+?? notes/th1-CCXY-kmap-audit.md
+?? text/
+
+exec
+/bin/zsh -lc 'rg -n "tautA-02|latexmk|pdflatex|tectonic" -S .' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+./notes/codex-consults/2026-06-26-g3-tautA02-reconfirm-spec.txt:1:Follow-up: you BLOCKed sign-off on text/tautxy/tautA-02.tex pending three source-line patches. All three
+./notes/codex-consults/2026-06-26-g3-tautA02-reconfirm-spec.txt:4:- tautA-02.tex:595 — removed the duplicated "are": now "The remaining cases to check are / the pure cases ...".
+./notes/codex-consults/2026-06-26-g3-tautA02-reconfirm-spec.txt:5:- tautA-02.tex:645 — now reads: "Because $s$ is a mixed $XXy_0$ face, it is not a face of $X+Y$, so its
+./notes/codex-consults/2026-06-26-g3-tautA02-reconfirm-spec.txt:7:- tautA-02.tex:663 — bracket fixed to $[x_0x_1y_0]$.
+./notes/codex-consults/2026-06-26-g3-tautA02-reconfirm-spec.txt:9:Re-read those three spots (and rebuild if you wish). Do you now sign off on tautA-02.tex as the joint
+./notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-summary.txt:99:- Do not keep `.aux/.bbl/.blg/.log/.out` unless reproducibility from one `pdflatex` command matters.
+./notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-summary.txt:110:- Q3: Copying `taut.bib` into the directory is fine and simplest. Removing `.bbl` is fine for a clean artifact directory, but a later rebuild requires the full `pdflatex -> bibtex -> pdflatex -> pdflatex` cycle for the four bib-using files.
+./notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-summary.txt:121:- Do not keep `.aux/.bbl/.blg/.log/.out` unless reproducibility from one `pdflatex` command matters.
+./notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-summary.txt:132:- Q3: Copying `taut.bib` into the directory is fine and simplest. Removing `.bbl` is fine for a clean artifact directory, but a later rebuild requires the full `pdflatex -> bibtex -> pdflatex -> pdflatex` cycle for the four bib-using files.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:28:text/tautxy/tautA-02.tex (built from your tautA-codex-01.tex spine plus agreed grafts from Claude's
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:31:Read text/tautxy/tautA-02.tex (and rebuild if you wish: pdflatex/bibtex cycle, TeX Live 2010 at
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:34:Question: are you happy with tautA-02.tex as the joint version A, or do you have residual concerns?
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:50:/bin/zsh -lc "nl -ba text/tautxy/tautA-02.tex | sed -n '1,260p'" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:314:/bin/zsh -lc 'ls -l text/tautxy/tautA-02.tex text/tautxy/taut.bib /usr/local/texlive/2010/bin/x86_64-darwin/pdflatex /usr/local/texlive/2010/bin/x86_64-darwin/bibtex' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:317:lrwxr-xr-x  1 root   wheel       6 Jan  1  2011 /usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -> pdftex
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:319:-rw-r-----@ 1 doyle  staff   34802 Jun 26 14:53 text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:322:/bin/zsh -lc 'rg -n "shuck|monotone|Theorem 2|cleanness|pseudomanifold|edge-link|vertex-link|octa|Overview|Lean|jok|TODO|typo|FIXME|Claude|Codex|degree-3|degree 3|maxdeg|max degree|4-regular|4 regular" text/tautxy/tautA-02.tex' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:355:/bin/zsh -lc "nl -ba text/tautxy/tautA-02.tex | sed -n '260,620p'" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:357:/bin/zsh -lc "nl -ba text/tautxy/tautA-02.tex | sed -n '920,1180p'" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:843:/bin/zsh -lc "nl -ba text/tautxy/tautA-02.tex | sed -n '620,920p'" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1150:/bin/zsh -lc 'PATH=/usr/local/texlive/2010/bin/x86_64-darwin:$PATH pdflatex -interaction=nonstopmode tautA-02.tex && bibtex tautA-02 && pdflatex -interaction=nonstopmode tautA-02.tex && pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1155:(./tautA-02.tex
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1216:No file tautA-02.aux.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1347:No file tautA-02.bbl.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1348:[14] (./tautA-02.aux)
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1350:Package rerunfilecheck Warning: File `tautA-02.out' has changed.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1376:Output written on tautA-02.pdf (14 pages, 211470 bytes).
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1377:Transcript written on tautA-02.log.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1383:/bin/zsh -lc 'tail -n 80 text/tautxy/tautA-02.log' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1414:No file tautA-02.bbl.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1418: (./tautA-02.aux)
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1422:Package rerunfilecheck Warning: File `tautA-02.out' has changed.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1426:Package rerunfilecheck Info: Checksums for `tautA-02.out':
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1458:Output written on tautA-02.pdf (14 pages, 211470 bytes).
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1476:/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/bibtex tautA-02' in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1479:The top-level auxiliary file: tautA-02.aux
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1486:/bin/zsh -lc "/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex >/tmp/tautA-02-pdflatex2.log && /usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex >/tmp/tautA-02-pdflatex3.log; tail -n 60 /tmp/tautA-02-pdflatex3.log; printf '\\n--- warnings ---\\n'; rg -n \"Warning|undefined|Citation|Reference|Overfull|Underfull|Error|"'!" tautA-02.log /tmp/tautA-02-pdflatex3.log' in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1491:(./tautA-02.aux)
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1500:(./tautA-02.out) (./tautA-02.out)
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1529:[11] [12] [13] (./tautA-02.bbl) [14] (./tautA-02.aux) )
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1546:Output written on tautA-02.pdf (14 pages, 221366 bytes).
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1547:Transcript written on tautA-02.log.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1550:/tmp/tautA-02-pdflatex3.log:78:Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1551:/tmp/tautA-02-pdflatex3.log:85:Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1552:/tmp/tautA-02-pdflatex3.log:90:Overfull \hbox (6.74567pt too wide) detected at line 572
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1553:/tmp/tautA-02-pdflatex3.log:99:Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1554:tautA-02.log:381:Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1555:tautA-02.log:390:Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1556:tautA-02.log:397:Overfull \hbox (6.74567pt too wide) detected at line 572
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1557:tautA-02.log:408:Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1562:/bin/zsh -lc 'rg -n "undefined|Citation|Reference|Rerun|Warning|Error|Overfull" text/tautxy/tautA-02.log' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1571:/bin/zsh -lc "rg -n \"%|Lean|lean|sorry|TODO|FIXME|joke|goblin|Claude|Codex|overview|Overview|are are|\\)|\\[.*\\)|teh|hte|recieve|occurance|iff|\\bweird\\b|\\bmagic\\b\" text/tautxy/tautA-02.tex" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1740:/bin/zsh -lc 'git status --short text/tautxy/tautA-02.tex text/tautxy/tautA-02.pdf text/tautxy/tautA-02.aux text/tautxy/tautA-02.bbl text/tautxy/tautA-02.blg text/tautxy/tautA-02.log text/tautxy/tautA-02.out' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1742:?? text/tautxy/tautA-02.aux
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1743:?? text/tautxy/tautA-02.bbl
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1744:?? text/tautxy/tautA-02.blg
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1745:?? text/tautxy/tautA-02.log
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1746:?? text/tautxy/tautA-02.out
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1747:?? text/tautxy/tautA-02.pdf
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1748:?? text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1756:  - [text/tautxy/tautA-02.tex:645](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:645): replace “Because `\del M = 0`” with “Because `s` is not a face of `X+Y`, its signed multiplicity in `\del M=X+Y` vanishes”.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1757:  - [text/tautxy/tautA-02.tex:595](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:595): remove duplicated “are”: “The remaining cases to check are the pure cases...”.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1758:  - [text/tautxy/tautA-02.tex:663](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:663): fix bracket typo `[x_0x_1y_0)` to `[x_0x_1y_0]`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1760:- Files to edit: only `text/tautxy/tautA-02.tex`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1763:  - Shucking/monotone graft: cleanly integrated at [897](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:897)-[949](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:949); no broken cross-refs found.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1764:  - Theorem 2 has explicit cleanness verification: pseudomanifold [854](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:854), edge-link [866](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:866), vertex-link [880](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:880).
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1765:  - Octahedral `maxdeg=4` argument is not overclaimed: [1026](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1026)-[1032](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1032) correctly uses no degree-3 implies 4-regular, hence `v=6`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1771:- Build: full `pdflatex`, `bibtex`, `pdflatex`, `pdflatex` cycle succeeds. Remaining TeX warnings are only small overfull boxes.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1779:  - [text/tautxy/tautA-02.tex:645](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:645): replace “Because `\del M = 0`” with “Because `s` is not a face of `X+Y`, its signed multiplicity in `\del M=X+Y` vanishes”.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1780:  - [text/tautxy/tautA-02.tex:595](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:595): remove duplicated “are”: “The remaining cases to check are the pure cases...”.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1781:  - [text/tautxy/tautA-02.tex:663](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:663): fix bracket typo `[x_0x_1y_0)` to `[x_0x_1y_0]`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1783:- Files to edit: only `text/tautxy/tautA-02.tex`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1786:  - Shucking/monotone graft: cleanly integrated at [897](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:897)-[949](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:949); no broken cross-refs found.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1787:  - Theorem 2 has explicit cleanness verification: pseudomanifold [854](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:854), edge-link [866](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:866), vertex-link [880](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:880).
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1788:  - Octahedral `maxdeg=4` argument is not overclaimed: [1026](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1026)-[1032](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1032) correctly uses no degree-3 implies 4-regular, hence `v=6`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-raw.txt:1794:- Build: full `pdflatex`, `bibtex`, `pdflatex`, `pdflatex` cycle succeeds. Remaining TeX warnings are only small overfull boxes.
+./notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt:27:Follow-up: you BLOCKed sign-off on text/tautxy/tautA-02.tex pending three source-line patches. All three
+./notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt:30:- tautA-02.tex:595 — removed the duplicated "are": now "The remaining cases to check are / the pure cases ...".
+./notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt:31:- tautA-02.tex:645 — now reads: "Because $s$ is a mixed $XXy_0$ face, it is not a face of $X+Y$, so its
+./notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt:33:- tautA-02.tex:663 — bracket fixed to $[x_0x_1y_0]$.
+./notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt:35:Re-read those three spots (and rebuild if you wish). Do you now sign off on tautA-02.tex as the joint
+./notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt:38:I’ll re-check the three patched locations directly in `tautA-02.tex` and do a quick build/status check only if the local setup makes that cheap.
+./notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt:40:/bin/zsh -lc "sed -n '588,668p' text/tautxy/tautA-02.tex" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt:125:/bin/zsh -lc 'git diff -- text/tautxy/tautA-02.tex' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt:132:tautA-02.pdf
+./notes/codex-consults/2026-06-26-2102-g3-tautA02-reconfirm-raw.txt:133:tautA-02.tex
+./notes/codex-consults/2026-06-25-g3-tautxy-pdfs-spec.txt:15:- Toolchain: only TeX on this box is TeX Live 2010 x86_64 (pdflatex+bibtex) run under Rosetta on arm64.
+./notes/codex-consults/2026-06-25-g3-tautxy-pdfs-spec.txt:16:- Compiled each: pdflatex -> bibtex -> pdflatex -> pdflatex (the 4 bib files); pdflatex x2 (tautleancc).
+./text/tautxy/tautA-gpt-01-report.md:39:- `pdflatex` ran successfully twice.
+./text/tautxy/tautA-claude-01-report.md:78:**Yes.** `pdflatex → bibtex → pdflatex → pdflatex` (TeX Live 2010 x86_64 under Rosetta; `taut.bib` is in
+./notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt:41:- Toolchain: only TeX on this box is TeX Live 2010 x86_64 (pdflatex+bibtex) run under Rosetta on arm64.
+./notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt:42:- Compiled each: pdflatex -> bibtex -> pdflatex -> pdflatex (the 4 bib files); pdflatex x2 (tautleancc).
+./notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt:237:- Do not keep `.aux/.bbl/.blg/.log/.out` unless reproducibility from one `pdflatex` command matters.
+./notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt:248:- Q3: Copying `taut.bib` into the directory is fine and simplest. Removing `.bbl` is fine for a clean artifact directory, but a later rebuild requires the full `pdflatex -> bibtex -> pdflatex -> pdflatex` cycle for the four bib-using files.
+./notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt:259:- Do not keep `.aux/.bbl/.blg/.log/.out` unless reproducibility from one `pdflatex` command matters.
+./notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt:270:- Q3: Copying `taut.bib` into the directory is fine and simplest. Removing `.bbl` is fine for a clean artifact directory, but a later rebuild requires the full `pdflatex -> bibtex -> pdflatex -> pdflatex` cycle for the four bib-using files.
+./text/tautxy/tautA-codex-01-report.md:39:  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`,
+./text/tautxy/tautA-codex-01-report.md:41:  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`,
+./text/tautxy/tautA-codex-01-report.md:42:  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:15:it now. Write text/tautxy/tautA-02.tex (the joint Claude+Codex v02). Do NOT overwrite any existing file.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:20:SPINE: copy text/tautxy/tautA-codex-01.tex as the base for tautA-02.tex (it is the strongest draft:
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:53:Then BUILD the PDF: from text/tautxy/, run pdflatex -interaction=nonstopmode tautA-02.tex ; bibtex tautA-02 ;
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:54:pdflatex ...; pdflatex ... (TeX Live 2010 at /usr/local/texlive/2010/bin/x86_64-darwin ; taut.bib is in
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:60:/bin/zsh -lc 'pwd && test ! -e text/tautxy/tautA-02.tex && printf '"'target clear\\n' || printf 'target exists\\n'" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:642:I’m going to create `tautA-02.tex` by copying the Codex draft now that the target is confirmed clear. The edits are confined to the requested prose sections: metadata, stale comments, shelling, the flag proof’s octahedral paragraph, and a short theorem-proof transition sentence.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:644:/bin/zsh -lc 'cp text/tautxy/tautA-codex-01.tex text/tautxy/tautA-02.tex' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:648:/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:649:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:651:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:652:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:755:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:757:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:758:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:864:/bin/zsh -lc "rg -n \"begin\\{comment\\}|end\\{comment\\}|dismant|checked directly|would requires|\\bK\\b|date\\{|bibliography|bibliographystyle|The case \\\\maxdeg|S\\"'^3|closed '"\\\\"'$3'"\\\\\\"'$-sphere|simplicial and that" text/tautxy/tautA-02.tex' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:872:/bin/zsh -lc "sed -n '922,1060p' text/tautxy/tautA-02.tex" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:874:/bin/zsh -lc "sed -n '780,925p' text/tautxy/tautA-02.tex" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1137:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1139:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1140:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1247:/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1248:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1250:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1251:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1383:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1385:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1386:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1519:/bin/zsh -lc "diff -u text/tautxy/tautA-codex-01.tex text/tautxy/tautA-02.tex | sed -n '1,240p'" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1521:/bin/zsh -lc "rg -n 'begin\\{comment\\}|end\\{comment\\}|dismant|checked directly|would requires|\\\\date\\{|bibliography|bibliographystyle|S\\"'^3|octahedral|octahedron|octahedral boundary|'"\\bK\\b' text/tautxy/tautA-02.tex" in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1544:+++ text/tautxy/tautA-02.tex	2026-06-26 14:53:42
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1677:/bin/zsh -lc 'ls -l text/tautxy/tautA-02.tex text/tautxy/taut.bib' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1680:-rw-r-----@ 1 doyle  staff  34802 Jun 26 14:53 text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1682:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1684:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1685:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1818:The diff now matches the requested v02 shape: stale comments gone, `K(M)` notation preserved, bibliography external, and the octahedral case has an actual degree/Euler argument. I’m starting the requested `pdflatex/bibtex/pdflatex/pdflatex` build sequence from `text/tautxy/`.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1820:/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1821:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1823:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1824:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:1960:(./tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2021:No file tautA-02.aux.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2152:No file tautA-02.bbl.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2153:[14] (./tautA-02.aux)
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2155:Package rerunfilecheck Warning: File `tautA-02.out' has changed.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2181:Output written on tautA-02.pdf (14 pages, 211470 bytes).
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2182:Transcript written on tautA-02.log.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2187:/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/bibtex tautA-02' in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2188:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2190:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2191:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2325:The top-level auxiliary file: tautA-02.aux
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2330:/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2331:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2333:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2334:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2470:(./tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2531:(./tautA-02.aux)
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2540:(./tautA-02.out) (./tautA-02.out)
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2607:[11] [12] [13] (./tautA-02.bbl) [14] (./tautA-02.aux)
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2631:Output written on tautA-02.pdf (14 pages, 220976 bytes).
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2632:Transcript written on tautA-02.log.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2637:/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2638:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2640:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2641:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2777:(./tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2838:(./tautA-02.aux)
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2847:(./tautA-02.out) (./tautA-02.out)
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2876:[11] [12] [13] (./tautA-02.bbl) [14] (./tautA-02.aux) )
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2893:Output written on tautA-02.pdf (14 pages, 221366 bytes).
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2894:Transcript written on tautA-02.log.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2897:/bin/zsh -lc 'git status --short text/tautxy/tautA-02.tex text/tautxy/tautA-02.pdf text/tautxy/tautA-02.aux text/tautxy/tautA-02.bbl text/tautxy/tautA-02.blg text/tautxy/tautA-02.log text/tautxy/tautA-02.out' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2899:?? text/tautxy/tautA-02.aux
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2900:?? text/tautxy/tautA-02.bbl
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2901:?? text/tautxy/tautA-02.blg
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2902:?? text/tautxy/tautA-02.log
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2903:?? text/tautxy/tautA-02.out
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2904:?? text/tautxy/tautA-02.pdf
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2905:?? text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2908:/bin/zsh -lc "rg -n 'LaTeX Warning: There were undefined references|Citation .* undefined|Undefined control sequence|Emergency stop|Output written' tautA-02.log" in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2910:446:Output written on tautA-02.pdf (14 pages, 221366 bytes).
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2913:/bin/zsh -lc "pdfinfo tautA-02.pdf | rg '"'^Pages:'"'" in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2914:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2916:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:2917:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:3053:Wrote `text/tautxy/tautA-02.tex` and built `text/tautxy/tautA-02.pdf` successfully with the requested LaTeX/BibTeX sequence; PDF is 14 pages.
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:3054:diff --git a/text/tautxy/tautA-02.tex b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:3056:--- a/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:3057:+++ b/text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-tautA-v02-build.log:3191:Wrote `text/tautxy/tautA-02.tex` and built `text/tautxy/tautA-02.pdf` successfully with the requested LaTeX/BibTeX sequence; PDF is 14 pages.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:77:/bin/zsh -lc 'git status --short text/tautxy/tautA-02.tex text/tautxy/tautA-02.pdf text/tautxy/tautA-02.aux text/tautxy/tautA-02.bbl text/tautxy/tautA-02.blg text/tautxy/tautA-02.log text/tautxy/tautA-02.out' in /Users/doyle/Dropbox/taut
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:79:?? text/tautxy/tautA-02.aux
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:80:?? text/tautxy/tautA-02.bbl
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:81:?? text/tautxy/tautA-02.blg
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:82:?? text/tautxy/tautA-02.log
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:83:?? text/tautxy/tautA-02.out
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:84:?? text/tautxy/tautA-02.pdf
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:85:?? text/tautxy/tautA-02.tex
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:93:  - [text/tautxy/tautA-02.tex:645](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:645): replace “Because `\del M = 0`” with “Because `s` is not a face of `X+Y`, its signed multiplicity in `\del M=X+Y` vanishes”.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:94:  - [text/tautxy/tautA-02.tex:595](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:595): remove duplicated “are”: “The remaining cases to check are the pure cases...”.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:95:  - [text/tautxy/tautA-02.tex:663](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:663): fix bracket typo `[x_0x_1y_0)` to `[x_0x_1y_0]`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:97:- Files to edit: only `text/tautxy/tautA-02.tex`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:100:  - Shucking/monotone graft: cleanly integrated at [897](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:897)-[949](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:949); no broken cross-refs found.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:101:  - Theorem 2 has explicit cleanness verification: pseudomanifold [854](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:854), edge-link [866](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:866), vertex-link [880](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:880).
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:102:  - Octahedral `maxdeg=4` argument is not overclaimed: [1026](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1026)-[1032](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1032) correctly uses no degree-3 implies 4-regular, hence `v=6`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:108:- Build: full `pdflatex`, `bibtex`, `pdflatex`, `pdflatex` cycle succeeds. Remaining TeX warnings are only small overfull boxes.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:116:  - [text/tautxy/tautA-02.tex:645](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:645): replace “Because `\del M = 0`” with “Because `s` is not a face of `X+Y`, its signed multiplicity in `\del M=X+Y` vanishes”.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:117:  - [text/tautxy/tautA-02.tex:595](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:595): remove duplicated “are”: “The remaining cases to check are the pure cases...”.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:118:  - [text/tautxy/tautA-02.tex:663](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:663): fix bracket typo `[x_0x_1y_0)` to `[x_0x_1y_0]`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:120:- Files to edit: only `text/tautxy/tautA-02.tex`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:123:  - Shucking/monotone graft: cleanly integrated at [897](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:897)-[949](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:949); no broken cross-refs found.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:124:  - Theorem 2 has explicit cleanness verification: pseudomanifold [854](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:854), edge-link [866](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:866), vertex-link [880](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:880).
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:125:  - Octahedral `maxdeg=4` argument is not overclaimed: [1026](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1026)-[1032](/Users/doyle/Dropbox/taut/text/tautxy/tautA-02.tex:1032) correctly uses no degree-3 implies 4-regular, hence `v=6`.
+./notes/codex-consults/2026-06-26-2059-g3-tautA02-signoff-summary.txt:131:- Build: full `pdflatex`, `bibtex`, `pdflatex`, `pdflatex` cycle succeeds. Remaining TeX warnings are only small overfull boxes.
+./notes/codex-consults/2026-06-26-g3-tautA02-signoff-spec.txt:2:text/tautxy/tautA-02.tex (built from your tautA-codex-01.tex spine plus agreed grafts from Claude's
+./notes/codex-consults/2026-06-26-g3-tautA02-signoff-spec.txt:5:Read text/tautxy/tautA-02.tex (and rebuild if you wish: pdflatex/bibtex cycle, TeX Live 2010 at
+./notes/codex-consults/2026-06-26-g3-tautA02-signoff-spec.txt:8:Question: are you happy with tautA-02.tex as the joint version A, or do you have residual concerns?
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:84:text/tautxy/, so the cycle is: pdflatex -> bibtex -> pdflatex -> pdflatex (run pdflatex with
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:7065:/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-codex-01.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:8005:The first `pdflatex` pass succeeded and produced a PDF with expected unresolved refs/citations. I’m running `bibtex` and the two final LaTeX passes now.
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:8760:/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-codex-01.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:9640:/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-codex-01.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:11247:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`,
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:11249:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`,
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:11250:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`.
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:12006:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`,
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:12008:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`,
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:12009:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`.
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:12786:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`,
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:12788:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`,
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:12789:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`.
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:13547:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`,
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:13549:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`,
+./notes/codex-consults/2026-06-26-tautA-codex-gen.log:13550:+  `pdflatex -interaction=nonstopmode tautA-codex-01.tex`.
+
+exec
+/bin/zsh -lc "find . -maxdepth 3 \\( -name 'Makefile' -o -name 'latexmkrc' -o -name '*.latexmkrc' \\) -print" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+codex
+The prior build instructions are present in the repo notes, and existing artifacts/logs are already in `text/tautxy`. I’m verifying the current log/PDF rather than rewriting files unnecessarily.
+exec
+/bin/zsh -lc "nl -ba tautA-02.tex | sed -n '592,666p'" in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 0ms:
+   592	Any $XX..$ tet dies in $M_Y$;
+   593	any $YY..$ tet dies in $M_X$.
+   594	
+   595	The remaining cases to check are
+   596	the pure cases $CCCX$, $CCCY$,
+   597	and the hybrid case $CCXY$.
+   598	A $CCCX$ tet $t=\pm[c_1c_2c_3x_1]$ dies in $M_Y$ because
+   599	$K_3(B,q)(t)=[c_1c_2c_3q]$,
+   600	which vanishes because $q \in C = \{c_1,c_2,c_3\}$ produces a repeated vertex.
+   601	Likewise a $CCCY$ tet dies in $M_X$.
+   602	The more interesting case is $CCXY$:
+   603	The key is that since $|C|=3$, $\{c_1,c_2\}$ cannot be disjoint from $\{p,q\}$,
+   604	so it dies on one side or the other.
+   605	
+   606	So 
+   607	\[
+   608	|M| = |M_X(p,q)| + |M_Y(p,q)|,
+   609	\]
+   610	and $\Zvol$ adds.
+   611	Note how we're now emphasizing the possible dependence of $M_X,M_Y$ on $p,q$.
+   612	When $n=1$ the choice of $p,q$ can indeed make a difference:
+   613	We can get a different pair $(M_X,M_Y)$ if we switch
+   614	$p$ and $q$.
+   615	(Think about the connected sum of two cycle graphs.)
+   616	
+   617	But when $n \geq 2$ we will now show that all tets are pure $X$ or pure $Y$,
+   618	so $M_X$ consists of all the pure $X$ tets, and ditto for $M_Y$.
+   619	This will make
+   620	$M = M_X + M_Y$ with $M_X \in \taut(X)$, $M_Y \in \taut(Y)$.
+   621	
+   622	Again our test case is $n=2$.
+   623	
+   624	The key observation is that, now that we know that every tet dies on
+   625	one side or the other, we know that no tet can die on both sides,
+   626	because that would make $|M| > \Zvol(X) + \Zvol(Y)$.
+   627	
+   628	An $XXYY$ tet would die on both sides, so there can be none of these.
+   629	
+   630	Any $pqXY$, $pXXY$, or $qXYY$ would die on both sides, and $p,q$ are arbitrary,
+   631	so this rules out all $CCXY,CXXY,CXYY$.
+   632	
+   633	The only remaining hybrids are $XXXY$ and $XYYY$.
+   634	Let's rule out $XXXY$, leaving $XYYY$ to symmetry.
+   635	
+   636	Fix any $y_0 \in B \setminus C$, and suppose there is
+   637	some $XXXy_0$ tet in $M$.
+   638	Let $U \subset M$ consist of all such $XXXy_0$ tets.
+   639	We claim that $y_0 \notin \vertices(\del U)$.
+   640	For let $s$ be any 2-simplex of the form $XXy_0$,
+   641	the only kind of 2-simplex containing $y_0$ that could belong
+   642	to $\del U$.
+   643	Any $t \in M$ of which $s$ or $-s$ is a face must be a hybrid tet,
+   644	and the only possibility is $XXXy_0$, so $t \in U$.
+   645	Because $s$ is a mixed $XXy_0$ face, it is not a face of $X+Y$, so its
+   646	signed multiplicity in $\del M = X+Y$ vanishes;
+   647	hence it also vanishes in $\del U$,
+   648	because the tets of $M$ with $\pm s$ as a face all belong to $U$.
+   649	So $y_0 \notin \vertices(\del U)$,
+   650	making $U$ a complete cone on $y_0$,
+   651	contradicting \ref{nocone}.
+   652	So there is no such $XXXy_0$ tet, ruling out $XXXY$,
+   653	and with it $XYYY$.
+   654	
+   655	So there are no hybrid tets, meaning that $M$ splits, as claimed.
+   656	\proofend
+   657	
+   658	The splitting of taut fillings depends on the assumption $n\geq 2$.
+   659	Let's consider what goes wrong when $n=1$.
+   660	Here the hybrid types are $CXY$, $XXY$, $XYY$.
+   661	Neither $pXY$ nor $qXY$ dies on both sides, so we cannot rule out $CXY$.
+   662	Failing that, the $XXy_0$ tets needn't form a complete cone,
+   663	because $[x_0x_1y_0]$ can continue across $[x_1 y_0]$ to $-[p x_1 y_0]$,
+   664	so we cannot rule out $XXY$ either.
+   665	
+   666	The foregoing proof works equally well over $\QQ$, providing we
+
+exec
+/bin/zsh -lc "rg -n 'LaTeX Warning: There were undefined references|Citation .* undefined|Undefined control sequence|Emergency stop|Output written|Error' tautA-02.log" in /Users/doyle/Dropbox/taut/text/tautxy
+ exited 2 in 0ms:
+rg: tautA-02.log: IO error for operation on tautA-02.log: No such file or directory (os error 2)
+
+exec
+/bin/zsh -lc "pdfinfo tautA-02.pdf | rg '"'^Pages:'"'" in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 153ms:
+Pages:           14
+
+codex
+The PDF is present and reports 14 pages, but the current `.log` file is absent, so I can’t verify warnings from the existing build artifact. I’ll run the standard TeX Live 2010 build cycle now and then inspect the fresh log.
+exec
+/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 228ms:
+entering extended mode
+(./tautA-02.tex
+LaTeX2e <2009/09/24>
+Babel <v3.8l> and hyphenation patterns for english, dumylang, nohyphenation, ge
+rman-x-2009-06-19, ngerman-x-2009-06-19, ancientgreek, ibycus, arabic, armenian
+, basque, bulgarian, catalan, pinyin, coptic, croatian, czech, danish, dutch, u
+kenglish, usenglishmax, esperanto, estonian, farsi, finnish, french, galician, 
+german, ngerman, swissgerman, monogreek, greek, hungarian, icelandic, assamese,
+ bengali, gujarati, hindi, kannada, malayalam, marathi, oriya, panjabi, tamil, 
+telugu, indonesian, interlingua, irish, italian, kurmanji, lao, latin, latvian,
+ lithuanian, mongolian, mongolianlmc, bokmal, nynorsk, polish, portuguese, roma
+nian, russian, sanskrit, serbian, slovak, slovenian, spanish, swedish, turkish,
+ turkmen, ukrainian, uppersorbian, welsh, loaded.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/size12.clo))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/graphics.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/pdftex-def/pdftex.def)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ltxcmds.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/infwarerr.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/etexcmds.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdfescape.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifluatex.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifpdf.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifvtex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/ifxetex/ifxetex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/hycolor.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/xcolor-patch.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/letltxmacro.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/intcalc.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/hyperref.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/kvoptions.sty)
+Implicit mode ON; LaTeX internals redefined
+(/usr/local/texlive/2010/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bitset.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bigintcalc.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/atbegshi.sty))
+* hyperref using default driver hpdftex *
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/atveryend.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/rerunfilecheck.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/uniquecounter.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/tools/verbatim.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption3.sty))
+No file tautA-02.aux.
+(/usr/local/texlive/2010/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/grfext.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/refcount.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/gettitlestring.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsb.fd)
+
+LaTeX Warning: Reference `nointernal' on page 1 undefined on input line 204.
+
+[1{/usr/local/texlive/2010/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+
+LaTeX Warning: Citation `ellison:gap' on page 2 undefined on input line 214.
+
+
+LaTeX Warning: Reference `th1' on page 2 undefined on input line 219.
+
+
+LaTeX Warning: Reference `cor1' on page 2 undefined on input line 232.
+
+
+Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+[]\OT1/cmr/m/n/12 Now let $\OML/cmm/m/it/12 ^^[$ \OT1/cmr/m/n/12 be a sim-pli-c
+ial tri-an-gu-la-tion of $\OML/cmm/m/it/12 S[]$\OT1/cmr/m/n/12 ; let $\OML/cmm/
+m/it/12 X\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/1
+2 2 \OML/cmm/m/it/12 Z[]\OT1/cmr/m/n/12 (^^A([](\OML/cmm/m/it/12 ^^[\OT1/cmr/m/
+n/12 ))\OML/cmm/m/it/12 ; \OT1/cmr/bx/n/12 Z\OT1/cmr/m/n/12 )$
+
+LaTeX Warning: Reference `th2' on page 2 undefined on input line 255.
+
+
+LaTeX Warning: Reference `th2' on page 2 undefined on input line 257.
+
+
+LaTeX Warning: Reference `th1' on page 2 undefined on input line 257.
+
+
+LaTeX Warning: Citation `stt:jams' on page 2 undefined on input line 265.
+
+
+LaTeX Warning: Citation `stt:jams' on page 2 undefined on input line 285.
+
+
+LaTeX Warning: Citation `mt' on page 2 undefined on input line 288.
+
+
+LaTeX Warning: Citation `dew:filling' on page 2 undefined on input line 294.
+
+
+LaTeX Warning: Reference `th2' on page 2 undefined on input line 296.
+
+[2]
+
+LaTeX Warning: Citation `dew:filling' on page 3 undefined on input line 302.
+
+
+LaTeX Warning: Citation `ellison:gap' on page 3 undefined on input line 312.
+
+[3]
+Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+\OT1/cmr/m/n/12 consisting of all the non-trivial ori-ented $(\OML/cmm/m/it/12 
+n \OT1/cmr/m/n/12 + 1)$-simplices $[](\OML/cmm/m/it/12 x; t\OT1/cmr/m/n/12 ) = 
+[\OML/cmm/m/it/12 xx[] [] x[]\OT1/cmr/m/n/12 ]$
+
+LaTeX Warning: Reference `maxdeg' on page 4 undefined on input line 405.
+
+[4] [5]
+
+LaTeX Warning: Citation `ellison:gap' on page 6 undefined on input line 530.
+
+
+LaTeX Warning: Citation `pw:flip' on page 6 undefined on input line 535.
+
+
+LaTeX Warning: Citation `stt:jams' on page 6 undefined on input line 539.
+
+
+Overfull \hbox (6.74567pt too wide) detected at line 572
+\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 @[]M[]; @[]M[]\OT1/cmr/m/n/12 ) = \OML/cmm/m/
+it/12 @[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12
+ p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )) = \OML/cmm/m/it/12 
+g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 @[]
+M\OT1/cmr/m/n/12 ) = \OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q
+\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 X \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 Y\OT1/c
+mr/m/n/12 ) = (\OML/cmm/m/it/12 X; Y\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 :
+[6]
+
+LaTeX Warning: Reference `nocone' on page 7 undefined on input line 651.
+
+[7] [8]
+
+LaTeX Warning: Citation `thurston:shapes' on page 9 undefined on input line 750
+.
+
+
+LaTeX Warning: Reference `maxdeg' on page 9 undefined on input line 791.
+
+[9]
+
+LaTeX Warning: Reference `th1' on page 10 undefined on input line 836.
+
+[10]
+Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/12 No edge $\OMS/cmsy/m/n/12 f\OML/cmm/m/it/12 a; b\OMS/cmsy/m/n
+/12 g$ \OT1/cmr/m/n/12 has dis-con-nected link in $\OML/cmm/m/it/12 K\OT1/cmr/m
+/n/12 (\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )$. The link is a $1$-dimensional
+
+LaTeX Warning: Reference `th2' on page 11 undefined on input line 894.
+
+[11]
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 920.
+
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 934.
+
+
+LaTeX Warning: Reference `th1' on page 12 undefined on input line 942.
+
+
+LaTeX Warning: Reference `th2' on page 12 undefined on input line 942.
+
+[12]
+
+LaTeX Warning: Reference `th2' on page 13 undefined on input line 999.
+
+[13]
+No file tautA-02.bbl.
+[14] (./tautA-02.aux)
+
+Package rerunfilecheck Warning: File `tautA-02.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ )
+(see the transcript file for additional information)</usr/local/texlive/2010/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2010/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2010/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2010/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2010/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2010/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2010/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2010/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2010/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2010/texmf-dist/font
+s/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2010/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2010/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmti12.pfb>
+Output written on tautA-02.pdf (14 pages, 211586 bytes).
+Transcript written on tautA-02.log.
+
+codex
+The first LaTeX pass succeeded and produced the expected temporary unresolved refs/citations. I’m running BibTeX and the two settling passes now.
+exec
+/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/bibtex tautA-02' in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 118ms:
+This is BibTeX, Version 0.99d (TeX Live 2010)
+The top-level auxiliary file: tautA-02.aux
+The style file: amsplain.bst
+Database file #1: taut.bib
+
+exec
+/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 248ms:
+This is pdfTeX, Version 3.1415926-1.40.11 (TeX Live 2010)
+ restricted \write18 enabled.
+entering extended mode
+(./tautA-02.tex
+LaTeX2e <2009/09/24>
+Babel <v3.8l> and hyphenation patterns for english, dumylang, nohyphenation, ge
+rman-x-2009-06-19, ngerman-x-2009-06-19, ancientgreek, ibycus, arabic, armenian
+, basque, bulgarian, catalan, pinyin, coptic, croatian, czech, danish, dutch, u
+kenglish, usenglishmax, esperanto, estonian, farsi, finnish, french, galician, 
+german, ngerman, swissgerman, monogreek, greek, hungarian, icelandic, assamese,
+ bengali, gujarati, hindi, kannada, malayalam, marathi, oriya, panjabi, tamil, 
+telugu, indonesian, interlingua, irish, italian, kurmanji, lao, latin, latvian,
+ lithuanian, mongolian, mongolianlmc, bokmal, nynorsk, polish, portuguese, roma
+nian, russian, sanskrit, serbian, slovak, slovenian, spanish, swedish, turkish,
+ turkmen, ukrainian, uppersorbian, welsh, loaded.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/size12.clo))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/graphics.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/pdftex-def/pdftex.def)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ltxcmds.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/infwarerr.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/etexcmds.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdfescape.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifluatex.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifpdf.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifvtex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/ifxetex/ifxetex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/hycolor.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/xcolor-patch.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/letltxmacro.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/intcalc.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/hyperref.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/kvoptions.sty)
+Implicit mode ON; LaTeX internals redefined
+(/usr/local/texlive/2010/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bitset.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bigintcalc.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/atbegshi.sty))
+* hyperref using default driver hpdftex *
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/atveryend.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/rerunfilecheck.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/uniquecounter.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/tools/verbatim.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption3.sty))
+(./tautA-02.aux)
+(/usr/local/texlive/2010/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/grfext.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/refcount.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/gettitlestring.sty))
+(./tautA-02.out) (./tautA-02.out)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsb.fd) [1{/usr/local/t
+exlive/2010/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+
+LaTeX Warning: Citation `ellison:gap' on page 2 undefined on input line 214.
+
+
+Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+[]\OT1/cmr/m/n/12 Now let $\OML/cmm/m/it/12 ^^[$ \OT1/cmr/m/n/12 be a sim-pli-c
+ial tri-an-gu-la-tion of $\OML/cmm/m/it/12 S[]$\OT1/cmr/m/n/12 ; let $\OML/cmm/
+m/it/12 X\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/1
+2 2 \OML/cmm/m/it/12 Z[]\OT1/cmr/m/n/12 (^^A([](\OML/cmm/m/it/12 ^^[\OT1/cmr/m/
+n/12 ))\OML/cmm/m/it/12 ; \OT1/cmr/bx/n/12 Z\OT1/cmr/m/n/12 )$
+
+LaTeX Warning: Citation `stt:jams' on page 2 undefined on input line 265.
+
+
+LaTeX Warning: Citation `stt:jams' on page 2 undefined on input line 285.
+
+
+LaTeX Warning: Citation `mt' on page 2 undefined on input line 288.
+
+
+LaTeX Warning: Citation `dew:filling' on page 2 undefined on input line 294.
+
+[2]
+
+LaTeX Warning: Citation `dew:filling' on page 3 undefined on input line 302.
+
+
+LaTeX Warning: Citation `ellison:gap' on page 3 undefined on input line 312.
+
+[3]
+Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+\OT1/cmr/m/n/12 consisting of all the non-trivial ori-ented $(\OML/cmm/m/it/12 
+n \OT1/cmr/m/n/12 + 1)$-simplices $[](\OML/cmm/m/it/12 x; t\OT1/cmr/m/n/12 ) = 
+[\OML/cmm/m/it/12 xx[] [] x[]\OT1/cmr/m/n/12 ]$
+[4] [5]
+
+LaTeX Warning: Citation `ellison:gap' on page 6 undefined on input line 530.
+
+
+LaTeX Warning: Citation `pw:flip' on page 6 undefined on input line 535.
+
+
+LaTeX Warning: Citation `stt:jams' on page 6 undefined on input line 539.
+
+
+Overfull \hbox (6.74567pt too wide) detected at line 572
+\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 @[]M[]; @[]M[]\OT1/cmr/m/n/12 ) = \OML/cmm/m/
+it/12 @[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12
+ p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )) = \OML/cmm/m/it/12 
+g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 @[]
+M\OT1/cmr/m/n/12 ) = \OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q
+\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 X \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 Y\OT1/c
+mr/m/n/12 ) = (\OML/cmm/m/it/12 X; Y\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 :
+[6] [7] [8]
+
+LaTeX Warning: Citation `thurston:shapes' on page 9 undefined on input line 750
+.
+
+[9] [10]
+Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/12 No edge $\OMS/cmsy/m/n/12 f\OML/cmm/m/it/12 a; b\OMS/cmsy/m/n
+/12 g$ \OT1/cmr/m/n/12 has dis-con-nected link in $\OML/cmm/m/it/12 K\OT1/cmr/m
+/n/12 (\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )$. The link is a $1$-dimensional
+[11] [12] [13] (./tautA-02.bbl) [14] (./tautA-02.aux)
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ )
+(see the transcript file for additional information)</usr/local/texlive/2010/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2010/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2010/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2010/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2010/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2010/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2010/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2010/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2010/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2010/texmf-dist/font
+s/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2010/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2010/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmti12.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmtt12.pfb>
+Output written on tautA-02.pdf (14 pages, 221114 bytes).
+Transcript written on tautA-02.log.
+
+codex
+The second LaTeX pass still has expected citation/reference settling warnings after BibTeX. I’m running the final pass and then I’ll check the resulting log for hard errors or unresolved references.
+exec
+/bin/zsh -lc '/usr/local/texlive/2010/bin/x86_64-darwin/pdflatex -interaction=nonstopmode tautA-02.tex' in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 241ms:
+entering extended mode
+(./tautA-02.tex
+LaTeX2e <2009/09/24>
+Babel <v3.8l> and hyphenation patterns for english, dumylang, nohyphenation, ge
+rman-x-2009-06-19, ngerman-x-2009-06-19, ancientgreek, ibycus, arabic, armenian
+, basque, bulgarian, catalan, pinyin, coptic, croatian, czech, danish, dutch, u
+kenglish, usenglishmax, esperanto, estonian, farsi, finnish, french, galician, 
+german, ngerman, swissgerman, monogreek, greek, hungarian, icelandic, assamese,
+ bengali, gujarati, hindi, kannada, malayalam, marathi, oriya, panjabi, tamil, 
+telugu, indonesian, interlingua, irish, italian, kurmanji, lao, latin, latvian,
+ lithuanian, mongolian, mongolianlmc, bokmal, nynorsk, polish, portuguese, roma
+nian, russian, sanskrit, serbian, slovak, slovenian, spanish, swedish, turkish,
+ turkmen, ukrainian, uppersorbian, welsh, loaded.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
+(/usr/local/texlive/2010/texmf-dist/tex/latex/base/size12.clo))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/graphics.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/pdftex-def/pdftex.def)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ltxcmds.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/infwarerr.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/etexcmds.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdfescape.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifluatex.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifpdf.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/ifvtex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/ifxetex/ifxetex.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/hycolor.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/xcolor-patch.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/letltxmacro.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/intcalc.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/hyperref.cfg)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/kvoptions.sty)
+Implicit mode ON; LaTeX internals redefined
+(/usr/local/texlive/2010/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bitset.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/bigintcalc.sty))
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/atbegshi.sty))
+* hyperref using default driver hpdftex *
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/atveryend.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/rerunfilecheck.sty
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/uniquecounter.sty)))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/tools/verbatim.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/caption/caption3.sty))
+(./tautA-02.aux)
+(/usr/local/texlive/2010/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/grfext.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2010/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2010/texmf-dist/tex/latex/oberdiek/refcount.sty)
+(/usr/local/texlive/2010/texmf-dist/tex/generic/oberdiek/gettitlestring.sty))
+(./tautA-02.out) (./tautA-02.out)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2010/texmf-dist/tex/latex/amsfonts/umsb.fd) [1{/usr/local/t
+exlive/2010/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \hbox (2.96419pt too wide) in paragraph at lines 240--248
+[]\OT1/cmr/m/n/12 Now let $\OML/cmm/m/it/12 ^^[$ \OT1/cmr/m/n/12 be a sim-pli-c
+ial tri-an-gu-la-tion of $\OML/cmm/m/it/12 S[]$\OT1/cmr/m/n/12 ; let $\OML/cmm/
+m/it/12 X\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/1
+2 2 \OML/cmm/m/it/12 Z[]\OT1/cmr/m/n/12 (^^A([](\OML/cmm/m/it/12 ^^[\OT1/cmr/m/
+n/12 ))\OML/cmm/m/it/12 ; \OT1/cmr/bx/n/12 Z\OT1/cmr/m/n/12 )$
+[2] [3]
+Overfull \hbox (4.94936pt too wide) in paragraph at lines 383--389
+\OT1/cmr/m/n/12 consisting of all the non-trivial ori-ented $(\OML/cmm/m/it/12 
+n \OT1/cmr/m/n/12 + 1)$-simplices $[](\OML/cmm/m/it/12 x; t\OT1/cmr/m/n/12 ) = 
+[\OML/cmm/m/it/12 xx[] [] x[]\OT1/cmr/m/n/12 ]$
+[4] [5]
+Overfull \hbox (6.74567pt too wide) detected at line 572
+\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 @[]M[]; @[]M[]\OT1/cmr/m/n/12 ) = \OML/cmm/m/
+it/12 @[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12
+ p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )) = \OML/cmm/m/it/12 
+g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 @[]
+M\OT1/cmr/m/n/12 ) = \OML/cmm/m/it/12 g[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 p; q
+\OT1/cmr/m/n/12 )(\OML/cmm/m/it/12 X \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 Y\OT1/c
+mr/m/n/12 ) = (\OML/cmm/m/it/12 X; Y\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 :
+[6] [7] [8] [9] [10]
+Overfull \hbox (9.98169pt too wide) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/12 No edge $\OMS/cmsy/m/n/12 f\OML/cmm/m/it/12 a; b\OMS/cmsy/m/n
+/12 g$ \OT1/cmr/m/n/12 has dis-con-nected link in $\OML/cmm/m/it/12 K\OT1/cmr/m
+/n/12 (\OML/cmm/m/it/12 M\OT1/cmr/m/n/12 )$. The link is a $1$-dimensional
+[11] [12] [13] (./tautA-02.bbl) [14] (./tautA-02.aux) )
+(see the transcript file for additional information)</usr/local/texlive/2010/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2010/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2010/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2010/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2010/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2010/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2010/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2010/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2010/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2010/texmf-dist/font
+s/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2010/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2010/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2010/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmti12.pfb></usr/local/texlive/2010/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmtt12.pfb>
+Output written on tautA-02.pdf (14 pages, 221496 bytes).
+Transcript written on tautA-02.log.
+
+codex
+The final pass succeeded and produced a 14-page PDF. I’m doing one last targeted log scan for undefined refs/citations and TeX errors before I close this out.
+exec
+/bin/zsh -lc 'git status --short text/tautxy/tautA-02.tex text/tautxy/tautA-02.pdf text/tautxy/tautA-02.aux text/tautxy/tautA-02.bbl text/tautxy/tautA-02.blg text/tautxy/tautA-02.log text/tautxy/tautA-02.out' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? text/tautxy/tautA-02.aux
+?? text/tautxy/tautA-02.bbl
+?? text/tautxy/tautA-02.blg
+?? text/tautxy/tautA-02.log
+?? text/tautxy/tautA-02.out
+?? text/tautxy/tautA-02.pdf
+?? text/tautxy/tautA-02.tex
+
+exec
+/bin/zsh -lc "rg -n 'LaTeX Warning: There were undefined references|Citation .* undefined|Reference .* undefined|Undefined control sequence|Emergency stop|"'^!|Error'"' tautA-02.log" in /Users/doyle/Dropbox/taut/text/tautxy
+ exited 1 in 0ms:
+exec
+/bin/zsh -lc "pdfinfo tautA-02.pdf | rg '"'^Pages:'"'" in /Users/doyle/Dropbox/taut/text/tautxy
+ succeeded in 0ms:
+Pages:           14
+
+codex
+PASS
+
+Verdict: I sign off on `text/tautxy/tautA-02.tex` as joint Claude+Codex version A.
+
+Exact recommended patch shape: no further source patches. The three requested line fixes are present verbatim at lines 595, 645-648, and 663.
+
+Files to edit: none.
+
+Local lemmas needed: none beyond the current text; the cone/no-cone step and mixed-face boundary multiplicity explanation are now stated cleanly enough for this version.
+
+Blockers: none. I rebuilt with `pdflatex -> bibtex -> pdflatex -> pdflatex`; final PDF is 14 pages, with no undefined references/citations or TeX errors in the final log scan.
+tokens used
+77,675
+PASS
+
+Verdict: I sign off on `text/tautxy/tautA-02.tex` as joint Claude+Codex version A.
+
+Exact recommended patch shape: no further source patches. The three requested line fixes are present verbatim at lines 595, 645-648, and 663.
+
+Files to edit: none.
+
+Local lemmas needed: none beyond the current text; the cone/no-cone step and mixed-face boundary multiplicity explanation are now stated cleanly enough for this version.
+
+Blockers: none. I rebuilt with `pdflatex -> bibtex -> pdflatex -> pdflatex`; final PDF is 14 pages, with no undefined references/citations or TeX errors in the final log scan.

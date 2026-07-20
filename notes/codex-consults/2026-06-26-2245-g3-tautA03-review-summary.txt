@@ -1,0 +1,133 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-2245-g3-tautA03-review-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-2245-g3-tautA03-review-summary.txt
+
+=== raw size ===
+    1509   68315 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-26-2245-g3-tautA03-review-raw.txt
+
+=== extracted markers ===
+1436:PASS
+1438:Verdict: `tautA-03` is a sound base for `tautA-04`, but not as-is. Fold in a few substantive alignment fixes.
+1474:PASS
+1476:Verdict: `tautA-03` is a sound base for `tautA-04`, but not as-is. Fold in a few substantive alignment fixes.
+
+=== final tail ===
+978:From the point of view of taut fillings these components are independent:
+979:any taut filling of $X(\sigma)$ is the union of taut fillings of the
+982:every taut filling is flag.
+986:any taut filling of $X(\sigma)$ is a flag complex.
+990:Let $\tau$ be the triangulated ball associated to the taut filling.
+1011:from $\tau$ gives a smaller counterexample.
+1023:For Configuration 1, removing an eligible tet deletes from $\tau$ only
+1030:$ABC,ABD,ACD,BCD$ to be present in $\tau$.
+1052:\bibliography{taut}
+1053:\bibliographystyle{amsplain}
+
+exec
+/bin/zsh -lc "sed -n '1038,1051l' text/tautxy/tautA-03.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+boundary.  In that exceptional case, say the interior edge \
+is $AD$;$
+then the relevant boundary faces are $ABC$ and $BCD$, and a\
+gain at most$
+two disjoint eligible tets meet them.  A preserving flip re\
+mains.$
+It remains to consider $\maxdeg(\sigma)=4$.$
+Since $\sigma$ has no degree-$3$ vertex, every vertex has d\
+egree at least$
+$4$, so $\sigma$ is $4$-regular.  The equations$
+$e=3v-6$ and $2e=4v$ give $v=6$, $e=12$, and $f=8$; hence $\
+\sigma$ is$
+the octahedral boundary, the only case with $\maxdeg(\sigma\
+)=4$.$
+For this single boundary triangulation one checks the same \
+finite list of$
+flip alternatives directly: every candidate $K_4$ either is\
+ already a tet of$
+$\tau$ or survives one of the eligible removals, giving a s\
+maller$
+counterexample.  Thus Configuration 2 is impossible.$
+\proofend$
+$
+
+exec
+/bin/zsh -lc "rg --files text/tautxy | rg '("'^|/)taut'"\\.(bib|bbl)"'$|tautA-0[23]'"\\.tex"'$'"'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+text/tautxy/tautA-02.tex
+text/tautxy/tautA-03.tex
+text/tautxy/taut.bib
+
+codex
+PASS
+
+Verdict: `tautA-03` is a sound base for `tautA-04`, but not as-is. Fold in a few substantive alignment fixes.
+
+- Exact patch shape:
+  - Add explicit cleanness sentence to abstract/overview.
+  - State Theorem 3 as: `K(M)` is freely shellable.
+  - State Theorem 4 as: `K(M)` is flag.
+  - Keep `\bibliography{taut}`; build from `text/tautxy/` so `taut.bib` resolves.
+  - Leave octahedron / `K_5` / maxdeg-4 eligible-tet checks as author-flagged unless authors want to supply the finite lemmas now.
+
+- Files to edit:
+  - `text/tautxy/tautA-03.tex` for `tautA-04.tex`.
+
+- Real errors / regressions:
+  - `text/tautxy/tautA-03.tex:167-183`: abstract still does not mention cleanness, contrary to the stated 03 change.
+  - `text/tautxy/tautA-03.tex:928-932`: Theorem 3 is still phrased for the filling, not literally for `K(M)`.
+  - `text/tautxy/tautA-03.tex:984-987`: Theorem 4 is still phrased for the filling, not literally for `K(M)`.
+
+- Cleanness argument:
+  - The persistence principle is directionally correct and improves 02.
+  - It still relies on a local avoidance lemma: enough eligible tets remain to avoid the witness, including repeated-tet witnesses and borderline `maxdeg=4`.
+  - No internal contradiction found, but this should be named as a lemma rather than left implicit.
+
+- Local lemmas needed:
+  - Eligible-tet avoidance for a fixed local obstruction witness.
+  - Repeated-tet persistence after removing an eligible tet, including `maxdeg=4`.
+  - Conjoined split localization, excluding only the artificial disconnected link of the new common edge.
+
+- Closure recommendations:
+  - Close briefly: `K(M)` wording after patch; bibliography/build path; `K_5` step if authors accept the standard “closed S^3 subcomplex cannot sit inside triangulated B^3” topology.
+  - Defer-to-authors: octahedron finite check; maxdeg-4 eligible/repeated-tet justification unless a short finite lemma is added now.
+
+- Blockers:
+  - None for using 03 as near-final base.
+  - Not ready as final 04 until the three wording/alignment fixes above are made.
+tokens used
+45,790
+PASS
+
+Verdict: `tautA-03` is a sound base for `tautA-04`, but not as-is. Fold in a few substantive alignment fixes.
+
+- Exact patch shape:
+  - Add explicit cleanness sentence to abstract/overview.
+  - State Theorem 3 as: `K(M)` is freely shellable.
+  - State Theorem 4 as: `K(M)` is flag.
+  - Keep `\bibliography{taut}`; build from `text/tautxy/` so `taut.bib` resolves.
+  - Leave octahedron / `K_5` / maxdeg-4 eligible-tet checks as author-flagged unless authors want to supply the finite lemmas now.
+
+- Files to edit:
+  - `text/tautxy/tautA-03.tex` for `tautA-04.tex`.
+
+- Real errors / regressions:
+  - `text/tautxy/tautA-03.tex:167-183`: abstract still does not mention cleanness, contrary to the stated 03 change.
+  - `text/tautxy/tautA-03.tex:928-932`: Theorem 3 is still phrased for the filling, not literally for `K(M)`.
+  - `text/tautxy/tautA-03.tex:984-987`: Theorem 4 is still phrased for the filling, not literally for `K(M)`.
+
+- Cleanness argument:
+  - The persistence principle is directionally correct and improves 02.
+  - It still relies on a local avoidance lemma: enough eligible tets remain to avoid the witness, including repeated-tet witnesses and borderline `maxdeg=4`.
+  - No internal contradiction found, but this should be named as a lemma rather than left implicit.
+
+- Local lemmas needed:
+  - Eligible-tet avoidance for a fixed local obstruction witness.
+  - Repeated-tet persistence after removing an eligible tet, including `maxdeg=4`.
+  - Conjoined split localization, excluding only the artificial disconnected link of the new common edge.
+
+- Closure recommendations:
+  - Close briefly: `K(M)` wording after patch; bibliography/build path; `K_5` step if authors accept the standard “closed S^3 subcomplex cannot sit inside triangulated B^3” topology.
+  - Defer-to-authors: octahedron finite check; maxdeg-4 eligible/repeated-tet justification unless a short finite lemma is added now.
+
+- Blockers:
+  - None for using 03 as near-final base.
+  - Not ready as final 04 until the three wording/alignment fixes above are made.

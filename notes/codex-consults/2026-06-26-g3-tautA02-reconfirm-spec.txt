@@ -1,0 +1,10 @@
+Follow-up: you BLOCKed sign-off on text/tautxy/tautA-02.tex pending three source-line patches. All three
+have now been applied VERBATIM as you specified, and the PDF rebuilds cleanly (14 pages, no errors/undefined
+refs). The applied changes:
+- tautA-02.tex:595 — removed the duplicated "are": now "The remaining cases to check are / the pure cases ...".
+- tautA-02.tex:645 — now reads: "Because $s$ is a mixed $XXy_0$ face, it is not a face of $X+Y$, so its
+  signed multiplicity in $\del M = X+Y$ vanishes; hence it also vanishes in $\del U$, ...".
+- tautA-02.tex:663 — bracket fixed to $[x_0x_1y_0]$.
+
+Re-read those three spots (and rebuild if you wish). Do you now sign off on tautA-02.tex as the joint
+Claude+Codex version A? First line: PASS or BLOCK. If BLOCK, give the exact remaining blocker.

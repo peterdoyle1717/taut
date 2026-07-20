@@ -5,19 +5,16 @@ import Taut.Stickerball
 
 The two remaining geometry holes (`degree3_hanchor`, `flipEdgePresent_side_bridge`)
 both need "a boundary triangle of the smaller filling lies in exactly one tet",
-which holds for a **pseudomanifold** but not for a bare freely-shellable complex.
-This file carries `IsPseudomanifold` through the eligible-tet flip:
+which holds for a **pseudomanifold**.  This file carries `IsPseudomanifold` through
+the eligible-tet flip:
 
 * `isPseudomanifold_union_of_sideSep` (LEMMA A) — two pseudomanifolds meeting only
-  along a ≤2-vertex set union to a pseudomanifold (the case-2 split reassembly);
-* the triangle rule-out (LEMMA C) — the shared faces of an eligible tet vanish on
-  removal, via the disjoint eligible pair and the parity bridge.
+  along a ≤2-vertex set union to a pseudomanifold (the case-2 split reassembly).
 
-The carried invariant is just `IsPseudomanifold M.support` alongside the existing
-`FreelyShellable`; the "two stickerballs joined along an edge" configuration never
-needs to be a named invariant — its two pieces are each a strictly smaller
-single-sphere taut filling, so the strong-induction hypothesis applies to each and
-LEMMA A glues their pseudomanifold-ness.
+The "two stickerballs joined along an edge" configuration never needs to be a named
+invariant — its two pieces are each a strictly smaller single-sphere taut filling,
+so the strong-induction hypothesis applies to each and LEMMA A glues their
+pseudomanifold-ness.
 -/
 
 namespace Taut

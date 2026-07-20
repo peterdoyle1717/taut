@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-27-1402-g3-tautA05-signoff-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-27-1402-g3-tautA05-signoff-summary.txt
+
+=== raw size ===
+     899   43556 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-27-1402-g3-tautA05-signoff-raw.txt
+
+=== extracted markers ===
+860:PASS
+862:Verdict: I agree `text/tautxy/tautA-05.tex` is a sound, complete paper-style version A. The rewritten flag proof is substantive and complete, and the octahedral/maxdeg special case has been removed.
+876:Blockers: none.
+881:PASS
+883:Verdict: I agree `text/tautxy/tautA-05.tex` is a sound, complete paper-style version A. The rewritten flag proof is substantive and complete, and the octahedral/maxdeg special case has been removed.
+897:Blockers: none.
+
+=== final tail ===
+  1015	\end{enumerate}
+  1016	
+  1017	If Configurations 1 and 2 are absent, so is Configuration 3.  Suppose the
+  1018	five vertices $\{A,B,C,D,E\}$ carried all ten edges.  With no empty $K_4$,
+  1019	all five tetrahedra on four of these vertices are simplices of $\tau$; let
+  1020	$U \subset M$ be the subchain formed by those five tetrahedra.  Each of the
+  1021	ten triangles on the five vertices is a face of exactly two of the five
+  1022	tetrahedra, and by triangle-boundedness (Theorem \ref{th2}) these are the
+  1023	only tetrahedra of $M$ containing it; incident to two tetrahedra, the
+  1024	triangle is interior, so it is not a face of $\sigma$ and has coefficient
+  1025	$0$ in $\del M = X(\sigma)$.  Hence $\del U$ vanishes on every triangle, so
+  1026	$\del U = 0$.  By Corollary \ref{nosubcycle} this forces $U = 0$,
+  1027	contradicting that $U$ contains five tetrahedra.
+  1028	
+  1029	We rule out Configurations 1 and 2 by minimal counterexample.
+  1030	If $\sigma$ has a degree-$3$ vertex, then $\sigma$ is a connected sum with
+  1031	one summand the tetrahedral boundary; removing that summand from $\sigma$ and
+  1032	the corresponding tetrahedron from $\tau$ gives a smaller counterexample.
+  1033	So assume $\sigma$ has no degree-$3$ vertex.
+  1034	By the eligible-tet count of Theorem \ref{th2} there are then at least
+  1035	$\maxdeg(\sigma)\geq 4$ eligible tetrahedra with pairwise disjoint pairs of
+  1036	boundary faces; in particular their flip edges are distinct, since the two
+  1037	boundary faces sharing an edge are the only two faces of $\sigma$ along it.
+  1038	Removing an eligible tet flips its edge of $\sigma$, leaving either a smaller
+  1039	triangulated sphere or two spheres conjoined along the new edge.  In the
+  1040	conjoined case a forbidden $K_3$ or $K_4$, all of whose vertices are joined
+  1041	by edges, lies on one side, where it gives a smaller counterexample.
+  1042	
+  1043	\emph{Configuration 1.}  Removing an eligible tet deletes from $\tau$ only
+  1044	the flipped edge.  The eligible tets have distinct flip edges, and the
+  1045	forbidden triangle has only three edges, so among at least four eligible
+  1046	tets some flip edge avoids all three; removing that tet preserves the
+  1047	triangle, a contradiction.
+  1048	
+  1049	\emph{Configuration 2.}  Assume Configuration 1 is already ruled out, so the
+  1050	six edges on $\{A,B,C,D\}$ make all four triangles $ABC,ABD,ACD,BCD$
+  1051	simplices of $\tau$.  We claim that removing \emph{any} eligible tet $t$
+  1052	leaves the empty $K_4$ in place, so a single removal already gives a smaller
+  1053	counterexample.  Removal creates no tetrahedron, so $\{A,B,C,D\}$ is still
+  1054	not one.  Each of the six edges survives: for an edge, say $AB$, the
+  1055	triangles $ABC$ and $ABD$ are simplices, and $t$ contains at most one of
+  1056	them, since containing both would force $\{A,B,C,D\}\subseteq t$, that is
+  1057	$t=\{A,B,C,D\}$, which is not a tetrahedron.  So one of them, say $ABD$, is
+  1058	not contained in $t$; being a simplex it is a face of some tetrahedron
+  1059	$u\neq t$, and $AB\subseteq ABD\subseteq u$ shows $AB$ survives the removal
+  1060	of $t$.  Hence all six edges remain and the empty $K_4$ persists, giving a
+  1061	smaller counterexample.  No maximum-degree bound and no octahedral special
+  1062	case is needed.
+  1063	\proofend
+  1064	
+  1065	\bibliography{taut}
+  1066	\bibliographystyle{amsplain}
+  1067	\end{document}
+
+exec
+/bin/zsh -lc 'rg -n "Lean|Mathlib|formaliz|theorem prover|endpoint|no_k5|bdry|hasEmpty|eligible|directive|octahedron placeholder|placeholder|TODO|FIXME|sorry|admit" text/tautxy/tautA-05.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+799:Call a support tetrahedron $t$ of $M$ \emph{eligible} if two of its
+819:Consequently there are at least $\maxdeg(\sigma)$ eligible support
+822:eligible tet $t$, there is another eligible tet whose boundary faces are
+825:Let $t$ be an eligible tet with boundary faces
+839:If that happened, remove instead an eligible tet $u$ whose boundary faces
+856:The same disjoint eligible-tet argument rules out that multiplicity-$2$
+859:The preceding paragraph shows that, for an eligible tet $t$, the intended
+862:minimality argument, using the supply of disjoint eligible tets.  The point
+865:link.  If we choose an eligible tet whose two boundary faces are disjoint from
+882:If the same unoriented tet occurred twice in $M$, then removing an eligible
+892:removing an eligible tet avoiding the tets accounting for this incidence
+894:split pieces.  If $s\in\sigma$, choose the eligible tet so that $s$ is not one
+906:link were disconnected, remove an eligible tet away from this exceptional
+966:$\maxdeg(\partial \tau)\geq 4$ disjointly eligible tets.
+1034:By the eligible-tet count of Theorem \ref{th2} there are then at least
+1035:$\maxdeg(\sigma)\geq 4$ eligible tetrahedra with pairwise disjoint pairs of
+1038:Removing an eligible tet flips its edge of $\sigma$, leaving either a smaller
+1043:\emph{Configuration 1.}  Removing an eligible tet deletes from $\tau$ only
+1044:the flipped edge.  The eligible tets have distinct flip edges, and the
+1045:forbidden triangle has only three edges, so among at least four eligible
+1051:simplices of $\tau$.  We claim that removing \emph{any} eligible tet $t$
+
+codex
+PASS
+
+Verdict: I agree `text/tautxy/tautA-05.tex` is a sound, complete paper-style version A. The rewritten flag proof is substantive and complete, and the octahedral/maxdeg special case has been removed.
+
+Exact recommended patch shape: no substantive patch needed.
+
+Files to edit: none.
+
+Local lemmas needed:
+- `nosubcycle`: taut subchains are taut, so a closed subchain has norm `Zvol(0)=0`; lines 365-373 are correct.
+- K5 closed-subchain exclusion: the five K4 tetrahedra form `U ⊂ M`; each triangle’s two incidences are exactly its incidences in `M`, so its boundary coefficient is zero; lines 1017-1027 are correct and avoid topology.
+- K4 persistence: with no empty K3, all four triangle faces exist; any eligible removal preserves each edge via one surviving triangle face; lines 1049-1062 are correct.
+- K3 flip count: at least four distinct flip edges versus three forbidden edges; lines 1034-1047 are sound.
+- Conjoined localization and degree-3 peel: lines 1030-1041 are sound in the needed minimal-counterexample sense.
+- Theorem 2 local-witness paragraph: lines 859-875 now states persistence by avoiding boundary faces needed to change the witness, without claiming every witness literally has boundary faces.
+
+Blockers: none.
+
+No leaked Lean/formalization-status language found. The only octahedral occurrence is the intended closing sentence at lines 1061-1062 saying no octahedral special case is needed.
+tokens used
+18,712
+PASS
+
+Verdict: I agree `text/tautxy/tautA-05.tex` is a sound, complete paper-style version A. The rewritten flag proof is substantive and complete, and the octahedral/maxdeg special case has been removed.
+
+Exact recommended patch shape: no substantive patch needed.
+
+Files to edit: none.
+
+Local lemmas needed:
+- `nosubcycle`: taut subchains are taut, so a closed subchain has norm `Zvol(0)=0`; lines 365-373 are correct.
+- K5 closed-subchain exclusion: the five K4 tetrahedra form `U ⊂ M`; each triangle’s two incidences are exactly its incidences in `M`, so its boundary coefficient is zero; lines 1017-1027 are correct and avoid topology.
+- K4 persistence: with no empty K3, all four triangle faces exist; any eligible removal preserves each edge via one surviving triangle face; lines 1049-1062 are correct.
+- K3 flip count: at least four distinct flip edges versus three forbidden edges; lines 1034-1047 are sound.
+- Conjoined localization and degree-3 peel: lines 1030-1041 are sound in the needed minimal-counterexample sense.
+- Theorem 2 local-witness paragraph: lines 859-875 now states persistence by avoiding boundary faces needed to change the witness, without claiming every witness literally has boundary faces.
+
+Blockers: none.
+
+No leaked Lean/formalization-status language found. The only octahedral occurrence is the intended closing sentence at lines 1061-1062 saying no octahedral special case is needed.

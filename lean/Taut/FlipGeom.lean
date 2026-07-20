@@ -2,14 +2,14 @@ import Taut.Theorem2
 import Taut.Ball
 
 /-!
-# Case-1 flip geometry (the missing `prime_step` packages) — AlephProver targets
+# Case-1 flip geometry
 
 The `prime_step` branch removes an eligible tet `e` from a taut filling `M` of the
 2-sphere `σ`.  When the flipped edge is absent (`¬ FlipEdgePresent`, case 1) the new
 boundary `σe := (σ \ sharedFaces M e) ∪ exposedFaces M e` is again a 2-sphere, the
 removed filling `removeTet M e` is again taut, and gluing `e` back is a `GlueStep`.
 These three facts — `IsSphere2 σe`, `IsTaut (removeTet M e)`, `GlueStep e σe σ` — are
-the data the induction (`theorem3_core`) needs to recurse on the smaller filling and
+the data the induction needs to recurse on the smaller filling and
 then snoc `e` back.  The flip API in `Theorem2.lean` already supplies the support and
 unit-chain facts (`support_flipBoundary_of_eligible`, `unitOn_flipBoundary_of_eligible`);
 these are the remaining pieces.
@@ -133,7 +133,7 @@ theorem connOn_erase_of_degree_two_bypass {G H : SimpleGraph V} [DecidableRel G.
   exact aux w.length w (le_refl _) ha hb
 
 theorem flipBoundary_card_faces_eq {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
     ((σ \ sharedFaces M e) ∪ exposedFaces M e).card = σ.card := by
@@ -168,7 +168,7 @@ theorem flipBoundary_card_faces_eq {M : Chain V} {σ : Finset (Finset V)} {e f�
   omega
 
 theorem flipBoundary_pure_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
     ∀ f ∈ ((σ \ sharedFaces M e) ∪ exposedFaces M e), f.card = 3 := by
@@ -181,7 +181,7 @@ theorem flipBoundary_pure_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e 
     exact (mem_powersetCard.mp hf_tet).2
 
 theorem flipBoundary_verts_eq {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
     vertsOf ((σ \ sharedFaces M e) ∪ exposedFaces M e) = vertsOf σ := by
@@ -287,7 +287,7 @@ theorem flipBoundary_verts_eq {M : Chain V} {σ : Finset (Finset V)} {e f₃ f�
     · exact ⟨F, by rw [Finset.mem_union]; exact Or.inl (Finset.mem_sdiff.mpr ⟨hFσ, hFS⟩), hxF⟩
 
 theorem flipBoundary_conn_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
     ConnOn (skel ((σ \ sharedFaces M e) ∪ exposedFaces M e))
@@ -296,7 +296,7 @@ theorem flipBoundary_conn_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e 
   let τ : Finset (Finset V) := (σ \ sharedFaces M e) ∪ exposedFaces M e
   have hverts : vertsOf τ = vertsOf σ := by
     dsimp [τ]
-    exact flipBoundary_verts_eq (M := M) (σ := σ) (e := e) (f₃ := f₃) (f₄ := f₄) hσ hU hS he hexp hf hNoFlip
+    exact flipBoundary_verts_eq (M := M) (σ := σ) (e := e) (f₃ := f₃) (f₄ := f₄) hσ hU he hexp hf hNoFlip
   have ht4 : e.card = 4 := he.1
   have hshcard : (sharedFaces M e).card = 2 := he.2.2.1
   have hf3exp : f₃ ∈ exposedFaces M e := by
@@ -498,7 +498,7 @@ theorem tetFaces_edge_filter_card_eq_two {e a : Finset V} (he : e.card = 4) (hae
   · exact absurd h (Finset.mem_sdiff.mp h₁).2
 
 theorem flipBoundary_closed_edge_in_tet_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ a : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄)
     (haτ : a ∈ edgesOf ((σ \ sharedFaces M e) ∪ exposedFaces M e)) (hae : a ⊆ e) :
@@ -666,7 +666,7 @@ theorem flipBoundary_closed_edge_in_tet_of_eligible {M : Chain V} {σ : Finset (
       omega
 
 theorem flipBoundary_closed_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
     ∀ a ∈ edgesOf ((σ \ sharedFaces M e) ∪ exposedFaces M e),
@@ -675,7 +675,7 @@ theorem flipBoundary_closed_of_eligible {M : Chain V} {σ : Finset (Finset V)} {
   intro a ha
   set τ : Finset (Finset V) := (σ \ sharedFaces M e) ∪ exposedFaces M e with hτdef
   by_cases hae : a ⊆ e
-  · exact flipBoundary_closed_edge_in_tet_of_eligible hσ hU hS he hexp hf hNoFlip ha hae
+  · exact flipBoundary_closed_edge_in_tet_of_eligible hσ hU he hexp hf hNoFlip ha hae
   · have hNoTet : ∀ f ∈ tetFaces e, ¬ a ⊆ f := by
       intro f hf haf
       have hfe : f ⊆ e := (Finset.mem_powersetCard.mp hf).1
@@ -780,7 +780,7 @@ theorem tetFaces_pair_inter_card_eq_two {e F G : Finset V} (he : e.card = 4) (hF
   omega
 
 theorem flipBoundary_linkConn_newDiag_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) {v : V} (hvnew : v ∈ f₃ ∩ f₄) :
     ConnOn (linkGraph ((σ \ sharedFaces M e) ∪ exposedFaces M e) v)
@@ -1000,7 +1000,7 @@ theorem flipBoundary_linkConn_newDiag_of_eligible {M : Chain V} {σ : Finset (Fi
   exact (reach_w x hx).trans (reach_w y hy).symm
 
 theorem flipBoundary_oldDiag_link_local_data {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) {v : V} (hve : v ∈ e) (hvnotnew : v ∉ f₃ ∩ f₄) :
     ∃ w p q : V,
@@ -1400,7 +1400,7 @@ theorem flipBoundary_oldDiag_link_local_data {M : Chain V} {σ : Finset (Finset 
       exact hmain x hvx hdiff_vx
 
 theorem flipBoundary_linkConn_oldDiag_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) {v : V} (hve : v ∈ e) (hvnotnew : v ∉ f₃ ∩ f₄) :
     ConnOn (linkGraph ((σ \ sharedFaces M e) ∪ exposedFaces M e) v)
@@ -1408,7 +1408,7 @@ theorem flipBoundary_linkConn_oldDiag_of_eligible {M : Chain V} {σ : Finset (Fi
   classical
   let τ : Finset (Finset V) := (σ \ sharedFaces M e) ∪ exposedFaces M e
   rcases flipBoundary_oldDiag_link_local_data (M := M) (σ := σ) (e := e) (f₃ := f₃) (f₄ := f₄)
-      hσ hU hS he hexp hf hNoFlip hve hvnotnew with
+      hσ hU he hexp hf hNoFlip hve hvnotnew with
     ⟨w, p, q, hvσ, hpq, hverts, hNbr, hHedge, hPres, hClosed⟩
   rw [hverts]
   exact connOn_erase_of_degree_two_bypass (G := linkGraph σ v) (H := linkGraph τ v)
@@ -1416,7 +1416,7 @@ theorem flipBoundary_linkConn_oldDiag_of_eligible {M : Chain V} {σ : Finset (Fi
     (hσ.linkConn v hvσ) hpq hClosed hNbr hHedge hPres
 
 theorem flipBoundary_linkConn_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
     ∀ v ∈ vertsOf ((σ \ sharedFaces M e) ∪ exposedFaces M e),
@@ -1425,11 +1425,11 @@ theorem flipBoundary_linkConn_of_eligible {M : Chain V} {σ : Finset (Finset V)}
   intro v hv
   by_cases hve : v ∈ e
   · by_cases hvnew : v ∈ f₃ ∩ f₄
-    · exact flipBoundary_linkConn_newDiag_of_eligible hσ hU hS he hexp hf hNoFlip hvnew
-    · exact flipBoundary_linkConn_oldDiag_of_eligible hσ hU hS he hexp hf hNoFlip hve hvnew
+    · exact flipBoundary_linkConn_newDiag_of_eligible hσ hU he hexp hf hNoFlip hvnew
+    · exact flipBoundary_linkConn_oldDiag_of_eligible hσ hU he hexp hf hNoFlip hve hvnew
   · let σe : Finset (Finset V) := (σ \ sharedFaces M e) ∪ exposedFaces M e
     have hvσ : v ∈ vertsOf σ := by
-      have hverts := flipBoundary_verts_eq hσ hU hS he hexp hf hNoFlip
+      have hverts := flipBoundary_verts_eq hσ hU he hexp hf hNoFlip
       simpa only [hverts] using hv
     have hface : ∀ {s : Finset V}, v ∈ s → (s ∈ σe ↔ s ∈ σ) := by
       intro s hvs
@@ -1505,7 +1505,7 @@ theorem three_mul_card_faces_of_pure_closed {τ : Finset (Finset V)}
   rw [← hleft, key, hright]
 
 theorem flipBoundary_euler_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
     (vertsOf ((σ \ sharedFaces M e) ∪ exposedFaces M e)).card +
@@ -1515,15 +1515,15 @@ theorem flipBoundary_euler_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e
   let τ : Finset (Finset V) := (σ \ sharedFaces M e) ∪ exposedFaces M e
   have hcard : τ.card = σ.card := by
     dsimp [τ]
-    exact flipBoundary_card_faces_eq hσ hU hS he hexp hf hNoFlip
+    exact flipBoundary_card_faces_eq hσ hU he hexp hf hNoFlip
   have hpure : ∀ f ∈ τ, f.card = 3 := by
     intro f hfτ
     dsimp [τ] at hfτ ⊢
-    exact flipBoundary_pure_of_eligible hσ hU hS he hexp hf hNoFlip f hfτ
+    exact flipBoundary_pure_of_eligible hσ hU he hexp hf hNoFlip f hfτ
   have hclosed : ∀ a ∈ edgesOf τ, edgeDeg τ a = 2 := by
     intro a ha
     dsimp [τ] at ha ⊢
-    exact flipBoundary_closed_of_eligible hσ hU hS he hexp hf hNoFlip a ha
+    exact flipBoundary_closed_of_eligible hσ hU he hexp hf hNoFlip a ha
   have hdoubleτ : 3 * τ.card = 2 * (edgesOf τ).card := by
     exact three_mul_card_faces_of_pure_closed hpure hclosed
   have hdoubleσ : 3 * σ.card = 2 * (edgesOf σ).card := by
@@ -1532,7 +1532,7 @@ theorem flipBoundary_euler_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e
     omega
   have hvert : (vertsOf τ).card = (vertsOf σ).card := by
     dsimp [τ]
-    rw [flipBoundary_verts_eq hσ hU hS he hexp hf hNoFlip]
+    rw [flipBoundary_verts_eq hσ hU he hexp hf hNoFlip]
   have heulerσ : (vertsOf σ).card + σ.card = (edgesOf σ).card + 2 := by
     exact hσ.euler
   dsimp [τ] at hvert hedge hcard hdoubleτ
@@ -1545,15 +1545,15 @@ theorem flipBoundary_euler_of_eligible {M : Chain V} {σ : Finset (Finset V)} {e
 combinatorial 2-sphere. -/
 theorem isSphere2_flipBoundary_of_eligible {M : Chain V} {σ : Finset (Finset V)}
     {e f₃ f₄ : Finset V}
-    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hS : SimplicialChain M)
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ)
     (he : EligibleTet M e) (hexp : exposedFaces M e = {f₃, f₄}) (hf : f₃ ≠ f₄)
     (hNoFlip : ¬ FlipEdgePresent σ f₃ f₄) :
     IsSphere2 ((σ \ sharedFaces M e) ∪ exposedFaces M e) := by
   refine ⟨?pure, ?closed, ?linkConn, ?conn, ?euler⟩
-  · exact flipBoundary_pure_of_eligible hσ hU hS he hexp hf hNoFlip
-  · exact flipBoundary_closed_of_eligible hσ hU hS he hexp hf hNoFlip
-  · exact flipBoundary_linkConn_of_eligible hσ hU hS he hexp hf hNoFlip
-  · exact flipBoundary_conn_of_eligible hσ hU hS he hexp hf hNoFlip
-  · exact flipBoundary_euler_of_eligible hσ hU hS he hexp hf hNoFlip
+  · exact flipBoundary_pure_of_eligible hσ hU he hexp hf hNoFlip
+  · exact flipBoundary_closed_of_eligible hσ hU he hexp hf hNoFlip
+  · exact flipBoundary_linkConn_of_eligible hσ hU he hexp hf hNoFlip
+  · exact flipBoundary_conn_of_eligible hσ hU he hexp hf hNoFlip
+  · exact flipBoundary_euler_of_eligible hσ hU he hexp hf hNoFlip
 
 end Taut

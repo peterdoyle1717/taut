@@ -1,0 +1,590 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[T1]{fontenc}
+\setlength{\emergencystretch}{3em}
+\sloppy
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\newcommand{\Zvol}{\operatorname{Zvol}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\bd}{\partial}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\card}[1]{\lvert #1\rvert}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+
+\title{Splitting and the Stickerball Theorem for Taut Fillings\\[2pt]
+\large A proof extracted from the Lean formalization}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent
+This document records, as ordinary mathematics, the two theorems established in the Lean
+development \code{lean/Taut}: (II) taut fillings split under almost-disjointness, and
+(III) a taut filling of a combinatorial $2$-sphere is an \emph{AnyRootedStickerball}.
+The organizing spine is the Lean architecture, not any prior narrative: almost-disjoint
+splitting is the engine, and the stickerball theorem is a single induction on the size of
+the filling driven by that engine. Typewriter names are the Lean identifiers; their status
+is summarized in \S\ref{sec:status}. Everything stated as a theorem or lemma is fully
+formalized with no \code{sorry} and no project axioms (\S\ref{sec:status}); the one notion
+that is genuinely weaker than its classical namesake, and the one classical bridge that is
+\emph{not} proved, are isolated in \S\ref{sec:classical}.
+
+%==========================================================================
+\section{Definitions}\label{sec:defs}
+
+Fix a linearly ordered vertex set $V$. A simplex is a finite subset $s\subseteq V$; if
+$\card{s}=k+1$ we call it a $k$-simplex. A \emph{chain} is a finitely supported function
+$M$ from simplices to $\Z$ (\code{Chain V}), written $M=\sum_s M(s)\,s$, with orientations
+fixed by the vertex order. The boundary $\bd$ is the usual signed face operator
+(\code{bdry}); $\bd\bd=0$. The \emph{norm} is $\norm{M}=\sum_s\card{M(s)}$ (\code{nrm}); a
+chain is \emph{simplicial} if every coefficient lies in $\{-1,0,1\}$
+(\code{SimplicialChain}), and then $\norm{M}$ is the number of simplices in its support. (For a
+taut filling of a $2$-sphere, simpliciality is automatic --- Theorem~\ref{thm:simpl} --- and is
+nowhere assumed.)
+
+\begin{definition}[Filling volume; taut filling]\label{def:taut}
+The \emph{filling volume} of a chain $X$ is $\Zvol(X)=\inf\{\norm{M}:\bd M=X\}$ (\code{Zvol},
+literally an $\inf$ over $\mathbb N$). For a cycle ($\bd X=0$) the cone over any vertex is a filling
+(\code{bdry\_cone\_of\_closed}), so the $\inf$ is attained and
+\[
+\Zvol(X)=\min\{\norm{M}:\bd M=X\}\qquad(\code{exists\_fill\_eq\_Zvol}).
+\]
+(\code{Zvol} is defined for every chain; it is used below only on cycles.)
+A chain $M$ is a \emph{taut filling} of $X$ if $\bd M=X$ and $\norm{M}=\Zvol(X)$, i.e.\ $M$
+is a norm-minimal filling of its own boundary (\code{IsTaut}).
+\end{definition}
+
+Tautness contributes exactly three things to the proofs, all consequences of minimality:
+\begin{itemize}
+\item[(T1)] \emph{Boundary control:} $\bd M=X$ holds on the nose.
+\item[(T2)] \emph{Purity / no junk:} the generators of a taut filling of an $n$-cycle are
+all $(n{+}1)$-simplices (\code{IsTaut.dim\_pure}), and every vertex of $M$ lies on the
+boundary (\code{IsTaut.vert\_subset}, via \code{IsTaut.no\_internal\_vertex}).
+\item[(T3)] \emph{No extraneous cancellation:} a taut chain contains no \emph{nontrivial}
+complete cone $\operatorname{cone} x\,W$ as a subchain --- $W$ closed ($\bd W=0$), the apex $x$
+absent from $W$ ($\deg_x W=0$), and some vertex $x'$ present in $W$ ($\deg_{x'} W\neq 0$)
+(\code{not\_taut\_complete\_cone}); such a cone could be
+refilled with strictly fewer simplices.
+\end{itemize}
+``Taut'' is therefore purely combinatorial $\ell^1$-minimality with these structural
+corollaries; it is not a metric or curvature condition.
+
+\begin{definition}[Combinatorial $2$-sphere]\label{def:sphere}
+A set $\sigma$ of triangles is a \emph{combinatorial $2$-sphere} (\code{IsSphere2}) if it is
+pure $2$-dimensional, every edge lies in exactly two triangles, every vertex link is
+\emph{connected}, the $1$-skeleton is connected, and $V+F=E+2$ (that each vertex link is in fact a
+cycle, i.e.\ $2$-regular, is then derived: \code{link\_two\_regular}). These properties are taken
+as the definition.
+\end{definition}
+
+\begin{definition}[AlmostDisjoint]\label{def:ad}
+Fix $n\ge 1$ and $A,B\subseteq V$. Closed pure $n$-cycles $X,Y$ are
+\emph{AlmostDisjoint over $(A,B)$} if every generator of $X$ is an $(n{+}1)$-subset of $A$,
+every generator of $Y$ is an $(n{+}1)$-subset of $B$, $\bd X=\bd Y=0$, and
+\[
+\card{A\cap B}\ \le\ n+1 .
+\]
+Mathematically: the two regions overlap in at most an $n$-simplex's worth of vertices.
+This is the \emph{entire} separation hypothesis --- no metric, no topological transversality.
+(Informal name; in Lean it is the hypothesis bundle of
+\code{Zvol\_add\_of\_almost\_disjoint\_full} and \code{IsTaut.splits\_full}.)
+\end{definition}
+
+For the stickerball theorem we build complexes of tetrahedra one at a time. Let $\tau$ be a
+set of tetrahedra ($4$-element simplices) with current boundary $B$ (a set of triangles).
+
+\begin{definition}[Clean glue step; clean shelling]\label{def:clean}
+Adding a tetrahedron $t$ to $\tau$ is a \emph{clean glue step} (\code{CleanGlueStep}) if:
+\begin{itemize}
+\item[(a)] $t$ meets the current boundary $B$ in one or two of its four triangular faces,
+and the new boundary is $B$ updated by symmetric difference with the faces of $t$;
+\item[(b)] $t\notin\tau$ and no already-interior face of $t$ is rogue (each old face of $t$
+lies in a shared boundary triangle); and the three \emph{link certificates}:
+\item[(c1)] each triangle of $t$ lies in at most one tetrahedron of $\tau$ (so at most two
+after adding $t$);
+\item[(c2)] each edge of $t$ is new to $\tau$, or shares an apex with $\tau$'s edge-link there;
+\item[(c3)] each vertex of $t$ is new to $\tau$, or shares an apex with $\tau$'s vertex-link there.
+\end{itemize}
+A \emph{clean shelling} of $\tau$ with boundary $B$ is an ordering $t_1,\dots,t_k$ of $\tau$
+in which $t_1$ is a single tetrahedron and each $t_{i+1}$ is added to $\{t_1,\dots,t_i\}$ by
+a clean glue step, terminating at boundary $B$ (\code{IsCleanShelling},
+\code{CleanShellFrom}).
+\end{definition}
+
+The certificates (c1)--(c3) are precisely the hypotheses needed to preserve, across one
+insertion, the three conditions defining a \emph{clean $3$-complex}.
+
+\begin{definition}[Clean $3$-complex]\label{def:clean3}
+A set $\tau$ of tetrahedra is a \emph{clean $3$-complex} (\code{IsClean3Complex}) if it is
+pure ($3$-dimensional), triangle-bounded (every triangle in at most two tetrahedra), and
+\emph{normal}: both its edge-links and its vertex-links are connected.
+\end{definition}
+
+\begin{definition}[Stickerball; root; RootedStickerball; AnyRootedStickerball]\label{def:sb}
+A set $\tau$ of tetrahedra is a \emph{stickerball} with boundary $B$ if it admits a clean
+shelling ending at $B$ and $B\neq\varnothing$ (\code{IsStickerball}).
+A \emph{root} of a stickerball is a tetrahedron $t\in\tau$ at which some clean shelling can
+\emph{begin}. ``Rooted at $t$'' (\emph{RootedStickerball}) is not a standalone Lean predicate; it
+names the existence clause for that $t$ inside \code{FreelyCleanShellable}. The stickerball is an
+\emph{AnyRootedStickerball} if every tetrahedron of $\tau$ is a root: in Lean,
+\code{IsAnyrootedStickerball} $=$ \code{IsStickerball} together with \code{FreelyCleanShellable},
+where \code{FreelyCleanShellable} asserts a clean shelling beginning at each $t\in\tau$.
+\end{definition}
+
+\begin{remark}
+``RootedStickerball'' and ``AnyRootedStickerball'' are stated in Lean-backed terms. The
+clean shelling certifies normality (\S\ref{sec:classical}); we do not silently upgrade
+``stickerball'' to ``shellable ball'' or ``$3$-ball'' --- the proved bridge and the missing
+bridge are stated in \S\ref{sec:classical}.
+\end{remark}
+
+%==========================================================================
+\section{Splitting under AlmostDisjoint}\label{sec:split}
+
+The engine of the splitting theorem is a small-support triviality (Lemma~\ref{lem:smallsupp})
+together with the no-cone property (T3) of taut chains. We also record here, once, the one
+homological input --- $H_1=0$ and the cut it yields (Lemma~\ref{lem:cut}); the splitting theorem
+does \emph{not} use it (its analogue of closedness is the coefficient-level
+\code{bdry\_lk\_eq\_zero}, not the cut), but the sphere-cutting reductions of \S\ref{sec:main} do.
+
+\subsection*{The homological input (used in \S\ref{sec:main})}
+
+\begin{lemma}[$H_1=0$ and the cut]\label{lem:cut}
+On a combinatorial $2$-sphere, over $\F_2$, every $1$-cycle is a boundary:
+$\operatorname{im}\bd_2=\ker\bd_1$ (\code{range\_bd2\_eq\_ker\_bd1}). Consequently, if
+$\gamma$ is a triple of vertices whose three edges lie in $\sigma$ but which is not a face
+of $\sigma$, then the $1$-cycle of its edges bounds a set $W$ of faces of $\sigma$
+(\code{exists\_cut}).
+\end{lemma}
+
+\begin{proof}
+The $\F_2$ $2$-cycles are spanned by the all-faces chain (dual-graph connectivity), so
+$\dim\operatorname{im}\bd_2=F-1$; the connected $1$-skeleton gives
+$\dim\operatorname{im}\bd_1=V-1$, hence $\dim\ker\bd_1=E-(V-1)$, which equals $F-1$ by
+$V+F=E+2$. With $\operatorname{im}\bd_2\subseteq\ker\bd_1$ this forces equality. A non-face
+triple $\gamma$ has each vertex on exactly two of its edges, so its edge-chain is a
+$1$-cycle and therefore a boundary $\bd_2 W$.
+\end{proof}
+
+\begin{lemma}[Small-support triviality]\label{lem:smallsupp}
+A closed chain whose generators all have $n+1$ vertices, supported on a set of at most
+$n+1$ vertices, is zero: with fewer than $n+1$ vertices there is no $(n{+}1)$-generator at all
+(\code{eq\_zero\_of\_supp\_card\_lt}, closedness not needed), and on exactly $n+1$ vertices the
+single possible generator is killed by closedness (\code{eq\_zero\_of\_closed\_supp\_card\_eq}).
+\end{lemma}
+
+\begin{proof}
+On at most $n+1$ vertices there is at most one $(n{+}1)$-subset, so the chain is $c\cdot s$
+for a single simplex; $\bd(c\,s)=0$ forces $c=0$.
+\end{proof}
+
+\subsection*{The split}
+
+Fix a common vertex $p\in A\cap B$. There is a norm-non-increasing \emph{kill operator}
+$K_{A,p}$ (\code{Projection.lean}, a cone projection toward $p$) with: $K_{A,p}$ fixes every
+chain confined to $A$ (\code{Kmap\_eq\_self}); and $K_{A,p}$ annihilates every closed pure
+$n$-cycle confined to $B$ (\code{Kmap\_eq\_zero\_of\_closed}), because its image is a closed
+pure cycle on $A\cap B$, hence on $\le n+1$ vertices, hence zero by
+Lemma~\ref{lem:smallsupp}. Symmetrically for $K_{B,q}$ with $q\in A\cap B$, $q\neq p$.
+
+\begin{theorem}[Additivity]\label{thm:add}
+If $X,Y$ are AlmostDisjoint over $(A,B)$ with $n\ge 1$, then
+$\Zvol(X+Y)=\Zvol(X)+\Zvol(Y)$ (\code{Zvol\_add\_of\_almost\_disjoint\_full}).
+\end{theorem}
+
+\begin{proof}
+$(\le)$ The sum of minimal fillings of $X$ and $Y$ is a filling of $X+Y$, so by subadditivity of
+the norm, $\Zvol(X{+}Y)\le\norm{M_X}+\norm{M_Y}=\Zvol X+\Zvol Y$ (\code{Zvol\_le}, \code{nrm\_add\_le}).
+$(\ge)$ Let $M$ be a minimal (hence taut) filling of $X+Y$, so $\Zvol(X{+}Y)=\norm M$; its
+generators are pure $(n{+}2)$-simplices lying in $A\cup B$ (\code{IsTaut.dim\_pure},
+\code{IsTaut.vert\_subset}). Each generator $t$ splits as
+$(t\cap A\cap B)\sqcup(t\setminus A)\sqcup(t\setminus B)$; as $\card{A\cap B}\le n+1<n+2$,
+$t$ cannot avoid both $t\setminus A$ and $t\setminus B$, so $t$ is killed by \emph{at least
+one} of $K_{A,p},K_{B,q}$ (\code{Kkills\_or\_Kkills}, an inclusive ``or''). Equivalently the
+two retained sets are disjoint --- a generator may be killed by both (retained by neither),
+e.g.\ one with $\card{t\setminus A}=\card{t\setminus B}=2$, and that is harmless. With the
+per-map bound $\norm{K_{A,p}M}+\norm{M{\restriction}_{\mathrm{kill}_A}}\le\norm M$
+(\code{nrm\_Kmap\_add\_killed\_le}) and
+$\norm M\le\norm{M{\restriction}_{\mathrm{kill}_A}}+\norm{M{\restriction}_{\mathrm{kill}_B}}$
+(\code{nrm\_le\_killed\_add\_killed}) this gives $\norm{K_{A,p}M}+\norm{K_{B,q}M}\le\norm{M}$.
+Because $K_{A,p}$ fixes the $A$-part of $\bd M$ and kills its closed $B$-part, $K_{A,p}M$ fills
+$X$ and $K_{B,q}M$ fills $Y$; thus $\norm{M}\ge\Zvol X+\Zvol Y$. (Exclusivity --- each generator
+killed by \emph{exactly} one --- is not used here; it holds only later, for the taut filling in
+Theorem~\ref{thm:split}, once \code{no\_double\_kill} rules out double kills.)
+\end{proof}
+
+\begin{theorem}[Splitting under AlmostDisjoint]\label{thm:split}
+Let $X,Y$ be AlmostDisjoint over $(A,B)$ with $n\ge 2$, and let $M$ be a taut filling of
+$X+Y$. Then, writing $M_A=M\!\restriction_{\,\subseteq A}$ and
+$M_B=M\!\restriction_{\,\not\subseteq A}$,
+\[
+M=M_A+M_B,\qquad \bd M_A=X,\qquad \bd M_B=Y,
+\]
+and $M_A,M_B$ are themselves taut (\code{IsTaut.splits\_full}).
+\end{theorem}
+
+\begin{proof}
+Tautness enters precisely here, turning Theorem~\ref{thm:add} into rigidity. Since $M$ is
+taut, $\norm{M}=\Zvol(X+Y)=\Zvol X+\Zvol Y$, while
+$\norm{M}\ge\norm{K_{A,p}M}+\norm{K_{B,q}M}\ge\Zvol X+\Zvol Y$. So all inequalities are
+equalities, with two consequences.
+
+\emph{No double kill} (\code{no\_double\_kill}): if some generator were retained by neither
+operator, the middle sum would be strictly smaller than $\norm M$. Hence every generator is
+retained by exactly one side, and $K_{A,p}M,K_{B,q}M$ are \emph{taut} fillings of $X,Y$.
+
+\emph{No straddling simplex} (\code{no\_extreme\_hybrid}). The three-part decomposition
+leaves, besides pure generators ($\subseteq A$ or $\subseteq B$), only ``extreme hybrids'':
+a single vertex $y_0$ on the far side and none in $A\cap B$. If such hybrids existed,
+collect those through a fixed $y_0$; their faces opposite $y_0$ form a nonempty cycle $L$.
+That $L$ is closed is \emph{not} the $\F_2$ cut: a coefficient computation shows that $\bd U$
+carries no face through $y_0$ (such faces lie in neither $X$ nor $Y$), and \code{bdry\_lk\_eq\_zero}
+then converts this into $\bd L=0$. So $M$ would contain the complete cone $y_0\ast L$,
+contradicting (T3). This is the only place $n\ge 2$ is used:
+the opposite faces need $\ge 2$ vertices for $L$ to be a genuine cycle.
+
+Thus every generator of $M$ is $\subseteq A$ or $\subseteq B$, so the literal restrictions give
+$M=M_A+M_B$. The identity $\bd M_A=X$ follows by applying $K_{A,p}$ to $\bd M_A+\bd M_B=X+Y$
+(\code{Kmap\_eq\_self} on the $A$-part, \code{Kmap\_eq\_zero\_of\_closed} on the closed $B$-part);
+then $\bd M_B=Y$ by cancellation. Tautness of the pieces follows from $\norm{M_A}+\norm{M_B}=\norm M$,
+additivity, and $\norm{M_A}\ge\Zvol X$, $\norm{M_B}\ge\Zvol Y$.
+\end{proof}
+
+\begin{remark}[Why exactly AlmostDisjoint]
+The proof uses the separation hypothesis only through Lemma~\ref{lem:smallsupp}, which needs
+nothing beyond $\card{A\cap B}\le n+1$. There is no appeal to any geometric or topological
+transversality; AlmostDisjointness is the exact combinatorial content that makes the cross
+terms vanish.
+\end{remark}
+
+The rational analogue (\code{Qvol\_add\_of\_almost\_disjoint\_full},
+\code{IsQTaut.splits\_full}) follows by clearing denominators, applying
+Theorems~\ref{thm:add}--\ref{thm:split} over $\Z$, and rescaling.
+
+%==========================================================================
+\section{Taut fillings are AnyRootedStickerballs}\label{sec:main}
+
+We now prove the main theorem by induction on the number of tetrahedra, using
+Theorem~\ref{thm:split} (in its $2$-sphere ``cut'' form) to produce the smaller taut
+fillings. The same reduction first pays off a debt in the hypotheses: a taut filling of a
+$2$-sphere is \emph{automatically} simplicial, so ``simplicial'' is a conclusion, not an
+assumption.
+
+\subsection*{Simpliciality is automatic}
+
+\begin{theorem}[Simpliciality is automatic]\label{thm:simpl}
+Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$, and $M$ a taut
+filling with $\bd M=X$. Then every tetrahedron coefficient of $M$ lies in $\{-1,0,1\}$ --- $M$
+is simplicial (\code{taut\_filling\_is\_simplicialChain}). \emph{No simpliciality is assumed.}
+\end{theorem}
+
+This discharges the only hypothesis of the main theorem that is not already part of ``$M$ is a
+taut filling of the simplicial $2$-sphere $\sigma$.'' The proof is a minimal-counterexample
+deletion driven by a counting engine that produces removable tetrahedra \emph{without} knowing
+the coefficients are $\pm1$ --- the point at which a naive argument would be circular.
+
+\begin{lemma}[Disjoint eligible family, simpliciality-free]\label{lem:family}
+Let $\sigma$ have no degree-$3$ vertex, and let $M$ be a taut filling whose boundary $\bd M$ is
+the $\pm1$ cycle on $\sigma$ and whose generators are all tetrahedra. Then for every vertex
+$v$ there are at least $\deg_v(\bd M)$ generators of $M$, pairwise disjoint in their boundary
+faces, each sharing exactly two faces with $\bd M$ in proper orientation --- i.e.\ at least
+$\deg_v(\bd M)$ disjoint \emph{eligible} tetrahedra
+(\code{exists\_disjoint\_eligible\_family\_noS}). (Under the unit boundary an eligible
+tetrahedron necessarily has coefficient $\pm1$,
+\code{tet\_coeff\_eq\_pm\_one\_of\_eligible\_unitOn}; this is what makes it removable below.)
+\end{lemma}
+
+\begin{proof}
+Call a triangle $\alpha\in\sigma$ a \emph{same-sign support face} of a generator $t$ if
+$\alpha$ is a face of $t$ whose chain contribution carries the sign of $\bd M$ there, i.e.\
+$\bd M(\alpha)\cdot M(t)\cdot\operatorname{sgn}(t,\alpha)>0$
+(\code{SameSignSupportFaceTet}). Every boundary triangle is a same-sign support face of
+\emph{some} generator (\code{sameSignSupportFace\_cover}); this --- strictly weaker than ``each
+boundary triangle lies on a unique tetrahedron'' --- is the \emph{only} geometric input, and
+it uses only that $\bd M$ is the unit cycle and that generators are tetrahedra, \emph{not} that
+their coefficients are $\pm1$. Pick one such generator for each of the $\card\sigma$ boundary
+triangles; since no vertex has degree $3$, each generator is picked by at most two triangles
+(\code{sharedFaces\_card\_le\_two\_of\_noDegree3}).
+
+Now count. Let $s=\card{\supp M}$ be the number of generators and $z$ the number of them with
+$\card{M(t)}\ge 2$. The norm budget $s+z\le\norm M$
+(\code{support\_card\_add\_nonUnitSupport\_card\_le\_nrm}; each non-unit generator costs
+$\ge 2$), tautness $\norm M=\Zvol(\bd M)$, and the degree--volume inequality
+$\Zvol(\bd M)+\deg_v(\bd M)\le\norm{\bd M}=\card\sigma$ (\code{Zvol\_add\_deg\_le},
+\code{UnitOn.nrm\_eq}) combine to
+\[
+s+z+\deg_v(\bd M)\ \le\ \card\sigma .
+\]
+A map from the $\card\sigma$ triangles \emph{into} the $s$ generators with every fibre of size
+$\le 2$ therefore has at least $z+\deg_v(\bd M)$ \emph{twofer} targets --- generators picked by
+exactly two triangles --- with pairwise-disjoint assigned pairs (\code{finset\_twofer\_fibers}: a
+fibred map with $s+k\le\card\sigma$ has $\ge k$ size-$2$ fibres). Discard the $\le z$ non-unit
+twofers; at least $\deg_v(\bd M)$ \emph{unit} twofers remain. A unit twofer has coefficient
+$\pm1$ and two same-sign boundary faces, which on a unit tetrahedron are \emph{properly
+oriented} (\code{sameSignFace\_to\_proper\_of\_unit}); it is therefore eligible, and disjoint
+assigned pairs make the family boundary-face disjoint.
+\end{proof}
+
+\begin{remark}
+The discard is the one place coefficients re-enter, and it is essential. Counting same-sign
+faces is insensitive to multiplicity --- a generator of coefficient $2$ still has each face
+once --- so the twofer count runs with no simpliciality; but only a \emph{unit} twofer is
+removable as an eligible tetrahedron. The norm budget pays the discard exactly: each non-unit
+generator contributes the $\ge 2$ to $\norm M$ that the count demanded as surplus.
+\end{remark}
+
+\begin{proof}[Proof of Theorem~\ref{thm:simpl}]
+Strong induction on $\norm M$, by the same trichotomy on $\sigma$ as in the main induction
+below. If some generator $t_0$ has $\card{M(t_0)}\ge 2$
+(\code{not\_simplicialChain\_iff\_exists\_natAbs\_ge\_two}), we produce a strictly smaller taut
+filling of a $2$-sphere in which $t_0$ keeps its coefficient --- still non-simplicial,
+contradicting the inductive hypothesis.
+\begin{itemize}
+\item \emph{Base} ($\card{\sigma}\le 4$): $M$ is a single tetrahedron, necessarily of
+coefficient $\pm1$, so there is no defect (\code{base\_simplicialChain}).
+\item \emph{Degree-$3$ vertex}: the capped cut (Lemma~\ref{lem:cut}) splits $M=M_L+M_R$ into
+two strictly smaller taut fillings of the two capped spheres
+(\code{taut\_splits\_for\_capped\_cut}), and $t_0$ lies on one side carrying its full
+coefficient.
+\item \emph{No degree-$3$ vertex}: applied at any vertex (every vertex of a $2$-sphere has
+$\deg_v(\bd M)\ge 3$), Lemma~\ref{lem:family} supplies at least three eligible tetrahedra ---
+in particular two distinct ones, so one is $u\neq t_0$. Remove $u$; $t_0$ persists with
+coefficient $M(t_0)$
+(\code{removeTet\_apply\_ne}). If $u$'s flip edge is absent, $M-u$ is a taut filling of the
+flipped $2$-sphere (\code{isSphere2\_flipBoundary\_of\_eligible},
+\code{isTaut\_removeTet}); if present, $M-u$ splits along that edge into two taut sub-fillings
+on smaller spheres (\code{flipEdgePresent\_side\_sets\_noS},
+\code{flipEdgePresent\_side\_algebra\_noS}), and $t_0$ lies on one.
+\end{itemize}
+In every case the smaller filling is simplicial by induction, forcing $\card{M(t_0)}\le 1$ ---
+a contradiction. Hence $M$ is simplicial.
+\end{proof}
+
+\subsection*{The induction}
+
+With simpliciality established (Theorem~\ref{thm:simpl}) we use it freely below: the Lean
+lemmas \code{taut\_isPseudomanifold} and \code{theorem3\_clean} carry \code{SimplicialChain M}
+as an explicit hypothesis, discharged once and for all by that theorem. First, the engine that
+gives the filling its $3$-dimensional shape.
+
+\begin{theorem}[Taut fillings are pure and triangle-bounded]\label{thm:pm}
+Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$
+(\code{UnitOn X $\sigma$}), and $M$ a taut filling with $\bd M=X$. Then every
+generator of $M$ is a tetrahedron and every triangle lies in at most two of them
+(\code{taut\_isPseudomanifold}, simpliciality from Theorem~\ref{thm:simpl}; purity from
+\code{IsTaut.dim\_pure}).
+\end{theorem}
+
+\begin{proof}
+Purity is (T2): $X$ is $2$-dimensional, so a taut filling is $3$-dimensional.
+Triangle-boundedness is a strong induction on the number of tetrahedra, by the trichotomy
+used again below. \emph{Base} ($\sigma$ has $\le 4$ vertices): $M$ is a single tetrahedron.
+\emph{Degree-$3$ vertex}: cut its star (Lemma~\ref{lem:cut}), apply the inductive
+hypothesis to the smaller filling, re-glue. \emph{No degree-$3$ vertex}: take two disjoint
+tetrahedra $e,u$ each meeting the boundary in exactly two faces
+(\code{aleph\_disjoint\_eligible\_pair}), remove $e$, apply the inductive hypothesis, re-glue;
+the key point is the \emph{triangle rule-out} (\code{faceCount\_removeTet\_sharedFace\_eq\_zero}):
+a shared face of $e$ cannot reappear after removing $e$, since the disjoint witness $u$ would
+otherwise force that triangle's incidence to $3$ in the inductively triangle-bounded filling
+$M-u$.
+\end{proof}
+
+\begin{theorem}[Main]\label{thm:anyrooted}
+Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$, and $M$ a taut
+filling with $\bd M=X$. Then the set of tetrahedra of $M$ is an
+\emph{AnyRootedStickerball} with boundary $\sigma$
+(\code{taut\_filling\_is\_anyrootedStickerball}). \emph{Simpliciality is not assumed}: the
+endpoint derives it internally by Theorem~\ref{thm:simpl}.
+\end{theorem}
+
+By Theorem~\ref{thm:pm} the support consists of tetrahedra; $\sigma\neq\varnothing$ gives
+nonempty boundary. The content is that every tetrahedron is a root:
+
+\begin{theorem}\label{thm:freely}
+Under the hypotheses of Theorem~\ref{thm:anyrooted}, for every tetrahedron $t_\star$ of $M$
+there is a clean shelling of $M$ beginning with $t_\star$ (\code{theorem3\_clean}, simpliciality
+from Theorem~\ref{thm:simpl}, via the induction skeleton \code{theorem3\_core\_clean} with cases
+\code{base\_free\_clean}, \code{deg3\_step\_clean}, \code{prime\_step\_clean}).
+\end{theorem}
+
+\begin{proof}
+Strong induction on the number $N$ of tetrahedra of $M$. The inductive invariant is exactly
+the AnyRooted statement: a clean shelling beginning at \emph{any} prescribed $t_\star$. The
+cases are a trichotomy on $\sigma$. In each non-base case the cut (Lemma~\ref{lem:cut})
+supplies strictly smaller taut fillings of smaller spheres to which the inductive hypothesis
+applies --- by Theorem~\ref{thm:split} itself in the degree-$3$ case, and by a separate
+side-decomposition resting on the same cut in the prime case.
+
+\medskip
+\noindent\textbf{Base ($\sigma$ has $\le 4$ vertices).} Then $\sigma$ is a tetrahedron
+boundary and $M$ is a single tetrahedron $T$; the one-term shelling starts at $T$ and is
+vacuously clean.
+
+\medskip
+\noindent\textbf{Degree-$3$ vertex $v$.} The link of $v$ is a triangle $\gamma$, and the
+star of $v$ is one tetrahedron $T=v\ast\gamma$. Since $\card{\sigma}\ge 5$, $\gamma$ is a
+non-face triangle whose edges lie in $\sigma$, so by Lemma~\ref{lem:cut} replacing the three
+triangles at $v$ by $\gamma$ yields a $2$-sphere $\sigma'$ with one fewer vertex. Restricting
+$M$ to the non-star side is a \emph{direct instance of Theorem~\ref{thm:split}}, with the two
+capped vertex-sets as $A,B$ (their overlap is exactly $\gamma$, so $\card{A\cap B}=n{+}1=3$):
+the lemma \code{taut\_splits\_for\_capped\_cut} invokes \code{IsTaut.splits} verbatim. It
+produces a \emph{taut} filling $M'$ of $\sigma'$ with strictly fewer tetrahedra, so by
+induction $M'$ is an AnyRootedStickerball. Two facts let $T$ be glued cleanly: $\gamma$ is a boundary
+triangle of $M'$ lying in a \emph{unique} remainder tetrahedron $t_0$ (tautness pins it,
+$\text{faceCount}(\gamma)=1$; \code{degree3\_hanchor}), and $v$ is a vertex absent from $M'$
+(\code{degree3\_apex\_notMem\_*}), so adjoining $T$ along the single face $\gamma$ satisfies
+(a)--(c3) (the apex $v$ is new, so its link certificates are vacuous). Now assemble, given
+$t_\star$:
+\begin{itemize}
+\item if $t_\star\neq T$: take a clean shelling of $M'$ rooted at $t_\star$ (induction) and
+append $T$ last;
+\item if $t_\star=T$: start with $T$, then a clean shelling of $M'$ rooted at the anchor
+$t_0$ (induction), which glues to $T$ along $\gamma$.
+\end{itemize}
+Either way $M$ has a clean shelling rooted at $t_\star$.
+
+\medskip
+\noindent\textbf{No degree-$3$ vertex ($\card{\sigma}\ge 5$).} Pick a tetrahedron $e$ of $M$
+with exactly two faces on $\sigma$ (its existence is a count: with no degree-$3$ vertex there
+are more boundary triangles than tetrahedra; \code{exists\_eligibleTet}). Let $f_3,f_4$ be its
+two interior faces and $f_3\cap f_4$ its \emph{flip edge}. Remove $e$.
+\begin{itemize}
+\item \emph{Flip edge absent.} Exposing $f_3,f_4$ is a $2$--$2$ flip of the boundary: the new
+boundary is again a $2$-sphere $\sigma'$ on the same vertices
+(\code{isSphere2\_flipBoundary\_of\_eligible}) and $M-e$ is a taut filling of it with fewer
+tetrahedra. By induction $M-e$ is an AnyRootedStickerball; re-gluing $e$ (two shared faces)
+is a clean glue step, its shared faces clean by the rule-out of Theorem~\ref{thm:pm}.
+\item \emph{Flip edge present.} Then $f_3\cap f_4\in\sigma$, and $\sigma$ separates along this
+edge into two $2$-spheres $\sigma_1,\sigma_2$; correspondingly $M-e$ splits along this edge into
+two taut sub-fillings $M_1,M_2$ with fewer tetrahedra (\code{flipEdgePresent\_side\_sets},
+\code{flipEdgePresent\_side\_algebra}). This is a decomposition of the same filter-by-side shape
+as Theorem~\ref{thm:split}, but a \emph{separate} argument: it is built directly on the cut
+(Lemma~\ref{lem:cut}/\code{exists\_cut}), not through \code{IsTaut.splits}.
+By induction each is an AnyRootedStickerball; concatenate their clean shellings --- rooting
+the second at the tetrahedron adjacent to the bridge --- and insert $e$ to bridge them
+(\code{glueStep\_bridge\_left}, \code{glueStep\_bridge\_right}).
+\end{itemize}
+In both sub-cases, choosing the root of the smaller piece(s) appropriately (and, if
+$t_\star=e$, starting with $e$) yields a clean shelling of $M$ rooted at $t_\star$.
+
+\medskip
+This proves the inductive invariant for $M$, completing the induction.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:anyrooted}]
+Theorem~\ref{thm:freely} gives a clean shelling rooted at each tetrahedron; with nonempty
+boundary this is the AnyRootedStickerball conclusion. Each re-gluing above is a clean glue
+step, so the link certificates (c1)--(c3) hold at every step; the assembled shelling is
+therefore a genuine clean shelling and the rooted structure is preserved through the
+assembly.
+\end{proof}
+
+\begin{remark}[Where each ingredient is used]
+The recursion always lands on strictly smaller taut fillings of strictly smaller spheres,
+so the induction terminates. Tautness is used (i) to make every cut-restriction again taut,
+so the inductive hypothesis applies (Theorem~\ref{thm:split} for the degree-$3$ cut, the
+analogous side-decomposition for the prime case); (ii) through
+Theorem~\ref{thm:pm} to keep every intermediate complex triangle-bounded, which the prime
+rule-out needs; and (iii) to pin boundary triangles into unique tetrahedra, giving the
+gluing anchors. The rooted structure is preserved because every assembly step is a
+\emph{clean} glue step.
+\end{remark}
+
+%==========================================================================
+\section{Lean correspondence and status}\label{sec:status}
+
+The development builds successfully; a search of \code{lean/Taut} finds no \code{sorry},
+\code{admit}, \code{native\_decide}, \code{axiom}, or \code{unsafe}. Each theorem below
+reduces to the three foundational axioms \code{propext}, \code{Classical.choice},
+\code{Quot.sound} only.
+
+\begin{center}\small
+\begin{tabular}{lll}
+\hline
+Result here & Lean identifier & Status\\
+\hline
+Lem~\ref{lem:cut} ($H_1=0$, cut) & \code{range\_bd2\_eq\_ker\_bd1}, \code{exists\_cut} & fully proved\\
+Thm~\ref{thm:add} (additivity) & \code{Zvol\_add\_of\_almost\_disjoint\_full} & fully proved\\
+Thm~\ref{thm:split} (splitting) & \code{IsTaut.splits\_full} & fully proved\\
+Thm~\ref{thm:simpl} (simpliciality automatic) & \code{taut\_filling\_is\_simplicialChain} & fully proved\\
+Thm~\ref{thm:pm} (pure, triangle-bounded) & \code{taut\_isPseudomanifold} & fully proved\\
+Thm~\ref{thm:freely} (rooted at each tet) & \code{theorem3\_clean} & fully proved\\
+Thm~\ref{thm:anyrooted} (AnyRootedStickerball) & \code{taut\_filling\_is\_anyrootedStickerball} & fully proved\\
+rational splitting/additivity & \code{IsQTaut.splits\_full}, \code{Qvol\_add\_*} & fully proved\\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent\emph{Definitions weaker than their classical namesakes.}
+\begin{itemize}
+\item \emph{Taut} (\code{IsTaut}) is combinatorial $\ell^1$-minimality
+(Definition~\ref{def:taut}), not a geometric condition.
+\item \emph{Triangle-bounded} (\code{IsPseudomanifold} in the development) means only ``every
+triangle in at most two tetrahedra.'' It is \emph{not} a full pseudomanifold; normality
+(link-connectedness) is established separately, via the clean shelling (see
+\S\ref{sec:classical}). Theorem~\ref{thm:pm} proves the triangle bound only.
+\item \emph{Clean shelling} (\code{IsCleanShelling}) carries the link certificates
+(c1)--(c3) as data; this is what makes it certify a clean $3$-complex, and is stronger than a
+boundary-only shelling.
+\end{itemize}
+
+%==========================================================================
+\section{Relation to the classical statement; remaining bridges}\label{sec:classical}
+
+The conclusion of Theorem~\ref{thm:anyrooted} is stated in Lean-backed terms
+(AnyRootedStickerball). Two questions separate this from a classical ``shellable normal
+$3$-ball'' statement.
+
+\paragraph{Proved bridge: AnyRootedStickerball $\Rightarrow$ normal $3$-pseudomanifold.}
+The development proves that a stickerball is a clean $3$-complex:
+\[
+\code{IsStickerball.isClean3Complex}\colon\quad
+\text{stickerball}\ \Longrightarrow\ \text{pure}\ \wedge\ \text{triangle-bounded}\ \wedge\
+\text{Normal3},
+\]
+where \code{Normal3} is \emph{edge-link connected and vertex-link connected}
+(\code{IsAnyrootedStickerball.isClean3Complex} for the AnyRooted form). This is proved by
+iterating the single-insertion lemma \code{clean3Complex\_insert} along the clean shelling;
+the three certificates (c1)--(c3) of each glue step supply exactly the triangle-count,
+edge-link, and vertex-link preservation (\code{isPseudomanifold\_insert},
+\code{edgeLinkConnected\_insert}, \code{vertexLinkConnected\_insert}). Thus pseudomanifoldness
+(triangle bound), edge-link connectedness, vertex-link connectedness, and nonempty boundary
+are all \emph{Lean-proved} consequences of the conclusion; the corresponding corollaries are
+\code{taut\_filling\_is\_clean3Complex} and \code{taut\_filling\_is\_shellable}.
+
+\paragraph{Missing bridge: stickerball $\Rightarrow$ topological/PL $3$-ball.}
+The statement ``a clean-shellable normal $3$-pseudomanifold with nonempty boundary is
+(PL-)homeomorphic to the $3$-ball'' is the classical shelling theorem of Danaraj--Klee /
+Bj\"orner. \emph{No bridge theorem from \code{IsStickerball} to a topological or PL ball
+appears in the current development}; it is recorded only as a docstring remark. Any classical
+reading of Theorem~\ref{thm:anyrooted} as ``$M$ triangulates a $3$-ball'' must invoke that
+external theorem explicitly. In the present, fully formalized terms the conclusion is exactly:
+\emph{the tetrahedra of a taut filling of a combinatorial $2$-sphere form an
+AnyRootedStickerball --- a clean-shellable normal $3$-pseudomanifold, with boundary the given
+sphere, that can be clean-shelled starting from any tetrahedron}.
+
+\paragraph{Hypotheses to carry into a paper statement.}
+The boundary cycle is $\pm1$ on $\sigma$ (\code{UnitOn}); the filling's simpliciality is
+\emph{derived, not assumed} (Theorem~\ref{thm:simpl}, \code{taut\_filling\_is\_simplicialChain}),
+so the only remaining qualifier on $M$ is tautness. Splitting (Theorem~\ref{thm:split}) needs
+dimension $n\ge 2$ while additivity (Theorem~\ref{thm:add}) needs only $n\ge 1$;
+AlmostDisjointness is
+$\card{A\cap B}\le n+1$; the ambient $V$ is infinite; and \code{IsSphere2} includes the Euler
+relation $V+F=E+2$ as part of its definition, from which $H_1=0$ (Lemma~\ref{lem:cut}) is
+derived rather than assumed.
+
+\end{document}

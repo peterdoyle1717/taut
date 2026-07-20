@@ -1,0 +1,1359 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019eff19-dacb-71d0-b6de-607bb0fa2162
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+CODEX CONSULT (G3) — verify a math writeup faithfully describes the Lean endpoint after the
+SimplicialChain-removal. You may read any repo file directly. Be adversarial: find misdescriptions.
+
+REPO: /Users/doyle/Dropbox/taut, branch clean-anyrooted-stickerball, HEAD a8f4566.
+BUILD EVIDENCE (already verified this session, do NOT rebuild unless you doubt it):
+  `cd lean && lake build` => green, 8273 jobs; grep over lean/Taut for sorry/admit/axiom/native_decide
+  => ZERO; `#print axioms taut_filling_is_simplicialChain` and `... taut_filling_is_anyrootedStickerball`
+  => [propext, Classical.choice, Quot.sound].
+
+WHAT CHANGED. The public Lean endpoint no longer assumes `SimplicialChain M`; simpliciality is derived
+by the new bridge `taut_filling_is_simplicialChain`. The Lean-companion writeup
+`notes/taut-lean-proof.tex` was edited THIS SESSION to match:
+  - dropped "simplicial" from the main theorem `thm:anyrooted` and from `thm:pm` / `thm:freely`;
+  - added a new subsection "Simpliciality is automatic" (search `\label{thm:simpl}`, approx lines
+    283-372): Theorem `thm:simpl` + Lemma `lem:family` (the hens-and-baskets twofer count) + a remark
+    + the minimal-counterexample deletion proof;
+  - updated the §status table (added `taut_filling_is_simplicialChain`) and the "Hypotheses to carry"
+    paragraph (approx line 578) to say simpliciality is derived, not assumed.
+The PDF recompiled clean (9 pages).
+
+GROUND TRUTH to check the writeup against (read these):
+  - bridge proof body: lean/Taut/Theorem3Clean.lean lines 3462-3589 (`taut_filling_is_simplicialChain`);
+    its four branches: base (`base_simplicialChain`), degree-3 capped cut (`taut_splits_for_capped_cut`),
+    prime flip-present (`flipEdgePresent_side_sets_noS`/`_algebra_noS`), prime flip-absent
+    (`isSphere2_flipBoundary_of_eligible`+`isTaut_removeTet`); `t_0` persistence via `removeTet_apply_ne`.
+  - the count: lean/Taut/Eligible.lean `exists_disjoint_eligible_family_noS` (~line 643), built from
+    `SameSignSupportFaceTet`, `sameSignSupportFace_cover`, `finset_twofer_fibers`,
+    `support_card_add_nonUnitSupport_card_le_nrm`, `Zvol_add_deg_le`, `UnitOn.nrm_eq`,
+    `sameSignFace_to_proper_of_unit`, `sharedFaces_card_le_two_of_noDegree3`.
+  - endpoint + corollaries: lean/Taut/Theorem3Clean.lean 3636-3663.
+
+A prior INDEPENDENT (non-Codex) subagent audit already ran and found NO major discrepancies, plus two
+minor phrasing issues that were FIXED: (1) `u != t_0` is justified by cardinality (E.card>=2 distinct
+members), not by face-disjointness (the writeup now says so); (2) `lem:family`'s conclusion is
+`EligibleTet`+disjoint, with unit-ness (`|M t|=1`) DERIVED under UnitOn via
+`tet_coeff_eq_pm_one_of_eligible_unitOn`, not part of EligibleTet (writeup now states this).
+
+REVIEW QUESTIONS (answer concretely; cite .tex line and .lean file:line for any problem):
+Q1. Does the writeup's hens-and-baskets count (coverage by same-sign support faces; fibre <= 2 with no
+    degree-3 vertex; the gap s + z + deg_v <= |sigma| from norm-budget + tautness + Zvol_add_deg_le;
+    twofer extraction; non-unit discard) faithfully match `exists_disjoint_eligible_family_noS`? Any
+    overstated or misattributed step?
+Q2. Do the four deletion branches and the `t_0`-persistence justification match the actual proof body?
+Q3. Is the no-circularity framing correct — i.e. does the bridge proof (3462-3589) avoid
+    `taut_isPseudomanifold` / stickerball / clean-shelling machinery, so it legitimately precedes them?
+Q4. Are the two minor fixes from the prior audit now correct as written in the .tex, or did they
+    introduce a new error?
+Q5. Anything else in the new section that misstates the Lean (identifier names, signatures, the
+    derived-not-assumed claim, the status table row)?
+
+Output per the contract: PASS / WARN / BLOCK first, then specific findings with citations.
+codex
+I’ll verify the TeX against the cited Lean endpoints directly, focusing on mismatches rather than restating the proof. I’ll read the relevant ranges and then answer each review question with concrete citations if anything is off.
+exec
+/bin/zsh -lc "sed -n '630,720p' lean/Taut/Eligible.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '560,595p' notes/taut-lean-proof.tex" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '3462,3589p' lean/Taut/Theorem3Clean.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '260,390p' notes/taut-lean-proof.tex" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+(\code{IsAnyrootedStickerball.isClean3Complex} for the AnyRooted form). This is proved by
+iterating the single-insertion lemma \code{clean3Complex\_insert} along the clean shelling;
+the three certificates (c1)--(c3) of each glue step supply exactly the triangle-count,
+edge-link, and vertex-link preservation (\code{isPseudomanifold\_insert},
+\code{edgeLinkConnected\_insert}, \code{vertexLinkConnected\_insert}). Thus pseudomanifoldness
+(triangle bound), edge-link connectedness, vertex-link connectedness, and nonempty boundary
+are all \emph{Lean-proved} consequences of the conclusion; the corresponding corollaries are
+\code{taut\_filling\_is\_clean3Complex} and \code{taut\_filling\_is\_shellable}.
+
+\paragraph{Missing bridge: stickerball $\Rightarrow$ topological/PL $3$-ball.}
+The statement ``a clean-shellable normal $3$-pseudomanifold with nonempty boundary is
+(PL-)homeomorphic to the $3$-ball'' is the classical shelling theorem of Danaraj--Klee /
+Bj\"orner. \emph{No bridge theorem from \code{IsStickerball} to a topological or PL ball
+appears in the current development}; it is recorded only as a docstring remark. Any classical
+reading of Theorem~\ref{thm:anyrooted} as ``$M$ triangulates a $3$-ball'' must invoke that
+external theorem explicitly. In the present, fully formalized terms the conclusion is exactly:
+\emph{the tetrahedra of a taut filling of a combinatorial $2$-sphere form an
+AnyRootedStickerball --- a clean-shellable normal $3$-pseudomanifold, with boundary the given
+sphere, that can be clean-shelled starting from any tetrahedron}.
+
+\paragraph{Hypotheses to carry into a paper statement.}
+The boundary cycle is $\pm1$ on $\sigma$ (\code{UnitOn}); the filling's simpliciality is
+\emph{derived, not assumed} (Theorem~\ref{thm:simpl}, \code{taut\_filling\_is\_simplicialChain}),
+so the only remaining qualifier on $M$ is tautness. Splitting (Theorem~\ref{thm:split}) needs
+dimension $n\ge 2$ while additivity (Theorem~\ref{thm:add}) needs only $n\ge 1$;
+AlmostDisjointness is
+$\card{A\cap B}\le n+1$; the ambient $V$ is infinite; and \code{IsSphere2} includes the Euler
+relation $V+F=E+2$ as part of its definition, from which $H_1=0$ (Lemma~\ref{lem:cut}) is
+derived rather than assumed.
+
+\end{document}
+
+ succeeded in 0ms:
+Thus every generator of $M$ is $\subseteq A$ or $\subseteq B$, so the literal restrictions give
+$M=M_A+M_B$. The identity $\bd M_A=X$ follows by applying $K_{A,p}$ to $\bd M_A+\bd M_B=X+Y$
+(\code{Kmap\_eq\_self} on the $A$-part, \code{Kmap\_eq\_zero\_of\_closed} on the closed $B$-part);
+then $\bd M_B=Y$ by cancellation. Tautness of the pieces follows from $\norm{M_A}+\norm{M_B}=\norm M$,
+additivity, and $\norm{M_A}\ge\Zvol X$, $\norm{M_B}\ge\Zvol Y$.
+\end{proof}
+
+\begin{remark}[Why exactly AlmostDisjoint]
+The proof uses the separation hypothesis only through Lemma~\ref{lem:smallsupp}, which needs
+nothing beyond $\card{A\cap B}\le n+1$. There is no appeal to any geometric or topological
+transversality; AlmostDisjointness is the exact combinatorial content that makes the cross
+terms vanish.
+\end{remark}
+
+The rational analogue (\code{Qvol\_add\_of\_almost\_disjoint\_full},
+\code{IsQTaut.splits\_full}) follows by clearing denominators, applying
+Theorems~\ref{thm:add}--\ref{thm:split} over $\Z$, and rescaling.
+
+%==========================================================================
+\section{Taut fillings are AnyRootedStickerballs}\label{sec:main}
+
+We now prove the main theorem by induction on the number of tetrahedra, using
+Theorem~\ref{thm:split} (in its $2$-sphere ``cut'' form) to produce the smaller taut
+fillings. The same reduction first pays off a debt in the hypotheses: a taut filling of a
+$2$-sphere is \emph{automatically} simplicial, so ``simplicial'' is a conclusion, not an
+assumption.
+
+\subsection*{Simpliciality is automatic}
+
+\begin{theorem}[Simpliciality is automatic]\label{thm:simpl}
+Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$, and $M$ a taut
+filling with $\bd M=X$. Then every tetrahedron coefficient of $M$ lies in $\{-1,0,1\}$ --- $M$
+is simplicial (\code{taut\_filling\_is\_simplicialChain}). \emph{No simpliciality is assumed.}
+\end{theorem}
+
+This discharges the only hypothesis of the main theorem that is not already part of ``$M$ is a
+taut filling of the simplicial $2$-sphere $\sigma$.'' The proof is a minimal-counterexample
+deletion driven by a counting engine that produces removable tetrahedra \emph{without} knowing
+the coefficients are $\pm1$ --- the point at which a naive argument would be circular.
+
+\begin{lemma}[Disjoint eligible family, simpliciality-free]\label{lem:family}
+Let $\sigma$ have no degree-$3$ vertex, and let $M$ be a taut filling whose boundary $\bd M$ is
+the $\pm1$ cycle on $\sigma$ and whose generators are all tetrahedra. Then for every vertex
+$v$ there are at least $\deg_v(\bd M)$ generators of $M$, pairwise disjoint in their boundary
+faces, each sharing exactly two faces with $\bd M$ in proper orientation --- i.e.\ at least
+$\deg_v(\bd M)$ disjoint \emph{eligible} tetrahedra
+(\code{exists\_disjoint\_eligible\_family\_noS}). (Under the unit boundary an eligible
+tetrahedron necessarily has coefficient $\pm1$,
+\code{tet\_coeff\_eq\_pm\_one\_of\_eligible\_unitOn}; this is what makes it removable below.)
+\end{lemma}
+
+\begin{proof}
+Call a triangle $\alpha\in\sigma$ a \emph{same-sign support face} of a generator $t$ if
+$\alpha$ is a face of $t$ whose chain contribution carries the sign of $\bd M$ there, i.e.\
+$\bd M(\alpha)\cdot M(t)\cdot\operatorname{sgn}(t,\alpha)>0$
+(\code{SameSignSupportFaceTet}). Every boundary triangle is a same-sign support face of
+\emph{some} generator (\code{sameSignSupportFace\_cover}); this --- strictly weaker than ``each
+boundary triangle lies on a unique tetrahedron'' --- is the \emph{only} geometric input, and
+it uses only that $\bd M$ is the unit cycle and that generators are tetrahedra, \emph{not} that
+their coefficients are $\pm1$. Pick one such generator for each of the $\card\sigma$ boundary
+triangles; since no vertex has degree $3$, each generator is picked by at most two triangles
+(\code{sharedFaces\_card\_le\_two\_of\_noDegree3}).
+
+Now count. Let $s=\card{\supp M}$ be the number of generators and $z$ the number of them with
+$\card{M(t)}\ge 2$. The norm budget $s+z\le\norm M$
+(\code{support\_card\_add\_nonUnitSupport\_card\_le\_nrm}; each non-unit generator costs
+$\ge 2$), tautness $\norm M=\Zvol(\bd M)$, and the degree--volume inequality
+$\Zvol(\bd M)+\deg_v(\bd M)\le\norm{\bd M}=\card\sigma$ (\code{Zvol\_add\_deg\_le},
+\code{UnitOn.nrm\_eq}) combine to
+\[
+s+z+\deg_v(\bd M)\ \le\ \card\sigma .
+\]
+A map from the $\card\sigma$ triangles onto the $s$ generators with every fibre of size $\le 2$
+therefore has at least $z+\deg_v(\bd M)$ \emph{twofer} targets --- generators picked by exactly
+two triangles --- with pairwise-disjoint assigned pairs (\code{finset\_twofer\_fibers}: a
+fibred map with $s+k\le\card\sigma$ has $\ge k$ size-$2$ fibres). Discard the $\le z$ non-unit
+twofers; at least $\deg_v(\bd M)$ \emph{unit} twofers remain. A unit twofer has coefficient
+$\pm1$ and two same-sign boundary faces, which on a unit tetrahedron are \emph{properly
+oriented} (\code{sameSignFace\_to\_proper\_of\_unit}); it is therefore eligible, and disjoint
+assigned pairs make the family boundary-face disjoint.
+\end{proof}
+
+\begin{remark}
+The discard is the one place coefficients re-enter, and it is essential. Counting same-sign
+faces is insensitive to multiplicity --- a generator of coefficient $2$ still has each face
+once --- so the twofer count runs with no simpliciality; but only a \emph{unit} twofer is
+removable as an eligible tetrahedron. The norm budget pays the discard exactly: each non-unit
+generator contributes the $\ge 2$ to $\norm M$ that the count demanded as surplus.
+\end{remark}
+
+\begin{proof}[Proof of Theorem~\ref{thm:simpl}]
+Strong induction on $\norm M$, by the same trichotomy on $\sigma$ as in the main induction
+below. If some generator $t_0$ has $\card{M(t_0)}\ge 2$
+(\code{not\_simplicialChain\_iff\_exists\_natAbs\_ge\_two}), we produce a strictly smaller taut
+filling of a $2$-sphere in which $t_0$ keeps its coefficient --- still non-simplicial,
+contradicting the inductive hypothesis.
+\begin{itemize}
+\item \emph{Base} ($\card{\sigma}\le 4$): $M$ is a single tetrahedron, necessarily of
+coefficient $\pm1$, so there is no defect (\code{base\_simplicialChain}).
+\item \emph{Degree-$3$ vertex}: the capped cut (Lemma~\ref{lem:cut}) splits $M=M_L+M_R$ into
+two strictly smaller taut fillings of the two capped spheres
+(\code{taut\_splits\_for\_capped\_cut}), and $t_0$ lies on one side carrying its full
+coefficient.
+\item \emph{No degree-$3$ vertex}: applied at any vertex (every vertex of a $2$-sphere has
+$\deg_v(\bd M)\ge 3$), Lemma~\ref{lem:family} supplies at least three eligible tetrahedra ---
+in particular two distinct ones, so one is $u\neq t_0$. Remove $u$; $t_0$ persists with
+coefficient $M(t_0)$
+(\code{removeTet\_apply\_ne}). If $u$'s flip edge is absent, $M-u$ is a taut filling of the
+flipped $2$-sphere (\code{isSphere2\_flipBoundary\_of\_eligible},
+\code{isTaut\_removeTet}); if present, $M-u$ splits along that edge into two taut sub-fillings
+on smaller spheres (\code{flipEdgePresent\_side\_sets\_noS},
+\code{flipEdgePresent\_side\_algebra\_noS}), and $t_0$ lies on one.
+\end{itemize}
+In every case the smaller filling is simplicial by induction, forcing $\card{M(t_0)}\le 1$ ---
+a contradiction. Hence $M$ is simplicial.
+\end{proof}
+
+\subsection*{The induction}
+
+With simpliciality established (Theorem~\ref{thm:simpl}) we use it freely below: the Lean
+lemmas \code{taut\_isPseudomanifold} and \code{theorem3\_clean} carry \code{SimplicialChain M}
+as an explicit hypothesis, discharged once and for all by that theorem. First, the engine that
+gives the filling its $3$-dimensional shape.
+
+\begin{theorem}[Taut fillings are pure and triangle-bounded]\label{thm:pm}
+Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$
+(\code{UnitOn X $\sigma$}), and $M$ a taut filling with $\bd M=X$. Then every
+generator of $M$ is a tetrahedron and every triangle lies in at most two of them
+(\code{taut\_isPseudomanifold}, simpliciality from Theorem~\ref{thm:simpl}; purity from
+\code{IsTaut.dim\_pure}).
+\end{theorem}
+
+ succeeded in 0ms:
+  · rw [if_pos hc]; omega
+  · rw [if_neg hc]; omega
+
+/-! ## Route-Y, step 4: the main `hS`-free disjoint *oriented* eligible family
+
+Assembling steps 1–3: the same-sign covering map has fibres in `sharedFaces` (≤ 2), the twofer
+lemma extracts `≥ deg v + |nonUnitSupport|` full fibres, and deleting the non-unit tets leaves
+`≥ deg v` *unit* tets. On a unit tet a full same-sign fibre upgrades to two proper boundary faces,
+i.e. `EligibleTet`. The budget gap is `support + |nonUnit| ≤ nrm M = Zvol(∂M) ≤ σ.card − deg v`. -/
+
+/-- **The disjoint oriented eligible family, `SimplicialChain`-free.** A no-degree-3 taut filling of a
+2-sphere has `≥ deg v (∂M)` pairwise-`sharedFaces`-disjoint *eligible* (oriented) support tets, with
+no `SimplicialChain` hypothesis. -/
+theorem exists_disjoint_eligible_family_noS
+    {M : Chain V} {σ : Finset (Finset V)}
+    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hT : IsTaut M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) (v : V) :
+    ∃ E : Finset (Finset V), E ⊆ M.support ∧ deg v (bdry M) ≤ E.card ∧
+      (∀ e ∈ E, EligibleTet M e) ∧ (↑E : Set (Finset V)).PairwiseDisjoint fun e => sharedFaces M e := by
+  classical
+  have hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2 := fun t ht =>
+    sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht)
+  -- (a) the same-sign covering map `c : {α // α ∈ σ} → {t // t ∈ M.support}`
+  have hcov : ∀ α ∈ σ, ∃ t, SameSignSupportFaceTet M α t :=
+    sameSignSupportFace_cover hU hPure
+  let c : {α // α ∈ σ} → {t // t ∈ M.support} := fun α =>
+    ⟨Classical.choose (hcov α.1 α.2), (Classical.choose_spec (hcov α.1 α.2)).1⟩
+  have hcspec : ∀ α : {α // α ∈ σ}, SameSignSupportFaceTet M α.1 (c α).1 := fun α =>
+    Classical.choose_spec (hcov α.1 α.2)
+  -- (b) apply the twofer lemma with B = σ-subtype, H = support-subtype, k = deg v + |nonUnit|
+  set B : Finset {α // α ∈ σ} := Finset.univ with hB_def
+  set H : Finset {t // t ∈ M.support} := Finset.univ with hH_def
+  set k : ℕ := deg v (bdry M) + (nonUnitSupport M).card with hk_def
+  have hmap : ∀ b ∈ B, c b ∈ H := fun _ _ => Finset.mem_univ _
+  -- fibre ≤ 2: each fibre ⊆ sameSignFaces (via subtype value), and sameSignFaces ⊆ sharedFaces ≤ 2
+  have hfib_val : ∀ (b : {t // t ∈ M.support}) (a : {α // α ∈ σ}),
+      a ∈ B.filter (fun a => c a = b) → (a : Finset V) ∈ sameSignFaces M σ (b : Finset V) := by
+    intro b a ha
+    rw [Finset.mem_filter] at ha
+    have hss : SameSignSupportFaceTet M a.1 (c a).1 := hcspec a
+    rw [ha.2] at hss
+    exact mem_sameSignFaces.mpr ⟨a.2, hss⟩
+  have hfiber_le2 : ∀ b ∈ H, (B.filter fun a => c a = b).card ≤ 2 := by
+    intro b _
+    -- map the fibre injectively into `sameSignFaces M σ b` via subtype value
+    have hinj : (B.filter fun a => c a = b).card
+        ≤ (sameSignFaces M σ (b : Finset V)).card := by
+      refine Finset.card_le_card_of_injOn (fun a => (a : Finset V)) ?_ ?_
+      · intro a ha; exact hfib_val b a ha
+      · intro a₁ _ a₂ _ h; exact Subtype.ext h
+    have hle : (sameSignFaces M σ (b : Finset V)).card ≤ (sharedFaces M (b : Finset V)).card :=
+      Finset.card_le_card (sameSignFaces_subset_sharedFaces hU)
+    have := hShared2 (b : Finset V) b.2
+    omega
+  -- the gap H.card + k ≤ B.card
+  have hgap_card : H.card + k ≤ B.card := by
+    rw [hB_def, hH_def, Finset.card_univ, Finset.card_univ, Fintype.card_coe, Fintype.card_coe,
+      hk_def]
+    -- support + |nonUnit| ≤ nrm M  and  nrm M + deg v ≤ σ.card
+    have hbudget := support_card_add_nonUnitSupport_card_le_nrm M
+    have h2 := Zvol_add_deg_le v (bdry_bdry M)
+    rw [UnitOn.nrm_eq hU] at h2
+    have hTeq : nrm M = Zvol (bdry M) := hT
+    omega
+  obtain ⟨E₀, hE₀sub, hE₀card, hE₀full, hE₀disj⟩ :=
+    finset_twofer_fibers B H c hmap hfiber_le2 hgap_card
+  -- named value-coercions (avoids `do`/`pure` ambiguity from inline coercion lambdas)
+  let σval : {α // α ∈ σ} → Finset V := Subtype.val
+  let supval : {t // t ∈ M.support} → Finset V := Subtype.val
+  -- the key fact: for a full-fibre b, `sharedFaces M b` equals the σ-value image of its fibre
+  have hshared_eq : ∀ b ∈ E₀, sharedFaces M (supval b)
+      = (B.filter fun a => c a = b).image σval := by
+    intro b hbE₀
+    have hfull : (B.filter fun a => c a = b).card = 2 := hE₀full b hbE₀
+    have hFb_card : ((B.filter fun a => c a = b).image σval).card = 2 := by
+      rw [Finset.card_image_of_injective _ Subtype.val_injective, hfull]
+    have hFb_sub : (B.filter fun a => c a = b).image σval ⊆ sharedFaces M (supval b) := by
+      intro s hs
+      rcases Finset.mem_image.mp hs with ⟨a, ha, rfl⟩
+      exact sameSignFaces_subset_sharedFaces hU (hfib_val b a ha)
+    have hSc : (sharedFaces M (supval b)).card = 2 := by
+      have hge : 2 ≤ (sharedFaces M (supval b)).card := hFb_card ▸ Finset.card_le_card hFb_sub
+      have := hShared2 (supval b) b.2; omega
+    exact (Finset.eq_of_subset_of_card_le hFb_sub (by rw [hFb_card, hSc])).symm
+  -- (c) delete the non-unit tets; survivors are unit, and ≥ deg v many
+  set Enu : Finset {t // t ∈ M.support} :=
+    H.filter (fun b => supval b ∈ nonUnitSupport M) with hEnu_def
+  have hEnu_card : Enu.card ≤ (nonUnitSupport M).card := by
+    refine Finset.card_le_card_of_injOn supval ?_ ?_
+    · intro b hb
+      simp only [hEnu_def, Finset.mem_coe, Finset.mem_filter] at hb
+
+ succeeded in 0ms:
+theorem taut_filling_is_simplicialChain {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) : SimplicialChain M := by
+  classical
+  -- strong induction on `nrm M`, generalised over `σ, X, M`
+  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M by
+    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N IH =>
+    intro σ X M hN hσ hU hXc hMX hT
+    by_contra hnotS
+    obtain ⟨t, ht2⟩ := not_simplicialChain_iff_exists_natAbs_ge_two.mp hnotS
+    have htsupp : t ∈ M.support := Finsupp.mem_support_iff.mpr (by
+      intro h0; rw [h0] at ht2; simp at ht2)
+    have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+    have hPure : ∀ s ∈ M.support, s.card = 4 :=
+      fun s hs => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT s hs).1
+    -- base case impossible: a single-tet filling is simplicial
+    by_cases hsmall : (vertsOf σ).card ≤ 4
+    · exact hnotS (base_simplicialChain hσ hU hMX hT hsmall)
+    push_neg at hsmall
+    -- IH packaged for strictly smaller taut fillings of any sphere
+    have IH' : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' := by
+      intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT'
+      exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT'
+    by_cases hd3 : HasDegree3Vertex σ
+    · -- degree-3 cut: split `M = ML + MR`, both smaller taut fillings of cut spheres
+      obtain ⟨v, W, hvv, hγ3, hγe, hγσ, hWbd, hσL, hσR⟩ := degree3_cut_setup σ hσ hsmall hd3
+      set γ : Finset V := linkVerts σ v with hγdef
+      set A : Finset V := vertsOf (insert γ (cutSet σ W)) with hAdef
+      set ML : Chain V := M.filter (fun s => s ⊆ A) with hMLdef
+      set MR : Chain V := M.filter (fun s => ¬ s ⊆ A) with hMRdef
+      obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
+        capped_cut_splits_unit σ X hσ hγ3 hγe hγσ hWbd hU hXc
+      obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
+        taut_splits_for_capped_cut σ X M hσ hσL hσR hγ3 hγe hWbd
+          hUL hXLc hUR hXRc hXsum hMX hT
+      -- both sides nonempty ⇒ each has strictly smaller norm
+      have hbdML : bdry ML = cappedCutLeft σ W X γ c := by rw [hMLdef]; exact hML
+      have hbdMR : bdry MR = cappedCutRight σ W X γ c := by rw [hMRdef]; exact hMR
+      have hMLne : ML.support.Nonempty := by
+        rw [hMLdef]; exact aleph_base_support_nonempty hσL hUL (by rw [← hMLdef]; exact hbdML)
+      have hMRne : MR.support.Nonempty := by
+        rw [hMRdef]; exact aleph_base_support_nonempty hσR hUR (by rw [← hMRdef]; exact hbdMR)
+      have hsumnrm : nrm ML + nrm MR = nrm M := by
+        rw [hMLdef, hMRdef]; exact nrm_filter_add_nrm_filter_neg (fun s => s ⊆ A) M
+      have hMLpos : 0 < nrm ML :=
+        lt_of_lt_of_le (Finset.card_pos.mpr hMLne) (card_support_le_nrm ML)
+      have hMRpos : 0 < nrm MR :=
+        lt_of_lt_of_le (Finset.card_pos.mpr hMRne) (card_support_le_nrm MR)
+      have hltL : nrm ML < nrm M := by omega
+      have hltR : nrm MR < nrm M := by omega
+      -- `t` lands on exactly one side, with the same coefficient
+      have htval : M t = ML t + MR t := by
+        rw [hMLdef, hMRdef, Finsupp.filter_apply, Finsupp.filter_apply]
+        by_cases hA : t ⊆ A <;> simp [hA]
+      by_cases hA : t ⊆ A
+      · -- left side keeps `t`
+        have hMLt : ML t = M t := by rw [hMLdef, Finsupp.filter_apply, if_pos hA]
+        have hSL : SimplicialChain ML :=
+          IH' (insert γ (cutSet σ W)) (cappedCutLeft σ W X γ c) ML hltL hσL hUL hXLc hbdML hTL
+        rcases hSL t with h | h | h <;> rw [hMLt] at h <;> rw [h] at ht2 <;> simp at ht2
+      · -- right side keeps `t`
+        have hMRt : MR t = M t := by rw [hMRdef, Finsupp.filter_apply, if_pos hA]
+        have hSR : SimplicialChain MR :=
+          IH' (insert γ (cutSet σ (W + fun _ => 1))) (cappedCutRight σ W X γ c) MR hltR hσR hUR hXRc hbdMR hTR
+        rcases hSR t with h | h | h <;> rw [hMRt] at h <;> rw [h] at ht2 <;> simp at ht2
+    · -- prime case: no degree-3 vertex ⇒ disjoint eligible family of size ≥ 3
+      have hNo3 : NoDegree3Vertex σ := fun w hw hc => hd3 ⟨w, hw, hc⟩
+      obtain ⟨w, hw⟩ := hσ.vertsOf_nonempty
+      have hdeg3 : 3 ≤ deg w (bdry M) := by
+        rw [aleph_deg_eq_card_filter_of_unitOn hUb w]
+        exact aleph_incident_faces_card_ge_three hσ hw
+      obtain ⟨E, hEsub, hEcard, hEelig, _hEdisj⟩ :=
+        exists_disjoint_eligible_family_noS hσ hUb hT hPure hNo3 w
+      have hEge2 : 2 ≤ E.card := le_trans (by omega) hEcard
+      -- pick an eligible `u ≠ t` (`|E| ≥ 2`, so two distinct members, one ≠ t)
+      obtain ⟨u, hu, hut⟩ : ∃ u ∈ E, u ≠ t := by
+        obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp (by omega : 1 < E.card)
+        by_cases hat : a = t
+        · exact ⟨b, hb, fun hbt => hab (hat.trans hbt.symm)⟩
+        · exact ⟨a, ha, hat⟩
+      have hue : EligibleTet M u := hEelig u hu
+      have htR : t ∈ (removeTet M u).support := by
+        rw [support_removeTet_of_mem (hue.2.1)]
+        exact Finset.mem_erase.mpr ⟨hut.symm, htsupp⟩
+      have htRval : (removeTet M u) t = M t := removeTet_apply_ne hut.symm
+      obtain ⟨f₃, f₄, hf₃₄, hexp⟩ := exposedFaces_eq_pair_of_eligible hue
+      by_cases hFlip : FlipEdgePresent σ f₃ f₄
+      · -- flip present: split `removeTet M u` into two smaller sphere taut fillings
+        obtain ⟨A, B, hAB, hcd2, hsphA, hsphB, hcover, hsep, _, _, _, _, _⟩ :=
+          flipEdgePresent_side_sets_noS hσ hU hXc hMX hT hue hexp hf₃₄ hFlip
+        obtain ⟨hUA, hUB, hbAc, hbBc, hTA, hTB, hnA, hnB, _, _, _, _⟩ :=
+          flipEdgePresent_side_algebra_noS hσ hU hXc hMX hT hue hexp hf₃₄ hFlip hAB hcd2 hcover hsep
+        -- `t` lands on one side with coefficient `M t`
+        rcases hcover t htR with hA | hB
+        · set MA : Chain V := (removeTet M u).filter (fun s => s ⊆ A) with hMAdef
+          have hMAt : MA t = M t := by
+            rw [hMAdef, Finsupp.filter_apply, if_pos hA, htRval]
+          have hSA : SimplicialChain MA :=
+            IH' ((flipBoundary σ M u).filter (fun f => f ⊆ A)) _ MA hnA hsphA hUA hbAc rfl hTA
+          rcases hSA t with h | h | h <;> rw [hMAt] at h <;> rw [h] at ht2 <;> simp at ht2
+        · set MB : Chain V := (removeTet M u).filter (fun s => s ⊆ B) with hMBdef
+          have hMBt : MB t = M t := by
+            rw [hMBdef, Finsupp.filter_apply, if_pos hB, htRval]
+          have hSB : SimplicialChain MB :=
+            IH' ((flipBoundary σ M u).filter (fun f => f ⊆ B)) _ MB hnB hsphB hUB hbBc rfl hTB
+          rcases hSB t with h | h | h <;> rw [hMBt] at h <;> rw [h] at ht2 <;> simp at ht2
+      · -- no flip: `removeTet M u` is a single smaller sphere taut filling
+        have hσu : IsSphere2 ((σ \ sharedFaces M u) ∪ exposedFaces M u) :=
+          isSphere2_flipBoundary_of_eligible hσ hUb hue hexp hf₃₄ hFlip
+        have hUu : UnitOn (bdry (removeTet M u)) ((σ \ sharedFaces M u) ∪ exposedFaces M u) :=
+          unitOn_flipBoundary_of_eligible hUb hue
+        have hTu : IsTaut (removeTet M u) := isTaut_removeTet hT
+        have hpm : M u = 1 ∨ M u = -1 := tet_coeff_eq_pm_one_of_eligible_unitOn hUb hue
+        have hltu : nrm (removeTet M u) < nrm M := by
+          have := nrm_removeTet_add_one_of_coeff_pm_one hue.2.1 hpm; omega
+        have hSu : SimplicialChain (removeTet M u) :=
+          IH' ((σ \ sharedFaces M u) ∪ exposedFaces M u) (bdry (removeTet M u)) (removeTet M u)
+            hltu hσu hUu (bdry_bdry _) rfl hTu
+        rcases hSu t with h | h | h <;> rw [htRval] at h <;> rw [h] at ht2 <;> simp at ht2
+
+/-- **Theorem 2 (clean route)**: a taut filling of a combinatorial 2-sphere `σ` is a *clean ball*
+(`IsCleanBall` = the paper's *stickerball* = a shellable clean ball: it admits a clean shelling).
+
+
+codex
+I have the main TeX and bridge proof in front of me. I’m going a bit deeper into the rest of the eligible-family proof and endpoint/status mentions now, because the likely failure modes are small signature or attribution drift rather than the high-level induction.
+exec
+/bin/zsh -lc "sed -n '3630,3670p' lean/Taut/Theorem3Clean.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+stickerball.**  That is, its support is a shellable clean 3-complex with nonempty boundary
+(`IsStickerball` — the combinatorial `B³` certificate) *and* a clean shelling can begin with any
+prescribed tetrahedron (`FreelyCleanShellable`).  Subsumes both the ordinary stickerball certificate
+(paper Theorem 2) and the free choice of starting tet (paper Theorem 3): the minimal-counterexample
+induction proves the anyrooted statement directly (`theorem3_clean`), of which the existence form
+(`theorem2_clean`) is the weakening. -/
+theorem taut_filling_is_anyrootedStickerball {σ : Finset (Finset V)} {X M : Chain V}
+    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsAnyrootedStickerball M.support σ := by
+  have hS : SimplicialChain M := taut_filling_is_simplicialChain hσ hU hXc hMX hT
+  exact ⟨⟨theorem2_clean hσ hU hXc hMX hT hS, hσ.nonempty⟩, theorem3_clean hσ hU hXc hMX hT hS⟩
+
+/-- A taut filling of a combinatorial 2-sphere is a *stickerball* (shellable clean ball with nonempty
+boundary — the combinatorial `B³` certificate).  Corollary of `taut_filling_is_anyrootedStickerball`. -/
+theorem taut_filling_is_stickerball {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsStickerball M.support σ :=
+  (taut_filling_is_anyrootedStickerball hσ hU hXc hMX hT).toStickerball
+
+/-- A taut filling of a combinatorial 2-sphere is a *clean 3-complex* — pure, every triangle in one or
+two tets, and *both* links connected (`VertexLinkConnected` and `EdgeLinkConnected`). -/
+theorem taut_filling_is_clean3Complex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsClean3Complex M.support :=
+  (taut_filling_is_stickerball hσ hU hXc hMX hT).isClean3Complex
+
+/-- A taut filling of a combinatorial 2-sphere is *shellable* (admits a clean shelling). -/
+theorem taut_filling_is_shellable {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsCleanBall M.support σ :=
+  (taut_filling_is_stickerball hσ hU hXc hMX hT).1
+
+end Taut
+
+exec
+/bin/zsh -lc "sed -n '720,820p' lean/Taut/Eligible.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+      simp only [hEnu_def, Finset.mem_coe, Finset.mem_filter] at hb
+      exact hb.2
+    · intro b₁ _ b₂ _ h; exact Subtype.ext h
+  set E₁ : Finset {t // t ∈ M.support} := E₀ \ Enu with hE₁_def
+  have hE₁card : deg v (bdry M) ≤ E₁.card := by
+    have hdiff : E₀.card ≤ E₁.card + Enu.card := by
+      have hsubU : E₀ ⊆ E₁ ∪ Enu := by
+        intro b hb
+        by_cases hbE : b ∈ Enu
+        · exact Finset.mem_union_right _ hbE
+        · exact Finset.mem_union_left _ (Finset.mem_sdiff.mpr ⟨hb, hbE⟩)
+      calc E₀.card ≤ (E₁ ∪ Enu).card := Finset.card_le_card hsubU
+        _ ≤ E₁.card + Enu.card := Finset.card_union_le _ _
+    omega
+  -- every b ∈ E₁ is a UNIT tet
+  have hE₁unit : ∀ b ∈ E₁, (M (supval b)).natAbs = 1 := by
+    intro b hb
+    rw [hE₁_def, Finset.mem_sdiff] at hb
+    by_contra hne
+    exact hb.2 (by rw [hEnu_def, Finset.mem_filter]
+                   exact ⟨Finset.mem_univ _, mem_nonUnitSupport.mpr ⟨b.2, hne⟩⟩)
+  -- (d) the final family E : Finset (Finset V) = subtype-values of E₁
+  refine ⟨E₁.image supval, ?_, ?_, ?_, ?_⟩
+  · intro e he; rcases Finset.mem_image.mp he with ⟨b, _, rfl⟩; exact b.2
+  · -- cardinality
+    rw [Finset.card_image_of_injective _ Subtype.val_injective]; exact hE₁card
+  · -- each value is an EligibleTet
+    intro e he
+    rcases Finset.mem_image.mp he with ⟨b, hbE₁, rfl⟩
+    have hbE₀ : b ∈ E₀ := (Finset.mem_sdiff.mp (hE₁_def ▸ hbE₁)).1
+    have hbunit : (M (supval b)).natAbs = 1 := hE₁unit b hbE₁
+    have hShared_card : (sharedFaces M (supval b)).card = 2 := by
+      rw [hshared_eq b hbE₀, Finset.card_image_of_injective _ Subtype.val_injective,
+        hE₀full b hbE₀]
+    refine ⟨hPure (supval b) b.2, b.2, hShared_card, ?_⟩
+    -- orientation: every shared face of b is properly oriented (b is unit ⇒ same-sign ⇒ proper)
+    intro s hs
+    rw [hshared_eq b hbE₀, Finset.mem_image] at hs
+    rcases hs with ⟨a, ha, rfl⟩
+    rw [Finset.mem_filter] at ha
+    have hss : SameSignSupportFaceTet M a.1 (c a).1 := hcspec a
+    rw [ha.2] at hss
+    have hUa : bdry M a.1 = 1 ∨ bdry M a.1 = -1 := hU.2 a.1 a.2
+    exact (sameSignFace_to_proper_of_unit hUa hss hbunit).2.2
+  · -- pairwise disjoint sharedFaces: for b ∈ E₁, sharedFaces M b = fibre image, fibres disjoint
+    intro e₁ he₁ e₂ he₂ hne
+    rcases Finset.mem_image.mp (Finset.mem_coe.mp he₁) with ⟨b₁, hb₁E₁, rfl⟩
+    rcases Finset.mem_image.mp (Finset.mem_coe.mp he₂) with ⟨b₂, hb₂E₁, rfl⟩
+    have hbne : b₁ ≠ b₂ := fun h => hne (by rw [h])
+    have hb₁E₀ : b₁ ∈ E₀ := (Finset.mem_sdiff.mp (hE₁_def ▸ hb₁E₁)).1
+    have hb₂E₀ : b₂ ∈ E₀ := (Finset.mem_sdiff.mp (hE₁_def ▸ hb₂E₁)).1
+    show Disjoint (sharedFaces M (supval b₁)) (sharedFaces M (supval b₂))
+    rw [hshared_eq b₁ hb₁E₀, hshared_eq b₂ hb₂E₀, Finset.disjoint_left]
+    intro s hs₁ hs₂
+    rcases Finset.mem_image.mp hs₁ with ⟨a₁, ha₁, rfl⟩
+    rcases Finset.mem_image.mp hs₂ with ⟨a₂, ha₂, ha₂eq⟩
+    have ha12 : a₁ = a₂ := Subtype.ext ha₂eq.symm
+    rw [Finset.mem_filter] at ha₁ ha₂
+    exact hbne (by rw [← ha₁.2, ha12, ha₂.2])
+
+end Taut
+
+exec
+/bin/zsh -lc 'rg -n "taut_filling_is_simplicialChain|Hypotheses to carry|Simpliciality is automatic|simplicial|SimplicialChain" notes/taut-lean-proof.tex' in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "nl -ba notes/taut-lean-proof.tex | sed -n '283,372p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+54:chain is \emph{simplicial} if every coefficient lies in $\{-1,0,1\}$
+55:(\code{SimplicialChain}), and then $\norm{M}$ is the number of simplices in its support. (For a
+56:taut filling of a $2$-sphere, simpliciality is automatic --- Theorem~\ref{thm:simpl} --- and is
+284:$2$-sphere is \emph{automatically} simplicial, so ``simplicial'' is a conclusion, not an
+287:\subsection*{Simpliciality is automatic}
+289:\begin{theorem}[Simpliciality is automatic]\label{thm:simpl}
+292:is simplicial (\code{taut\_filling\_is\_simplicialChain}). \emph{No simpliciality is assumed.}
+296:taut filling of the simplicial $2$-sphere $\sigma$.'' The proof is a minimal-counterexample
+300:\begin{lemma}[Disjoint eligible family, simpliciality-free]\label{lem:family}
+345:once --- so the twofer count runs with no simpliciality; but only a \emph{unit} twofer is
+353:(\code{not\_simplicialChain\_iff\_exists\_natAbs\_ge\_two}), we produce a strictly smaller taut
+354:filling of a $2$-sphere in which $t_0$ keeps its coefficient --- still non-simplicial,
+358:coefficient $\pm1$, so there is no defect (\code{base\_simplicialChain}).
+373:In every case the smaller filling is simplicial by induction, forcing $\card{M(t_0)}\le 1$ ---
+374:a contradiction. Hence $M$ is simplicial.
+379:With simpliciality established (Theorem~\ref{thm:simpl}) we use it freely below: the Lean
+380:lemmas \code{taut\_isPseudomanifold} and \code{theorem3\_clean} carry \code{SimplicialChain M}
+388:(\code{taut\_isPseudomanifold}, simpliciality from Theorem~\ref{thm:simpl}; purity from
+419:there is a clean shelling of $M$ beginning with $t_\star$ (\code{theorem3\_clean}, simpliciality
+523:Thm~\ref{thm:simpl} (simpliciality automatic) & \code{taut\_filling\_is\_simplicialChain} & fully proved\\
+580:\paragraph{Hypotheses to carry into a paper statement.}
+581:The boundary cycle is $\pm1$ on $\sigma$ (\code{UnitOn}); the filling's simpliciality is
+582:\emph{derived, not assumed} (Theorem~\ref{thm:simpl}, \code{taut\_filling\_is\_simplicialChain}),
+
+ succeeded in 0ms:
+   283	fillings. The same reduction first pays off a debt in the hypotheses: a taut filling of a
+   284	$2$-sphere is \emph{automatically} simplicial, so ``simplicial'' is a conclusion, not an
+   285	assumption.
+   286	
+   287	\subsection*{Simpliciality is automatic}
+   288	
+   289	\begin{theorem}[Simpliciality is automatic]\label{thm:simpl}
+   290	Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$, and $M$ a taut
+   291	filling with $\bd M=X$. Then every tetrahedron coefficient of $M$ lies in $\{-1,0,1\}$ --- $M$
+   292	is simplicial (\code{taut\_filling\_is\_simplicialChain}). \emph{No simpliciality is assumed.}
+   293	\end{theorem}
+   294	
+   295	This discharges the only hypothesis of the main theorem that is not already part of ``$M$ is a
+   296	taut filling of the simplicial $2$-sphere $\sigma$.'' The proof is a minimal-counterexample
+   297	deletion driven by a counting engine that produces removable tetrahedra \emph{without} knowing
+   298	the coefficients are $\pm1$ --- the point at which a naive argument would be circular.
+   299	
+   300	\begin{lemma}[Disjoint eligible family, simpliciality-free]\label{lem:family}
+   301	Let $\sigma$ have no degree-$3$ vertex, and let $M$ be a taut filling whose boundary $\bd M$ is
+   302	the $\pm1$ cycle on $\sigma$ and whose generators are all tetrahedra. Then for every vertex
+   303	$v$ there are at least $\deg_v(\bd M)$ generators of $M$, pairwise disjoint in their boundary
+   304	faces, each sharing exactly two faces with $\bd M$ in proper orientation --- i.e.\ at least
+   305	$\deg_v(\bd M)$ disjoint \emph{eligible} tetrahedra
+   306	(\code{exists\_disjoint\_eligible\_family\_noS}). (Under the unit boundary an eligible
+   307	tetrahedron necessarily has coefficient $\pm1$,
+   308	\code{tet\_coeff\_eq\_pm\_one\_of\_eligible\_unitOn}; this is what makes it removable below.)
+   309	\end{lemma}
+   310	
+   311	\begin{proof}
+   312	Call a triangle $\alpha\in\sigma$ a \emph{same-sign support face} of a generator $t$ if
+   313	$\alpha$ is a face of $t$ whose chain contribution carries the sign of $\bd M$ there, i.e.\
+   314	$\bd M(\alpha)\cdot M(t)\cdot\operatorname{sgn}(t,\alpha)>0$
+   315	(\code{SameSignSupportFaceTet}). Every boundary triangle is a same-sign support face of
+   316	\emph{some} generator (\code{sameSignSupportFace\_cover}); this --- strictly weaker than ``each
+   317	boundary triangle lies on a unique tetrahedron'' --- is the \emph{only} geometric input, and
+   318	it uses only that $\bd M$ is the unit cycle and that generators are tetrahedra, \emph{not} that
+   319	their coefficients are $\pm1$. Pick one such generator for each of the $\card\sigma$ boundary
+   320	triangles; since no vertex has degree $3$, each generator is picked by at most two triangles
+   321	(\code{sharedFaces\_card\_le\_two\_of\_noDegree3}).
+   322	
+   323	Now count. Let $s=\card{\supp M}$ be the number of generators and $z$ the number of them with
+   324	$\card{M(t)}\ge 2$. The norm budget $s+z\le\norm M$
+   325	(\code{support\_card\_add\_nonUnitSupport\_card\_le\_nrm}; each non-unit generator costs
+   326	$\ge 2$), tautness $\norm M=\Zvol(\bd M)$, and the degree--volume inequality
+   327	$\Zvol(\bd M)+\deg_v(\bd M)\le\norm{\bd M}=\card\sigma$ (\code{Zvol\_add\_deg\_le},
+   328	\code{UnitOn.nrm\_eq}) combine to
+   329	\[
+   330	s+z+\deg_v(\bd M)\ \le\ \card\sigma .
+   331	\]
+   332	A map from the $\card\sigma$ triangles onto the $s$ generators with every fibre of size $\le 2$
+   333	therefore has at least $z+\deg_v(\bd M)$ \emph{twofer} targets --- generators picked by exactly
+   334	two triangles --- with pairwise-disjoint assigned pairs (\code{finset\_twofer\_fibers}: a
+   335	fibred map with $s+k\le\card\sigma$ has $\ge k$ size-$2$ fibres). Discard the $\le z$ non-unit
+   336	twofers; at least $\deg_v(\bd M)$ \emph{unit} twofers remain. A unit twofer has coefficient
+   337	$\pm1$ and two same-sign boundary faces, which on a unit tetrahedron are \emph{properly
+   338	oriented} (\code{sameSignFace\_to\_proper\_of\_unit}); it is therefore eligible, and disjoint
+   339	assigned pairs make the family boundary-face disjoint.
+   340	\end{proof}
+   341	
+   342	\begin{remark}
+   343	The discard is the one place coefficients re-enter, and it is essential. Counting same-sign
+   344	faces is insensitive to multiplicity --- a generator of coefficient $2$ still has each face
+   345	once --- so the twofer count runs with no simpliciality; but only a \emph{unit} twofer is
+   346	removable as an eligible tetrahedron. The norm budget pays the discard exactly: each non-unit
+   347	generator contributes the $\ge 2$ to $\norm M$ that the count demanded as surplus.
+   348	\end{remark}
+   349	
+   350	\begin{proof}[Proof of Theorem~\ref{thm:simpl}]
+   351	Strong induction on $\norm M$, by the same trichotomy on $\sigma$ as in the main induction
+   352	below. If some generator $t_0$ has $\card{M(t_0)}\ge 2$
+   353	(\code{not\_simplicialChain\_iff\_exists\_natAbs\_ge\_two}), we produce a strictly smaller taut
+   354	filling of a $2$-sphere in which $t_0$ keeps its coefficient --- still non-simplicial,
+   355	contradicting the inductive hypothesis.
+   356	\begin{itemize}
+   357	\item \emph{Base} ($\card{\sigma}\le 4$): $M$ is a single tetrahedron, necessarily of
+   358	coefficient $\pm1$, so there is no defect (\code{base\_simplicialChain}).
+   359	\item \emph{Degree-$3$ vertex}: the capped cut (Lemma~\ref{lem:cut}) splits $M=M_L+M_R$ into
+   360	two strictly smaller taut fillings of the two capped spheres
+   361	(\code{taut\_splits\_for\_capped\_cut}), and $t_0$ lies on one side carrying its full
+   362	coefficient.
+   363	\item \emph{No degree-$3$ vertex}: applied at any vertex (every vertex of a $2$-sphere has
+   364	$\deg_v(\bd M)\ge 3$), Lemma~\ref{lem:family} supplies at least three eligible tetrahedra ---
+   365	in particular two distinct ones, so one is $u\neq t_0$. Remove $u$; $t_0$ persists with
+   366	coefficient $M(t_0)$
+   367	(\code{removeTet\_apply\_ne}). If $u$'s flip edge is absent, $M-u$ is a taut filling of the
+   368	flipped $2$-sphere (\code{isSphere2\_flipBoundary\_of\_eligible},
+   369	\code{isTaut\_removeTet}); if present, $M-u$ splits along that edge into two taut sub-fillings
+   370	on smaller spheres (\code{flipEdgePresent\_side\_sets\_noS},
+   371	\code{flipEdgePresent\_side\_algebra\_noS}), and $t_0$ lies on one.
+   372	\end{itemize}
+
+codex
+The high-level story matches the Lean proof so far. I’m checking exact line-numbered citations now so the final answer can point to the real locations for both the verified matches and any patch suggestions.
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem3Clean.lean | sed -n '3462,3589p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Eligible.lean | sed -n '643,810p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   643	theorem exists_disjoint_eligible_family_noS
+   644	    {M : Chain V} {σ : Finset (Finset V)}
+   645	    (hσ : IsSphere2 σ) (hU : UnitOn (bdry M) σ) (hT : IsTaut M)
+   646	    (hPure : ∀ t ∈ M.support, t.card = 4) (hNo3 : NoDegree3Vertex σ) (v : V) :
+   647	    ∃ E : Finset (Finset V), E ⊆ M.support ∧ deg v (bdry M) ≤ E.card ∧
+   648	      (∀ e ∈ E, EligibleTet M e) ∧ (↑E : Set (Finset V)).PairwiseDisjoint fun e => sharedFaces M e := by
+   649	  classical
+   650	  have hShared2 : ∀ t ∈ M.support, (sharedFaces M t).card ≤ 2 := fun t ht =>
+   651	    sharedFaces_card_le_two_of_noDegree3 hσ hU hNo3 (hPure t ht)
+   652	  -- (a) the same-sign covering map `c : {α // α ∈ σ} → {t // t ∈ M.support}`
+   653	  have hcov : ∀ α ∈ σ, ∃ t, SameSignSupportFaceTet M α t :=
+   654	    sameSignSupportFace_cover hU hPure
+   655	  let c : {α // α ∈ σ} → {t // t ∈ M.support} := fun α =>
+   656	    ⟨Classical.choose (hcov α.1 α.2), (Classical.choose_spec (hcov α.1 α.2)).1⟩
+   657	  have hcspec : ∀ α : {α // α ∈ σ}, SameSignSupportFaceTet M α.1 (c α).1 := fun α =>
+   658	    Classical.choose_spec (hcov α.1 α.2)
+   659	  -- (b) apply the twofer lemma with B = σ-subtype, H = support-subtype, k = deg v + |nonUnit|
+   660	  set B : Finset {α // α ∈ σ} := Finset.univ with hB_def
+   661	  set H : Finset {t // t ∈ M.support} := Finset.univ with hH_def
+   662	  set k : ℕ := deg v (bdry M) + (nonUnitSupport M).card with hk_def
+   663	  have hmap : ∀ b ∈ B, c b ∈ H := fun _ _ => Finset.mem_univ _
+   664	  -- fibre ≤ 2: each fibre ⊆ sameSignFaces (via subtype value), and sameSignFaces ⊆ sharedFaces ≤ 2
+   665	  have hfib_val : ∀ (b : {t // t ∈ M.support}) (a : {α // α ∈ σ}),
+   666	      a ∈ B.filter (fun a => c a = b) → (a : Finset V) ∈ sameSignFaces M σ (b : Finset V) := by
+   667	    intro b a ha
+   668	    rw [Finset.mem_filter] at ha
+   669	    have hss : SameSignSupportFaceTet M a.1 (c a).1 := hcspec a
+   670	    rw [ha.2] at hss
+   671	    exact mem_sameSignFaces.mpr ⟨a.2, hss⟩
+   672	  have hfiber_le2 : ∀ b ∈ H, (B.filter fun a => c a = b).card ≤ 2 := by
+   673	    intro b _
+   674	    -- map the fibre injectively into `sameSignFaces M σ b` via subtype value
+   675	    have hinj : (B.filter fun a => c a = b).card
+   676	        ≤ (sameSignFaces M σ (b : Finset V)).card := by
+   677	      refine Finset.card_le_card_of_injOn (fun a => (a : Finset V)) ?_ ?_
+   678	      · intro a ha; exact hfib_val b a ha
+   679	      · intro a₁ _ a₂ _ h; exact Subtype.ext h
+   680	    have hle : (sameSignFaces M σ (b : Finset V)).card ≤ (sharedFaces M (b : Finset V)).card :=
+   681	      Finset.card_le_card (sameSignFaces_subset_sharedFaces hU)
+   682	    have := hShared2 (b : Finset V) b.2
+   683	    omega
+   684	  -- the gap H.card + k ≤ B.card
+   685	  have hgap_card : H.card + k ≤ B.card := by
+   686	    rw [hB_def, hH_def, Finset.card_univ, Finset.card_univ, Fintype.card_coe, Fintype.card_coe,
+   687	      hk_def]
+   688	    -- support + |nonUnit| ≤ nrm M  and  nrm M + deg v ≤ σ.card
+   689	    have hbudget := support_card_add_nonUnitSupport_card_le_nrm M
+   690	    have h2 := Zvol_add_deg_le v (bdry_bdry M)
+   691	    rw [UnitOn.nrm_eq hU] at h2
+   692	    have hTeq : nrm M = Zvol (bdry M) := hT
+   693	    omega
+   694	  obtain ⟨E₀, hE₀sub, hE₀card, hE₀full, hE₀disj⟩ :=
+   695	    finset_twofer_fibers B H c hmap hfiber_le2 hgap_card
+   696	  -- named value-coercions (avoids `do`/`pure` ambiguity from inline coercion lambdas)
+   697	  let σval : {α // α ∈ σ} → Finset V := Subtype.val
+   698	  let supval : {t // t ∈ M.support} → Finset V := Subtype.val
+   699	  -- the key fact: for a full-fibre b, `sharedFaces M b` equals the σ-value image of its fibre
+   700	  have hshared_eq : ∀ b ∈ E₀, sharedFaces M (supval b)
+   701	      = (B.filter fun a => c a = b).image σval := by
+   702	    intro b hbE₀
+   703	    have hfull : (B.filter fun a => c a = b).card = 2 := hE₀full b hbE₀
+   704	    have hFb_card : ((B.filter fun a => c a = b).image σval).card = 2 := by
+   705	      rw [Finset.card_image_of_injective _ Subtype.val_injective, hfull]
+   706	    have hFb_sub : (B.filter fun a => c a = b).image σval ⊆ sharedFaces M (supval b) := by
+   707	      intro s hs
+   708	      rcases Finset.mem_image.mp hs with ⟨a, ha, rfl⟩
+   709	      exact sameSignFaces_subset_sharedFaces hU (hfib_val b a ha)
+   710	    have hSc : (sharedFaces M (supval b)).card = 2 := by
+   711	      have hge : 2 ≤ (sharedFaces M (supval b)).card := hFb_card ▸ Finset.card_le_card hFb_sub
+   712	      have := hShared2 (supval b) b.2; omega
+   713	    exact (Finset.eq_of_subset_of_card_le hFb_sub (by rw [hFb_card, hSc])).symm
+   714	  -- (c) delete the non-unit tets; survivors are unit, and ≥ deg v many
+   715	  set Enu : Finset {t // t ∈ M.support} :=
+   716	    H.filter (fun b => supval b ∈ nonUnitSupport M) with hEnu_def
+   717	  have hEnu_card : Enu.card ≤ (nonUnitSupport M).card := by
+   718	    refine Finset.card_le_card_of_injOn supval ?_ ?_
+   719	    · intro b hb
+   720	      simp only [hEnu_def, Finset.mem_coe, Finset.mem_filter] at hb
+   721	      exact hb.2
+   722	    · intro b₁ _ b₂ _ h; exact Subtype.ext h
+   723	  set E₁ : Finset {t // t ∈ M.support} := E₀ \ Enu with hE₁_def
+   724	  have hE₁card : deg v (bdry M) ≤ E₁.card := by
+   725	    have hdiff : E₀.card ≤ E₁.card + Enu.card := by
+   726	      have hsubU : E₀ ⊆ E₁ ∪ Enu := by
+   727	        intro b hb
+   728	        by_cases hbE : b ∈ Enu
+   729	        · exact Finset.mem_union_right _ hbE
+   730	        · exact Finset.mem_union_left _ (Finset.mem_sdiff.mpr ⟨hb, hbE⟩)
+   731	      calc E₀.card ≤ (E₁ ∪ Enu).card := Finset.card_le_card hsubU
+   732	        _ ≤ E₁.card + Enu.card := Finset.card_union_le _ _
+   733	    omega
+   734	  -- every b ∈ E₁ is a UNIT tet
+   735	  have hE₁unit : ∀ b ∈ E₁, (M (supval b)).natAbs = 1 := by
+   736	    intro b hb
+   737	    rw [hE₁_def, Finset.mem_sdiff] at hb
+   738	    by_contra hne
+   739	    exact hb.2 (by rw [hEnu_def, Finset.mem_filter]
+   740	                   exact ⟨Finset.mem_univ _, mem_nonUnitSupport.mpr ⟨b.2, hne⟩⟩)
+   741	  -- (d) the final family E : Finset (Finset V) = subtype-values of E₁
+   742	  refine ⟨E₁.image supval, ?_, ?_, ?_, ?_⟩
+   743	  · intro e he; rcases Finset.mem_image.mp he with ⟨b, _, rfl⟩; exact b.2
+   744	  · -- cardinality
+   745	    rw [Finset.card_image_of_injective _ Subtype.val_injective]; exact hE₁card
+   746	  · -- each value is an EligibleTet
+   747	    intro e he
+   748	    rcases Finset.mem_image.mp he with ⟨b, hbE₁, rfl⟩
+   749	    have hbE₀ : b ∈ E₀ := (Finset.mem_sdiff.mp (hE₁_def ▸ hbE₁)).1
+   750	    have hbunit : (M (supval b)).natAbs = 1 := hE₁unit b hbE₁
+   751	    have hShared_card : (sharedFaces M (supval b)).card = 2 := by
+   752	      rw [hshared_eq b hbE₀, Finset.card_image_of_injective _ Subtype.val_injective,
+   753	        hE₀full b hbE₀]
+   754	    refine ⟨hPure (supval b) b.2, b.2, hShared_card, ?_⟩
+   755	    -- orientation: every shared face of b is properly oriented (b is unit ⇒ same-sign ⇒ proper)
+   756	    intro s hs
+   757	    rw [hshared_eq b hbE₀, Finset.mem_image] at hs
+   758	    rcases hs with ⟨a, ha, rfl⟩
+   759	    rw [Finset.mem_filter] at ha
+   760	    have hss : SameSignSupportFaceTet M a.1 (c a).1 := hcspec a
+   761	    rw [ha.2] at hss
+   762	    have hUa : bdry M a.1 = 1 ∨ bdry M a.1 = -1 := hU.2 a.1 a.2
+   763	    exact (sameSignFace_to_proper_of_unit hUa hss hbunit).2.2
+   764	  · -- pairwise disjoint sharedFaces: for b ∈ E₁, sharedFaces M b = fibre image, fibres disjoint
+   765	    intro e₁ he₁ e₂ he₂ hne
+   766	    rcases Finset.mem_image.mp (Finset.mem_coe.mp he₁) with ⟨b₁, hb₁E₁, rfl⟩
+   767	    rcases Finset.mem_image.mp (Finset.mem_coe.mp he₂) with ⟨b₂, hb₂E₁, rfl⟩
+   768	    have hbne : b₁ ≠ b₂ := fun h => hne (by rw [h])
+   769	    have hb₁E₀ : b₁ ∈ E₀ := (Finset.mem_sdiff.mp (hE₁_def ▸ hb₁E₁)).1
+   770	    have hb₂E₀ : b₂ ∈ E₀ := (Finset.mem_sdiff.mp (hE₁_def ▸ hb₂E₁)).1
+   771	    show Disjoint (sharedFaces M (supval b₁)) (sharedFaces M (supval b₂))
+   772	    rw [hshared_eq b₁ hb₁E₀, hshared_eq b₂ hb₂E₀, Finset.disjoint_left]
+   773	    intro s hs₁ hs₂
+   774	    rcases Finset.mem_image.mp hs₁ with ⟨a₁, ha₁, rfl⟩
+   775	    rcases Finset.mem_image.mp hs₂ with ⟨a₂, ha₂, ha₂eq⟩
+   776	    have ha12 : a₁ = a₂ := Subtype.ext ha₂eq.symm
+   777	    rw [Finset.mem_filter] at ha₁ ha₂
+   778	    exact hbne (by rw [← ha₁.2, ha12, ha₂.2])
+   779	
+   780	end Taut
+
+ succeeded in 0ms:
+  3462	theorem taut_filling_is_simplicialChain {σ : Finset (Finset V)} {X M : Chain V}
+  3463	    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+  3464	    (hT : IsTaut M) : SimplicialChain M := by
+  3465	  classical
+  3466	  -- strong induction on `nrm M`, generalised over `σ, X, M`
+  3467	  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+  3468	      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M by
+  3469	    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT
+  3470	  intro N
+  3471	  induction N using Nat.strong_induction_on with
+  3472	  | _ N IH =>
+  3473	    intro σ X M hN hσ hU hXc hMX hT
+  3474	    by_contra hnotS
+  3475	    obtain ⟨t, ht2⟩ := not_simplicialChain_iff_exists_natAbs_ge_two.mp hnotS
+  3476	    have htsupp : t ∈ M.support := Finsupp.mem_support_iff.mpr (by
+  3477	      intro h0; rw [h0] at ht2; simp at ht2)
+  3478	    have hUb : UnitOn (bdry M) σ := by rw [hMX]; exact hU
+  3479	    have hPure : ∀ s ∈ M.support, s.card = 4 :=
+  3480	      fun s hs => (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT s hs).1
+  3481	    -- base case impossible: a single-tet filling is simplicial
+  3482	    by_cases hsmall : (vertsOf σ).card ≤ 4
+  3483	    · exact hnotS (base_simplicialChain hσ hU hMX hT hsmall)
+  3484	    push_neg at hsmall
+  3485	    -- IH packaged for strictly smaller taut fillings of any sphere
+  3486	    have IH' : ∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+  3487	        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' := by
+  3488	      intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT'
+  3489	      exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT'
+  3490	    by_cases hd3 : HasDegree3Vertex σ
+  3491	    · -- degree-3 cut: split `M = ML + MR`, both smaller taut fillings of cut spheres
+  3492	      obtain ⟨v, W, hvv, hγ3, hγe, hγσ, hWbd, hσL, hσR⟩ := degree3_cut_setup σ hσ hsmall hd3
+  3493	      set γ : Finset V := linkVerts σ v with hγdef
+  3494	      set A : Finset V := vertsOf (insert γ (cutSet σ W)) with hAdef
+  3495	      set ML : Chain V := M.filter (fun s => s ⊆ A) with hMLdef
+  3496	      set MR : Chain V := M.filter (fun s => ¬ s ⊆ A) with hMRdef
+  3497	      obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
+  3498	        capped_cut_splits_unit σ X hσ hγ3 hγe hγσ hWbd hU hXc
+  3499	      obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
+  3500	        taut_splits_for_capped_cut σ X M hσ hσL hσR hγ3 hγe hWbd
+  3501	          hUL hXLc hUR hXRc hXsum hMX hT
+  3502	      -- both sides nonempty ⇒ each has strictly smaller norm
+  3503	      have hbdML : bdry ML = cappedCutLeft σ W X γ c := by rw [hMLdef]; exact hML
+  3504	      have hbdMR : bdry MR = cappedCutRight σ W X γ c := by rw [hMRdef]; exact hMR
+  3505	      have hMLne : ML.support.Nonempty := by
+  3506	        rw [hMLdef]; exact aleph_base_support_nonempty hσL hUL (by rw [← hMLdef]; exact hbdML)
+  3507	      have hMRne : MR.support.Nonempty := by
+  3508	        rw [hMRdef]; exact aleph_base_support_nonempty hσR hUR (by rw [← hMRdef]; exact hbdMR)
+  3509	      have hsumnrm : nrm ML + nrm MR = nrm M := by
+  3510	        rw [hMLdef, hMRdef]; exact nrm_filter_add_nrm_filter_neg (fun s => s ⊆ A) M
+  3511	      have hMLpos : 0 < nrm ML :=
+  3512	        lt_of_lt_of_le (Finset.card_pos.mpr hMLne) (card_support_le_nrm ML)
+  3513	      have hMRpos : 0 < nrm MR :=
+  3514	        lt_of_lt_of_le (Finset.card_pos.mpr hMRne) (card_support_le_nrm MR)
+  3515	      have hltL : nrm ML < nrm M := by omega
+  3516	      have hltR : nrm MR < nrm M := by omega
+  3517	      -- `t` lands on exactly one side, with the same coefficient
+  3518	      have htval : M t = ML t + MR t := by
+  3519	        rw [hMLdef, hMRdef, Finsupp.filter_apply, Finsupp.filter_apply]
+  3520	        by_cases hA : t ⊆ A <;> simp [hA]
+  3521	      by_cases hA : t ⊆ A
+  3522	      · -- left side keeps `t`
+  3523	        have hMLt : ML t = M t := by rw [hMLdef, Finsupp.filter_apply, if_pos hA]
+  3524	        have hSL : SimplicialChain ML :=
+  3525	          IH' (insert γ (cutSet σ W)) (cappedCutLeft σ W X γ c) ML hltL hσL hUL hXLc hbdML hTL
+  3526	        rcases hSL t with h | h | h <;> rw [hMLt] at h <;> rw [h] at ht2 <;> simp at ht2
+  3527	      · -- right side keeps `t`
+  3528	        have hMRt : MR t = M t := by rw [hMRdef, Finsupp.filter_apply, if_pos hA]
+  3529	        have hSR : SimplicialChain MR :=
+  3530	          IH' (insert γ (cutSet σ (W + fun _ => 1))) (cappedCutRight σ W X γ c) MR hltR hσR hUR hXRc hbdMR hTR
+  3531	        rcases hSR t with h | h | h <;> rw [hMRt] at h <;> rw [h] at ht2 <;> simp at ht2
+  3532	    · -- prime case: no degree-3 vertex ⇒ disjoint eligible family of size ≥ 3
+  3533	      have hNo3 : NoDegree3Vertex σ := fun w hw hc => hd3 ⟨w, hw, hc⟩
+  3534	      obtain ⟨w, hw⟩ := hσ.vertsOf_nonempty
+  3535	      have hdeg3 : 3 ≤ deg w (bdry M) := by
+  3536	        rw [aleph_deg_eq_card_filter_of_unitOn hUb w]
+  3537	        exact aleph_incident_faces_card_ge_three hσ hw
+  3538	      obtain ⟨E, hEsub, hEcard, hEelig, _hEdisj⟩ :=
+  3539	        exists_disjoint_eligible_family_noS hσ hUb hT hPure hNo3 w
+  3540	      have hEge2 : 2 ≤ E.card := le_trans (by omega) hEcard
+  3541	      -- pick an eligible `u ≠ t` (`|E| ≥ 2`, so two distinct members, one ≠ t)
+  3542	      obtain ⟨u, hu, hut⟩ : ∃ u ∈ E, u ≠ t := by
+  3543	        obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp (by omega : 1 < E.card)
+  3544	        by_cases hat : a = t
+  3545	        · exact ⟨b, hb, fun hbt => hab (hat.trans hbt.symm)⟩
+  3546	        · exact ⟨a, ha, hat⟩
+  3547	      have hue : EligibleTet M u := hEelig u hu
+  3548	      have htR : t ∈ (removeTet M u).support := by
+  3549	        rw [support_removeTet_of_mem (hue.2.1)]
+  3550	        exact Finset.mem_erase.mpr ⟨hut.symm, htsupp⟩
+  3551	      have htRval : (removeTet M u) t = M t := removeTet_apply_ne hut.symm
+  3552	      obtain ⟨f₃, f₄, hf₃₄, hexp⟩ := exposedFaces_eq_pair_of_eligible hue
+  3553	      by_cases hFlip : FlipEdgePresent σ f₃ f₄
+  3554	      · -- flip present: split `removeTet M u` into two smaller sphere taut fillings
+  3555	        obtain ⟨A, B, hAB, hcd2, hsphA, hsphB, hcover, hsep, _, _, _, _, _⟩ :=
+  3556	          flipEdgePresent_side_sets_noS hσ hU hXc hMX hT hue hexp hf₃₄ hFlip
+  3557	        obtain ⟨hUA, hUB, hbAc, hbBc, hTA, hTB, hnA, hnB, _, _, _, _⟩ :=
+  3558	          flipEdgePresent_side_algebra_noS hσ hU hXc hMX hT hue hexp hf₃₄ hFlip hAB hcd2 hcover hsep
+  3559	        -- `t` lands on one side with coefficient `M t`
+  3560	        rcases hcover t htR with hA | hB
+  3561	        · set MA : Chain V := (removeTet M u).filter (fun s => s ⊆ A) with hMAdef
+  3562	          have hMAt : MA t = M t := by
+  3563	            rw [hMAdef, Finsupp.filter_apply, if_pos hA, htRval]
+  3564	          have hSA : SimplicialChain MA :=
+  3565	            IH' ((flipBoundary σ M u).filter (fun f => f ⊆ A)) _ MA hnA hsphA hUA hbAc rfl hTA
+  3566	          rcases hSA t with h | h | h <;> rw [hMAt] at h <;> rw [h] at ht2 <;> simp at ht2
+  3567	        · set MB : Chain V := (removeTet M u).filter (fun s => s ⊆ B) with hMBdef
+  3568	          have hMBt : MB t = M t := by
+  3569	            rw [hMBdef, Finsupp.filter_apply, if_pos hB, htRval]
+  3570	          have hSB : SimplicialChain MB :=
+  3571	            IH' ((flipBoundary σ M u).filter (fun f => f ⊆ B)) _ MB hnB hsphB hUB hbBc rfl hTB
+  3572	          rcases hSB t with h | h | h <;> rw [hMBt] at h <;> rw [h] at ht2 <;> simp at ht2
+  3573	      · -- no flip: `removeTet M u` is a single smaller sphere taut filling
+  3574	        have hσu : IsSphere2 ((σ \ sharedFaces M u) ∪ exposedFaces M u) :=
+  3575	          isSphere2_flipBoundary_of_eligible hσ hUb hue hexp hf₃₄ hFlip
+  3576	        have hUu : UnitOn (bdry (removeTet M u)) ((σ \ sharedFaces M u) ∪ exposedFaces M u) :=
+  3577	          unitOn_flipBoundary_of_eligible hUb hue
+  3578	        have hTu : IsTaut (removeTet M u) := isTaut_removeTet hT
+  3579	        have hpm : M u = 1 ∨ M u = -1 := tet_coeff_eq_pm_one_of_eligible_unitOn hUb hue
+  3580	        have hltu : nrm (removeTet M u) < nrm M := by
+  3581	          have := nrm_removeTet_add_one_of_coeff_pm_one hue.2.1 hpm; omega
+  3582	        have hSu : SimplicialChain (removeTet M u) :=
+  3583	          IH' ((σ \ sharedFaces M u) ∪ exposedFaces M u) (bdry (removeTet M u)) (removeTet M u)
+  3584	            hltu hσu hUu (bdry_bdry _) rfl hTu
+  3585	        rcases hSu t with h | h | h <;> rw [htRval] at h <;> rw [h] at ht2 <;> simp at ht2
+  3586	
+  3587	/-- **Theorem 2 (clean route)**: a taut filling of a combinatorial 2-sphere `σ` is a *clean ball*
+  3588	(`IsCleanBall` = the paper's *stickerball* = a shellable clean ball: it admits a clean shelling).
+  3589	
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem3Clean.lean | sed -n '3636,3663p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  3636	theorem taut_filling_is_anyrootedStickerball {σ : Finset (Finset V)} {X M : Chain V}
+  3637	    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+  3638	    IsAnyrootedStickerball M.support σ := by
+  3639	  have hS : SimplicialChain M := taut_filling_is_simplicialChain hσ hU hXc hMX hT
+  3640	  exact ⟨⟨theorem2_clean hσ hU hXc hMX hT hS, hσ.nonempty⟩, theorem3_clean hσ hU hXc hMX hT hS⟩
+  3641	
+  3642	/-- A taut filling of a combinatorial 2-sphere is a *stickerball* (shellable clean ball with nonempty
+  3643	boundary — the combinatorial `B³` certificate).  Corollary of `taut_filling_is_anyrootedStickerball`. -/
+  3644	theorem taut_filling_is_stickerball {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+  3645	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+  3646	    IsStickerball M.support σ :=
+  3647	  (taut_filling_is_anyrootedStickerball hσ hU hXc hMX hT).toStickerball
+  3648	
+  3649	/-- A taut filling of a combinatorial 2-sphere is a *clean 3-complex* — pure, every triangle in one or
+  3650	two tets, and *both* links connected (`VertexLinkConnected` and `EdgeLinkConnected`). -/
+  3651	theorem taut_filling_is_clean3Complex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+  3652	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+  3653	    IsClean3Complex M.support :=
+  3654	  (taut_filling_is_stickerball hσ hU hXc hMX hT).isClean3Complex
+  3655	
+  3656	/-- A taut filling of a combinatorial 2-sphere is *shellable* (admits a clean shelling). -/
+  3657	theorem taut_filling_is_shellable {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+  3658	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+  3659	    IsCleanBall M.support σ :=
+  3660	  (taut_filling_is_stickerball hσ hU hXc hMX hT).1
+  3661	
+  3662	end Taut
+
+exec
+/bin/zsh -lc "nl -ba notes/taut-lean-proof.tex | sed -n '515,586p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   515	\begin{center}\small
+   516	\begin{tabular}{lll}
+   517	\hline
+   518	Result here & Lean identifier & Status\\
+   519	\hline
+   520	Lem~\ref{lem:cut} ($H_1=0$, cut) & \code{range\_bd2\_eq\_ker\_bd1}, \code{exists\_cut} & fully proved\\
+   521	Thm~\ref{thm:add} (additivity) & \code{Zvol\_add\_of\_almost\_disjoint\_full} & fully proved\\
+   522	Thm~\ref{thm:split} (splitting) & \code{IsTaut.splits\_full} & fully proved\\
+   523	Thm~\ref{thm:simpl} (simpliciality automatic) & \code{taut\_filling\_is\_simplicialChain} & fully proved\\
+   524	Thm~\ref{thm:pm} (pure, triangle-bounded) & \code{taut\_isPseudomanifold} & fully proved\\
+   525	Thm~\ref{thm:freely} (rooted at each tet) & \code{theorem3\_clean} & fully proved\\
+   526	Thm~\ref{thm:anyrooted} (AnyRootedStickerball) & \code{taut\_filling\_is\_anyrootedStickerball} & fully proved\\
+   527	rational splitting/additivity & \code{IsQTaut.splits\_full}, \code{Qvol\_add\_*} & fully proved\\
+   528	\hline
+   529	\end{tabular}
+   530	\end{center}
+   531	
+   532	\noindent\emph{Definitions weaker than their classical namesakes.}
+   533	\begin{itemize}
+   534	\item \emph{Taut} (\code{IsTaut}) is combinatorial $\ell^1$-minimality
+   535	(Definition~\ref{def:taut}), not a geometric condition.
+   536	\item \emph{Triangle-bounded} (\code{IsPseudomanifold} in the development) means only ``every
+   537	triangle in at most two tetrahedra.'' It is \emph{not} a full pseudomanifold; normality
+   538	(link-connectedness) is established separately, via the clean shelling (see
+   539	\S\ref{sec:classical}). Theorem~\ref{thm:pm} proves the triangle bound only.
+   540	\item \emph{Clean shelling} (\code{IsCleanShelling}) carries the link certificates
+   541	(c1)--(c3) as data; this is what makes it certify a clean $3$-complex, and is stronger than a
+   542	boundary-only shelling.
+   543	\end{itemize}
+   544	
+   545	%==========================================================================
+   546	\section{Relation to the classical statement; remaining bridges}\label{sec:classical}
+   547	
+   548	The conclusion of Theorem~\ref{thm:anyrooted} is stated in Lean-backed terms
+   549	(AnyRootedStickerball). Two questions separate this from a classical ``shellable normal
+   550	$3$-ball'' statement.
+   551	
+   552	\paragraph{Proved bridge: AnyRootedStickerball $\Rightarrow$ normal $3$-pseudomanifold.}
+   553	The development proves that a stickerball is a clean $3$-complex:
+   554	\[
+   555	\code{IsStickerball.isClean3Complex}\colon\quad
+   556	\text{stickerball}\ \Longrightarrow\ \text{pure}\ \wedge\ \text{triangle-bounded}\ \wedge\
+   557	\text{Normal3},
+   558	\]
+   559	where \code{Normal3} is \emph{edge-link connected and vertex-link connected}
+   560	(\code{IsAnyrootedStickerball.isClean3Complex} for the AnyRooted form). This is proved by
+   561	iterating the single-insertion lemma \code{clean3Complex\_insert} along the clean shelling;
+   562	the three certificates (c1)--(c3) of each glue step supply exactly the triangle-count,
+   563	edge-link, and vertex-link preservation (\code{isPseudomanifold\_insert},
+   564	\code{edgeLinkConnected\_insert}, \code{vertexLinkConnected\_insert}). Thus pseudomanifoldness
+   565	(triangle bound), edge-link connectedness, vertex-link connectedness, and nonempty boundary
+   566	are all \emph{Lean-proved} consequences of the conclusion; the corresponding corollaries are
+   567	\code{taut\_filling\_is\_clean3Complex} and \code{taut\_filling\_is\_shellable}.
+   568	
+   569	\paragraph{Missing bridge: stickerball $\Rightarrow$ topological/PL $3$-ball.}
+   570	The statement ``a clean-shellable normal $3$-pseudomanifold with nonempty boundary is
+   571	(PL-)homeomorphic to the $3$-ball'' is the classical shelling theorem of Danaraj--Klee /
+   572	Bj\"orner. \emph{No bridge theorem from \code{IsStickerball} to a topological or PL ball
+   573	appears in the current development}; it is recorded only as a docstring remark. Any classical
+   574	reading of Theorem~\ref{thm:anyrooted} as ``$M$ triangulates a $3$-ball'' must invoke that
+   575	external theorem explicitly. In the present, fully formalized terms the conclusion is exactly:
+   576	\emph{the tetrahedra of a taut filling of a combinatorial $2$-sphere form an
+   577	AnyRootedStickerball --- a clean-shellable normal $3$-pseudomanifold, with boundary the given
+   578	sphere, that can be clean-shelled starting from any tetrahedron}.
+   579	
+   580	\paragraph{Hypotheses to carry into a paper statement.}
+   581	The boundary cycle is $\pm1$ on $\sigma$ (\code{UnitOn}); the filling's simpliciality is
+   582	\emph{derived, not assumed} (Theorem~\ref{thm:simpl}, \code{taut\_filling\_is\_simplicialChain}),
+   583	so the only remaining qualifier on $M$ is tautness. Splitting (Theorem~\ref{thm:split}) needs
+   584	dimension $n\ge 2$ while additivity (Theorem~\ref{thm:add}) needs only $n\ge 1$;
+   585	AlmostDisjointness is
+   586	$\card{A\cap B}\le n+1$; the ambient $V$ is infinite; and \code{IsSphere2} includes the Euler
+
+exec
+/bin/zsh -lc "nl -ba notes/taut-lean-proof.tex | sed -n '390,430p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   390	\end{theorem}
+   391	
+   392	\begin{proof}
+   393	Purity is (T2): $X$ is $2$-dimensional, so a taut filling is $3$-dimensional.
+   394	Triangle-boundedness is a strong induction on the number of tetrahedra, by the trichotomy
+   395	used again below. \emph{Base} ($\sigma$ has $\le 4$ vertices): $M$ is a single tetrahedron.
+   396	\emph{Degree-$3$ vertex}: cut its star (Lemma~\ref{lem:cut}), apply the inductive
+   397	hypothesis to the smaller filling, re-glue. \emph{No degree-$3$ vertex}: take two disjoint
+   398	tetrahedra $e,u$ each meeting the boundary in exactly two faces
+   399	(\code{aleph\_disjoint\_eligible\_pair}), remove $e$, apply the inductive hypothesis, re-glue;
+   400	the key point is the \emph{triangle rule-out} (\code{faceCount\_removeTet\_sharedFace\_eq\_zero}):
+   401	a shared face of $e$ cannot reappear after removing $e$, since the disjoint witness $u$ would
+   402	otherwise force that triangle's incidence to $3$ in the inductively triangle-bounded filling
+   403	$M-u$.
+   404	\end{proof}
+   405	
+   406	\begin{theorem}[Main]\label{thm:anyrooted}
+   407	Let $\sigma$ be a combinatorial $2$-sphere, $X$ the $\pm1$ cycle on $\sigma$, and $M$ a taut
+   408	filling with $\bd M=X$. Then the set of tetrahedra of $M$ is an
+   409	\emph{AnyRootedStickerball} with boundary $\sigma$
+   410	(\code{taut\_filling\_is\_anyrootedStickerball}). \emph{Simpliciality is not assumed}: the
+   411	endpoint derives it internally by Theorem~\ref{thm:simpl}.
+   412	\end{theorem}
+   413	
+   414	By Theorem~\ref{thm:pm} the support consists of tetrahedra; $\sigma\neq\varnothing$ gives
+   415	nonempty boundary. The content is that every tetrahedron is a root:
+   416	
+   417	\begin{theorem}\label{thm:freely}
+   418	Under the hypotheses of Theorem~\ref{thm:anyrooted}, for every tetrahedron $t_\star$ of $M$
+   419	there is a clean shelling of $M$ beginning with $t_\star$ (\code{theorem3\_clean}, simpliciality
+   420	from Theorem~\ref{thm:simpl}, via the induction skeleton \code{theorem3\_core\_clean} with cases
+   421	\code{base\_free\_clean}, \code{deg3\_step\_clean}, \code{prime\_step\_clean}).
+   422	\end{theorem}
+   423	
+   424	\begin{proof}
+   425	Strong induction on the number $N$ of tetrahedra of $M$. The inductive invariant is exactly
+   426	the AnyRooted statement: a clean shelling beginning at \emph{any} prescribed $t_\star$. The
+   427	cases are a trichotomy on $\sigma$. In each non-base case the cut (Lemma~\ref{lem:cut})
+   428	supplies strictly smaller taut fillings of smaller spheres to which the inductive hypothesis
+   429	applies --- by Theorem~\ref{thm:split} itself in the degree-$3$ case, and by a separate
+   430	side-decomposition resting on the same cut in the prime case.
+
+exec
+/bin/zsh -lc 'rg -n "theorem taut_isPseudomanifold|theorem theorem2_clean|theorem theorem3_clean|SimplicialChain M" lean/Taut/Theorem3Clean.lean' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+10:      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+14:      SimplicialChain M → HasDegree3Vertex σ →
+16:        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+21:      SimplicialChain M → NoDegree3Vertex σ →
+23:        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+27:    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+30:      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+53:    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+644:    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
+647:      IsTaut M' → SimplicialChain M' →
+686:    have hSimpR : SimplicialChain MR := by
+822:    have hSimpL : SimplicialChain ML := by
+959:    (hT : IsTaut M) (hS : SimplicialChain M)
+1042:    (hT : IsTaut M) (hS : SimplicialChain M)
+1076:    (hT : IsTaut M) (hS : SimplicialChain M)
+1250:    (hT : IsTaut M) (hS : SimplicialChain M)
+1691:    (hT : IsTaut M) (hS : SimplicialChain M)
+1719:    (hT : IsTaut M) (hS : SimplicialChain M) (he : EligibleTet M e)
+1723:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+1746:    (hT : IsTaut M) (hS : SimplicialChain M)
+1881:    (hT : IsTaut M) (hS : SimplicialChain M)
+1887:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+1941:    (hT : IsTaut M) (hS : SimplicialChain M)
+1946:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+1970:    (hT : IsTaut M) (hS : SimplicialChain M)
+2598:    (hT : IsTaut M) (hS : SimplicialChain M)
+2605:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+2682:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+2684:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+2692:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+2723:    (hS : SimplicialChain M) (hv : (vertsOf σ).card ≤ 4) :
+2746:    (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex σ)
+2748:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+2789:    have hSimpR : SimplicialChain MR := by
+2880:    have hSimpL : SimplicialChain ML := by
+2955:    (hS : SimplicialChain M) : EdgeLinkConnected M.support := by
+2957:      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+2988:    (hT : IsTaut M) (hS : SimplicialChain M)
+2990:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+3004:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+3132:    (hT : IsTaut M) (hS : SimplicialChain M)
+3134:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+3147:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+3350:    (hT : IsTaut M) (hS : SimplicialChain M) (hNo3 : NoDegree3Vertex σ)
+3352:      UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+3379:theorem theorem3_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+3381:    (hS : SimplicialChain M) : FreelyCleanShellable M.support σ :=
+3386:The public endpoints below carried a spurious `SimplicialChain M` hypothesis.  It
+3397:/-- `¬ SimplicialChain M` is witnessed by a coordinate of absolute value `≥ 2`,
+3400:    ¬ SimplicialChain M ↔ ∃ t, 2 ≤ (M t).natAbs := by
+3421:    (hv : (vertsOf σ).card ≤ 4) : SimplicialChain M := by
+3464:    (hT : IsTaut M) : SimplicialChain M := by
+3468:      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M by
+3487:        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' := by
+3524:        have hSL : SimplicialChain ML :=
+3529:        have hSR : SimplicialChain MR :=
+3564:          have hSA : SimplicialChain MA :=
+3570:          have hSB : SimplicialChain MB :=
+3607:theorem theorem2_clean {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+3609:    (hS : SimplicialChain M) : IsCleanBall M.support σ := by
+3621:    (hS : SimplicialChain M) : Clean3Complex M.support :=
+3639:  have hS : SimplicialChain M := taut_filling_is_simplicialChain hσ hU hXc hMX hT
+
+exec
+/bin/zsh -lc 'rg -n "taut_isPseudomanifold|theorem3_clean|theorem2_clean|SimplicialChain" notes/taut-lean-proof.tex' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+55:(\code{SimplicialChain}), and then $\norm{M}$ is the number of simplices in its support. (For a
+380:lemmas \code{taut\_isPseudomanifold} and \code{theorem3\_clean} carry \code{SimplicialChain M}
+
+codex
+One small wording risk surfaced: the writeup says the chosen map is “onto” the support. I’m checking the counting lemma’s actual hypothesis before deciding whether that is harmless prose or a real misdescription.
+exec
+/bin/zsh -lc 'rg -n "finset_twofer_fibers|theorem finset_twofer|lemma finset_twofer" lean/Taut -S' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Eligible.lean:559:theorem finset_twofer_fibers {β η : Type*} [DecidableEq β] [DecidableEq η]
+lean/Taut/Eligible.lean:695:    finset_twofer_fibers B H c hmap hfiber_le2 hgap_card
+
+exec
+/bin/zsh -lc 'rg -n "def nonUnitSupport|nonUnitSupport" lean/Taut -S' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Eligible.lean:601:`≠ ±1`, so `|·| ≥ 2`) contributes `≥ 2`. Hence `support.card + |nonUnitSupport| ≤ nrm M`. -/
+lean/Taut/Eligible.lean:604:noncomputable def nonUnitSupport (M : Chain V) : Finset (Finset V) :=
+lean/Taut/Eligible.lean:608:lemma mem_nonUnitSupport {M : Chain V} {t : Finset V} :
+lean/Taut/Eligible.lean:609:    t ∈ nonUnitSupport M ↔ t ∈ M.support ∧ (M t).natAbs ≠ 1 := Finset.mem_filter
+lean/Taut/Eligible.lean:612:/-- **The budget inequality.** `support.card + |nonUnitSupport| ≤ nrm M`: each support tet is worth
+lean/Taut/Eligible.lean:614:lemma support_card_add_nonUnitSupport_card_le_nrm (M : Chain V) :
+lean/Taut/Eligible.lean:615:    M.support.card + (nonUnitSupport M).card ≤ nrm M := by
+lean/Taut/Eligible.lean:616:  show M.support.card + (nonUnitSupport M).card ≤ ∑ s ∈ M.support, (M s).natAbs
+lean/Taut/Eligible.lean:618:  have hweight : M.support.card + (nonUnitSupport M).card
+lean/Taut/Eligible.lean:620:    rw [nonUnitSupport, Finset.card_filter, Finset.card_eq_sum_ones, ← Finset.sum_add_distrib]
+lean/Taut/Eligible.lean:636:lemma extracts `≥ deg v + |nonUnitSupport|` full fibres, and deleting the non-unit tets leaves
+lean/Taut/Eligible.lean:662:  set k : ℕ := deg v (bdry M) + (nonUnitSupport M).card with hk_def
+lean/Taut/Eligible.lean:689:    have hbudget := support_card_add_nonUnitSupport_card_le_nrm M
+lean/Taut/Eligible.lean:716:    H.filter (fun b => supval b ∈ nonUnitSupport M) with hEnu_def
+lean/Taut/Eligible.lean:717:  have hEnu_card : Enu.card ≤ (nonUnitSupport M).card := by
+lean/Taut/Eligible.lean:740:                   exact ⟨Finset.mem_univ _, mem_nonUnitSupport.mpr ⟨b.2, hne⟩⟩)
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Eligible.lean | sed -n '604,625p'" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Eligible.lean | sed -n '559,595p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   604	noncomputable def nonUnitSupport (M : Chain V) : Finset (Finset V) :=
+   605	  M.support.filter fun t => (M t).natAbs ≠ 1
+   606	
+   607	omit [LinearOrder V] in
+   608	lemma mem_nonUnitSupport {M : Chain V} {t : Finset V} :
+   609	    t ∈ nonUnitSupport M ↔ t ∈ M.support ∧ (M t).natAbs ≠ 1 := Finset.mem_filter
+   610	
+   611	omit [LinearOrder V] in
+   612	/-- **The budget inequality.** `support.card + |nonUnitSupport| ≤ nrm M`: each support tet is worth
+   613	`≥ 1`, each non-unit one `≥ 2`. (Generalises `card_support_le_nrm`.) -/
+   614	lemma support_card_add_nonUnitSupport_card_le_nrm (M : Chain V) :
+   615	    M.support.card + (nonUnitSupport M).card ≤ nrm M := by
+   616	  show M.support.card + (nonUnitSupport M).card ≤ ∑ s ∈ M.support, (M s).natAbs
+   617	  -- write the LHS as a single sum over support: `if t ∈ nonUnit then 2 else 1`
+   618	  have hweight : M.support.card + (nonUnitSupport M).card
+   619	      = ∑ t ∈ M.support, (if (M t).natAbs ≠ 1 then 2 else 1) := by
+   620	    rw [nonUnitSupport, Finset.card_filter, Finset.card_eq_sum_ones, ← Finset.sum_add_distrib]
+   621	    refine Finset.sum_congr rfl fun t _ => ?_
+   622	    by_cases hc : (M t).natAbs ≠ 1
+   623	    · rw [if_pos hc, if_pos hc]
+   624	    · rw [if_neg hc, if_neg hc]
+   625	  rw [hweight]
+
+ succeeded in 0ms:
+   559	theorem finset_twofer_fibers {β η : Type*} [DecidableEq β] [DecidableEq η]
+   560	    (B : Finset β) (H : Finset η) (f : β → η)
+   561	    (hmap : ∀ b ∈ B, f b ∈ H)
+   562	    (hfiber_le2 : ∀ h ∈ H, (B.filter fun b => f b = h).card ≤ 2)
+   563	    {k : ℕ} (hgap : H.card + k ≤ B.card) :
+   564	    ∃ E : Finset η, E ⊆ H ∧ k ≤ E.card ∧
+   565	      (∀ h ∈ E, (B.filter fun b => f b = h).card = 2) ∧
+   566	      (↑E : Set η).PairwiseDisjoint (fun h => B.filter fun b => f b = h) := by
+   567	  classical
+   568	  set E : Finset η := H.filter fun h => (B.filter fun b => f b = h).card = 2 with hE_def
+   569	  have hEsub : E ⊆ H := Finset.filter_subset _ _
+   570	  -- the fibre count: B.card = ∑_{h∈H} fibre.card
+   571	  have hsum : B.card = ∑ h ∈ H, (B.filter fun b => f b = h).card :=
+   572	    Finset.card_eq_sum_card_fiberwise hmap
+   573	  -- pointwise: fibre.card ≤ 1 + indicator(fibre = 2)
+   574	  have hbound : B.card ≤ H.card + E.card := by
+   575	    rw [hsum]
+   576	    have hle : ∑ h ∈ H, (B.filter fun b => f b = h).card
+   577	        ≤ ∑ h ∈ H, (1 + if (B.filter fun b => f b = h).card = 2 then 1 else 0) := by
+   578	      refine Finset.sum_le_sum fun h hh => ?_
+   579	      have h2 := hfiber_le2 h hh
+   580	      by_cases hc : (B.filter fun b => f b = h).card = 2
+   581	      · simp [hc]
+   582	      · simp only [hc, if_false, add_zero]; omega
+   583	    have heq : ∑ h ∈ H, (1 + if (B.filter fun b => f b = h).card = 2 then 1 else 0)
+   584	        = H.card + E.card := by
+   585	      rw [Finset.sum_add_distrib, ← Finset.card_eq_sum_ones, ← Finset.card_filter, ← hE_def]
+   586	    omega
+   587	  refine ⟨E, hEsub, by omega, ?_, ?_⟩
+   588	  · intro h hh; exact (Finset.mem_filter.mp hh).2
+   589	  · intro h₁ hh₁ h₂ hh₂ hne
+   590	    simp only [Finset.mem_coe] at hh₁ hh₂
+   591	    show Disjoint (B.filter fun b => f b = h₁) (B.filter fun b => f b = h₂)
+   592	    rw [Finset.disjoint_left]
+   593	    intro b hb₁ hb₂
+   594	    rw [Finset.mem_filter] at hb₁ hb₂
+   595	    exact hne (hb₁.2.symm.trans hb₂.2)
+
+codex
+WARN
+
+Verdict: faithful overall, with one minor wording bug in the count.
+
+Finding:
+- `notes/taut-lean-proof.tex:332` says “A map from the `|σ|` triangles **onto** the `s` generators”. Lean only builds a map from boundary triangles into `M.support`; it does not prove surjectivity onto every support generator. See `lean/Taut/Eligible.lean:653-663` (`c : {α // α ∈ σ} → {t // t ∈ M.support}` plus `hmap`) and `lean/Taut/Eligible.lean:559-566` (`finset_twofer_fibers` requires `hmap`, not surjectivity). This is a real phrasing overstatement, though it does not affect the described inequality or conclusion.
+
+Exact recommended patch shape:
+- In `notes/taut-lean-proof.tex:332`, replace:
+  - “A map from the `\card\sigma` triangles onto the `s` generators”
+- with:
+  - “A map from the `\card\sigma` triangles into the `s` generators”
+- or:
+  - “A choice map from boundary triangles to support generators”
+
+Files to edit:
+- `notes/taut-lean-proof.tex`
+
+Local lemmas needed:
+- No Lean lemmas needed; documentation-only patch.
+- Existing cited lemmas are the right ones: `sameSignSupportFace_cover`, `sharedFaces_card_le_two_of_noDegree3`, `support_card_add_nonUnitSupport_card_le_nrm`, `Zvol_add_deg_le`, `UnitOn.nrm_eq`, `finset_twofer_fibers`, `sameSignFace_to_proper_of_unit`.
+
+Review answers:
+- Q1: Count matches Lean except the “onto” wording above. Coverage is boundary-face coverage, not support-surjectivity. Non-unit discard and gap match `Eligible.lean:684-745`; eligibility/orientation/disjointness match `Eligible.lean:746-778`.
+- Q2: Four branches and `t_0` persistence match. Base `3481-3483`; degree-3 cut `3490-3531`; flip-present `3553-3572`; flip-absent `3573-3585`; persistence via cardinality choice and `removeTet_apply_ne` at `3538-3551`.
+- Q3: No-circularity framing is correct. The bridge proof `Theorem3Clean.lean:3462-3585` does not call `taut_isPseudomanifold`, stickerball, or clean-shelling machinery; public endpoint then derives `hS` at `3636-3640`.
+- Q4: Prior fixes are correct. `u ≠ t_0` is by `E.card ≥ 2`, not disjointness (`notes:363-366`, Lean `3538-3546`). `lem:family` concludes `EligibleTet` plus disjointness, while coefficient `±1` is derived under `UnitOn` (`notes:306-308`, Lean `Eligible.lean:643-648`, `Theorem3Clean.lean:3579`).
+- Q5: Status table and derived-not-assumed claim are correct (`notes:523`, `580-583`; endpoint `Theorem3Clean.lean:3636-3640`).
+
+Blockers: none.
+tokens used
+37,770
+WARN
+
+Verdict: faithful overall, with one minor wording bug in the count.
+
+Finding:
+- `notes/taut-lean-proof.tex:332` says “A map from the `|σ|` triangles **onto** the `s` generators”. Lean only builds a map from boundary triangles into `M.support`; it does not prove surjectivity onto every support generator. See `lean/Taut/Eligible.lean:653-663` (`c : {α // α ∈ σ} → {t // t ∈ M.support}` plus `hmap`) and `lean/Taut/Eligible.lean:559-566` (`finset_twofer_fibers` requires `hmap`, not surjectivity). This is a real phrasing overstatement, though it does not affect the described inequality or conclusion.
+
+Exact recommended patch shape:
+- In `notes/taut-lean-proof.tex:332`, replace:
+  - “A map from the `\card\sigma` triangles onto the `s` generators”
+- with:
+  - “A map from the `\card\sigma` triangles into the `s` generators”
+- or:
+  - “A choice map from boundary triangles to support generators”
+
+Files to edit:
+- `notes/taut-lean-proof.tex`
+
+Local lemmas needed:
+- No Lean lemmas needed; documentation-only patch.
+- Existing cited lemmas are the right ones: `sameSignSupportFace_cover`, `sharedFaces_card_le_two_of_noDegree3`, `support_card_add_nonUnitSupport_card_le_nrm`, `Zvol_add_deg_le`, `UnitOn.nrm_eq`, `finset_twofer_fibers`, `sameSignFace_to_proper_of_unit`.
+
+Review answers:
+- Q1: Count matches Lean except the “onto” wording above. Coverage is boundary-face coverage, not support-surjectivity. Non-unit discard and gap match `Eligible.lean:684-745`; eligibility/orientation/disjointness match `Eligible.lean:746-778`.
+- Q2: Four branches and `t_0` persistence match. Base `3481-3483`; degree-3 cut `3490-3531`; flip-present `3553-3572`; flip-absent `3573-3585`; persistence via cardinality choice and `removeTet_apply_ne` at `3538-3551`.
+- Q3: No-circularity framing is correct. The bridge proof `Theorem3Clean.lean:3462-3585` does not call `taut_isPseudomanifold`, stickerball, or clean-shelling machinery; public endpoint then derives `hS` at `3636-3640`.
+- Q4: Prior fixes are correct. `u ≠ t_0` is by `E.card ≥ 2`, not disjointness (`notes:363-366`, Lean `3538-3546`). `lem:family` concludes `EligibleTet` plus disjointness, while coefficient `±1` is derived under `UnitOn` (`notes:306-308`, Lean `Eligible.lean:643-648`, `Theorem3Clean.lean:3579`).
+- Q5: Status table and derived-not-assumed claim are correct (`notes:523`, `580-583`; endpoint `Theorem3Clean.lean:3636-3640`).
+
+Blockers: none.

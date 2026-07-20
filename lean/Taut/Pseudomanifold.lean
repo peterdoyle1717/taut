@@ -28,10 +28,9 @@ With a unit boundary this forces every boundary triangle into exactly one tet
 def IsPseudomanifold (τ : Finset (Finset V)) : Prop :=
   ∀ f, f.card = 3 → faceCount τ f ≤ 2
 
-/-- `TriangleBounded3` — the preferred name for the triangle-count condition
-(`IsPseudomanifold`): every triangle lies in at most two tets.  This is a
-low-level helper only; it is *not* a normal/clean pseudomanifold (it admits two
-balls joined along an edge, or along a single vertex). -/
+/-- `TriangleBounded3` — the triangle-count condition (`IsPseudomanifold`): every
+triangle lies in at most two tets.  This is *not* a normal/clean pseudomanifold:
+it admits two balls joined along an edge, or along a single vertex. -/
 abbrev TriangleBounded3 (τ : Finset (Finset V)) : Prop := IsPseudomanifold τ
 
 /-- A face contained in no tet has incidence zero — used to discharge the
@@ -41,7 +40,6 @@ lemma faceCount_eq_zero {τ : Finset (Finset V)} {f : Finset V}
   unfold faceCount
   rw [Finset.filter_false_of_mem h]; rfl
 
-/-- Inserting a fresh tet bumps the count of exactly the faces it contains. -/
 lemma faceCount_insert_of_not_mem {τ : Finset (Finset V)} {t : Finset V}
     (ht : t ∉ τ) (f : Finset V) :
     faceCount (insert t τ) f = faceCount τ f + (if f ⊆ t then 1 else 0) := by
@@ -53,7 +51,6 @@ lemma faceCount_insert_of_not_mem {τ : Finset (Finset V)} {t : Finset V}
     simp only [if_pos h, Finset.card_insert_of_notMem hnm]
   · simp only [if_neg h, Nat.add_zero]
 
-/-- A single tetrahedron is a pseudomanifold (each triangle is in at most one tet). -/
 lemma isPseudomanifold_singleton (t : Finset V) :
     IsPseudomanifold ({t} : Finset (Finset V)) := by
   intro f _
@@ -66,9 +63,7 @@ lemma isPseudomanifold_singleton (t : Finset V) :
 /-- **Clean glue preserves the pseudomanifold property.** Inserting a fresh tet
 `t` whose every *triangle* lies in at most one existing tet keeps `τ` a
 pseudomanifold.  The hypothesis `hclean` is exactly the "no re-exposure"
-condition the forward construction must supply at each shelling step; here it is
-discharged into the bookkeeping, isolating the genuine content (proving `hclean`
-for the flipped-back eligible tet) from the mechanical part. -/
+condition the forward construction must supply at each shelling step. -/
 lemma isPseudomanifold_insert {τ : Finset (Finset V)} {t : Finset V}
     (hτ : IsPseudomanifold τ) (ht : t ∉ τ)
     (hclean : ∀ f, f.card = 3 → f ⊆ t → faceCount τ f ≤ 1) :
@@ -112,7 +107,6 @@ lemma edgeLinkVerts_eq_empty {τ : Finset (Finset V)} {e : Finset V}
   unfold edgeLinkVerts vertsOf
   rw [Finset.filter_false_of_mem h]; simp
 
-/-- Edge-link graphs grow with the tet-set. -/
 lemma edgeLinkGraph_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (e : Finset V) :
     edgeLinkGraph τ e ≤ edgeLinkGraph τ' e :=
   fun _ _ hxy => ⟨hxy.1, h hxy.2⟩
@@ -125,7 +119,6 @@ lemma edgeLink_reachable_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (e :
     (edgeLinkGraph τ' e).Reachable x y :=
   hr.mono (edgeLinkGraph_mono h e)
 
-/-- A single tetrahedron is edge-link connected. -/
 lemma edgeLinkConnected_singleton {t : Finset V} (ht : t.card = 4) :
     EdgeLinkConnected ({t} : Finset (Finset V)) := by
   intro e he x hx y hy
@@ -149,10 +142,6 @@ lemma edgeLinkConnected_singleton {t : Finset V} (ht : t.card = 4) :
     · exact hyt
     · exact hesub hz
 
-/-! ## Edge-link connectedness is preserved by a clean tet insertion -/
-
-/-- If `z, w` are the two apexes of edge `e` in the tetrahedron `t`, then
-`e ∪ {z, w} = t`. -/
 lemma insert_apexes_eq {t e : Finset V} {z w : V} (ht : t.card = 4) (he : e.card = 2)
     (hsub : e ⊆ t) (hz : z ∈ t \ e) (hw : w ∈ t \ e) (hzw : z ≠ w) :
     insert z (insert w e) = t := by
@@ -169,8 +158,6 @@ lemma insert_apexes_eq {t e : Finset V} {z w : V} (ht : t.card = 4) (he : e.card
   · exact hw.1
   · exact hsub hu
 
-/-- The apexes of `e` after inserting a tet `t ⊇ e` are `(t \ e)` together with
-the old apexes. -/
 lemma edgeLinkVerts_insert_of_subset {τ : Finset (Finset V)} {t e : Finset V}
     (h : e ⊆ t) :
     edgeLinkVerts (insert t τ) e = (t \ e) ∪ edgeLinkVerts τ e := by
@@ -178,14 +165,12 @@ lemma edgeLinkVerts_insert_of_subset {τ : Finset (Finset V)} {t e : Finset V}
   rw [Finset.filter_insert, if_pos h, Finset.biUnion_insert, id_eq,
     Finset.union_sdiff_distrib]
 
-/-- If `e ⊄ t`, inserting `t` does not change the apexes of `e`. -/
 lemma edgeLinkVerts_insert_of_not_subset {τ : Finset (Finset V)} {t e : Finset V}
     (h : ¬ e ⊆ t) :
     edgeLinkVerts (insert t τ) e = edgeLinkVerts τ e := by
   unfold edgeLinkVerts
   rw [Finset.filter_insert, if_neg h]
 
-/-- The apexes of `e` in a union are the union of the apexes on each side. -/
 lemma edgeLinkVerts_union {τ₁ τ₂ : Finset (Finset V)} (e : Finset V) :
     edgeLinkVerts (τ₁ ∪ τ₂) e = edgeLinkVerts τ₁ e ∪ edgeLinkVerts τ₂ e := by
   ext w
@@ -234,49 +219,6 @@ lemma edgeLinkConnected_insert {τ : Finset (Finset V)} {t : Finset V} (ht : t.c
   · rw [edgeLinkVerts_insert_of_not_subset hsub] at hx hy
     exact (hτ e he x hx y hy).mono hmono
 
-/-! ## The faithful stickerball -/
-
-/-- **LEGACY / superseded — do not use in new code.**  This early "stickerball" predicate predates the
-clean-shelling migration and is no longer referenced by any endpoint (its only lemmas
-`isStickerball_singleton`/`isStickerball_insert` are unused).  Two reasons it is *not* the right
-vocabulary, both fixed by the clean route:
-
-* it **bundles `FreelyShellable`**, conflating *stickerball* (= a shellable clean ball) with *freely
-  shellable* (= shellable starting at any prescribed tet).  The live split keeps these distinct:
-  `IsCleanBall` is the stickerball notion, `FreelyCleanShellable` is the free-start notion;
-* it **omits `VertexLinkConnected`** — it carries only `EdgeLinkConnected`, so it is weaker than the
-  paper's "normal/clean".  The live normality package is `Clean3Complex = Pure3 ∧ TriangleBounded3 ∧
-  Normal3` with `Normal3 = EdgeLinkConnected ∧ VertexLinkConnected` (see `taut_clean3Complex`).
-
-Kept (unused) only to avoid churning the committed bridge; new work should use `IsCleanBall` /
-`FreelyCleanShellable` / `Clean3Complex`. -/
-def IsStickerball (τ B : Finset (Finset V)) : Prop :=
-  FreelyShellable τ B ∧ IsPseudomanifold τ ∧ EdgeLinkConnected τ
-
-/-- The base of the induction: one tetrahedron is a stickerball with the
-tetrahedron-boundary sphere. -/
-lemma isStickerball_singleton {t : Finset V} (ht : t.card = 4) :
-    IsStickerball ({t} : Finset (Finset V)) (tetFaces t) := by
-  refine ⟨?_, isPseudomanifold_singleton t, edgeLinkConnected_singleton ht⟩
-  intro s hs
-  rw [Finset.mem_singleton] at hs; subst hs
-  exact ⟨[s], rfl, by simp, by simp, ht, rfl⟩
-
-/-- **Preservation: a clean glue onto a stickerball is a stickerball.** Given the
-shelling extends (`hfree`, from the existing reassembly machinery) and the new tet
-meets the simplicial structure cleanly — each triangle of `t` in ≤ 1 old tet
-(`hpmc`), each edge of `t` new or already apex-sharing (`helc`) — the result keeps
-both manifold invariants. -/
-lemma isStickerball_insert {τ : Finset (Finset V)} {t σ : Finset (Finset V)} {tt : Finset V}
-    (ht : tt.card = 4) (httτ : tt ∉ τ)
-    (hpm : IsPseudomanifold τ) (hel : EdgeLinkConnected τ)
-    (hfree : FreelyShellable (insert tt τ) σ)
-    (hpmc : ∀ f, f.card = 3 → f ⊆ tt → faceCount τ f ≤ 1)
-    (helc : ∀ e, e ⊆ tt → e.card = 2 →
-      edgeLinkVerts τ e = ∅ ∨ ((tt \ e) ∩ edgeLinkVerts τ e).Nonempty) :
-    IsStickerball (insert tt τ) σ :=
-  ⟨hfree, isPseudomanifold_insert hpm httτ hpmc, edgeLinkConnected_insert ht hel helc⟩
-
 /-! ## Rule-out engines
 
 The two ways re-gluing the eligible tet can spoil simpliciality each reduce, via
@@ -284,23 +226,17 @@ minimality, to "a smaller filling `M−u` fails to be a stickerball".  These are
 reusable cores: a surviving over-incident triangle breaks `IsPseudomanifold`, and
 a surviving disconnected edge-link breaks `EdgeLinkConnected`. -/
 
-/-- Face incidence is monotone in the tet-set (deleting tets can only lower it). -/
 lemma faceCount_le_of_subset {τ τ' : Finset (Finset V)} (h : τ' ⊆ τ) (f : Finset V) :
     faceCount τ' f ≤ faceCount τ f := by
   unfold faceCount
   exact Finset.card_le_card (Finset.filter_subset_filter _ h)
 
-/-- **Face incidence splits over a disjoint union.** The count over `τ₁ ∪ τ₂` is the
-sum of the side counts when the tet-sets are disjoint (`Finset.filter_union` plus
-disjoint `card_union`). -/
 lemma faceCount_union_of_disjoint {τ₁ τ₂ : Finset (Finset V)} (hd : Disjoint τ₁ τ₂)
     (f : Finset V) : faceCount (τ₁ ∪ τ₂) f = faceCount τ₁ f + faceCount τ₂ f := by
   unfold faceCount
   rw [Finset.filter_union, Finset.card_union_of_disjoint
     (Finset.disjoint_filter_filter hd)]
 
-/-- **Triangle rule-out core.** A triangle still in ≥ 3 tets of `τ'` forbids
-`IsPseudomanifold τ'`. -/
 lemma not_isPseudomanifold_of_faceCount {τ' : Finset (Finset V)} {f : Finset V}
     (hf : f.card = 3) (h3 : 3 ≤ faceCount τ' f) : ¬ IsPseudomanifold τ' :=
   fun hP => by have := hP f hf; omega
@@ -342,13 +278,11 @@ reachable in the vertex-link graph (one connected link, no pinch). -/
 def VertexLinkConnected (τ : Finset (Finset V)) : Prop :=
   ∀ v : V, ConnOn (vertexLinkGraph τ v) (vertexLinkVerts τ v)
 
-/-- A vertex in no tet has empty apex set. -/
 lemma vertexLinkVerts_eq_empty {τ : Finset (Finset V)} {v : V}
     (h : ∀ t ∈ τ, v ∉ t) : vertexLinkVerts τ v = ∅ := by
   unfold vertexLinkVerts vertsOf
   rw [Finset.filter_false_of_mem h]; simp
 
-/-- The apexes of `v` in a union are the union of the apexes on each side. -/
 lemma vertexLinkVerts_union {τ₁ τ₂ : Finset (Finset V)} (v : V) :
     vertexLinkVerts (τ₁ ∪ τ₂) v = vertexLinkVerts τ₁ v ∪ vertexLinkVerts τ₂ v := by
   ext w
@@ -362,7 +296,6 @@ lemma vertexLinkVerts_union {τ₁ τ₂ : Finset (Finset V)} (v : V) :
     · exact ⟨⟨t, ⟨Or.inl ht, hvt⟩, hwt⟩, hwv⟩
     · exact ⟨⟨t, ⟨Or.inr ht, hvt⟩, hwt⟩, hwv⟩
 
-/-- Vertex-link graphs grow with the tet-set. -/
 lemma vertexLinkGraph_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (v : V) :
     vertexLinkGraph τ v ≤ vertexLinkGraph τ' v :=
   fun _ _ hxy => ⟨hxy.1, hxy.2.imp fun _ ht => ⟨h ht.1, ht.2⟩⟩
@@ -374,8 +307,6 @@ lemma vertexLink_reachable_mono {τ τ' : Finset (Finset V)} (h : τ ⊆ τ') (v
     (vertexLinkGraph τ' v).Reachable x y :=
   hr.mono (vertexLinkGraph_mono h v)
 
-/-- A single tetrahedron is vertex-link connected (its link at any vertex is a
-clique on the opposite face). -/
 lemma vertexLinkConnected_singleton (t : Finset V) :
     VertexLinkConnected ({t} : Finset (Finset V)) := by
   intro v x hx y hy
@@ -395,8 +326,6 @@ lemma vertexLinkConnected_singleton (t : Finset V) :
     · exact hxf
     · exact hyg
 
-/-- The apexes of `v` after inserting a tet `t ∋ v` are `(t \ {v})` together with
-the old apexes. -/
 lemma vertexLinkVerts_insert_of_mem {τ : Finset (Finset V)} {t : Finset V} {v : V}
     (h : v ∈ t) :
     vertexLinkVerts (insert t τ) v = (t \ {v}) ∪ vertexLinkVerts τ v := by
@@ -404,7 +333,6 @@ lemma vertexLinkVerts_insert_of_mem {τ : Finset (Finset V)} {t : Finset V} {v :
   rw [Finset.filter_insert, if_pos h, Finset.biUnion_insert, id_eq,
     Finset.union_sdiff_distrib]
 
-/-- If `v ∉ t`, inserting `t` does not change the apexes of `v`. -/
 lemma vertexLinkVerts_insert_of_not_mem {τ : Finset (Finset V)} {t : Finset V} {v : V}
     (h : v ∉ t) :
     vertexLinkVerts (insert t τ) v = vertexLinkVerts τ v := by
@@ -482,9 +410,19 @@ def Normal3 (τ : Finset (Finset V)) : Prop :=
 
 /-- `Clean3Complex τ`: pure, triangle-bounded, and normal — the honest
 "simplicial triangulation of a 3-ball" invariant the public shelling must carry,
-not the boundary-only trace. -/
+not the boundary-only trace.  Exposed under the `Is`-prefixed names
+`IsClean3Complex` / `IsNormal3Psman` as the preferred public vocabulary. -/
 def Clean3Complex (τ : Finset (Finset V)) : Prop :=
   Pure3 τ ∧ TriangleBounded3 τ ∧ Normal3 τ
+
+/-- **`IsClean3Complex`** — the clean (normal) 3-complex condition: pure, every triangle in one or two
+tets, and *both* links connected (`VertexLinkConnected` and `EdgeLinkConnected`).  This is the local
+combinatorial-manifold condition; preferred public name for `Clean3Complex`. -/
+abbrev IsClean3Complex (τ : Finset (Finset V)) : Prop := Clean3Complex τ
+
+/-- **`IsNormal3Psman`** — synonym for `IsClean3Complex`: a normal 3-pseudomanifold (triangle-bounded
+with both links connected, pure). -/
+abbrev IsNormal3Psman (τ : Finset (Finset V)) : Prop := Clean3Complex τ
 
 lemma pure3_singleton {t : Finset V} (ht : t.card = 4) :
     Pure3 ({t} : Finset (Finset V)) := by
@@ -503,8 +441,7 @@ lemma clean3Complex_singleton {t : Finset V} (ht : t.card = 4) :
 per-dimension preservation lemmas (triangle count, edge link, vertex link).  These
 three compatibilities are discharged from the chain geometry of the shelling step
 (unit boundary ⇒ a boundary face lies in exactly one tet); `CleanGlueStep.clean`
-gives the no-rogue *shape* but not these quantitative facts on its own (G1
-2026-06-18, session 019ed979). -/
+gives the no-rogue *shape* but not these quantitative facts on its own. -/
 lemma clean3Complex_insert {τ : Finset (Finset V)} {t : Finset V}
     (ht : t.card = 4) (httτ : t ∉ τ) (hτ : Clean3Complex τ)
     (hpmc : ∀ f, f.card = 3 → f ⊆ t → faceCount τ f ≤ 1)

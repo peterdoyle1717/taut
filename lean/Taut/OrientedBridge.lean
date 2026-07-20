@@ -1,12 +1,12 @@
 import Taut.Theorem2
 
 /-!
-# The triangle-cut oriented bridge (M24b, architect: codex 019ec44f, Q2)
+# The triangle-cut oriented bridge
 
 For the connected-sum (degree-3) reduction, a non-face triangle `γ` cuts the unit
-boundary cycle `X = ∂M` of a 2-sphere into two oriented sides. Unlike the
-edge-join (M23), the side-filter `X.filter (· ∈ σ₁)` is NOT closed — its boundary
-is `c • ∂γ` for some `c` — so each side must be *capped* with `γ`:
+boundary cycle `X = ∂M` of a 2-sphere into two oriented sides. The side-filter
+`X.filter (· ∈ σ₁)` is NOT closed — its boundary is `c • ∂γ` for some `c` — so each
+side must be *capped* with `γ`:
 
     X₁ = X.filter (· ∈ σ₁) − c • [γ],   X₂ = X.filter (· ∈ σ₂) + c • [γ]
 
@@ -67,7 +67,7 @@ lemma closed_one_chain_supported_on_triangle {γ : Finset V} (hγ3 : γ.card = 3
 identified as `bdry X₁ = c • bdryGen γ` (via `closed_one_chain_supported_on_triangle`
 applied to the cut), capping the two sides with `± c • [γ]` makes both closed while
 preserving their sum: `(X₁ − c•[γ]) + (X₂ + c•[γ]) = X`. The cut-machinery half
-(showing `bdry X₁` lands on γ's edges) is the remaining part of M24b. -/
+(showing `bdry X₁` lands on γ's edges) is the remaining gap. -/
 lemma capped_split_of_side_boundary {X X₁ X₂ : Chain V} {γ : Finset V} {c : ℤ}
     (hsum : X₁ + X₂ = X) (hXc : bdry X = 0) (hb1 : bdry X₁ = c • bdryGen γ) :
     bdry (X₁ - Finsupp.single γ c) = 0 ∧ bdry (X₂ + Finsupp.single γ c) = 0 ∧

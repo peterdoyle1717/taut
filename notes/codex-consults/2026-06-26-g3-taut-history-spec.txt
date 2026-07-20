@@ -1,0 +1,39 @@
+CODEX CONSULT (G3) — red-team a draft-history analysis before I report it. You may read the files.
+Be adversarial about the JUDGMENTS and the RECOMMENDATION; the raw facts are md5/line-verified.
+
+CONTEXT. Reconstructed the revision history of a math paper taut.tex (from a read-only git repo on a
+remote host). Drafts extracted to /Users/doyle/Dropbox/taut/drafts_by_date/. The report is
+`drafts_by_date/taut-history-report.md`. Key files there:
+- tauty = `save_taut1100.tex` (1031 lines)   [md5 41534feb = local text/tautxy/tauty.tex]
+- tautx = `taut_2026-WORKINGTREE_uncommitted.tex` (1042 lines)  [md5 42d2a51f = local text/tautxy/tautx.tex]
+- diffs: `diff_tauty_to_tautx.diff`, `diff_key_transition.diff`.
+
+VERIFIED FACTS (I checked these by reading the exact lines; spot-check if you doubt):
+- tautx lines 689-788: the whole `\section{Triangulations}` is inside `\begin{comment}...\end{comment}`
+  (so clean/link/pseudomanifold/simplicial-triangulation defs do NOT render).
+- tauty:791-792 "We'll call $Y$ clean if it is simplicial and the associated simplicial complex is clean."
+  is absent from tautx live text.
+- Theorem 2: tauty "Then $Y$ is clean, and arises from a simplicial triangulation of $B^3$" →
+  tautx "Any taut filling of $\sigma$ arises from a simplicial triangulation of $B^3$" (drops "is clean").
+- tautx typos: 802 `$X$` should be `$M$`; 870-871 dropped the `(\sigma_2,M_2)` clause; 817 "that"→"than".
+
+QUESTIONS (answer concretely, cite file:line):
+Q1. Is the tauty/tautx identification sound (md5-exact), and is the report's claim that tautx = the gauss
+    *uncommitted working tree* (a later state than HEAD c658823) correct to emphasize?
+Q2. The report's HEADLINE loss is "tautx commented out the entire Triangulations section, stranding the
+    core definitions (clean/link/pseudomanifold) which the live text still uses." Read tautx around
+    689-795 and the flag section (943+): is this fair, or does tautx in fact redefine these terms
+    elsewhere in live text (which would weaken the claim)? Specifically: does any LIVE tautx text define
+    "clean", "pseudomanifold", "link", or "simplicial triangulation"?
+Q3. Theorem 2: is calling the change a "de-scoping / accidental loss" fair, or is "arises from a
+    simplicial triangulation of B^3" actually equivalent (does a B^3 triangulation already entail clean,
+    making the dropped word harmless)? Give your read.
+Q4. The RECOMMENDATION is: base version A on tauty's definitional scaffolding, adopt tautx's notation
+    (Ω, M, X/Y), and graft tautx's four proof improvements (eligible-tet pigeonhole, conjoined edge-flip
+    case split, shucking proof of Thm 3, K5/octahedron flag repair); do NOT start from tautx. Is this the
+    right call given the goal (a paper-style draft, no Lean terminology), or would starting from tautx and
+    re-inserting the definitions be less work / lower-risk? Push back if you disagree.
+Q5. Any overclaim, mislabeled "improvement vs loss", or missed item (e.g. is "monotone shelling" really a
+    loss, or is it redundant with "type-3 gluing creates an interior vertex")?
+
+Output per contract: PASS/WARN/BLOCK first, then concrete answers.

@@ -1,0 +1,461 @@
+Reading additional input from stdin...
+OpenAI Codex v0.140.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019f000a-a808-73b2-aef4-c9d8ecae10b4
+--------
+user
+OUTPUT CONTRACT:
+Your visible final answer must be at most 80 lines.
+Start with exactly one of: PASS, WARN, BLOCK, PLAN.
+Do not restate project background.
+Do not paste long code excerpts, diffs, Lean terms, logs, or transcripts.
+If detailed reasoning is useful, summarize it; do not dump it.
+Give:
+- verdict;
+- exact recommended patch shape;
+- files to edit;
+- local lemmas needed;
+- blockers, if any.
+
+CODEX CONSULT (G1) — confirm a hypothesis-mismatch in the Theorem-4 public endpoint and bless the
+narrow fix, before I touch Lean or the writeup. Be adversarial; verify signatures yourself.
+
+REPO: /Users/doyle/Dropbox/taut, branch clean-anyrooted-stickerball, HEAD a8f4566.
+Build green 8273; grep over lean/Taut for sorry/admit/axiom/native_decide = ZERO.
+
+BACKGROUND. Earlier this session the public stickerball endpoint was made hS-free: the bridge
+`taut_filling_is_simplicialChain` (Theorem3Clean.lean:3462) derives `SimplicialChain M` from tautness,
+and `taut_filling_is_anyrootedStickerball` (Theorem3Clean.lean:3636) now derives hS internally:
+    have hS : SimplicialChain M := taut_filling_is_simplicialChain hσ hU hXc hMX hT
+    exact ⟨⟨theorem2_clean … hS, hσ.nonempty⟩, theorem3_clean … hS⟩
+The user is now adding Theorem 4 (flag complex) to the Lean→informal writeup and wants the Th4 PUBLIC
+STATEMENT to be hS-free IF Theorems 2/3 already supply simpliciality (internal use of hS is fine).
+
+FINDING TO CONFIRM (I read these; verify):
+- `theorem4_flag` (Theorem4.lean:1503) signature ends `… (hT : IsTaut M) (hS : SimplicialChain M) :
+  IsFlagComplex M.support` — hS is an EXTERNAL hypothesis.
+- `taut_filling_is_flagComplex` (Theorem4.lean:1511) is a rename: same hS hypothesis, body
+  `theorem4_flag hσ hU hXc hMX hT hS`.
+- Theorem4.lean NEVER calls `taut_filling_is_simplicialChain` (grep finds none) — so neither flag
+  endpoint derives hS; both demand it. This is asymmetric with the stickerball endpoint above.
+- Theorem4.lean line 1 is `import Taut.Theorem3Clean`, so the bridge IS in scope.
+
+PROPOSED NARROW FIX (Lean): replace `taut_filling_is_flagComplex` with an hS-free version deriving hS
+from the existing bridge (keep `theorem4_flag` as the internal hS-taking lemma):
+    theorem taut_filling_is_flagComplex {σ} {X M} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
+        (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) : IsFlagComplex M.support :=
+      theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)
+This reuses the bridge; it does NOT reopen the hens-and-baskets proof. The internal induction
+`no_emptyK3K4_of_taut` keeps threading hS for sub-fillings as it already does (unchanged, already CHECKED).
+
+QUESTIONS:
+Q1. Confirm the finding: both Th4 flag endpoints take external hS and neither derives it; the stickerball
+    endpoint does derive it. Is this correctly a "mismatch" the user wants fixed (Th4 public statement
+    should be hS-free since 2/3 provide simpliciality)?
+Q2. Is the proposed 1-line wrapper correct and sufficient (types line up; `taut_filling_is_simplicialChain`
+    has exactly the hyps hσ/hU/hXc/hMX/hT and concludes SimplicialChain M)? Any reason it would NOT
+    typecheck or would change axioms?
+Q3. Is there any reason Th4 was deliberately left hS-taking (a real obstruction — e.g. the induction's
+    IH needs SimplicialChain for smaller fillings in a way the top-level derivation cannot supply)?
+    I claim NO: the top-level wrapper only supplies the top-level hS; the existing proof already
+    re-derives/threads simpliciality for sub-fillings internally. Confirm or refute.
+Q4. For the WRITEUP: with the wrapper in place, is it faithful to state Theorem 4 hS-free and say
+    "simpliciality is supplied by Theorems 2/3 / the bridge (Thm `thm:simpl`)", exactly as the writeup
+    already does for the pure/triangle-bounded (thm:pm) and rooted (thm:freely) theorems?
+
+Output per contract: PASS/WARN/BLOCK first, then concrete answers with file:line citations.
+codex
+I’ll verify the Lean signatures and nearby definitions directly, then check the bridge and public stickerball wrapper for the asymmetry you described.
+exec
+/bin/zsh -lc 'rg -n "theorem4_flag|taut_filling_is_flagComplex|taut_filling_is_simplicialChain|taut_filling_is_anyrootedStickerball" lean/Taut/Theorem4.lean lean/Taut/Theorem3Clean.lean' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Theorem4.lean:316:theorem theorem4_flag_from_no_emptyK3K4
+lean/Taut/Theorem4.lean:1501:minimal-counterexample / edge-flip induction) with `theorem4_flag_from_no_emptyK3K4` (which adds the
+lean/Taut/Theorem4.lean:1503:theorem theorem4_flag {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+lean/Taut/Theorem4.lean:1507:  theorem4_flag_from_no_emptyK3K4 hσ hU hXc hMX hT hS hK3 hK4
+lean/Taut/Theorem4.lean:1510:complex** — every clique of its 1-skeleton spans a simplex.  Paper-independent name for `theorem4_flag`. -/
+lean/Taut/Theorem4.lean:1511:theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+lean/Taut/Theorem4.lean:1514:  theorem4_flag hσ hU hXc hMX hT hS
+lean/Taut/Theorem3Clean.lean:3378:`taut_filling_is_anyrootedStickerball`. -/
+lean/Taut/Theorem3Clean.lean:3388:a `±1`-coefficient chain.  This is the content of `taut_filling_is_simplicialChain`,
+lean/Taut/Theorem3Clean.lean:3462:theorem taut_filling_is_simplicialChain {σ : Finset (Finset V)} {X M : Chain V}
+lean/Taut/Theorem3Clean.lean:3636:theorem taut_filling_is_anyrootedStickerball {σ : Finset (Finset V)} {X M : Chain V}
+lean/Taut/Theorem3Clean.lean:3639:  have hS : SimplicialChain M := taut_filling_is_simplicialChain hσ hU hXc hMX hT
+lean/Taut/Theorem3Clean.lean:3643:boundary — the combinatorial `B³` certificate).  Corollary of `taut_filling_is_anyrootedStickerball`. -/
+lean/Taut/Theorem3Clean.lean:3647:  (taut_filling_is_anyrootedStickerball hσ hU hXc hMX hT).toStickerball
+
+exec
+/bin/zsh -lc 'git status --short && git rev-parse --abbrev-ref HEAD && git rev-parse HEAD' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+?? SHELLING-CONSULT.md
+?? notes/codex-consults/2026-06-15-g1-archfix-output.txt
+?? notes/codex-consults/2026-06-15-g1-assembly-output.txt
+?? notes/codex-consults/2026-06-15-g1-case2-impl-output.txt
+?? notes/codex-consults/2026-06-15-g1-case2-split-output.txt
+?? notes/codex-consults/2026-06-15-g1-deg3starfix-output.txt
+?? notes/codex-consults/2026-06-15-g1-deg3step-output.txt
+?? notes/codex-consults/2026-06-15-g1-final2-output.txt
+?? notes/codex-consults/2026-06-15-g1-hanchor-output.txt
+?? notes/codex-consults/2026-06-15-g1-hanchorfix2-output.txt
+?? notes/codex-consults/2026-06-15-g1-loosefix-output.txt
+?? notes/codex-consults/2026-06-15-g1-papervnotmr-output.txt
+?? notes/codex-consults/2026-06-15-g1-sidedata-output.txt
+?? notes/codex-consults/2026-06-15-g1-vnotmr-output.txt
+?? notes/codex-consults/2026-06-18-g3-h2bridge-output.txt
+?? notes/codex-consults/2026-06-18-g3-h2bridge-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-audit-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-audit-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit2-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit2-spec.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit3-output.txt
+?? notes/codex-consults/2026-06-23-g3-writeup-reaudit3-spec.txt
+?? notes/codex-consults/2026-06-25-1005-g3-writeup-simpl-raw.txt
+?? notes/codex-consults/2026-06-25-1005-g3-writeup-simpl-summary.txt
+?? notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-raw.txt
+?? notes/codex-consults/2026-06-25-1355-g3-tautxy-pdfs-summary.txt
+?? notes/codex-consults/2026-06-25-1428-g1-th4-hs-mismatch-raw.txt
+?? notes/codex-consults/2026-06-25-g1-th4-hs-mismatch-spec.txt
+?? notes/codex-consults/2026-06-25-g3-tautxy-pdfs-spec.txt
+?? notes/codex-consults/2026-06-25-g3-writeup-simpl-spec.txt
+?? notes/lean-proof-data-for-writeup.md
+?? notes/simpliciality-hypothesis-repair.md
+?? notes/stickerball-state-2026-06-24.md
+?? notes/taut-clean/
+?? notes/taut-lean-proof-claude-scratch.tex
+?? notes/taut-lean-proof.pdf
+?? notes/th1-CCXY-kmap-audit.md
+?? text/
+clean-anyrooted-stickerball
+a8f4566e91dae364632b43d5db4c593bc54483a2
+
+codex
+The branch and HEAD match. The worktree has untracked notes only, so I’ll ignore those and read the exact theorem blocks plus imports to check the type surface.
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem4.lean | sed -n '1,25p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+     1	import Taut.Theorem3Clean
+     2	
+     3	/-!
+     4	# Theorem 4 (the flag-complex theorem)
+     5	
+     6	Theorem 4 of "Taut fillings": a taut filling of a triangulated `S²` is a *flag complex*.
+     7	The combinatorial notion of "flag" is `IsFlagComplex`: every set `s` whose every edge is a
+     8	simplex of `τ` is itself a simplex of `τ`.
+     9	
+    10	* `no_k5Clique_of_no_emptyK4_taut` replaces the paper's `S³ ⊄ B³` step: a `K₅` of edges in
+    11	  `M.support` would, via pseudomanifoldness, make every triangle inside it a *cancelled*
+    12	  (non-boundary) triangle, so the sub-chain `U := M ↾ s` of the `5` tets is closed;
+    13	  tautness (Prop 1) then forces `U = 0`, contradicting that `U` carries `5` tets.
+    14	-/
+    15	
+    16	namespace Taut
+    17	
+    18	open Finset
+    19	
+    20	variable {V : Type*} [LinearOrder V]
+    21	
+    22	/-! ## Flag-complex vocabulary -/
+    23	
+    24	/-- `s` is (the vertex set of) a simplex of `τ`: either empty (the `(-1)`-simplex) or
+    25	contained in a facet. -/
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem3Clean.lean | sed -n '3456,3470p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  3456	    exact Finsupp.notMem_support_iff.mp this
+  3457	
+  3458	/-- **The simpliciality bridge.**  Every taut filling `M` of a combinatorial
+  3459	2-sphere `σ` is a `SimplicialChain` (all coefficients in `{-1,0,1}`).  Strong
+  3460	induction on `nrm M`; the inductive deletion is governed by the `hS`-free
+  3461	eligible-tet / flip / degree-3 machinery. -/
+  3462	theorem taut_filling_is_simplicialChain {σ : Finset (Finset V)} {X M : Chain V}
+  3463	    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+  3464	    (hT : IsTaut M) : SimplicialChain M := by
+  3465	  classical
+  3466	  -- strong induction on `nrm M`, generalised over `σ, X, M`
+  3467	  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+  3468	      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M by
+  3469	    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT
+  3470	  intro N
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem4.lean | sed -n '1488,1518p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  1488	    · exact base_no_emptyK3K4 hσ hU hMX hT hv
+  1489	    · push_neg at hv
+  1490	      by_cases hd3 : HasDegree3Vertex σ
+  1491	      · refine deg3_no_emptyK3K4 σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+  1492	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+  1493	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+  1494	      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+  1495	        refine prime_no_emptyK3K4 σ X M hσ hU hXc hMX hT hS hno3 ?_
+  1496	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+  1497	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+  1498	
+  1499	/-- **Theorem 4 (the flag-complex theorem).** Any taut filling `M` of a combinatorial 2-sphere `σ` is a
+  1500	flag complex: every clique of its 1-skeleton spans a simplex.  Combines `no_emptyK3K4_of_taut` (the
+  1501	minimal-counterexample / edge-flip induction) with `theorem4_flag_from_no_emptyK3K4` (which adds the
+  1502	`K₅` obstruction). -/
+  1503	theorem theorem4_flag {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+  1504	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+  1505	    (hS : SimplicialChain M) : IsFlagComplex M.support :=
+  1506	  let ⟨hK3, hK4⟩ := no_emptyK3K4_of_taut hσ hU hXc hMX hT hS
+  1507	  theorem4_flag_from_no_emptyK3K4 hσ hU hXc hMX hT hS hK3 hK4
+  1508	
+  1509	/-- **Public endpoint (mathematically named): a taut filling of a combinatorial 2-sphere is a flag
+  1510	complex** — every clique of its 1-skeleton spans a simplex.  Paper-independent name for `theorem4_flag`. -/
+  1511	theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+  1512	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+  1513	    (hS : SimplicialChain M) : IsFlagComplex M.support :=
+  1514	  theorem4_flag hσ hU hXc hMX hT hS
+  1515	
+  1516	end Taut
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem3Clean.lean | sed -n '3628,3642p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  3628	
+  3629	/-- **Main theorem (Theorems 2+3 unified): a taut filling of a combinatorial 2-sphere is an anyrooted
+  3630	stickerball.**  That is, its support is a shellable clean 3-complex with nonempty boundary
+  3631	(`IsStickerball` — the combinatorial `B³` certificate) *and* a clean shelling can begin with any
+  3632	prescribed tetrahedron (`FreelyCleanShellable`).  Subsumes both the ordinary stickerball certificate
+  3633	(paper Theorem 2) and the free choice of starting tet (paper Theorem 3): the minimal-counterexample
+  3634	induction proves the anyrooted statement directly (`theorem3_clean`), of which the existence form
+  3635	(`theorem2_clean`) is the weakening. -/
+  3636	theorem taut_filling_is_anyrootedStickerball {σ : Finset (Finset V)} {X M : Chain V}
+  3637	    (hσ : IsSphere2 σ) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+  3638	    IsAnyrootedStickerball M.support σ := by
+  3639	  have hS : SimplicialChain M := taut_filling_is_simplicialChain hσ hU hXc hMX hT
+  3640	  exact ⟨⟨theorem2_clean hσ hU hXc hMX hT hS, hσ.nonempty⟩, theorem3_clean hσ hU hXc hMX hT hS⟩
+  3641	
+  3642	/-- A taut filling of a combinatorial 2-sphere is a *stickerball* (shellable clean ball with nonempty
+
+codex
+The key signatures line up with your hypothesis. I’m doing one more repository search for calls/import reachability and for any local naming collision that could make the wrapper ambiguous.
+exec
+/bin/zsh -lc 'rg -n "taut_filling_is_simplicialChain" lean/Taut/Theorem4.lean lean/Taut' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Theorem3Clean.lean:3388:a `±1`-coefficient chain.  This is the content of `taut_filling_is_simplicialChain`,
+lean/Taut/Theorem3Clean.lean:3462:theorem taut_filling_is_simplicialChain {σ : Finset (Finset V)} {X M : Chain V}
+lean/Taut/Theorem3Clean.lean:3639:  have hS : SimplicialChain M := taut_filling_is_simplicialChain hσ hU hXc hMX hT
+
+exec
+/bin/zsh -lc 'rg -n "taut_filling_is_flagComplex|theorem4_flag" lean/Taut' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/Theorem4.lean:316:theorem theorem4_flag_from_no_emptyK3K4
+lean/Taut/Theorem4.lean:1501:minimal-counterexample / edge-flip induction) with `theorem4_flag_from_no_emptyK3K4` (which adds the
+lean/Taut/Theorem4.lean:1503:theorem theorem4_flag {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+lean/Taut/Theorem4.lean:1507:  theorem4_flag_from_no_emptyK3K4 hσ hU hXc hMX hT hS hK3 hK4
+lean/Taut/Theorem4.lean:1510:complex** — every clique of its 1-skeleton spans a simplex.  Paper-independent name for `theorem4_flag`. -/
+lean/Taut/Theorem4.lean:1511:theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+lean/Taut/Theorem4.lean:1514:  theorem4_flag hσ hU hXc hMX hT hS
+
+exec
+/bin/zsh -lc 'rg -n "no_emptyK3K4_of_taut" lean/Taut/Theorem4.lean' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+330:In the minimal-counterexample induction (`no_emptyK3K4_of_taut`) we remove a tet — a degree-3
+1030:The minimal-counterexample induction `no_emptyK3K4_of_taut` removes either a degree-3
+1476:theorem no_emptyK3K4_of_taut {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+1500:flag complex: every clique of its 1-skeleton spans a simplex.  Combines `no_emptyK3K4_of_taut` (the
+1506:  let ⟨hK3, hK4⟩ := no_emptyK3K4_of_taut hσ hU hXc hMX hT hS
+
+codex
+The repository search confirms Theorem4 currently has no use of the simpliciality bridge. I’m checking the induction signature to answer whether there’s a genuine obstruction hidden below the public wrapper.
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem4.lean | sed -n '1468,1498p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+  1468	        (simplicialChain_removeTet hS)).2 hR
+  1469	  exact ⟨hNoK3, hNoK4⟩
+  1470	
+  1471	/-! ## (6) The induction and the Theorem-4 endpoint -/
+  1472	
+  1473	/-- **No empty `K₃`/`K₄` in a taut filling of a 2-sphere.** Strong induction on `nrm M`, mirroring
+  1474	`taut_isPseudomanifold`: base case (`≤ 4` vertices) by `base_no_emptyK3K4`; a degree-3 vertex by
+  1475	`deg3_no_emptyK3K4`; otherwise by `prime_no_emptyK3K4`. -/
+  1476	theorem no_emptyK3K4_of_taut {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+  1477	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+  1478	    (hS : SimplicialChain M) : ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support := by
+  1479	  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+  1480	      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+  1481	      ¬ HasEmptyK3 M.support ∧ ¬ HasEmptyK4 M.support by
+  1482	    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+  1483	  intro N
+  1484	  induction N using Nat.strong_induction_on with
+  1485	  | _ N IH =>
+  1486	    intro σ X M hN hσ hU hXc hMX hT hS
+  1487	    by_cases hv : (vertsOf σ).card ≤ 4
+  1488	    · exact base_no_emptyK3K4 hσ hU hMX hT hv
+  1489	    · push_neg at hv
+  1490	      by_cases hd3 : HasDegree3Vertex σ
+  1491	      · refine deg3_no_emptyK3K4 σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+  1492	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+  1493	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+  1494	      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+  1495	        refine prime_no_emptyK3K4 σ X M hσ hU hXc hMX hT hS hno3 ?_
+  1496	        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+  1497	        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+  1498	
+
+exec
+/bin/zsh -lc "nl -ba lean/Taut/Theorem4.lean | sed -n '300,324p'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+   300	  have hZ0 : Zvol (0 : Chain V) = 0 := Nat.le_zero.mp (by
+   301	    simpa using Zvol_le (show bdry (0 : Chain V) = 0 by simp))
+   302	  have hnrmU : nrm U = 0 := by rw [IsTaut] at hTU; rw [hTU, hbU, hZ0]
+   303	  have hU0 : U = 0 := nrm_eq_zero_iff.mp hnrmU
+   304	  obtain ⟨q, hqs, hq4⟩ := Finset.exists_subset_card_eq (show 4 ≤ s.card by omega)
+   305	  have hqM : q ∈ M.support := fourSubset_mem_support hPure hK4 hedges hqs hq4
+   306	  have hUq : U q = M q := by rw [hUdef, Finsupp.filter_apply, if_pos hqs]
+   307	  have hMq : M q ≠ 0 := Finsupp.mem_support_iff.mp hqM
+   308	  rw [hU0] at hUq
+   309	  simp only [Finsupp.coe_zero, Pi.zero_apply] at hUq
+   310	  exact hMq hUq.symm
+   311	
+   312	/-- Once `HasEmptyK3` / `HasEmptyK4` are ruled out for a taut filling `M` of a 2-sphere `σ`, the
+   313	support is a flag complex.  Composes `NoTaboo.to_flag` with `no_k5Clique_of_no_emptyK4_taut`
+   314	(which supplies `¬ HasK5Clique` from `¬ HasEmptyK4`), deriving purity from
+   315	`aleph_base_taut_support_card4_subset_verts`. -/
+   316	theorem theorem4_flag_from_no_emptyK3K4
+   317	    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+   318	    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M)
+   319	    (hS : SimplicialChain M)
+   320	    (hK3 : ¬ HasEmptyK3 M.support) (hK4 : ¬ HasEmptyK4 M.support) :
+   321	    IsFlagComplex M.support := by
+   322	  have hPure : ∀ t ∈ M.support, t.card = 4 := fun t ht =>
+   323	    (aleph_base_taut_support_card4_subset_verts hσ hU hMX hT t ht).1
+   324	  have hK5 : ¬ HasK5Clique M.support :=
+
+codex
+The lower induction still explicitly takes `SimplicialChain M`, and its IH also expects `SimplicialChain M'`. That does not block an hS-free public wrapper because the proposed wrapper only fills the existing top-level `hS` slot.
+exec
+/bin/zsh -lc "printf '%s
+' 'import Taut.Theorem4' '' 'namespace Taut' '' 'open Finset' '' 'variable {V : Type*} [LinearOrder V]' '' '#check fun {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)' '    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) =>' '  theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)' '' 'end Taut' | lake env lean --stdin" in /Users/doyle/Dropbox/taut
+ exited 1 in 954ms:
+<stdin>:1:0: error: unknown module prefix 'Taut'
+
+No directory 'Taut' or file 'Taut.olean' in the search path entries:
+/Users/doyle/.elan/toolchains/leanprover--lean4---v4.31.0/lib/lean
+/Users/doyle/.elan/toolchains/leanprover--lean4---v4.31.0/lib/lean
+
+codex
+The direct stdin check failed before typechecking because `lake env` did not expose the package module search path from this repository root. I’m checking the repo layout rather than drawing conclusions from that failed import.
+exec
+/bin/zsh -lc "rg --files -g 'lakefile*' -g 'lean-toolchain' -g 'lake-manifest.json' -g 'Taut.lean' -g 'Theorem4.lean'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/lakefile.lean
+lean/Taut/Theorem4.lean
+lean/Taut.lean
+lean/lake-manifest.json
+lean/lean-toolchain
+
+exec
+/bin/zsh -lc ls in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+LICENSE
+NEXT-CLAUDE.md
+RECOVERY.md
+SHELLING-CONSULT.md
+STATUS.md
+TEAMWORK.md
+THEOREM4-START.md
+lean
+notes
+scripts
+taut
+taut.pdf
+text
+
+codex
+The Lean project root is `lean/`, so I’m rerunning the syntax/type probe from there against the actual modules.
+exec
+/bin/zsh -lc "printf '%s
+' 'import Taut.Theorem4' '' 'namespace Taut' '' 'open Finset' '' 'variable {V : Type*} [LinearOrder V]' '' '#check fun {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)' '    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) =>' '  theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)' '' 'end Taut' | lake env lean --stdin" in /Users/doyle/Dropbox/taut/lean
+ succeeded in 26437ms:
+fun {σ} {X M} hσ hU hXc hMX hT =>
+  theorem4_flag hσ hU hXc hMX hT
+    (taut_filling_is_simplicialChain hσ hU hXc hMX
+      hT) : ∀ {σ : Finset (Finset V)} {X M : Chain V},
+  IsSphere2 σ → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → IsFlagComplex M.support
+
+codex
+PASS
+
+**Verdict**
+Q1 confirmed. `theorem4_flag` and `taut_filling_is_flagComplex` both require external `hS : SimplicialChain M` at [lean/Taut/Theorem4.lean:1503](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1503) and [lean/Taut/Theorem4.lean:1511](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1511). `Theorem4.lean` imports `Taut.Theorem3Clean` at [line 1](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1), but never calls `taut_filling_is_simplicialChain`.
+
+The mismatch is real: stickerball public endpoint derives `hS` internally at [lean/Taut/Theorem3Clean.lean:3636](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3636), using the bridge at [line 3639](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3639).
+
+**Exact Recommended Patch Shape**
+Edit only the public wrapper:
+
+```lean
+theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsFlagComplex M.support :=
+  theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)
+```
+
+Keep `theorem4_flag` unchanged as the internal hS-taking theorem.
+
+**Files To Edit**
+`lean/Taut/Theorem4.lean`, replacing [lines 1511-1514](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1511).
+
+**Local Lemmas Needed**
+Only existing lemmas:
+`taut_filling_is_simplicialChain` at [lean/Taut/Theorem3Clean.lean:3462](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3462), whose hypotheses exactly match `hσ hU hXc hMX hT` and conclusion is `SimplicialChain M`.
+`theorem4_flag` at [lean/Taut/Theorem4.lean:1503](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1503).
+
+I also ran a Lean `#check` from `lean/`; the proposed wrapper expression typechecks and has the desired hS-free type.
+
+**Blockers**
+None. No apparent axiom impact: this is a definitional wrapper composing existing theorems.
+
+Q3: no obstruction found. The lower induction still takes and threads `hS` internally at [lean/Taut/Theorem4.lean:1476](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1476), with recursive sub-filling `hS'` passed through at [lines 1492-1497](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1492). The public wrapper only supplies the top-level `hS`.
+
+Q4: yes. With this wrapper, the writeup can faithfully state Theorem 4 hS-free and say simpliciality is supplied by the bridge / Theorems 2-3, matching the public endpoint style.
+tokens used
+20,210
+PASS
+
+**Verdict**
+Q1 confirmed. `theorem4_flag` and `taut_filling_is_flagComplex` both require external `hS : SimplicialChain M` at [lean/Taut/Theorem4.lean:1503](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1503) and [lean/Taut/Theorem4.lean:1511](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1511). `Theorem4.lean` imports `Taut.Theorem3Clean` at [line 1](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1), but never calls `taut_filling_is_simplicialChain`.
+
+The mismatch is real: stickerball public endpoint derives `hS` internally at [lean/Taut/Theorem3Clean.lean:3636](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3636), using the bridge at [line 3639](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3639).
+
+**Exact Recommended Patch Shape**
+Edit only the public wrapper:
+
+```lean
+theorem taut_filling_is_flagComplex {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) :
+    IsFlagComplex M.support :=
+  theorem4_flag hσ hU hXc hMX hT (taut_filling_is_simplicialChain hσ hU hXc hMX hT)
+```
+
+Keep `theorem4_flag` unchanged as the internal hS-taking theorem.
+
+**Files To Edit**
+`lean/Taut/Theorem4.lean`, replacing [lines 1511-1514](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1511).
+
+**Local Lemmas Needed**
+Only existing lemmas:
+`taut_filling_is_simplicialChain` at [lean/Taut/Theorem3Clean.lean:3462](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3Clean.lean:3462), whose hypotheses exactly match `hσ hU hXc hMX hT` and conclusion is `SimplicialChain M`.
+`theorem4_flag` at [lean/Taut/Theorem4.lean:1503](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1503).
+
+I also ran a Lean `#check` from `lean/`; the proposed wrapper expression typechecks and has the desired hS-free type.
+
+**Blockers**
+None. No apparent axiom impact: this is a definitional wrapper composing existing theorems.
+
+Q3: no obstruction found. The lower induction still takes and threads `hS` internally at [lean/Taut/Theorem4.lean:1476](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1476), with recursive sub-filling `hS'` passed through at [lines 1492-1497](/Users/doyle/Dropbox/taut/lean/Taut/Theorem4.lean:1492). The public wrapper only supplies the top-level `hS`.
+
+Q4: yes. With this wrapper, the writeup can faithfully state Theorem 4 hS-free and say simpliciality is supplied by the bridge / Theorems 2-3, matching the public endpoint style.

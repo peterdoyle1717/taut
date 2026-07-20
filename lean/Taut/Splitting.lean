@@ -16,8 +16,7 @@ Proof skeleton (the paper's, in general dimension):
    (`n+1` vertices on one pure side, one vertex on the other, none
    shared) (`hybrid_structure`);
 3. extreme hybrids form a complete cone over their lone vertex, which a
-   taut chain cannot contain — the coefficient-level vanishing argument
-   flagged by the G1 auditor (`no_extreme_hybrid`);
+   taut chain cannot contain (`no_extreme_hybrid`);
 4. so generators are pure and the filter along `· ⊆ A` splits `M`.
 -/
 
@@ -25,9 +24,6 @@ namespace Taut
 
 variable {V : Type*} [LinearOrder V]
 
-/-! ## Helpers -/
-
-/-- The three-part vertex count of a simplex in `A ∪ B`. -/
 lemma card_three_part {A B t : Finset V} (htAB : t ⊆ A ∪ B) :
     (t ∩ (A ∩ B)).card + ((t \ A).card + (t \ B).card) = t.card := by
   have hdisj : Disjoint (t \ A) (t \ B) := by
@@ -44,13 +40,11 @@ lemma card_three_part {A B t : Finset V} (htAB : t ⊆ A ∪ B) :
   rw [hsplit, Finset.card_union_of_disjoint hdisj] at h1
   omega
 
-/-- The boundary as a sum over the support. -/
 lemma bdry_eq_sum (M : Chain V) :
     bdry M = ∑ t ∈ M.support, M t • bdryGen t := by
   rw [bdry, Finsupp.lsum_apply, Finsupp.sum]
   exact Finset.sum_congr rfl fun s _ => LinearMap.toSpanSingleton_apply ..
 
-/-- A simplex in the support of `bdryGen t` is a facet of `t`. -/
 lemma exists_facet_of_bdryGen_ne_zero {t s : Finset V}
     (h : bdryGen t s ≠ 0) : ∃ w ∈ t, s = t.erase w := by
   by_contra hcon
@@ -61,14 +55,12 @@ lemma exists_facet_of_bdryGen_ne_zero {t s : Finset V}
   rw [Finsupp.smul_apply, Finsupp.single_apply,
     if_neg (fun he => hcon w hw he.symm), smul_zero]
 
-/-- Pointwise boundary formula over the support. -/
 lemma bdry_apply_eq_sum (M : Chain V) (s : Finset V) :
     bdry M s = ∑ t ∈ M.support, M t * bdryGen t s := by
   rw [bdry_eq_sum, Finset.sum_apply']
   exact Finset.sum_congr rfl fun t _ => by
     rw [Finsupp.smul_apply, smul_eq_mul]
 
-/-- Supports and dimensions pass to the boundary. -/
 lemma bdry_supp_of_supp {B : Finset V} {k : ℕ} {M : Chain V}
     (h : ∀ t ∈ M.support, t ⊆ B ∧ t.card = k + 1) :
     ∀ s ∈ (bdry M).support, s ⊆ B ∧ s.card = k := by
@@ -81,9 +73,9 @@ lemma bdry_supp_of_supp {B : Finset V} {k : ℕ} {M : Chain V}
   exact ⟨(Finset.erase_subset w t).trans h1,
     by rw [Finset.card_erase_of_mem hw, h2]; omega⟩
 
-/-- The closedness of the link, extracted from the no-internal-vertex
-argument: if `U` is supported on simplices containing `x` and its
-boundary has no `x`-part, then `lk x U` is closed. -/
+/-- The closedness of the link: if `U` is supported on simplices
+containing `x` and its boundary has no `x`-part, then `lk x U` is
+closed. -/
 lemma bdry_lk_eq_zero {x : V} {U : Chain V} (hU : nbhd x U = U)
     (hbU : nbhd x (bdry U) = 0) : bdry (lk x U) = 0 := by
   have hWfree : nbhd x (lk x U) = 0 := nbhd_lk x U
@@ -97,13 +89,11 @@ lemma bdry_lk_eq_zero {x : V} {U : Chain V} (hU : nbhd x U = U)
   rw [hWb] at h
   exact h
 
-/-- Two distinct elements of a set with at least two elements. -/
 lemma exists_pair_of_one_lt_card {s : Finset V} (h : 2 ≤ s.card) :
     ∃ a ∈ s, ∃ b ∈ s, a ≠ b := by
   obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp (show 1 < s.card by omega)
   exact ⟨a, ha, b, hb, hab⟩
 
-/-- Kill certificates. -/
 lemma kills_of_two_sdiff {A : Finset V} (p : V) {t : Finset V}
     (h : 2 ≤ (t \ A).card) : Kkills A p t := by
   constructor
@@ -234,24 +224,19 @@ lemma hybrid_structure {A B : Finset V} {n : ℕ}
   by_cases hxb : (t \ B).card = 0
   · exact Or.inr (Or.inl (Finset.sdiff_eq_empty_iff_subset.mp
       (Finset.card_eq_zero.mp hxb)))
-  -- both parts nonempty: a hybrid
   by_cases hc0 : (t ∩ (A ∩ B)).card = 0
-  · -- no shared vertices: must be extreme on one side
-    by_cases hxa1 : (t \ A).card = 1
+  · by_cases hxa1 : (t \ A).card = 1
     · exact Or.inr (Or.inr (Or.inl ⟨hxa1, Finset.card_eq_zero.mp hc0⟩))
     by_cases hxb1 : (t \ B).card = 1
     · exact Or.inr (Or.inr (Or.inr ⟨hxb1, Finset.card_eq_zero.mp hc0⟩))
-    -- ≥ 2 on both sides: doubly killed
     exact (no_double_kill hn1 hp hq hpq hC hX hY hXc hYc hM1 hMt hp hq hpq ht
       (kills_of_two_sdiff p (by omega))
       (kills_of_two_sdiff q (by omega))).elim
-  · -- a shared vertex exists
-    have hcap : (t ∩ (A ∩ B)).Nonempty :=
+  · have hcap : (t ∩ (A ∩ B)).Nonempty :=
       Finset.card_pos.mp (by omega)
     by_cases hxa1 : (t \ A).card = 1
     · by_cases hxb1 : (t \ B).card = 1
-      · -- one vertex on each side: two shared vertices kill both sides
-        have hc2 : 2 ≤ (t ∩ (A ∩ B)).card := by omega
+      · have hc2 : 2 ≤ (t ∩ (A ∩ B)).card := by omega
         obtain ⟨p', hp', q', hq', hpq'⟩ := exists_pair_of_one_lt_card hc2
         have hp'AB : p' ∈ A ∩ B := (Finset.mem_inter.mp hp').2
         have hq'AB : q' ∈ A ∩ B := (Finset.mem_inter.mp hq').2
@@ -259,10 +244,8 @@ lemma hybrid_structure {A B : Finset V} {n : ℕ}
           hp'AB hq'AB hpq' ht
           (kills_of_mem hxa1 (Finset.mem_inter.mp hp').1)
           (kills_of_mem hxb1 (Finset.mem_inter.mp hq').1)).elim
-      · -- one vertex outside A, ≥ 2 outside B: a shared vertex kills A-side
-        obtain ⟨p', hp'⟩ := hcap
+      · obtain ⟨p', hp'⟩ := hcap
         have hp'AB : p' ∈ A ∩ B := (Finset.mem_inter.mp hp').2
-        -- a second distinct point of A ∩ B
         set q' := if p' = p then q else p with hq'def
         have hq'AB : q' ∈ A ∩ B := by
           rw [hq'def]; split <;> assumption
@@ -276,8 +259,7 @@ lemma hybrid_structure {A B : Finset V} {n : ℕ}
           (kills_of_mem hxa1 (Finset.mem_inter.mp hp').1)
           (kills_of_two_sdiff q' (by omega))).elim
     · by_cases hxb1 : (t \ B).card = 1
-      · -- symmetric: ≥ 2 outside A, one outside B
-        obtain ⟨q', hq'⟩ := hcap
+      · obtain ⟨q', hq'⟩ := hcap
         have hq'AB : q' ∈ A ∩ B := (Finset.mem_inter.mp hq').2
         set p' := if q' = p then q else p with hp'def
         have hp'AB : p' ∈ A ∩ B := by
@@ -291,8 +273,7 @@ lemma hybrid_structure {A B : Finset V} {n : ℕ}
           hp'AB hq'AB hpq' ht
           (kills_of_two_sdiff p' (by omega))
           (kills_of_mem hxb1 (Finset.mem_inter.mp hq').1)).elim
-      · -- ≥ 2 on both sides
-        exact (no_double_kill hn1 hp hq hpq hC hX hY hXc hYc hM1 hMt hp hq hpq ht
+      · exact (no_double_kill hn1 hp hq hpq hC hX hY hXc hYc hM1 hMt hp hq hpq ht
           (kills_of_two_sdiff p (by omega))
           (kills_of_two_sdiff q (by omega))).elim
 
@@ -326,7 +307,6 @@ lemma no_extreme_hybrid {A B : Finset V} {n : ℕ}
     · rfl
     · rename_i hyt
       rw [hU, Finsupp.filter_apply, if_neg (fun h => hyt h.1)]
-  -- every generator of U is an extreme hybrid with lone vertex y₀
   have hUstruct : ∀ t ∈ U.support,
       t \ A = {y₀} ∧ t ∩ (A ∩ B) = ∅ ∧ (t \ B).card = n + 1 := by
     intro t ht
@@ -346,7 +326,6 @@ lemma no_extreme_hybrid {A B : Finset V} {n : ℕ}
       simp only [Finset.card_empty, Finset.card_singleton] at hpart
       exact ⟨hy', h2, by omega⟩
     · omega
-  -- t₀ itself is a generator of U
   have hxb₀ : (t₀ \ B).card = n + 1 := by
     have hpart := card_three_part (hsuppAB t₀ ht₀)
     rw [hpure t₀ ht₀, hcap, hy] at hpart
@@ -357,7 +336,6 @@ lemma no_extreme_hybrid {A B : Finset V} {n : ℕ}
   have ht₀U : t₀ ∈ U.support := by
     rw [Finsupp.mem_support_iff, hUt₀]
     exact Finsupp.mem_support_iff.mp ht₀
-  -- the boundary of U has no y₀-part
   have hbU : nbhd y₀ (bdry U) = 0 := by
     ext s
     rw [nbhd_apply, Finsupp.coe_zero, Pi.zero_apply]
@@ -410,7 +388,6 @@ lemma no_extreme_hybrid {A B : Finset V} {n : ℕ}
   have hWclosed := bdry_lk_eq_zero hUnbhd hbU
   have hdegy : deg y₀ (lk y₀ U) = 0 := by rw [deg, nbhd_lk, nrm_zero]
   have hconeU : cone y₀ (lk y₀ U) = U := by rw [cone_lk, hUnbhd]
-  -- a witness vertex of the link
   have hWne : lk y₀ U (t₀.erase y₀) ≠ 0 := by
     intro h0
     have happ : cone y₀ (lk y₀ U) t₀ = U t₀ := by rw [hconeU]
@@ -447,7 +424,6 @@ theorem IsTaut.splits {A B : Finset V} {n : ℕ}
     M.filter (fun t => t ⊆ A) + M.filter (fun t => ¬ t ⊆ A) = M := by
   classical
   have hn1 : 1 ≤ n := by omega
-  -- context facts
   have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
     intro s hs
     rw [hM1] at hs
@@ -465,7 +441,6 @@ theorem IsTaut.splits {A B : Finset V} {n : ℕ}
     exact (vert_add_subset X Y).trans (Finset.union_subset_union
       (vert_subset_of_supp fun s hs => (hX s hs).1)
       (vert_subset_of_supp fun s hs => (hY s hs).1))
-  -- every generator is pure
   have hdich : ∀ t ∈ M.support, t ⊆ A ∨ t ⊆ B := by
     intro t ht
     rcases hybrid_structure hn hp hq hpq hC hX hY hXc hYc hM1 hMt hpure
@@ -486,7 +461,6 @@ theorem IsTaut.splits {A B : Finset V} {n : ℕ}
         (Finset.inter_comm A B ▸ hp) hpq.symm (Finset.inter_comm A B ▸ hC)
         hY hX hYc hXc hM1' hMt hpure hsuppBA ht hx
         (Finset.inter_comm A B ▸ h2)).elim
-  -- the split along `· ⊆ A`
   set Mx := M.filter (fun t => t ⊆ A) with hMx
   set My := M.filter (fun t => ¬ t ⊆ A) with hMy
   have hsum : Mx + My = M := Finsupp.filter_pos_add_filter_neg M _
@@ -498,7 +472,6 @@ theorem IsTaut.splits {A B : Finset V} {n : ℕ}
     intro t ht
     rw [hMy, Finsupp.support_filter, Finset.mem_filter] at ht
     exact ⟨(hdich t ht.1).resolve_left ht.2, hpure t ht.1⟩
-  -- identify the boundaries by projecting
   have hbsum : bdry Mx + bdry My = X + Y := by rw [← map_add, hsum, hM1]
   have hbx : bdry Mx = X := by
     have happly := congrArg (Kmap A p) hbsum
@@ -513,7 +486,6 @@ theorem IsTaut.splits {A B : Finset V} {n : ℕ}
     have h := hbsum
     rw [hbx] at h
     exact add_left_cancel h
-  -- tautness of the parts
   have hnrm : nrm Mx + nrm My = nrm M := nrm_filter_add_nrm_filter_neg _ M
   have hadd := Zvol_add_of_almost_disjoint hn1 hp hq hpq hC hX hY hXc hYc
   have hM2 : nrm M = Zvol (X + Y) := by rw [IsTaut, hM1] at hMt; exact hMt
@@ -532,11 +504,9 @@ fresh vertices `F` to reach `|A' ∩ B'| = 2 ≤ n + 1`, run the split along
 every generator of the filling `M` lies in `A ∪ B`, hence is disjoint from
 the fresh set `F`, so `t ⊆ A' ↔ t ⊆ A` on `M.support`.
 
-`[Infinite V]` is pure ambient bookkeeping, not a finiteness restriction: chains are finitely
-supported (`Chain V := Finset V →₀ ℤ`), so the active vertex set is always finite.  It only
-guarantees that *fresh cut vertices are available* for the `|A ∩ B| ≤ 1` enlargement; a taut
-filling never uses vertices beyond its boundary (`IsTaut.vert_subset`), so unused ambient
-vertices play no mathematical role. -/
+`[Infinite V]` only guarantees that fresh cut vertices are available for the
+`|A ∩ B| ≤ 1` enlargement; a taut filling never uses vertices beyond its boundary
+(`IsTaut.vert_subset`). -/
 theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
     {A B : Finset V} {n : ℕ} (hn : 2 ≤ n) (hC : (A ∩ B).card ≤ n + 1)
     {X Y : Chain V}
@@ -555,7 +525,6 @@ theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
     exact IsTaut.splits hn hp hq hpq hC hX hY hXc hYc hMt hM1
   · push_neg at h2
     have hn1 : 1 ≤ n := by omega
-    -- enlarge both sides by a fresh set `F` capping the intersection at two
     have hle : (A ∪ B).card ≤ (A ∪ B).card + (2 - (A ∩ B).card) := Nat.le_add_right _ _
     obtain ⟨W, hWsub, hWcard⟩ :=
       Infinite.exists_superset_card_eq (A ∪ B) _ hle
@@ -593,10 +562,8 @@ theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
       fun s hs => ⟨(hX s hs).1.trans hAA', (hX s hs).2⟩
     have hY' : ∀ s ∈ Y.support, s ⊆ B' ∧ s.card = n + 1 :=
       fun s hs => ⟨(hY s hs).1.trans hBB', (hY s hs).2⟩
-    -- run the split along `· ⊆ A'`
     obtain ⟨hbx', hby', hMxt', hMyt', hsum'⟩ :=
       IsTaut.splits hn hp hq hpq hC' hX' hY' hXc hYc hMt hM1
-    -- every generator of `M` lives in `A ∪ B`, hence is disjoint from `F`
     have hbdsupp : ∀ s ∈ (bdry M).support, s.card = n + 1 := by
       intro s hs
       rw [hM1] at hs
@@ -614,7 +581,6 @@ theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
       exact (vert_add_subset X Y).trans (Finset.union_subset_union
         (vert_subset_of_supp fun s hs => (hX s hs).1)
         (vert_subset_of_supp fun s hs => (hY s hs).1))
-    -- on `M.support`, `t ⊆ A' ↔ t ⊆ A`
     have hiff : ∀ t ∈ M.support, (t ⊆ A' ↔ t ⊆ A) := by
       intro t ht
       have hdisj : Disjoint t F := (hFdisj.mono_right (hsuppAB t ht)).symm
@@ -625,7 +591,6 @@ theorem IsTaut.splits_full {V : Type*} [LinearOrder V] [Infinite V]
         · exact absurd h (Finset.disjoint_left.mp hdisj hx)
       · intro htA
         exact htA.trans hAA'
-    -- transfer the two filters from `A'` to `A`
     have hfilt_pos : M.filter (fun t => t ⊆ A') = M.filter (fun t => t ⊆ A) := by
       ext s
       rw [Finsupp.filter_apply, Finsupp.filter_apply]

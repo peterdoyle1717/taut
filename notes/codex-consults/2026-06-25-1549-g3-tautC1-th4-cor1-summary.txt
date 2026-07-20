@@ -1,0 +1,135 @@
+RAW: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1549-g3-tautC1-th4-cor1-raw.txt
+SUMMARY: /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1549-g3-tautC1-th4-cor1-summary.txt
+
+=== raw size ===
+    1503   93001 /Users/doyle/Dropbox/taut/notes/codex-consults/2026-06-25-1549-g3-tautC1-th4-cor1-raw.txt
+
+=== extracted markers ===
+1454:PASS
+1456:Verdict: the new sections faithfully match the cited Lean endpoints. No strengthening found.
+1477:Blockers: none.
+1480:PASS
+1482:Verdict: the new sections faithfully match the cited Lean endpoints. No strengthening found.
+1503:Blockers: none.
+
+=== final tail ===
+   190	      · rw [h, Finset.mem_filter]; exact ⟨hmemA, Finset.subset_insert a f⟩
+   191	      · rw [Finset.mem_singleton.mp h, Finset.mem_filter]
+   192	        exact ⟨hmemB, Finset.subset_insert b f⟩
+   193	    have hpaircard : ({insert a f, insert b f} : Finset (Finset V)).card = 2 := by
+   194	      rw [Finset.card_insert_of_notMem (by simp [hneq]), Finset.card_singleton]
+   195	    have hge : 2 ≤ faceCount M.support f := by
+   196	      unfold faceCount; rw [← hpaircard]; exact Finset.card_le_card hpairsub
+   197	    have hle : faceCount M.support f ≤ 2 := hPM f hf3
+   198	    omega
+   199	  have hne : bdry M f ≠ 1 ∧ bdry M f ≠ -1 := by
+   200	    constructor <;> intro hb
+   201	    · exact faceCount_ne_two_of_boundary hS hPure hf3 (Or.inl hb) hfc2
+   202	    · exact faceCount_ne_two_of_boundary hS hPure hf3 (Or.inr hb) hfc2
+   203	  have hXf : X f = 0 := by
+   204	    by_contra hXf0
+   205	    have hfσ : f ∈ σ := hU.1 ▸ Finsupp.mem_support_iff.mpr hXf0
+   206	    rcases hU.2 f hfσ with h | h
+   207	    · exact hne.1 (by rw [hMX, h])
+   208	    · exact hne.2 (by rw [hMX, h])
+   209	  rw [hMX]; exact hXf
+   210	
+
+ succeeded in 0ms:
+29:\title{Splitting, Stickerballs, and Flag Complexes for Taut Fillings\\[2pt]
+45:triangle-bounded, and forms an \emph{AnyRootedStickerball} --- a clean-shellable complex that
+49:Almost-disjoint splitting is the engine; the stickerball and flag-complex theorems are
+53:than its classical namesake, or a classical bridge is \emph{not} formalized, this is stated
+54:explicitly and flagged in the text as ``not Lean-proven here'' (\S\ref{sec:status}--\ref{sec:classical}).
+117:For the stickerball theorem we build complexes of tetrahedra one at a time. Let $\tau$ be a
+147:\begin{definition}[Stickerball; root; RootedStickerball; AnyRootedStickerball]\label{def:sb}
+148:A set $\tau$ of tetrahedra is a \emph{stickerball} with boundary $B$ if it admits a clean
+149:shelling ending at $B$ and $B\neq\varnothing$ (\code{IsStickerball}).
+150:A \emph{root} of a stickerball is a tetrahedron $t\in\tau$ at which some clean shelling can
+151:\emph{begin}. ``Rooted at $t$'' (\emph{RootedStickerball}) is not a standalone Lean predicate; it
+152:names the existence clause for that $t$ inside \code{FreelyCleanShellable}. The stickerball is an
+153:\emph{AnyRootedStickerball} if every tetrahedron of $\tau$ is a root: in Lean,
+154:\code{IsAnyrootedStickerball} $=$ \code{IsStickerball} together with \code{FreelyCleanShellable},
+159:``RootedStickerball'' and ``AnyRootedStickerball'' are stated in Lean-backed terms. The
+160:clean shelling certifies normality (\S\ref{sec:classical}); we do not silently upgrade
+161:``stickerball'' to ``shellable ball'' or ``$3$-ball'' --- the proved bridge and the missing
+162:bridge are stated in \S\ref{sec:classical}.
+316:\section{Taut fillings are AnyRootedStickerballs}\label{sec:main}
+446:\emph{AnyRootedStickerball} with boundary $\sigma$
+447:(\code{taut\_filling\_is\_anyrootedStickerball}). \emph{Simpliciality is not assumed}: the
+483:induction $M'$ is an AnyRootedStickerball. Two facts let $T$ be glued cleanly: $\gamma$ is a boundary
+506:tetrahedra. By induction $M-e$ is an AnyRootedStickerball; re-gluing $e$ (two shared faces)
+514:By induction each is an AnyRootedStickerball; concatenate their clean shellings --- rooting
+527:boundary this is the AnyRootedStickerball conclusion. Each re-gluing above is a clean glue
+563:derives it internally from Theorem~\ref{thm:simpl}, exactly as the stickerball endpoint does.
+585:substitute for the paper's ``$S^3\not\subseteq B^3$.'' Suppose five vertices $s$ carry all ten
+595:appeal to $S^3\not\subseteq B^3$; the project carries no topology, and this combinatorial
+623:Thm~\ref{thm:anyrooted} (AnyRootedStickerball) & \code{taut\_filling\_is\_anyrootedStickerball} & fully proved\\
+631:\noindent\emph{Definitions weaker than their classical namesakes.}
+638:\S\ref{sec:classical}). Theorem~\ref{thm:pm} proves the triangle bound only.
+645:\section{Relation to the classical statement; remaining bridges}\label{sec:classical}
+648:(AnyRootedStickerball). Two questions separate this from a classical ``shellable normal
+649:$3$-ball'' statement.
+651:\paragraph{Proved bridge: AnyRootedStickerball $\Rightarrow$ normal $3$-pseudomanifold.}
+652:The development proves that a stickerball is a clean $3$-complex:
+654:\code{IsStickerball.isClean3Complex}\colon\quad
+655:\text{stickerball}\ \Longrightarrow\ \text{pure}\ \wedge\ \text{triangle-bounded}\ \wedge\
+659:(\code{IsAnyrootedStickerball.isClean3Complex} for the AnyRooted form). This is proved by
+668:\paragraph{Missing bridge: stickerball $\Rightarrow$ topological/PL $3$-ball.}
+670:(PL-)homeomorphic to the $3$-ball'' is the classical shelling theorem of Danaraj--Klee /
+671:Bj\"orner. This bridge is \textbf{not Lean-proven here}: no theorem from \code{IsStickerball} to
+672:a topological or PL ball appears in the development (it is recorded only as a docstring remark).
+673:Any classical reading of Theorem~\ref{thm:anyrooted} as ``$M$ triangulates a $3$-ball'' must
+676:AnyRootedStickerball --- a clean-shellable normal $3$-pseudomanifold, with boundary the given
+
+codex
+PASS
+
+Verdict: the new sections faithfully match the cited Lean endpoints. No strengthening found.
+
+Recommended patch shape: none required. Optional cosmetic edit only: in `text/tautxy/tautC1.tex:307-312`, split the rational proof sketch into additivity vs splitting to avoid mentioning `M` for part (i), but this is not a correctness blocker.
+
+Files to edit: none required.
+
+Local lemmas/endpoints checked:
+- Flag vocabulary: `SimplexOf`, `CliqueInOneSkeleton`, `IsFlagComplex`, taboo predicates at `lean/Taut/Theorem4.lean:26-52`.
+- `NoTaboo.to_flag`: `lean/Taut/Theorem4.lean:59`.
+- K5 closure: `bdry_filter_subset_eq_zero`, `fourSubset_mem_support`, `IsTaut.subChain`, `no_k5Clique_of_no_emptyK4_taut` at `lean/Taut/Theorem4.lean:83,215,287-310`; `IsTaut.subChain` at `lean/Taut/Zvol.lean:98`.
+- Flag endpoint: `theorem4_flag_from_no_emptyK3K4`, `theorem4_flag`, `taut_filling_is_flagComplex` at `lean/Taut/Theorem4.lean:316-326,1503-1514`.
+- Rational tautness and thresholds: `IsQTaut` at `lean/Taut/Corollary1.lean:50`; `IsQTaut.splits_full` at `lean/Taut/Corollary1.lean:347-356`; `Qvol_add_of_almost_disjoint_full` at `lean/Taut/Corollary1.lean:596-602`.
+
+Q1: yes. `def:flag`, `thm:flag`, `lem:notaboo`, the K5 contradiction, and the hS-free public signature match Lean. The K5 proof in `text/tautxy/tautC1.tex:584-590` is faithful to `Theorem4.lean:292-310`.
+
+Q2: yes. `IsQTaut` is correctly stated as order-optimal, not attainment of `Qvol`; the `n≥1` and `n≥2` thresholds match `Corollary1.lean:596-602` and `347-356`; no rational minimizer existence is claimed.
+
+Q3: no new overclaim found. The flag theorem is not described as triangulating a ball, and the `S^3 ⊄ B^3` replacement is explicitly combinatorial at `text/tautxy/tautC1.tex:584-596`.
+
+Q4: no missing “not Lean-proven here” tag found. The PL/topological ball bridge is correctly flagged at `text/tautxy/tautC1.tex:668-674`.
+
+Blockers: none.
+tokens used
+39,139
+PASS
+
+Verdict: the new sections faithfully match the cited Lean endpoints. No strengthening found.
+
+Recommended patch shape: none required. Optional cosmetic edit only: in `text/tautxy/tautC1.tex:307-312`, split the rational proof sketch into additivity vs splitting to avoid mentioning `M` for part (i), but this is not a correctness blocker.
+
+Files to edit: none required.
+
+Local lemmas/endpoints checked:
+- Flag vocabulary: `SimplexOf`, `CliqueInOneSkeleton`, `IsFlagComplex`, taboo predicates at `lean/Taut/Theorem4.lean:26-52`.
+- `NoTaboo.to_flag`: `lean/Taut/Theorem4.lean:59`.
+- K5 closure: `bdry_filter_subset_eq_zero`, `fourSubset_mem_support`, `IsTaut.subChain`, `no_k5Clique_of_no_emptyK4_taut` at `lean/Taut/Theorem4.lean:83,215,287-310`; `IsTaut.subChain` at `lean/Taut/Zvol.lean:98`.
+- Flag endpoint: `theorem4_flag_from_no_emptyK3K4`, `theorem4_flag`, `taut_filling_is_flagComplex` at `lean/Taut/Theorem4.lean:316-326,1503-1514`.
+- Rational tautness and thresholds: `IsQTaut` at `lean/Taut/Corollary1.lean:50`; `IsQTaut.splits_full` at `lean/Taut/Corollary1.lean:347-356`; `Qvol_add_of_almost_disjoint_full` at `lean/Taut/Corollary1.lean:596-602`.
+
+Q1: yes. `def:flag`, `thm:flag`, `lem:notaboo`, the K5 contradiction, and the hS-free public signature match Lean. The K5 proof in `text/tautxy/tautC1.tex:584-590` is faithful to `Theorem4.lean:292-310`.
+
+Q2: yes. `IsQTaut` is correctly stated as order-optimal, not attainment of `Qvol`; the `n≥1` and `n≥2` thresholds match `Corollary1.lean:596-602` and `347-356`; no rational minimizer existence is claimed.
+
+Q3: no new overclaim found. The flag theorem is not described as triangulating a ball, and the `S^3 ⊄ B^3` replacement is explicitly combinatorial at `text/tautxy/tautC1.tex:584-596`.
+
+Q4: no missing “not Lean-proven here” tag found. The PL/topological ball bridge is correctly flagged at `text/tautxy/tautC1.tex:668-674`.
+
+Blockers: none.

@@ -1,0 +1,3095 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/doyle/Dropbox/taut
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: none
+reasoning summaries: none
+session id: 019eccdd-e0fd-7923-bd4f-7f03357015e5
+--------
+user
+Write the EXACT typecheckable Lean proof of the FreelyShellable deg3_step for the taut-fillings project, mirroring degree3_reassemble_from_cut_split (Theorem2Aleph.lean:909-1075, the IsBall version) but DIRECTLY producing FreelyShellable M.support sigma from the induction hypothesis. Target signature (theorem3_core deg3_step hole, Theorem23.lean): 
+theorem deg3_step_free (sigma : Finset (Finset V)) (X M : Chain V) (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card) (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma) (IH : forall sigma' X' M', nrm M' < nrm M -> IsSphere2 sigma' -> UnitOn X' sigma' -> bdry X' = 0 -> bdry M' = X' -> IsTaut M' -> SimplicialChain M' -> FreelyShellable M'.support sigma') : FreelyShellable M.support sigma. 
+Reuse: degree3_cut_setup (426), capped_cut_splits_unit (175), taut_splits_for_capped_cut (775), degree3_cut_star_side_glue (465), star_filter_support_singleton (672), norm_lt_filter_neg_of_filter_support_singleton (441), starTet/starTet_card_of_degree3 (456/458), and the FreelyShellable tools FreelyShellable.exists_shelling_insert_of_glueStep_old (Theorem3.lean old-target snoc) and FreelyShellable.insert_of_glueStep (Theorem3.lean, the full L1 with hstart_t). The remainder side (non-star) is the smaller filling: get FreelyShellable on it by IH; the star tet glues onto its boundary by the single link-triangle face (GlueStep starTet sigma' sigma, from degree3_cut_star_side_glue). intro s hs; by_cases s = starTet: STAR TARGET uses FreelyShellable.insert_of_glueStep with a NEW lemma degree3_star_start_shellFrom supplying hstart_t (state it precisely, leave it as the ONLY sorry); OLD TARGET (s in remainder) uses exists_shelling_insert_of_glueStep_old. Read Theorem2Aleph.lean 909-1075 and 672-760, Theorem3.lean, Ball.lean (GlueStep/FreelyShellable/ShellFrom). Give COMPLETE Lean for deg3_step_free plus the precise statement of degree3_star_start_shellFrom. End APPROVED/BLOCKED.
+codex
+I’ll inspect the Lean files around the referenced theorems and shelling APIs, then patch the target theorem with only the requested new lemma left as `sorry`.
+exec
+/bin/zsh -lc "sed -n '650,790p' Theorem2Aleph.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '880,1090p' Theorem2Aleph.lean" in /Users/doyle/Dropbox/taut
+ exited 1 in 0ms:
+sed: Theorem2Aleph.lean: No such file or directory
+
+ exited 1 in 0ms:
+sed: Theorem2Aleph.lean: No such file or directory
+
+exec
+/bin/zsh -lc "sed -n '1,260p' Theorem3.lean" in /Users/doyle/Dropbox/taut
+ exited 1 in 0ms:
+sed: Theorem3.lean: No such file or directory
+
+exec
+/bin/zsh -lc 'rg -n "deg3_step|theorem3_core|degree3_cut_setup|capped_cut_splits_unit|taut_splits_for_capped_cut|degree3_cut_star_side_glue|star_filter_support_singleton|norm_lt_filter_neg_of_filter_support_singleton|starTet|starTet_card|FreelyShellable|GlueStep|ShellFrom" *.lean' in /Users/doyle/Dropbox/taut
+ exited 1 in 0ms:
+zsh:1: no matches found: *.lean
+
+codex
+The Lean files aren’t at the workspace root, so I’m locating the project layout first and then I’ll read the referenced sections from their actual paths.
+exec
+/bin/zsh -lc "rg --files -g '*.lean'" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/lakefile.lean
+lean/Taut/Complex2.lean
+lean/Taut/Eligible.lean
+lean/Taut/Chains.lean
+lean/Taut/Zvol.lean
+lean/Taut/Homology2.lean
+lean/Taut/Projection.lean
+lean/Taut/Ball.lean
+lean/Taut/Degree3.lean
+lean/Taut/Separation.lean
+lean/Taut/FlipGeom.lean
+lean/Taut/Theorem1.lean
+lean/Taut/Theorem2.lean
+lean/Taut/Splitting.lean
+lean/Taut/OrientedBridge.lean
+lean/Taut/Theorem23.lean
+lean/Taut/Theorem3.lean
+lean/Taut/PrimeStep.lean
+lean/Taut/Theorem2Aleph.lean
+lean/Taut.lean
+
+exec
+/bin/zsh -lc ls in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+RECOVERY.md
+TEAMWORK.md
+lean
+notes
+taut
+taut.pdf
+
+codex
+I found the Lean sources under `lean/Taut`. Next I’m checking the existing proof shape and the shelling constructors so the new proof matches the local API exactly.
+exec
+/bin/zsh -lc "sed -n '880,1090p' lean/Taut/Theorem2Aleph.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+    exact ht.2
+  · intro t ht
+    rw [Finsupp.support_filter, Finset.mem_filter] at ht
+    exact (hdich t ht.1).resolve_left ht.2
+  · exact hsumM
+
+theorem vertsOf_tetFaces_eq (T : Finset V) (hT4 : T.card = 4) : vertsOf (tetFaces T) = T := by
+  ext x
+  constructor
+  · intro hx
+    rw [mem_vertsOf] at hx
+    rcases hx with ⟨f, hf, hxf⟩
+    exact (Finset.mem_powersetCard.mp hf).1 hxf
+  · intro hx
+    rw [mem_vertsOf]
+    have herasecard : (T.erase x).card = 3 := by
+      rw [Finset.card_erase_of_mem hx, hT4]
+    have hpos : 0 < (T.erase x).card := by omega
+    rcases Finset.card_pos.mp hpos with ⟨y, hy⟩
+    have hyne : y ≠ x := (Finset.mem_erase.mp hy).1
+    have hyT : y ∈ T := (Finset.mem_erase.mp hy).2
+    refine ⟨T.erase y, ?_, ?_⟩
+    · refine Finset.mem_powersetCard.mpr ⟨?_, ?_⟩
+      · intro z hz
+        exact Finset.mem_of_mem_erase hz
+      · rw [Finset.card_erase_of_mem hyT, hT4]
+    · exact Finset.mem_erase.mpr ⟨Ne.symm hyne, hx⟩
+
+theorem degree3_reassemble_from_cut_split (σ : Finset (Finset V)) (X M : Chain V) {v : V} {W : C2 σ} {c : ℤ}
+    (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card) (hv : v ∈ vertsOf σ)
+    (h3 : (linkVerts σ v).card = 3)
+    (hW : bd2 σ W = gammaChain σ (linkVerts σ v))
+    (hσL : IsSphere2 (insert (linkVerts σ v) (cutSet σ W)))
+    (hσR : IsSphere2 (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))))
+    (hUL : UnitOn (cappedCutLeft σ W X (linkVerts σ v) c) (insert (linkVerts σ v) (cutSet σ W)))
+    (hXLc : bdry (cappedCutLeft σ W X (linkVerts σ v) c) = 0)
+    (hUR : UnitOn (cappedCutRight σ W X (linkVerts σ v) c) (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))))
+    (hXRc : bdry (cappedCutRight σ W X (linkVerts σ v) c) = 0)
+    (hML : bdry (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))) =
+      cappedCutLeft σ W X (linkVerts σ v) c)
+    (hMR : bdry (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))) =
+      cappedCutRight σ W X (linkVerts σ v) c)
+    (hTL : IsTaut (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
+    (hTR : IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))))
+    (hSuppL : ∀ t ∈ (M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))).support,
+      t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))
+    (hSuppR : ∀ t ∈ (M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W)))).support,
+      t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))))
+    (hMsum : M.filter (fun t => t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))) +
+      M.filter (fun t => ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))) = M)
+    (hS : SimplicialChain M) :
+    ∃ (σ' : Finset (Finset V)) (X' M' : Chain V),
+      IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
+      SimplicialChain M' ∧ nrm M' < nrm M ∧
+      (IsBall M'.support σ' → IsBall M.support σ) := by
+  classical
+  let γ : Finset V := linkVerts σ v
+  let A : Finset V := vertsOf (insert γ (cutSet σ W))
+  let ML : Chain V := M.filter (fun t => t ⊆ A)
+  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
+  have hsplit := degree3_cut_star_side_glue σ hσ hbig hv h3 hW
+  rcases hsplit with hcase | hcase
+  · rcases hcase with ⟨hstar, hglue⟩
+    refine ⟨insert γ (cutSet σ (W + fun _ => 1)), cappedCutRight σ W X γ c, MR, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · dsimp [γ]
+      exact hσR
+    · dsimp [γ]
+      exact hUR
+    · dsimp [γ]
+      exact hXRc
+    · dsimp [MR, A, γ]
+      exact hMR
+    · dsimp [MR, A, γ]
+      exact hTR
+    · intro t
+      dsimp [MR, A, γ]
+      rw [Finsupp.filter_apply]
+      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))
+      · rw [if_pos ht]
+        exact hS t
+      · rw [if_neg ht]
+        exact Or.inr (Or.inl rfl)
+    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+      have hULtet : UnitOn (cappedCutLeft σ W X γ c) (tetFaces (starTet σ v)) := by
+        dsimp [γ]
+        rw [← hstar]
+        exact hUL
+      have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet σ v := by
+        intro t ht
+        have htA : t ⊆ vertsOf (insert γ (cutSet σ W)) := hSuppL t (by simpa only [ML, A] using ht)
+        dsimp [γ] at htA
+        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+        exact htA
+      have hMLsupp : ML.support = {starTet σ v} := by
+        exact star_filter_support_singleton ML (cappedCutLeft σ W X γ c) (starTet σ v) hT4 hULtet (by simpa only [ML, A, γ] using hML) (by simpa only [ML, A, γ] using hTL) hSuppLT
+      have hlt : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
+        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
+      simpa only [MR] using hlt
+    · intro hball
+      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+      have hULtet : UnitOn (cappedCutLeft σ W X γ c) (tetFaces (starTet σ v)) := by
+        dsimp [γ]
+        rw [← hstar]
+        exact hUL
+      have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet σ v := by
+        intro t ht
+        have htA : t ⊆ vertsOf (insert γ (cutSet σ W)) := hSuppL t (by simpa only [ML, A] using ht)
+        dsimp [γ] at htA
+        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+        exact htA
+      have hMLsupp : ML.support = {starTet σ v} := by
+        exact star_filter_support_singleton ML (cappedCutLeft σ W X γ c) (starTet σ v) hT4 hULtet (by simpa only [ML, A, γ] using hML) (by simpa only [ML, A, γ] using hTL) hSuppLT
+      have hreasm : IsBall (M.filter (fun t => ¬ t ⊆ A)).support (insert γ (cutSet σ (W + fun _ => 1))) → IsBall M.support σ :=
+        ball_reassemble_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp hglue
+      exact hreasm (by simpa only [MR] using hball)
+  · rcases hcase with ⟨hstar, hglue⟩
+    refine ⟨insert γ (cutSet σ W), cappedCutLeft σ W X γ c, ML, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · dsimp [γ]
+      exact hσL
+    · dsimp [γ]
+      exact hUL
+    · dsimp [γ]
+      exact hXLc
+    · dsimp [ML, A, γ]
+      exact hML
+    · dsimp [ML, A, γ]
+      exact hTL
+    · intro t
+      dsimp [ML, A, γ]
+      rw [Finsupp.filter_apply]
+      by_cases ht : t ⊆ vertsOf (insert (linkVerts σ v) (cutSet σ W))
+      · rw [if_pos ht]
+        exact hS t
+      · rw [if_neg ht]
+        exact Or.inr (Or.inl rfl)
+    · have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+      have hURtet : UnitOn (cappedCutRight σ W X γ c) (tetFaces (starTet σ v)) := by
+        dsimp [γ]
+        rw [← hstar]
+        exact hUR
+      have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet σ v := by
+        intro t ht
+        have htA : t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) := hSuppR t (by simpa only [MR, A] using ht)
+        dsimp [γ] at htA
+        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+        exact htA
+      have hMRsupp : MR.support = {starTet σ v} := by
+        exact star_filter_support_singleton MR (cappedCutRight σ W X γ c) (starTet σ v) hT4 hURtet (by simpa only [MR, A, γ] using hMR) (by simpa only [MR, A, γ] using hTR) hSuppRT
+      have hlt : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
+        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
+      have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+        dsimp [ML]
+        ext t
+        rw [Finsupp.filter_apply, Finsupp.filter_apply]
+        by_cases ht : t ⊆ A
+        · rw [if_pos ht, if_pos]
+          intro hneg
+          exact hneg ht
+        · rw [if_neg ht, if_neg]
+          intro hnn
+          exact hnn ht
+      rw [hML_eq]
+      exact hlt
+    · intro hball
+      have hT4 : (starTet σ v).card = 4 := starTet_card_of_degree3 σ h3
+      have hURtet : UnitOn (cappedCutRight σ W X γ c) (tetFaces (starTet σ v)) := by
+        dsimp [γ]
+        rw [← hstar]
+        exact hUR
+      have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet σ v := by
+        intro t ht
+        have htA : t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1))) := hSuppR t (by simpa only [MR, A] using ht)
+        dsimp [γ] at htA
+        rw [hstar, vertsOf_tetFaces_eq (starTet σ v) hT4] at htA
+        exact htA
+      have hMRsupp : MR.support = {starTet σ v} := by
+        exact star_filter_support_singleton MR (cappedCutRight σ W X γ c) (starTet σ v) hT4 hURtet (by simpa only [MR, A, γ] using hMR) (by simpa only [MR, A, γ] using hTR) hSuppRT
+      have hreasm : IsBall (M.filter (fun t => ¬ (¬ t ⊆ A))).support (insert γ (cutSet σ W)) → IsBall M.support σ :=
+        ball_reassemble_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp hglue
+      apply hreasm
+      have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
+        dsimp [ML]
+        ext t
+        rw [Finsupp.filter_apply, Finsupp.filter_apply]
+        by_cases ht : t ⊆ A
+        · rw [if_pos ht, if_pos]
+          intro hneg
+          exact hneg ht
+        · rw [if_neg ht, if_neg]
+          intro hnn
+          exact hnn ht
+      rw [← hML_eq]
+      exact hball
+
+
+/-- M26 hole `deg3_split`: a 2-sphere with a degree-3 vertex (> 4 vertices) splits,
+along the link triangle, into a strictly smaller taut filling whose ball reassembles
+to the original (connected-sum reduction). -/
+theorem aleph_deg3_split (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    (hbig : 4 < (vertsOf σ).card) (hU : UnitOn X σ) (hXc : bdry X = 0) (hMX : bdry M = X)
+    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex σ) :
+    ∃ (σ' : Finset (Finset V)) (X' M' : Chain V),
+      IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
+      SimplicialChain M' ∧ nrm M' < nrm M ∧
+      (IsBall M'.support σ' → IsBall M.support σ) := by
+  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ := degree3_cut_setup σ hσ hbig hd3
+  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ := capped_cut_splits_unit σ X hσ hγ3 hγe hγσ hW hU hXc
+  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ := taut_splits_for_capped_cut σ X M hσ hσL hσR hγ3 hγe hW hUL hXLc hUR hXRc hXsum hMX hT
+  exact degree3_reassemble_from_cut_split σ X M hσ hbig hv hγ3 hW hσL hσR hUL hXLc hUR hXRc hML hMR hTL hTR hSuppL hSuppR hMsum hS
+
+
+exec
+/bin/zsh -lc "sed -n '650,790p' lean/Taut/Theorem2Aleph.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    have hWFadd : ((W + fun _ => 1) : C2 σ) ⟨F, hFσ⟩ = 1 := by
+      show W ⟨F, hFσ⟩ + 1 = 1
+      rw [hWF0]
+      decide
+    have hstar := star_side_eq (W + fun _ => 1) hWadd hWFadd
+    refine ⟨?_, ?_⟩
+    · simpa [γ, T] using hstar
+    · have hcomp : cutSet σ W = σ \ cutSet σ (W + fun _ => 1) := by
+        rw [cutSet_add_one_eq_sdiff W]
+        exact (Finset.sdiff_sdiff_eq_self (cutSet_subset : cutSet σ W ⊆ σ)).symm
+      have hg : GlueStep T (insert γ (cutSet σ W)) σ :=
+        glue_of_star (W + fun _ => 1) hstar (insert γ (cutSet σ W)) (by rw [hcomp])
+      simpa [γ, T] using hg
+  · left
+    have hWγ : bd2 σ W = gammaChain σ γ := by simpa [γ] using hW
+    have hstar := star_side_eq W hWγ hWF1
+    refine ⟨?_, ?_⟩
+    · simpa [γ, T] using hstar
+    · have hg : GlueStep T (insert γ (cutSet σ (W + fun _ => 1))) σ :=
+        glue_of_star W hstar (insert γ (cutSet σ (W + fun _ => 1))) (by rw [cutSet_add_one_eq_sdiff W])
+      simpa [γ, T] using hg
+
+theorem star_filter_support_singleton (Mstar Y : Chain V) (T : Finset V) (hT4 : T.card = 4)
+    (hU : UnitOn Y (tetFaces T)) (hbd : bdry Mstar = Y) (hMt : IsTaut Mstar)
+    (hSupp : ∀ t ∈ Mstar.support, t ⊆ T) :
+    Mstar.support = {T} := by
+  classical
+  have h_all : ∀ t ∈ Mstar.support, t = T := by
+    intro t ht
+    have hbdsupp : ∀ s ∈ (bdry Mstar).support, s.card = 3 := by
+      intro s hs
+      rw [hbd, hU.1] at hs
+      exact (Finset.mem_powersetCard.mp hs).2
+    have hcardt : t.card = 4 := by
+      simpa using (hMt.dim_pure hbdsupp t ht)
+    exact Finset.eq_of_subset_of_card_le (hSupp t ht) (by omega)
+  have hnonempty : Mstar.support.Nonempty := by
+    have hcardfaces : (tetFaces T).card = 4 := card_tetFaces hT4
+    have hfaces_nonempty : (tetFaces T).Nonempty := by
+      exact Finset.card_pos.mp (by rw [hcardfaces]; norm_num)
+    rcases hfaces_nonempty with ⟨s, hs⟩
+    have hYs : s ∈ Y.support := by
+      rw [hU.1]
+      exact hs
+    have hYne : Y ≠ 0 := by
+      intro hY0
+      rw [hY0] at hYs
+      simpa using hYs
+    have hMne : Mstar ≠ 0 := by
+      intro hM0
+      apply hYne
+      rw [← hbd, hM0]
+      simp
+    rw [Finset.nonempty_iff_ne_empty]
+    intro hempty
+    apply hMne
+    rw [← Finsupp.support_eq_empty]
+    exact hempty
+  ext t
+  constructor
+  · intro ht
+    have htT : t = T := h_all t ht
+    rw [htT]
+    exact Finset.mem_singleton_self T
+  · intro ht
+    rw [Finset.mem_singleton] at ht
+    rw [ht]
+    rcases hnonempty with ⟨u, hu⟩
+    have huT : u = T := h_all u hu
+    rw [← huT]
+    exact hu
+
+theorem support_eq_insert_of_filter_support_singleton (M : Chain V) (P : Finset V → Prop) [DecidablePred P] {T : Finset V}
+    (hP : (M.filter P).support = {T}) :
+    M.support = insert T (M.filter (fun t => ¬ P t)).support := by
+  ext s
+  constructor
+  · intro hs
+    by_cases hPs : P s
+    · have hsfil : s ∈ (M.filter P).support := by
+        simpa using And.intro hs hPs
+      rw [hP] at hsfil
+      have hsT : s = T := by
+        simpa using hsfil
+      simp [hsT]
+    · have hsfil : s ∈ (M.filter (fun t => ¬ P t)).support := by
+        simpa using And.intro hs hPs
+      exact mem_insert_of_mem hsfil
+  · intro hs
+    simp at hs
+    rcases hs with hsT | hsfil
+    · have hTin : T ∈ (M.filter P).support := by
+        rw [hP]
+        simp
+      have hTnz : ¬ M T = 0 := by
+        have hTin' : ¬ M T = 0 ∧ P T := by
+          simpa using hTin
+        exact hTin'.1
+      simpa [hsT] using hTnz
+    · simpa using hsfil.1
+
+theorem ball_reassemble_of_filter_support_singleton (M : Chain V) (P : Finset V → Prop) [DecidablePred P] {T : Finset V}
+    {B σ : Finset (Finset V)} (hP : (M.filter P).support = {T})
+    (hglue : GlueStep T B σ) :
+    IsBall (M.filter (fun t => ¬ P t)).support B → IsBall M.support σ := by
+  intro hball
+  have hTmem : T ∈ (M.filter P).support := by
+    rw [hP]
+    simp
+  have hTne : (M.filter P) T ≠ 0 := by
+    exact Finsupp.mem_support_iff.mp hTmem
+  have hPT : P T := by
+    by_contra hnot
+    have hzero : (M.filter P) T = 0 := by
+      simp [Finsupp.filter, hnot]
+    exact hTne hzero
+  have hTnot : T ∉ (M.filter (fun t => ¬ P t)).support := by
+    intro h
+    have hne : (M.filter (fun t => ¬ P t)) T ≠ 0 := Finsupp.mem_support_iff.mp h
+    have hzero : (M.filter (fun t => ¬ P t)) T = 0 := by
+      simp [Finsupp.filter, hPT]
+    exact hne hzero
+  rw [support_eq_insert_of_filter_support_singleton M P hP]
+  exact IsBall.insert_of_glueStep hball hglue hTnot
+
+theorem taut_splits_for_capped_cut (σ : Finset (Finset V)) (X M : Chain V) {γ : Finset V} {W : C2 σ} {c : ℤ}
+    (hσ : IsSphere2 σ)
+    (hσL : IsSphere2 (insert γ (cutSet σ W)))
+    (hσR : IsSphere2 (insert γ (cutSet σ (W + fun _ => 1))))
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+    (hW : bd2 σ W = gammaChain σ γ)
+    (hUL : UnitOn (cappedCutLeft σ W X γ c) (insert γ (cutSet σ W)))
+    (hXLc : bdry (cappedCutLeft σ W X γ c) = 0)
+    (hUR : UnitOn (cappedCutRight σ W X γ c) (insert γ (cutSet σ (W + fun _ => 1))))
+    (hXRc : bdry (cappedCutRight σ W X γ c) = 0)
+    (hXsum : cappedCutLeft σ W X γ c + cappedCutRight σ W X γ c = X)
+    (hMX : bdry M = X) (hT : IsTaut M) :
+    bdry (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))) = cappedCutLeft σ W X γ c ∧
+    bdry (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))) = cappedCutRight σ W X γ c ∧
+    IsTaut (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+    IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+
+exec
+/bin/zsh -lc "sed -n '1,320p' lean/Taut/Theorem3.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Theorem2Aleph
+
+/-!
+# Theorem 3: free sticker balls (the `FreelyShellable` reassembly)
+
+Per Peter's "sticker ball" reframe (codex 019ecbfa): the induction carries
+`FreelyShellable` (a free sticker ball — startable at any tet), and the case-2
+reassembly is a direct concatenation rather than a topological obstruction. This
+file builds the free-shelling reassembly tools and discharges the branch holes of
+`theorem3_core`.
+
+This installment: **L1** — the free case-1 stick (a free sticker ball plus a
+`GlueStep` tet is a free sticker ball, given the bridge-start relative shelling) —
+and **base_free** — the minimal-sphere base case as a free sticker ball (reusing
+the Aleph base lemmas, finishing with `freelyShellable_singleton`).
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-- **L1 (free case-1 stick).** A free sticker ball `τ` (boundary `B`) plus a fresh
+`GlueStep` tet `t` is a free sticker ball with `t` adjoined. For an old target the
+shelling is `(old shelling from target) ++ [t]`; for target `t` the shelling is
+`t :: (a shelling of τ onto the post-glue boundary `B'` starting from `tetFaces t`)`
+— that bridge-start relative shelling is the hypothesis `hstart_t` (supplied by the
+geometry at the call site). -/
+lemma FreelyShellable.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Finset V}
+    (hfree : FreelyShellable τ B) (hg : GlueStep t B B') (ht : t ∉ τ)
+    (hstart_t : ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
+      ShellFrom (tetFaces t) l B') :
+    FreelyShellable (insert t τ) B' := by
+  intro s hs
+  rw [Finset.mem_insert] at hs
+  rcases hs with rfl | hsτ
+  · -- target is the new tet (`rcases rfl` substituted the binder `t := s`)
+    obtain ⟨l, hlτ, hnodup, hsf⟩ := hstart_t
+    refine ⟨s :: l, rfl, ?_, ?_, hg.card4, hsf⟩
+    · rw [List.toFinset_cons, hlτ]
+    · exact List.nodup_cons.mpr ⟨fun hc => ht (hlτ ▸ List.mem_toFinset.mpr hc), hnodup⟩
+  · -- target is an old tet `s ∈ τ`
+    obtain ⟨l, hhead, hlτ, hnodup, hsh⟩ := hfree s hsτ
+    refine ⟨l ++ [t], ?_, ?_, ?_, IsShelling_snoc hsh hg⟩
+    · cases l with
+      | nil => exact absurd hsh (by simp [IsShelling])
+      | cons a r => rw [List.cons_append]; exact hhead
+    · rw [List.toFinset_append, hlτ]
+      ext x
+      simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+      tauto
+    · refine hnodup.append (List.nodup_singleton t) ?_
+      rw [List.disjoint_left]
+      intro a ha
+      simp only [List.mem_singleton]
+      rintro rfl
+      exact ht (hlτ ▸ List.mem_toFinset.mpr ha)
+
+/-- **Old-target snoc** (L1's old-target half, extracted, with no `hstart_t`): if `τ`
+is a free sticker ball and a fresh tet `e` glues onto its boundary, then for any OLD
+target `s ∈ τ` there is a shelling of `insert e τ` starting at `s` — namely `(τ's
+shelling from s) ++ [e]`.  This is the only half `prime_step`/`deg3_step` need: by
+the M25b disjoint-eligible-pair, the removed tet is always chosen `≠ s`, so the
+target is always old and the removed tet always glues last. -/
+lemma FreelyShellable.exists_shelling_insert_of_glueStep_old
+    {τ B B' : Finset (Finset V)} {e s : Finset V}
+    (hfree : FreelyShellable τ B) (hg : GlueStep e B B') (heτ : e ∉ τ) (hsτ : s ∈ τ) :
+    ∃ l : List (Finset V), l.head? = some s ∧ l.toFinset = insert e τ ∧ l.Nodup ∧
+      IsShelling l B' := by
+  obtain ⟨l, hhead, hlτ, hnodup, hsh⟩ := hfree s hsτ
+  refine ⟨l ++ [e], ?_, ?_, ?_, IsShelling_snoc hsh hg⟩
+  · cases l with
+    | nil => exact absurd hsh (by simp [IsShelling])
+    | cons a r => rw [List.cons_append]; exact hhead
+  · rw [List.toFinset_append, hlτ]
+    ext x
+    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+    tauto
+  · refine hnodup.append (List.nodup_singleton e) ?_
+    rw [List.disjoint_left]
+    intro a ha
+    simp only [List.mem_singleton]
+    rintro rfl
+    exact heτ (hlτ ▸ List.mem_toFinset.mpr ha)
+
+/-- **base_free** (the base hole of `theorem3_core`): a taut filling of a 2-sphere on
+≤ 4 vertices is a free sticker ball — it is a single tetrahedron
+(`freelyShellable_singleton`). Reuses the Aleph base lemmas verbatim; only the final
+step changes from `isBall_singleton` to `freelyShellable_singleton`. -/
+theorem base_free (σ : Finset (Finset V)) (X M : Chain V) (hσ : IsSphere2 σ)
+    (hU : UnitOn X σ) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M)
+    (hv : (vertsOf σ).card ≤ 4) : FreelyShellable M.support σ := by
+  have hcard : (vertsOf σ).card = 4 := aleph_base_verts_card_eq_four hσ hv
+  have hσeq : σ = (vertsOf σ).powersetCard 3 := aleph_base_sphere_eq_powersetCard3 hσ hcard
+  have hsuppInfo := aleph_base_taut_support_card4_subset_verts hσ hU hMX hT
+  have hne := aleph_base_support_nonempty hσ hU hMX
+  have hsupp : M.support = {vertsOf σ} :=
+    aleph_base_support_eq_singleton_of_four_vertices hcard hsuppInfo hne
+  rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+  exact freelyShellable_singleton hcard
+
+end Taut
+
+exec
+/bin/zsh -lc "sed -n '1,260p' lean/Taut/Ball.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Complex2
+
+/-!
+# Shelling-certified combinatorial 3-balls
+
+The combinatorial replacement for "simplicial triangulation of `B³`",
+following the paper's *Shelling* section.  A *shelling* of a ball is an
+ordering `(t₁, …, t_k)` of its tetrahedra such that gluing them on one at a
+time always maintains a ball; the type of a glued tet is the number of its
+faces shared with what is already built (type 1 or 2; type 3 — which would
+create an interior vertex — never occurs here).
+
+Following the G1 audit (Q2/Q3 APPROVED, `notes/codex-consults/
+2026-06-12-g1-sphere-ball-*`), a ball is encoded as an **explicit shelling
+certificate** (a `List` of tets), not an inductive `Prop`: the Theorem 2
+reassembly grafts shellings by list concatenation, and free shellability
+quantifies over the first element.  A glue step is a purely combinatorial
+stick (tet glued by one or two faces); intermediate boundaries are **not**
+required to be spheres — that the boundary of a sticker ball is a 2-sphere is
+a separate, deferred fact (`glueStep_preserves_isSphere2`), not needed for the
+main theorem (whose boundary `σ` is given as a sphere).
+
+`IsBall τ B` is, by design, a *shelling-certified* ball — not a general
+combinatorial-ball definition.  It is exactly the object the merged
+Theorem 2+3 induction constructs.
+
+Faces of a tetrahedron `t` (a 4-element set) are its card-3 subsets,
+`t.powersetCard 3`.  When tet `t` is glued onto a ball whose boundary is the
+2-sphere `B`, the faces of `t` already present in `B` become interior and the
+new faces are exposed: the new boundary is the symmetric difference
+`(B \ t.powersetCard 3) ∪ (t.powersetCard 3 \ B)`.
+
+Validation (build-checked):
+* a single tet is a (freely shellable) ball with the tetrahedron-boundary
+  sphere as its boundary (`isBall_singleton`, `freelyShellable_singleton`).
+
+That the boundary of a sticker ball is a 2-sphere
+(`glueStep_preserves_isSphere2` / `ShellFrom.isSphere2_of_seed`) is true but
+**deferred**: it is the classification-of-surfaces fact (closed + connected +
+orientable + χ = 2), provable fieldwise, and is *not* on the path of the main
+theorem.
+-/
+
+namespace Taut
+
+variable {V : Type*} [LinearOrder V]
+
+/-- The four triangular faces of a tetrahedron `t` (the card-3 subsets). -/
+abbrev tetFaces (t : Finset V) : Finset (Finset V) := t.powersetCard 3
+
+/-- One gluing step of a shelling: tet `t` is glued onto a ball whose
+boundary is `B`, producing the ball with boundary `B'`.
+
+* `card4` — `t` is a tetrahedron (4 vertices);
+* `shared` — `t` meets the current boundary in **one or two** of its faces
+  (type 1 or 2; type 3 is excluded, as it would create an interior vertex);
+* `newBdry` — the new boundary is the symmetric difference of `B` and the
+  faces of `t`: shared faces become interior, the rest are exposed.
+
+A glue step is a **purely combinatorial** stick; it does not assert the new
+boundary is a 2-sphere (that holds, but is the separate, deferred fact
+`glueStep_preserves_isSphere2`, not needed for the main theorem). -/
+structure GlueStep (t : Finset V) (B B' : Finset (Finset V)) : Prop where
+  card4 : t.card = 4
+  shared : (tetFaces t ∩ B).card = 1 ∨ (tetFaces t ∩ B).card = 2
+  newBdry : B' = (B \ tetFaces t) ∪ (tetFaces t \ B)
+
+/-- Starting from a ball with boundary `B₀`, gluing on the tets of `l` in
+order yields a ball with boundary `B`. -/
+def ShellFrom : Finset (Finset V) → List (Finset V) → Finset (Finset V) → Prop
+  | B₀, [],     B => B = B₀
+  | B₀, t :: l, B => ∃ B₁, GlueStep t B₀ B₁ ∧ ShellFrom B₁ l B
+
+/-- `l` is a shelling with final boundary `B`: the head tet is the initial
+tetrahedron (its boundary is the tetrahedron-boundary sphere) and the
+remaining tets are glued on in order. -/
+def IsShelling : List (Finset V) → Finset (Finset V) → Prop
+  | [],     _ => False
+  | t :: l, B => t.card = 4 ∧ ShellFrom (tetFaces t) l B
+
+/-- A *shelling-certified ball*: a facet set `τ` admitting a shelling (a
+nodup ordering of its tets gluing up to boundary `B`). -/
+def IsBall (τ B : Finset (Finset V)) : Prop :=
+  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+
+/-- `τ` is *freely shellable* with boundary `B` if **any** of its tets can
+serve as the initial tet of a shelling (the paper's "freely shellable":
+shucking in reverse can remove any prescribed tet last). -/
+def FreelyShellable (τ B : Finset (Finset V)) : Prop :=
+  ∀ t ∈ τ, ∃ l : List (Finset V),
+    l.head? = some t ∧ l.toFinset = τ ∧ l.Nodup ∧ IsShelling l B
+
+/-! ## The boundary of a sticker ball is a sphere — DEFERRED
+
+That every intermediate (hence the final) boundary of a sticker ball is a
+combinatorial 2-sphere is true but **off the critical path**, so deferred.
+Mathematically it is the classification of surfaces — a sphere glued to a tet
+along one or two faces stays closed, connected, orientable, with χ = 2, all
+preserved by the surgery — but Mathlib has no usable classification theorem,
+so the Lean route is fieldwise preservation (the only nontrivial field being
+`linkConn`, the manifold/no-pinch condition: an edge subdivision of the vertex
+links for type 1, a contraction-at-2 + subdivision-at-2 for type 2).  Targets
+(to be proved later by a genuine fieldwise argument — never assumed):
+
+* `glueStep_preserves_isSphere2 (hg : GlueStep t B B') : IsSphere2 B → IsSphere2 B'`
+* `ShellFrom.isSphere2_of_seed (h : ShellFrom B₀ l B) : IsSphere2 B₀ → IsSphere2 B`
+
+The main theorem (`theorem3_core`) does not use these: the boundary of
+`M.support` is `σ`, which is given as a sphere. -/
+
+/-! ## Reassembly (M22a): appending tets and bridging two balls
+
+Architect: codex 019ec2cc. `ShellFrom`/`IsShelling` are closed under appending
+tets at the end; a ball with a `GlueStep` tet on its boundary grows by that tet
+(case-1 of the Theorem-2 induction). Gluing two balls through a bridging tet
+needs *relative* shellability (`RelShelling`) — that is the genuine hidden-
+topology fact (M22b), here reduced to a tautological bridge given the relative
+shelling. -/
+
+/-- `ShellFrom` composes: glue `l₁` then `l₂`. -/
+lemma ShellFrom_append {B₀ B₁ B₂ : Finset (Finset V)} {l₁ l₂ : List (Finset V)}
+    (h₁ : ShellFrom B₀ l₁ B₁) (h₂ : ShellFrom B₁ l₂ B₂) :
+    ShellFrom B₀ (l₁ ++ l₂) B₂ := by
+  induction l₁ generalizing B₀ with
+  | nil => simp only [ShellFrom, List.nil_append] at h₁ ⊢; exact h₁ ▸ h₂
+  | cons t l ih =>
+      simp only [ShellFrom, List.cons_append] at h₁ ⊢
+      obtain ⟨B', hg, hrest⟩ := h₁
+      exact ⟨B', hg, ih hrest⟩
+
+/-- Append one `GlueStep` tet to a `ShellFrom`. -/
+lemma ShellFrom_snoc {B₀ B B' : Finset (Finset V)} {l : List (Finset V)} {t : Finset V}
+    (h : ShellFrom B₀ l B) (hg : GlueStep t B B') : ShellFrom B₀ (l ++ [t]) B' :=
+  ShellFrom_append h ⟨B', hg, rfl⟩
+
+/-- **Ambient transport of one glue step.** A glue step commutes with adjoining a
+piece `K` of boundary disjoint from the tet's faces: the shared count is unchanged
+(the tet's faces avoid `K`) and the new boundary just carries `K` along.  This is
+the combinatorial core of the case-2 bridge — sticking the second ball's tets while
+the first ball + bridge sit in the ambient `K`. -/
+lemma GlueStep.union_disjoint {t : Finset V} {B B' K : Finset (Finset V)}
+    (hg : GlueStep t B B') (hdisj : Disjoint (tetFaces t) K) :
+    GlueStep t (B ∪ K) (B' ∪ K) where
+  card4 := hg.card4
+  shared := by
+    have heq : tetFaces t ∩ (B ∪ K) = tetFaces t ∩ B := by
+      ext s
+      simp only [Finset.mem_inter, Finset.mem_union]
+      constructor
+      · rintro ⟨hsT, hsB | hsK⟩
+        · exact ⟨hsT, hsB⟩
+        · exact absurd hsK (fun h => (Finset.disjoint_left.mp hdisj) hsT h)
+      · rintro ⟨hsT, hsB⟩; exact ⟨hsT, Or.inl hsB⟩
+    rw [heq]; exact hg.shared
+  newBdry := by
+    rw [hg.newBdry]
+    ext s
+    simp only [Finset.mem_union, Finset.mem_sdiff]
+    by_cases hsK : s ∈ K
+    · have hsT : s ∉ tetFaces t := fun h => (Finset.disjoint_left.mp hdisj) h hsK
+      tauto
+    · tauto
+
+/-- **Ambient transport of a whole relative shelling.** Gluing the tets of `l` onto
+`B₀` transports to gluing them onto `B₀ ∪ K`, provided every tet's faces avoid `K`. -/
+lemma ShellFrom_union_disjoint {K : Finset (Finset V)} {l : List (Finset V)} :
+    ∀ {B₀ B : Finset (Finset V)}, ShellFrom B₀ l B →
+      (∀ t ∈ l, Disjoint (tetFaces t) K) → ShellFrom (B₀ ∪ K) l (B ∪ K) := by
+  induction l with
+  | nil =>
+      intro B₀ B h _
+      simp only [ShellFrom] at h ⊢
+      rw [h]
+  | cons t l ih =>
+      intro B₀ B h hd
+      simp only [ShellFrom] at h ⊢
+      obtain ⟨B₁, hg, hrest⟩ := h
+      exact ⟨B₁ ∪ K, hg.union_disjoint (hd t (List.mem_cons.mpr (Or.inl rfl))),
+        ih hrest (fun u hu => hd u (List.mem_cons.mpr (Or.inr hu)))⟩
+
+/-- Glue a `ShellFrom` of `l₂` onto the end of a shelling `l`. -/
+lemma IsShelling_append {l l₂ : List (Finset V)} {B₁ B : Finset (Finset V)}
+    (h : IsShelling l B₁) (hf : ShellFrom B₁ l₂ B) : IsShelling (l ++ l₂) B := by
+  cases l with
+  | nil => simp only [IsShelling] at h
+  | cons t r => simp only [IsShelling, List.cons_append] at h ⊢; exact ⟨h.1, ShellFrom_append h.2 hf⟩
+
+/-- Append one `GlueStep` tet to a shelling. -/
+lemma IsShelling_snoc {B B' : Finset (Finset V)} {l : List (Finset V)} {t : Finset V}
+    (h : IsShelling l B) (hg : GlueStep t B B') : IsShelling (l ++ [t]) B' :=
+  IsShelling_append h ⟨B', hg, rfl⟩
+
+/-- **Case-1 reassembly.** A ball whose boundary admits a `GlueStep` for a fresh
+tet `t` grows to the ball with `t` adjoined. -/
+theorem IsBall.insert_of_glueStep {τ B B' : Finset (Finset V)} {t : Finset V}
+    (h : IsBall τ B) (hg : GlueStep t B B') (ht : t ∉ τ) : IsBall (insert t τ) B' := by
+  obtain ⟨l, hlτ, hnodup, hsh⟩ := h
+  have htl : t ∉ l := fun hc => ht (hlτ ▸ List.mem_toFinset.mpr hc)
+  refine ⟨l ++ [t], ?_, ?_, IsShelling_snoc hsh hg⟩
+  · rw [List.toFinset_append, hlτ]
+    ext s
+    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+    tauto
+  · refine hnodup.append (List.nodup_singleton t) ?_
+    rw [List.disjoint_left]; intro a ha
+    simp only [List.mem_singleton]; rintro rfl; exact htl ha
+
+/-- A *relative shelling*: glue the tets of `τ` onto an ambient boundary `B₀`,
+ending at `B`. (`IsBall` is the special case `B₀ = tetFaces (head)`.) This is the
+invariant the case-2 bridge needs but `IsBall` does not supply. -/
+def RelShelling (τ B₀ B : Finset (Finset V)) : Prop :=
+  ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧ ShellFrom B₀ l B
+
+/-- **Case-2 bridge (tautological given the relative shelling).** A ball `τ₁`,
+a `GlueStep` tet `t` onto its boundary, and a relative shelling of `τ₂` onto the
+resulting boundary, assemble into one ball. The hard part — that the separated
+ball actually supplies the `RelShelling` — is M22b. -/
+theorem IsBall.bridge_of_relShelling {τ₁ τ₂ B₁ Bmid B : Finset (Finset V)} {t : Finset V}
+    (h₁ : IsBall τ₁ B₁) (hg : GlueStep t B₁ Bmid) (h₂ : RelShelling τ₂ Bmid B)
+    (ht₁ : t ∉ τ₁) (ht₂ : t ∉ τ₂) (hdisj : Disjoint τ₁ τ₂) :
+    IsBall (insert t (τ₁ ∪ τ₂)) B := by
+  obtain ⟨l₁, hl₁, hn₁, hsh₁⟩ := h₁
+  obtain ⟨l₂, hl₂, hn₂, hsf₂⟩ := h₂
+  have htl₁ : t ∉ l₁ := fun hc => ht₁ (hl₁ ▸ List.mem_toFinset.mpr hc)
+  have htl₂ : t ∉ l₂ := fun hc => ht₂ (hl₂ ▸ List.mem_toFinset.mpr hc)
+  have hdl : l₁.Disjoint l₂ := by
+    intro a ha ha₂
+    exact Finset.disjoint_left.mp hdisj (hl₁ ▸ List.mem_toFinset.mpr ha)
+      (hl₂ ▸ List.mem_toFinset.mpr ha₂)
+  refine ⟨(l₁ ++ [t]) ++ l₂, ?_, ?_, IsShelling_append (IsShelling_snoc hsh₁ hg) hsf₂⟩
+  · rw [List.toFinset_append, List.toFinset_append, hl₁, hl₂]
+    ext s
+    simp only [Finset.mem_union, Finset.mem_insert, List.mem_toFinset, List.mem_singleton]
+    tauto
+  · refine (hn₁.append (List.nodup_singleton t) ?_).append hn₂ ?_
+    · rw [List.disjoint_left]; intro a ha
+      simp only [List.mem_singleton]; rintro rfl; exact htl₁ ha
+    · rw [List.disjoint_left]; intro a ha
+      rw [List.mem_append, List.mem_singleton] at ha
+      rcases ha with ha | rfl
+      · exact List.disjoint_left.mp hdl ha
+      · exact htl₂
+
+/-! ## A single tetrahedron is a ball -/
+
+/-- A single tetrahedron `t` is a shelling-certified ball whose boundary is
+the tetrahedron-boundary sphere. -/
+theorem isBall_singleton {t : Finset V} (ht : t.card = 4) :
+    IsBall {t} (tetFaces t) := by
+  refine ⟨[t], by simp, by simp, ?_⟩
+  simp only [IsShelling, ShellFrom]
+  exact ⟨ht, trivial⟩
+
+/-- A single tetrahedron is freely shellable. -/
+theorem freelyShellable_singleton {t : Finset V} (ht : t.card = 4) :
+    FreelyShellable {t} (tetFaces t) := by
+  intro t' ht'
+  rw [Finset.mem_singleton] at ht'
+  subst t'
+  refine ⟨[t], by simp, by simp, by simp, ?_⟩
+
+exec
+/bin/zsh -lc "sed -n '260,620p' lean/Taut/Ball.lean" in /Users/doyle/Dropbox/taut
+exec
+/bin/zsh -lc "sed -n '1,260p' lean/Taut/Theorem23.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Eligible
+
+/-!
+# Theorem 2 (core): a taut filling of a 2-sphere is a ball — the induction skeleton
+
+The central theorem of "Taut fillings": a taut integral filling `M` of a
+combinatorial 2-sphere `σ` arises from a simplicial triangulation of `B³` — here,
+`M.support` is a (shelling-certified) ball with boundary `σ` (`IsBall M.support
+σ`). The paper's proof is a strong induction on `|M| = nrm M`.
+
+This file is the **induction skeleton** (architect: codex 019ec44f, Q5): the
+strong-induction plumbing, with the three reduction steps as explicit hypotheses
+— the named holes the remaining milestones fill:
+
+* `base` — the minimal sphere `(vertsOf σ).card ≤ 4` (a tetrahedron boundary): its
+  taut filling is a single tet, a ball (M24 base / `isBall_singleton`);
+* `deg3_split` — a sphere with a degree-3 vertex splits (connected sum along the
+  link triangle) into a strictly smaller taut filling whose ball reassembles to
+  the original (M24c `deg3_split`, interface per the codex 019ec44f Q4 design);
+* `prime_step` — a no-degree-3 ("prime") sphere: remove an eligible tet
+  (`exists_eligibleTet_of_noDegree3`, M25 ✓) and reassemble, consuming the
+  induction hypothesis on strictly smaller fillings (the eligible-tet branch =
+  M25b disjoint pair + M22b relative shelling + the M23 edge-join bridge).
+
+`theorem2_core` discharges Theorem 2 modulo these three. Free shellability
+(Theorem 3) is a strengthening of the invariant, deferred.
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-- **Theorem 2 (core), the strong induction.** Given the base case and the two
+reduction steps, every taut filling of a 2-sphere is a ball. The proof is pure
+strong-induction plumbing on `nrm M`; all geometric content lives in the three
+hypotheses (the named holes M24/M25b/M22b fill). -/
+theorem theorem2_core
+    (base : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ → UnitOn X σ →
+      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+      IsBall M.support σ)
+    (deg3_split : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+      SimplicialChain M → HasDegree3Vertex σ →
+      ∃ (σ' : Finset (Finset V)) (X' M' : Chain V),
+        IsSphere2 σ' ∧ UnitOn X' σ' ∧ bdry X' = 0 ∧ bdry M' = X' ∧ IsTaut M' ∧
+        SimplicialChain M' ∧ nrm M' < nrm M ∧
+        (IsBall M'.support σ' → IsBall M.support σ))
+    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+      SimplicialChain M → NoDegree3Vertex σ →
+      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+        IsBall M'.support σ') →
+      IsBall M.support σ)
+    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
+    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+    IsBall M.support σ := by
+  -- strong induction on `nrm M`
+  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+      IsBall M.support σ by
+    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N IH =>
+    intro σ X M hN hσ hU hXc hMX hT hS
+    by_cases hv : (vertsOf σ).card ≤ 4
+    · exact base σ X M hσ hU hMX hT hS hv
+    · push_neg at hv
+      by_cases hd3 : HasDegree3Vertex σ
+      · obtain ⟨σ', X', M', hσ', hU', hX'c, hM'X', hT', hS', hlt, hreass⟩ :=
+          deg3_split σ X M hσ hv hU hXc hMX hT hS hd3
+        exact hreass (IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS')
+      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+        refine prime_step σ X M hσ hv hU hXc hMX hT hS hno3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+
+/-! ## Theorem 3 (core): the free-shelling induction
+
+Per Peter's "sticker ball" reframe (and codex 019ecbfa): the right inductive
+invariant is `FreelyShellable` (a free sticker ball — buildable one tet at a time,
+startable at ANY tet), not plain `IsBall`. With it the case-2 reassembly is a
+direct concatenation (start the second piece at the bridge-adjacent tet — possible
+exactly because it is *free*), so no separate relative-shelling "topology" lemma is
+needed at the induction level. Theorem 2 (`IsBall`) is then a corollary. -/
+
+/-- A free sticker ball is a ball (forget the freedom). -/
+lemma FreelyShellable.isBall_of_mem {τ B : Finset (Finset V)} {t : Finset V}
+    (h : FreelyShellable τ B) (ht : t ∈ τ) : IsBall τ B := by
+  obtain ⟨l, _, hfin, hnodup, hsh⟩ := h t ht
+  exact ⟨l, hfin, hnodup, hsh⟩
+
+/-- **Theorem 3 (core), the free-shelling strong induction.** Same plumbing as
+`theorem2_core`, carrying `FreelyShellable M.support σ`. Both non-base branches
+consume the induction hypothesis (every strictly smaller taut filling is a free
+sticker ball). Reduces Theorem 3 to three reduction steps. -/
+theorem theorem3_core
+    (base : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ → UnitOn X σ →
+      bdry M = X → IsTaut M → SimplicialChain M → (vertsOf σ).card ≤ 4 →
+      FreelyShellable M.support σ)
+    (deg3_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+      SimplicialChain M → HasDegree3Vertex σ →
+      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+        FreelyShellable M'.support σ') →
+      FreelyShellable M.support σ)
+    (prime_step : ∀ (σ : Finset (Finset V)) (X M : Chain V), IsSphere2 σ →
+      4 < (vertsOf σ).card → UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M →
+      SimplicialChain M → NoDegree3Vertex σ →
+      (∀ (σ' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M → IsSphere2 σ' →
+        UnitOn X' σ' → bdry X' = 0 → bdry M' = X' → IsTaut M' → SimplicialChain M' →
+        FreelyShellable M'.support σ') →
+      FreelyShellable M.support σ)
+    {σ : Finset (Finset V)} {X M : Chain V} (hσ : IsSphere2 σ) (hU : UnitOn X σ)
+    (hXc : bdry X = 0) (hMX : bdry M = X) (hT : IsTaut M) (hS : SimplicialChain M) :
+    FreelyShellable M.support σ := by
+  suffices H : ∀ N, ∀ (σ : Finset (Finset V)) (X M : Chain V), nrm M = N → IsSphere2 σ →
+      UnitOn X σ → bdry X = 0 → bdry M = X → IsTaut M → SimplicialChain M →
+      FreelyShellable M.support σ by
+    exact H (nrm M) σ X M rfl hσ hU hXc hMX hT hS
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N IH =>
+    intro σ X M hN hσ hU hXc hMX hT hS
+    by_cases hv : (vertsOf σ).card ≤ 4
+    · exact base σ X M hσ hU hMX hT hS hv
+    · push_neg at hv
+      by_cases hd3 : HasDegree3Vertex σ
+      · refine deg3_step σ X M hσ hv hU hXc hMX hT hS hd3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+      · have hno3 : NoDegree3Vertex σ := fun v hvv hcard => hd3 ⟨v, hvv, hcard⟩
+        refine prime_step σ X M hσ hv hU hXc hMX hT hS hno3 ?_
+        intro σ' X' M' hlt hσ' hU' hX'c hM'X' hT' hS'
+        exact IH (nrm M') (hN ▸ hlt) σ' X' M' rfl hσ' hU' hX'c hM'X' hT' hS'
+
+end Taut
+
+ succeeded in 0ms:
+  refine ⟨[t], by simp, by simp, by simp, ?_⟩
+  simp only [IsShelling, ShellFrom]
+  exact ⟨ht, trivial⟩
+
+end Taut
+
+exec
+/bin/zsh -lc "sed -n '400,490p' lean/Taut/Theorem2Aleph.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+          unfold cappedCutRight cutChain
+          have hγnotcut : γ ∉ cutSet σ (W + fun _ => 1) := fun h => hγσ (cutSet_subset h)
+          rw [Finsupp.add_apply, Finsupp.filter_apply, if_neg hγnotcut, Finsupp.single_eq_same, zero_add]
+          rcases hcpm with rfl | rfl <;> norm_num
+        · unfold cappedCutRight cutChain
+          have hγs : γ ≠ s := by intro h; exact hγσ (by rw [h]; exact cutSet_subset hsCut)
+          have hsX : s ∈ X.support := by rw [hU.1]; exact cutSet_subset hsCut
+          have hXne : X s ≠ 0 := Finsupp.mem_support_iff.mp hsX
+          rw [Finsupp.add_apply, Finsupp.filter_apply, if_pos hsCut, Finsupp.single_apply, if_neg hγs, add_zero]
+          exact hXne
+    · intro s hs
+      rcases Finset.mem_insert.mp hs with hsγ | hsCut
+      · rw [hsγ]
+        unfold cappedCutRight cutChain
+        have hγnotcut : γ ∉ cutSet σ (W + fun _ => 1) := fun h => hγσ (cutSet_subset h)
+        rw [Finsupp.add_apply, Finsupp.filter_apply, if_neg hγnotcut, Finsupp.single_eq_same, zero_add]
+        rcases hcpm with rfl | rfl <;> norm_num
+      · unfold cappedCutRight cutChain
+        have hγs : γ ≠ s := by intro h; exact hγσ (by rw [h]; exact cutSet_subset hsCut)
+        rw [Finsupp.add_apply, Finsupp.filter_apply, if_pos hsCut, Finsupp.single_apply, if_neg hγs, add_zero]
+        exact hU.2 s (cutSet_subset hsCut)
+  refine ⟨c, hUnitL, ?_, hUnitR, ?_, ?_⟩
+  · simpa [cappedCutLeft] using hsplit.1
+  · simpa [cappedCutRight] using hsplit.2.1
+  · simpa [cappedCutLeft, cappedCutRight] using hsplit.2.2
+
+theorem degree3_cut_setup (σ : Finset (Finset V)) (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card)
+    (hd3 : HasDegree3Vertex σ) :
+    ∃ (v : V) (W : C2 σ),
+      v ∈ vertsOf σ ∧ (linkVerts σ v).card = 3 ∧
+      (linkVerts σ v).powersetCard 2 ⊆ edgesOf σ ∧ linkVerts σ v ∉ σ ∧
+      bd2 σ W = gammaChain σ (linkVerts σ v) ∧
+      IsSphere2 (insert (linkVerts σ v) (cutSet σ W)) ∧
+      IsSphere2 (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))) := by
+  rcases hd3 with ⟨v, hv, h3⟩
+  rcases degree3_link_triangle_cut_data hσ hv h3 hbig with ⟨hγ3, hγe, hγσ⟩
+  rcases exists_cut hσ hγ3 hγe with ⟨W, hW⟩
+  refine ⟨v, W, hv, hγ3, hγe, hγσ, hW, ?_, ?_⟩
+  · exact isSphere2_cut hσ hγ3 hγe hγσ hW
+  · exact isSphere2_cut hσ hγ3 hγe hγσ (bd2_W_add_one hσ hW)
+
+theorem norm_lt_filter_neg_of_filter_support_singleton (M : Chain V) (P : Finset V → Prop) [DecidablePred P] {T : Finset V}
+    (hP : (M.filter P).support = {T}) :
+    nrm (M.filter (fun t => ¬ P t)) < nrm M := by
+  have hpos_nonzero : M.filter P ≠ 0 := by
+    intro hzero
+    rw [hzero] at hP
+    simp at hP
+  have hpos : 0 < nrm (M.filter P) := by
+    have hnz : nrm (M.filter P) ≠ 0 := by
+      intro hn
+      exact hpos_nonzero (nrm_eq_zero_iff.mp hn)
+    exact Nat.pos_of_ne_zero hnz
+  have hsum := nrm_filter_add_nrm_filter_neg P M
+  omega
+
+def starTet (σ : Finset (Finset V)) (v : V) : Finset V := insert v (linkVerts σ v)
+
+theorem starTet_card_of_degree3 (σ : Finset (Finset V)) {v : V} (h3 : (linkVerts σ v).card = 3) :
+    (starTet σ v).card = 4 := by
+  rw [starTet, Finset.card_insert_of_notMem]
+  · omega
+  · rw [linkVerts]
+    exact Finset.notMem_erase _ _
+
+theorem degree3_cut_star_side_glue (σ : Finset (Finset V)) {v : V} {W : C2 σ}
+    (hσ : IsSphere2 σ) (hbig : 4 < (vertsOf σ).card) (hv : v ∈ vertsOf σ)
+    (h3 : (linkVerts σ v).card = 3)
+    (hW : bd2 σ W = gammaChain σ (linkVerts σ v)) :
+    (insert (linkVerts σ v) (cutSet σ W) = tetFaces (starTet σ v) ∧
+      GlueStep (starTet σ v) (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1))) σ) ∨
+    (insert (linkVerts σ v) (cutSet σ (W + fun _ => 1)) = tetFaces (starTet σ v) ∧
+      GlueStep (starTet σ v) (insert (linkVerts σ v) (cutSet σ W)) σ) := by
+  classical
+  let γ := linkVerts σ v
+  let T := starTet σ v
+  have hdata := degree3_link_triangle_cut_data hσ hv h3 hbig
+  have hγ3 : γ.card = 3 := by simpa [γ] using hdata.1
+  have hγe : γ.powersetCard 2 ⊆ edgesOf σ := by simpa [γ] using hdata.2.1
+  have hγσ : γ ∉ σ := by simpa [γ] using hdata.2.2
+  have hvγ : v ∉ γ := by
+    simp [γ, linkVerts]
+  obtain ⟨F, hFσ, hvF⟩ := mem_vertsOf.mp hv
+  have hTcard : T.card = 4 := by
+    simpa [T, starTet, γ] using starTet_card_of_degree3 σ (v := v) h3
+  have star_side_eq (U : C2 σ) (hU : bd2 σ U = gammaChain σ γ)
+      (hUF : U ⟨F, hFσ⟩ = 1) :
+      insert γ (cutSet σ U) = tetFaces T := by
+    let τ : Finset (Finset V) := insert γ (cutSet σ U)
+    change τ = tetFaces T
+    have hτ : IsSphere2 τ := by
+
+exec
+/bin/zsh -lc "sed -n '740,805p' lean/Taut/Theorem2Aleph.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+    rcases hs with hsT | hsfil
+    · have hTin : T ∈ (M.filter P).support := by
+        rw [hP]
+        simp
+      have hTnz : ¬ M T = 0 := by
+        have hTin' : ¬ M T = 0 ∧ P T := by
+          simpa using hTin
+        exact hTin'.1
+      simpa [hsT] using hTnz
+    · simpa using hsfil.1
+
+theorem ball_reassemble_of_filter_support_singleton (M : Chain V) (P : Finset V → Prop) [DecidablePred P] {T : Finset V}
+    {B σ : Finset (Finset V)} (hP : (M.filter P).support = {T})
+    (hglue : GlueStep T B σ) :
+    IsBall (M.filter (fun t => ¬ P t)).support B → IsBall M.support σ := by
+  intro hball
+  have hTmem : T ∈ (M.filter P).support := by
+    rw [hP]
+    simp
+  have hTne : (M.filter P) T ≠ 0 := by
+    exact Finsupp.mem_support_iff.mp hTmem
+  have hPT : P T := by
+    by_contra hnot
+    have hzero : (M.filter P) T = 0 := by
+      simp [Finsupp.filter, hnot]
+    exact hTne hzero
+  have hTnot : T ∉ (M.filter (fun t => ¬ P t)).support := by
+    intro h
+    have hne : (M.filter (fun t => ¬ P t)) T ≠ 0 := Finsupp.mem_support_iff.mp h
+    have hzero : (M.filter (fun t => ¬ P t)) T = 0 := by
+      simp [Finsupp.filter, hPT]
+    exact hne hzero
+  rw [support_eq_insert_of_filter_support_singleton M P hP]
+  exact IsBall.insert_of_glueStep hball hglue hTnot
+
+theorem taut_splits_for_capped_cut (σ : Finset (Finset V)) (X M : Chain V) {γ : Finset V} {W : C2 σ} {c : ℤ}
+    (hσ : IsSphere2 σ)
+    (hσL : IsSphere2 (insert γ (cutSet σ W)))
+    (hσR : IsSphere2 (insert γ (cutSet σ (W + fun _ => 1))))
+    (hγ3 : γ.card = 3) (hγe : γ.powersetCard 2 ⊆ edgesOf σ)
+    (hW : bd2 σ W = gammaChain σ γ)
+    (hUL : UnitOn (cappedCutLeft σ W X γ c) (insert γ (cutSet σ W)))
+    (hXLc : bdry (cappedCutLeft σ W X γ c) = 0)
+    (hUR : UnitOn (cappedCutRight σ W X γ c) (insert γ (cutSet σ (W + fun _ => 1))))
+    (hXRc : bdry (cappedCutRight σ W X γ c) = 0)
+    (hXsum : cappedCutLeft σ W X γ c + cappedCutRight σ W X γ c = X)
+    (hMX : bdry M = X) (hT : IsTaut M) :
+    bdry (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))) = cappedCutLeft σ W X γ c ∧
+    bdry (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))) = cappedCutRight σ W X γ c ∧
+    IsTaut (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+    IsTaut (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))) ∧
+    (∀ t ∈ (M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W)))).support,
+      t ⊆ vertsOf (insert γ (cutSet σ W))) ∧
+    (∀ t ∈ (M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W)))).support,
+      t ⊆ vertsOf (insert γ (cutSet σ (W + fun _ => 1)))) ∧
+    M.filter (fun t => t ⊆ vertsOf (insert γ (cutSet σ W))) +
+      M.filter (fun t => ¬ t ⊆ vertsOf (insert γ (cutSet σ W))) = M := by
+  classical
+  let A : Finset V := vertsOf (insert γ (cutSet σ W))
+  let B : Finset V := vertsOf (insert γ (cutSet σ (W + fun _ => 1)))
+  have hXsupp : ∀ s ∈ (cappedCutLeft σ W X γ c).support, s ⊆ A ∧ s.card = 2 + 1 := by
+    intro s hs
+    have hsτ : s ∈ insert γ (cutSet σ W) := by
+      rw [hUL.1] at hs
+      exact hs
+    constructor
+
+codex
+The target file currently contains only the core skeleton; the free reassembly tools live in `Theorem3.lean`, while the degree-3 cut lemmas live in `Theorem2Aleph.lean`. I’m checking imports and existing build state before editing to avoid creating a cycle.
+exec
+/bin/zsh -lc "sed -n '1,60p' lean/Taut/Theorem2Aleph.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Theorem23
+import Taut.Degree3
+import Taut.OrientedBridge
+
+/-!
+# Theorem 2 (core): two of three holes closed by Aleph Prover
+
+`theorem2_core` (in `Taut.Theorem23`) reduces "a taut filling of a combinatorial
+2-sphere is a ball" to three reduction steps. This file records machine-found
+proofs (Aleph Prover, alephprover.logicalintelligence.com) of two of them —
+`aleph_base` (minimal-sphere base case) and `aleph_deg3_split` (degree-3 /
+connected-sum reduction) — together with M25b (`aleph_disjoint_eligible_pair`).
+
+Provenance: the proofs and the auxiliary `aleph_*` / `degree3_*` / `cut*` lemma
+names are Aleph Prover's, reproduced verbatim. Each was VERIFIED locally — it
+compiles against the project's own definitions with a complete proof, reducing to
+`[propext, Classical.choice, Quot.sound]`.
+
+`theorem2_modulo_prime_step` discharges these two holes, leaving Theorem 2's core
+dependent on a single remaining step `prime_step` (the no-degree-3 inductive step,
+whose hard core is the M22b relative-shelling reassembly — not closed here).
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+theorem aleph_base_boundary_vert_eq {σ : Finset (Finset V)} {X M : Chain V} (hU : UnitOn X σ) (hMX : bdry M = X) :
+    vert (bdry M) = vertsOf σ := by
+  rw [hMX, vert, hU.1, vertsOf]
+
+theorem aleph_base_sphere_eq_powersetCard3 {σ : Finset (Finset V)} (hσ : IsSphere2 σ) (hcard : (vertsOf σ).card = 4) :
+    σ = (vertsOf σ).powersetCard 3 := by
+  classical
+  apply Finset.eq_of_subset_of_card_le
+  · intro f hf
+    rw [Finset.mem_powersetCard]
+    constructor
+    · intro x hx
+      exact mem_vertsOf.mpr ⟨f, hf, hx⟩
+    · exact hσ.pure f hf
+  · rw [Finset.card_powersetCard, hcard]
+    norm_num
+    have htwo := two_mul_card_verts hσ
+    rw [hcard] at htwo
+    omega
+
+theorem aleph_base_support_eq_singleton_of_four_vertices {M : Chain V} {T : Finset V} (hTcard : T.card = 4)
+    (hsupp : ∀ t ∈ M.support, t.card = 4 ∧ t ⊆ T)
+    (hne : M.support.Nonempty) : M.support = {T} := by
+  classical
+  obtain ⟨u, hu⟩ := hne
+  have huT : u = T := by
+    have hprops := hsupp u hu
+    exact Finset.eq_of_subset_of_card_le hprops.2 (by
+      rw [hprops.1, hTcard])
+  have hTmem : T ∈ M.support := by
+    simpa [huT] using hu
+
+exec
+/bin/zsh -lc "sed -n '1,80p' lean/Taut.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Chains
+import Taut.Zvol
+import Taut.Projection
+import Taut.Theorem1
+import Taut.Splitting
+import Taut.Complex2
+import Taut.Ball
+import Taut.Homology2
+import Taut.Separation
+import Taut.Theorem2
+import Taut.Eligible
+import Taut.Degree3
+import Taut.Theorem23
+import Taut.OrientedBridge
+import Taut.Theorem2Aleph
+import Taut.Theorem3
+
+exec
+/bin/zsh -lc "sed -n '1,80p' lean/Taut/Eligible.lean" in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+import Taut.Theorem2
+
+/-!
+# Eligible tets (M25, architect: codex 019ec428)
+
+For the Theorem-2 induction we need, in a no-degree-3 taut filling, an *eligible*
+tet — one sharing two oriented faces with the boundary.
+The route (paper §"Filling a triangulation of the 2-sphere", the 2-to-1 count):
+
+* every boundary face `α` (`∂M α = ±1`) is a *properly oriented* face of some tet
+  of `M` — `∂M α` is a sum of `{-1,0,1}` tet contributions, so one of them equals
+  `∂M α`. The tet is chosen, not unique;
+* the choice map `σ → M.support` has fibers `⊆ sharedFaces`, hence (no deg-3)
+  `≤ 2`; a *double* fiber is an eligible tet;
+* a count + Prop 2 (`Zvol_add_deg_le`) forces a double fiber to exist.
+
+M25a here: the face→tet layer and `exists_eligibleTet` modulo the
+`sharedFaces ≤ 2` bound (the hard deg-3 lemma is M25a').
+-/
+
+namespace Taut
+
+open Finset
+
+variable {V : Type*} [LinearOrder V]
+
+/-- The tet's contribution at a face, unfolded: `M t · ∂(t)` at that face. -/
+lemma tetContribution_apply (M : Chain V) (t α : Finset V) :
+    tetContribution M t α = M t * bdryGen t α := by
+  rw [tetContribution, bdry_single, Finsupp.smul_apply, smul_eq_mul]
+
+/-- `∂(t)` evaluated at any face is `-1`, `0`, or `1` (a sign, or absent). -/
+lemma bdryGen_apply_mem_pm (t α : Finset V) :
+    bdryGen t α = -1 ∨ bdryGen t α = 0 ∨ bdryGen t α = 1 := by
+  by_cases h : ∃ x ∈ t, α = t.erase x
+  · obtain ⟨x, hx, rfl⟩ := h
+    rw [bdryGen_apply_erase_of_mem hx]
+    rcases mul_self_eq_one_iff.mp (sgn_mul_self x t) with h1 | h1
+    · exact Or.inr (Or.inr h1)
+    · exact Or.inl h1
+  · push_neg at h
+    refine Or.inr (Or.inl ?_)
+    rw [bdryGen, Finset.sum_apply']
+    refine Finset.sum_eq_zero fun x hx => ?_
+    rw [Finsupp.smul_apply, Finsupp.single_eq_of_ne (h x hx), smul_zero]
+
+/-- `α` is a *properly oriented boundary face* of the tet `t`: a genuine tet of
+`M` whose contribution at `α` accounts for the whole boundary coefficient. -/
+def ProperBoundaryFaceTet (M : Chain V) (α t : Finset V) : Prop :=
+  t ∈ M.support ∧ α ∈ tetFaces t ∧ (bdry M) α = tetContribution M t α
+
+/-- **Every boundary face is properly oriented by some tet.** `∂M α = ±1` is a
+sum of `{-1,0,1}` tet contributions, so one of them equals `∂M α`. -/
+lemma exists_properBoundaryFaceTet {M : Chain V} (hS : SimplicialChain M)
+    (hPure : ∀ t ∈ M.support, t.card = 4) {α : Finset V}
+    (hαpm : (bdry M) α = 1 ∨ (bdry M) α = -1) :
+    ∃ t, ProperBoundaryFaceTet M α t := by
+  have hbound : ∀ t ∈ M.support, M t * bdryGen t α = -1 ∨ M t * bdryGen t α = 0
+      ∨ M t * bdryGen t α = 1 := by
+    intro t _
+    rcases hS t with hm | hm | hm <;> rcases bdryGen_apply_mem_pm t α with hg | hg | hg <;>
+      rw [hm, hg] <;> decide
+  have hsum : bdry M α = ∑ t ∈ M.support, M t * bdryGen t α := bdry_apply_eq_sum M α
+  have hkey : ∃ t ∈ M.support, M t * bdryGen t α = bdry M α := by
+    by_contra hcon
+    push_neg at hcon
+    rcases hαpm with hp | hp
+    · have hle : (∑ t ∈ M.support, M t * bdryGen t α) ≤ 0 := by
+        refine Finset.sum_nonpos fun t ht => ?_
+        rcases hbound t ht with h | h | h
+        · rw [h]; decide
+        · rw [h]
+        · exact absurd (h.trans hp.symm) (hcon t ht)
+      rw [← hsum, hp] at hle; exact absurd hle (by decide)
+    · have hge : (0 : ℤ) ≤ ∑ t ∈ M.support, M t * bdryGen t α := by
+        refine Finset.sum_nonneg fun t ht => ?_
+        rcases hbound t ht with h | h | h
+        · exact absurd (h.trans hp.symm) (hcon t ht)
+        · rw [h]
+        · rw [h]; decide
+
+exec
+/bin/zsh -lc 'rg -n "sorry|admit|deg3_step_free|degree3_star_start" lean/Taut/*.lean' in /Users/doyle/Dropbox/taut
+ succeeded in 0ms:
+lean/Taut/FlipGeom.lean:74:  sorry
+lean/Taut/Ball.lean:81:/-- A *shelling-certified ball*: a facet set `τ` admitting a shelling (a
+lean/Taut/Ball.lean:193:/-- **Case-1 reassembly.** A ball whose boundary admits a `GlueStep` for a fresh
+
+codex
+There’s an import-cycle constraint: `Theorem2Aleph.lean` already imports `Theorem23.lean`, so the degree-3 proof cannot live directly in `Theorem23.lean` without moving a large block of Aleph lemmas. I’m placing the closed `deg3_step_free` in `Theorem3.lean`, where both the core signature and the Aleph degree-3 lemmas are available, so it can be supplied as the `theorem3_core` degree-3 argument.
+codex
+I’m going to add a small bridge-start lemma with the exact `ShellFrom (tetFaces starTet) ... σ` payload expected by `FreelyShellable.insert_of_glueStep`, then implement the degree-3 step by duplicating the two cut branches from the IsBall proof and swapping the final reassembly for free shellability.
+apply patch
+patch: completed
+/Users/doyle/Dropbox/taut/lean/Taut/Theorem3.lean
+diff --git a/lean/Taut/Theorem3.lean b/lean/Taut/Theorem3.lean
+index 53cf2f9c33fba0c73bcc3931f42758a6086c5b19..9f1fe535844b81751d9e03f6fd52c5091e45ee5c
+--- a/lean/Taut/Theorem3.lean
++++ b/lean/Taut/Theorem3.lean
+@@ -100,4 +100,186 @@
+   rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+   exact freelyShellable_singleton hcard
+ 
++/-- Degree-3 bridge-start shelling for the star target.  In the degree-3 cut,
++after the star tetrahedron `starTet σ v` is glued onto the smaller side `τ` with
++boundary `B`, the smaller side admits a relative shelling from the star boundary
++all the way to the original boundary `σ`. -/
++lemma degree3_star_start_shellFrom (σ B τ : Finset (Finset V)) {v : V}
++    (hfree : FreelyShellable τ B) (hg : GlueStep (starTet σ v) B σ) :
++    ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
++      ShellFrom (tetFaces (starTet σ v)) l σ := by
++  sorry
++
++/-- Degree-3 step for the free-shelling induction: cut off the degree-3 star,
++apply the induction hypothesis to the non-star side, then glue the star tetrahedron
++back onto that freely shellable remainder. -/
++theorem deg3_step_free (sigma : Finset (Finset V)) (X M : Chain V)
++    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
++    (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X)
++    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
++    (IH : ∀ (sigma' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M →
++      IsSphere2 sigma' → UnitOn X' sigma' → bdry X' = 0 → bdry M' = X' →
++      IsTaut M' → SimplicialChain M' → FreelyShellable M'.support sigma') :
++    FreelyShellable M.support sigma := by
++  classical
++  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ :=
++    degree3_cut_setup sigma hsigma hbig hd3
++  let γ : Finset V := linkVerts sigma v
++  let A : Finset V := vertsOf (insert γ (cutSet sigma W))
++  let ML : Chain V := M.filter (fun t => t ⊆ A)
++  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
++  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
++    capped_cut_splits_unit sigma X hsigma hγ3 hγe hγσ hW hU hXc
++  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
++    taut_splits_for_capped_cut sigma X M hsigma hσL hσR hγ3 hγe hW
++      hUL hXLc hUR hXRc hXsum hMX hT
++  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
++  rcases hsplit with hcase | hcase
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hULtet : UnitOn (cappedCutLeft sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUL
++    have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
++        hSuppL t (by simpa only [ML, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMLsupp : ML.support = {starTet sigma v} := by
++      exact star_filter_support_singleton ML (cappedCutLeft sigma W X γ c)
++        (starTet sigma v) hT4 hULtet (by simpa only [ML, A, γ] using hML)
++        (by simpa only [ML, A, γ] using hTL) hSuppLT
++    have hlt : nrm MR < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++      simpa only [MR] using hlt'
++    have hSimpR : SimplicialChain MR := by
++      intro t
++      dsimp [MR, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeR : FreelyShellable MR.support (insert γ (cutSet sigma (W + fun _ => 1))) :=
++      IH (insert γ (cutSet sigma (W + fun _ => 1)))
++        (cappedCutRight sigma W X γ c) MR hlt
++        (by dsimp [γ]; exact hσR) (by dsimp [γ]; exact hUR)
++        (by dsimp [γ]; exact hXRc) (by dsimp [MR, A, γ]; exact hMR)
++        (by dsimp [MR, A, γ]; exact hTR) hSimpR
++    have hPT : (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ ML.support := by
++        rw [hMLsupp]
++        simp
++      have hTin' : ¬ ML (starTet sigma v) = 0 ∧ (starTet sigma v) ⊆ A := by
++        simpa [ML] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ MR.support := by
++      intro hmem
++      have hne : MR (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : MR (starTet sigma v) = 0 := by
++        simp [MR, hPT]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) MR.support := by
++      simpa only [MR] using
++        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++    have hstart : ∃ l : List (Finset V), l.toFinset = MR.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma (W + fun _ => 1)))
++        MR.support hfreeR hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) MR.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeR hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeR hglue hTnot hsold
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hURtet : UnitOn (cappedCutRight sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUR
++    have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma (W + fun _ => 1))) :=
++        hSuppR t (by simpa only [MR, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMRsupp : MR.support = {starTet sigma v} := by
++      exact star_filter_support_singleton MR (cappedCutRight sigma W X γ c)
++        (starTet sigma v) hT4 hURtet (by simpa only [MR, A, γ] using hMR)
++        (by simpa only [MR, A, γ] using hTR) hSuppRT
++    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
++      dsimp [ML]
++      ext t
++      rw [Finsupp.filter_apply, Finsupp.filter_apply]
++      by_cases ht : t ⊆ A
++      · rw [if_pos ht, if_pos]
++        intro hneg
++        exact hneg ht
++      · rw [if_neg ht, if_neg]
++        intro hnn
++        exact hnn ht
++    have hlt : nrm ML < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hlt'
++    have hSimpL : SimplicialChain ML := by
++      intro t
++      dsimp [ML, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeL : FreelyShellable ML.support (insert γ (cutSet sigma W)) :=
++      IH (insert γ (cutSet sigma W)) (cappedCutLeft sigma W X γ c) ML hlt
++        (by dsimp [γ]; exact hσL) (by dsimp [γ]; exact hUL)
++        (by dsimp [γ]; exact hXLc) (by dsimp [ML, A, γ]; exact hML)
++        (by dsimp [ML, A, γ]; exact hTL) hSimpL
++    have hPstar : ¬ (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ MR.support := by
++        rw [hMRsupp]
++        simp
++      have hTin' : ¬ MR (starTet sigma v) = 0 ∧ ¬ (starTet sigma v) ⊆ A := by
++        simpa [MR] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ ML.support := by
++      intro hmem
++      have hne : ML (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : ML (starTet sigma v) = 0 := by
++        simp [ML, hPstar]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) ML.support := by
++      have hsupport' :
++          M.support = insert (starTet sigma v)
++            (M.filter (fun t => ¬ (¬ t ⊆ A))).support := by
++        exact support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hsupport'
++    have hstart : ∃ l : List (Finset V), l.toFinset = ML.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma W)) ML.support hfreeL hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) ML.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeL hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeL hglue hTnot hsold
++
+ end Taut
+
+diff --git a/lean/Taut/Theorem3.lean b/lean/Taut/Theorem3.lean
+index 53cf2f9c33fba0c73bcc3931f42758a6086c5b19..9f1fe535844b81751d9e03f6fd52c5091e45ee5c
+--- a/lean/Taut/Theorem3.lean
++++ b/lean/Taut/Theorem3.lean
+@@ -100,4 +100,186 @@
+   rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+   exact freelyShellable_singleton hcard
+ 
++/-- Degree-3 bridge-start shelling for the star target.  In the degree-3 cut,
++after the star tetrahedron `starTet σ v` is glued onto the smaller side `τ` with
++boundary `B`, the smaller side admits a relative shelling from the star boundary
++all the way to the original boundary `σ`. -/
++lemma degree3_star_start_shellFrom (σ B τ : Finset (Finset V)) {v : V}
++    (hfree : FreelyShellable τ B) (hg : GlueStep (starTet σ v) B σ) :
++    ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
++      ShellFrom (tetFaces (starTet σ v)) l σ := by
++  sorry
++
++/-- Degree-3 step for the free-shelling induction: cut off the degree-3 star,
++apply the induction hypothesis to the non-star side, then glue the star tetrahedron
++back onto that freely shellable remainder. -/
++theorem deg3_step_free (sigma : Finset (Finset V)) (X M : Chain V)
++    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
++    (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X)
++    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
++    (IH : ∀ (sigma' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M →
++      IsSphere2 sigma' → UnitOn X' sigma' → bdry X' = 0 → bdry M' = X' →
++      IsTaut M' → SimplicialChain M' → FreelyShellable M'.support sigma') :
++    FreelyShellable M.support sigma := by
++  classical
++  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ :=
++    degree3_cut_setup sigma hsigma hbig hd3
++  let γ : Finset V := linkVerts sigma v
++  let A : Finset V := vertsOf (insert γ (cutSet sigma W))
++  let ML : Chain V := M.filter (fun t => t ⊆ A)
++  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
++  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
++    capped_cut_splits_unit sigma X hsigma hγ3 hγe hγσ hW hU hXc
++  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
++    taut_splits_for_capped_cut sigma X M hsigma hσL hσR hγ3 hγe hW
++      hUL hXLc hUR hXRc hXsum hMX hT
++  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
++  rcases hsplit with hcase | hcase
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hULtet : UnitOn (cappedCutLeft sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUL
++    have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
++        hSuppL t (by simpa only [ML, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMLsupp : ML.support = {starTet sigma v} := by
++      exact star_filter_support_singleton ML (cappedCutLeft sigma W X γ c)
++        (starTet sigma v) hT4 hULtet (by simpa only [ML, A, γ] using hML)
++        (by simpa only [ML, A, γ] using hTL) hSuppLT
++    have hlt : nrm MR < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++      simpa only [MR] using hlt'
++    have hSimpR : SimplicialChain MR := by
++      intro t
++      dsimp [MR, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeR : FreelyShellable MR.support (insert γ (cutSet sigma (W + fun _ => 1))) :=
++      IH (insert γ (cutSet sigma (W + fun _ => 1)))
++        (cappedCutRight sigma W X γ c) MR hlt
++        (by dsimp [γ]; exact hσR) (by dsimp [γ]; exact hUR)
++        (by dsimp [γ]; exact hXRc) (by dsimp [MR, A, γ]; exact hMR)
++        (by dsimp [MR, A, γ]; exact hTR) hSimpR
++    have hPT : (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ ML.support := by
++        rw [hMLsupp]
++        simp
++      have hTin' : ¬ ML (starTet sigma v) = 0 ∧ (starTet sigma v) ⊆ A := by
++        simpa [ML] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ MR.support := by
++      intro hmem
++      have hne : MR (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : MR (starTet sigma v) = 0 := by
++        simp [MR, hPT]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) MR.support := by
++      simpa only [MR] using
++        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++    have hstart : ∃ l : List (Finset V), l.toFinset = MR.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma (W + fun _ => 1)))
++        MR.support hfreeR hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) MR.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeR hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeR hglue hTnot hsold
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hURtet : UnitOn (cappedCutRight sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUR
++    have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma (W + fun _ => 1))) :=
++        hSuppR t (by simpa only [MR, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMRsupp : MR.support = {starTet sigma v} := by
++      exact star_filter_support_singleton MR (cappedCutRight sigma W X γ c)
++        (starTet sigma v) hT4 hURtet (by simpa only [MR, A, γ] using hMR)
++        (by simpa only [MR, A, γ] using hTR) hSuppRT
++    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
++      dsimp [ML]
++      ext t
++      rw [Finsupp.filter_apply, Finsupp.filter_apply]
++      by_cases ht : t ⊆ A
++      · rw [if_pos ht, if_pos]
++        intro hneg
++        exact hneg ht
++      · rw [if_neg ht, if_neg]
++        intro hnn
++        exact hnn ht
++    have hlt : nrm ML < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hlt'
++    have hSimpL : SimplicialChain ML := by
++      intro t
++      dsimp [ML, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeL : FreelyShellable ML.support (insert γ (cutSet sigma W)) :=
++      IH (insert γ (cutSet sigma W)) (cappedCutLeft sigma W X γ c) ML hlt
++        (by dsimp [γ]; exact hσL) (by dsimp [γ]; exact hUL)
++        (by dsimp [γ]; exact hXLc) (by dsimp [ML, A, γ]; exact hML)
++        (by dsimp [ML, A, γ]; exact hTL) hSimpL
++    have hPstar : ¬ (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ MR.support := by
++        rw [hMRsupp]
++        simp
++      have hTin' : ¬ MR (starTet sigma v) = 0 ∧ ¬ (starTet sigma v) ⊆ A := by
++        simpa [MR] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ ML.support := by
++      intro hmem
++      have hne : ML (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : ML (starTet sigma v) = 0 := by
++        simp [ML, hPstar]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) ML.support := by
++      have hsupport' :
++          M.support = insert (starTet sigma v)
++            (M.filter (fun t => ¬ (¬ t ⊆ A))).support := by
++        exact support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hsupport'
++    have hstart : ∃ l : List (Finset V), l.toFinset = ML.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma W)) ML.support hfreeL hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) ML.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeL hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeL hglue hTnot hsold
++
+ end Taut
+
+codex
+The implementation is in place. I’m running Lean now; any failures should be mostly elaboration details from the long dependent terms rather than proof-shape issues.
+exec
+/bin/zsh -lc 'lake env lean Taut/Theorem3.lean' in /Users/doyle/Dropbox/taut/lean
+diff --git a/lean/Taut/Theorem3.lean b/lean/Taut/Theorem3.lean
+index 53cf2f9c33fba0c73bcc3931f42758a6086c5b19..9f1fe535844b81751d9e03f6fd52c5091e45ee5c
+--- a/lean/Taut/Theorem3.lean
++++ b/lean/Taut/Theorem3.lean
+@@ -100,4 +100,186 @@
+   rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+   exact freelyShellable_singleton hcard
+ 
++/-- Degree-3 bridge-start shelling for the star target.  In the degree-3 cut,
++after the star tetrahedron `starTet σ v` is glued onto the smaller side `τ` with
++boundary `B`, the smaller side admits a relative shelling from the star boundary
++all the way to the original boundary `σ`. -/
++lemma degree3_star_start_shellFrom (σ B τ : Finset (Finset V)) {v : V}
++    (hfree : FreelyShellable τ B) (hg : GlueStep (starTet σ v) B σ) :
++    ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
++      ShellFrom (tetFaces (starTet σ v)) l σ := by
++  sorry
++
++/-- Degree-3 step for the free-shelling induction: cut off the degree-3 star,
++apply the induction hypothesis to the non-star side, then glue the star tetrahedron
++back onto that freely shellable remainder. -/
++theorem deg3_step_free (sigma : Finset (Finset V)) (X M : Chain V)
++    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
++    (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X)
++    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
++    (IH : ∀ (sigma' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M →
++      IsSphere2 sigma' → UnitOn X' sigma' → bdry X' = 0 → bdry M' = X' →
++      IsTaut M' → SimplicialChain M' → FreelyShellable M'.support sigma') :
++    FreelyShellable M.support sigma := by
++  classical
++  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ :=
++    degree3_cut_setup sigma hsigma hbig hd3
++  let γ : Finset V := linkVerts sigma v
++  let A : Finset V := vertsOf (insert γ (cutSet sigma W))
++  let ML : Chain V := M.filter (fun t => t ⊆ A)
++  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
++  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
++    capped_cut_splits_unit sigma X hsigma hγ3 hγe hγσ hW hU hXc
++  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
++    taut_splits_for_capped_cut sigma X M hsigma hσL hσR hγ3 hγe hW
++      hUL hXLc hUR hXRc hXsum hMX hT
++  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
++  rcases hsplit with hcase | hcase
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hULtet : UnitOn (cappedCutLeft sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUL
++    have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
++        hSuppL t (by simpa only [ML, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMLsupp : ML.support = {starTet sigma v} := by
++      exact star_filter_support_singleton ML (cappedCutLeft sigma W X γ c)
++        (starTet sigma v) hT4 hULtet (by simpa only [ML, A, γ] using hML)
++        (by simpa only [ML, A, γ] using hTL) hSuppLT
++    have hlt : nrm MR < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++      simpa only [MR] using hlt'
++    have hSimpR : SimplicialChain MR := by
++      intro t
++      dsimp [MR, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeR : FreelyShellable MR.support (insert γ (cutSet sigma (W + fun _ => 1))) :=
++      IH (insert γ (cutSet sigma (W + fun _ => 1)))
++        (cappedCutRight sigma W X γ c) MR hlt
++        (by dsimp [γ]; exact hσR) (by dsimp [γ]; exact hUR)
++        (by dsimp [γ]; exact hXRc) (by dsimp [MR, A, γ]; exact hMR)
++        (by dsimp [MR, A, γ]; exact hTR) hSimpR
++    have hPT : (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ ML.support := by
++        rw [hMLsupp]
++        simp
++      have hTin' : ¬ ML (starTet sigma v) = 0 ∧ (starTet sigma v) ⊆ A := by
++        simpa [ML] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ MR.support := by
++      intro hmem
++      have hne : MR (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : MR (starTet sigma v) = 0 := by
++        simp [MR, hPT]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) MR.support := by
++      simpa only [MR] using
++        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++    have hstart : ∃ l : List (Finset V), l.toFinset = MR.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma (W + fun _ => 1)))
++        MR.support hfreeR hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) MR.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeR hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeR hglue hTnot hsold
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hURtet : UnitOn (cappedCutRight sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUR
++    have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma (W + fun _ => 1))) :=
++        hSuppR t (by simpa only [MR, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMRsupp : MR.support = {starTet sigma v} := by
++      exact star_filter_support_singleton MR (cappedCutRight sigma W X γ c)
++        (starTet sigma v) hT4 hURtet (by simpa only [MR, A, γ] using hMR)
++        (by simpa only [MR, A, γ] using hTR) hSuppRT
++    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
++      dsimp [ML]
++      ext t
++      rw [Finsupp.filter_apply, Finsupp.filter_apply]
++      by_cases ht : t ⊆ A
++      · rw [if_pos ht, if_pos]
++        intro hneg
++        exact hneg ht
++      · rw [if_neg ht, if_neg]
++        intro hnn
++        exact hnn ht
++    have hlt : nrm ML < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hlt'
++    have hSimpL : SimplicialChain ML := by
++      intro t
++      dsimp [ML, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeL : FreelyShellable ML.support (insert γ (cutSet sigma W)) :=
++      IH (insert γ (cutSet sigma W)) (cappedCutLeft sigma W X γ c) ML hlt
++        (by dsimp [γ]; exact hσL) (by dsimp [γ]; exact hUL)
++        (by dsimp [γ]; exact hXLc) (by dsimp [ML, A, γ]; exact hML)
++        (by dsimp [ML, A, γ]; exact hTL) hSimpL
++    have hPstar : ¬ (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ MR.support := by
++        rw [hMRsupp]
++        simp
++      have hTin' : ¬ MR (starTet sigma v) = 0 ∧ ¬ (starTet sigma v) ⊆ A := by
++        simpa [MR] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ ML.support := by
++      intro hmem
++      have hne : ML (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : ML (starTet sigma v) = 0 := by
++        simp [ML, hPstar]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) ML.support := by
++      have hsupport' :
++          M.support = insert (starTet sigma v)
++            (M.filter (fun t => ¬ (¬ t ⊆ A))).support := by
++        exact support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hsupport'
++    have hstart : ∃ l : List (Finset V), l.toFinset = ML.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma W)) ML.support hfreeL hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) ML.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeL hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeL hglue hTnot hsold
++
+ end Taut
+
+ exited 1 in 3694ms:
+Taut/Theorem3.lean:92:58: warning: unused variable `hS`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+Taut/Theorem3.lean:107:6: warning: declaration uses `sorry`
+Taut/Theorem3.lean:179:8: error: Type mismatch: After simplification, term
+  hTin
+ has type
+  ¬M (starTet sigma v) = 0 ∧ starTet sigma v ⊆ A
+but is expected to have type
+  ¬(Finsupp.filter (fun t => t ⊆ A) M) (starTet sigma v) = 0 ∧ starTet sigma v ⊆ A
+Taut/Theorem3.lean:256:8: error: Type mismatch: After simplification, term
+  hTin
+ has type
+  ¬M (starTet sigma v) = 0 ∧ ¬starTet sigma v ⊆ A
+but is expected to have type
+  ¬(Finsupp.filter (fun t => ¬t ⊆ A) M) (starTet sigma v) = 0 ∧ ¬starTet sigma v ⊆ A
+
+codex
+Lean accepted the overall structure and pointed at two support-filter coercions. I’m tightening those local facts so they extract the predicate from `M.filter` support in the form Lean actually simplifies to.
+apply patch
+patch: completed
+/Users/doyle/Dropbox/taut/lean/Taut/Theorem3.lean
+diff --git a/lean/Taut/Theorem3.lean b/lean/Taut/Theorem3.lean
+index 53cf2f9c33fba0c73bcc3931f42758a6086c5b19..1f28877e7c4918b35b98bb39066391612d17a5b8
+--- a/lean/Taut/Theorem3.lean
++++ b/lean/Taut/Theorem3.lean
+@@ -100,4 +100,186 @@
+   rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+   exact freelyShellable_singleton hcard
+ 
++/-- Degree-3 bridge-start shelling for the star target.  In the degree-3 cut,
++after the star tetrahedron `starTet σ v` is glued onto the smaller side `τ` with
++boundary `B`, the smaller side admits a relative shelling from the star boundary
++all the way to the original boundary `σ`. -/
++lemma degree3_star_start_shellFrom (σ B τ : Finset (Finset V)) {v : V}
++    (hfree : FreelyShellable τ B) (hg : GlueStep (starTet σ v) B σ) :
++    ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
++      ShellFrom (tetFaces (starTet σ v)) l σ := by
++  sorry
++
++/-- Degree-3 step for the free-shelling induction: cut off the degree-3 star,
++apply the induction hypothesis to the non-star side, then glue the star tetrahedron
++back onto that freely shellable remainder. -/
++theorem deg3_step_free (sigma : Finset (Finset V)) (X M : Chain V)
++    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
++    (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X)
++    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
++    (IH : ∀ (sigma' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M →
++      IsSphere2 sigma' → UnitOn X' sigma' → bdry X' = 0 → bdry M' = X' →
++      IsTaut M' → SimplicialChain M' → FreelyShellable M'.support sigma') :
++    FreelyShellable M.support sigma := by
++  classical
++  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ :=
++    degree3_cut_setup sigma hsigma hbig hd3
++  let γ : Finset V := linkVerts sigma v
++  let A : Finset V := vertsOf (insert γ (cutSet sigma W))
++  let ML : Chain V := M.filter (fun t => t ⊆ A)
++  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
++  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
++    capped_cut_splits_unit sigma X hsigma hγ3 hγe hγσ hW hU hXc
++  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
++    taut_splits_for_capped_cut sigma X M hsigma hσL hσR hγ3 hγe hW
++      hUL hXLc hUR hXRc hXsum hMX hT
++  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
++  rcases hsplit with hcase | hcase
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hULtet : UnitOn (cappedCutLeft sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUL
++    have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
++        hSuppL t (by simpa only [ML, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMLsupp : ML.support = {starTet sigma v} := by
++      exact star_filter_support_singleton ML (cappedCutLeft sigma W X γ c)
++        (starTet sigma v) hT4 hULtet (by simpa only [ML, A, γ] using hML)
++        (by simpa only [ML, A, γ] using hTL) hSuppLT
++    have hlt : nrm MR < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++      simpa only [MR] using hlt'
++    have hSimpR : SimplicialChain MR := by
++      intro t
++      dsimp [MR, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeR : FreelyShellable MR.support (insert γ (cutSet sigma (W + fun _ => 1))) :=
++      IH (insert γ (cutSet sigma (W + fun _ => 1)))
++        (cappedCutRight sigma W X γ c) MR hlt
++        (by dsimp [γ]; exact hσR) (by dsimp [γ]; exact hUR)
++        (by dsimp [γ]; exact hXRc) (by dsimp [MR, A, γ]; exact hMR)
++        (by dsimp [MR, A, γ]; exact hTR) hSimpR
++    have hPT : (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ ML.support := by
++        rw [hMLsupp]
++        simp
++      have hTin' : ¬ M (starTet sigma v) = 0 ∧ (starTet sigma v) ⊆ A := by
++        simpa [ML] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ MR.support := by
++      intro hmem
++      have hne : MR (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : MR (starTet sigma v) = 0 := by
++        simp [MR, hPT]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) MR.support := by
++      simpa only [MR] using
++        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++    have hstart : ∃ l : List (Finset V), l.toFinset = MR.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma (W + fun _ => 1)))
++        MR.support hfreeR hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) MR.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeR hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeR hglue hTnot hsold
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hURtet : UnitOn (cappedCutRight sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUR
++    have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma (W + fun _ => 1))) :=
++        hSuppR t (by simpa only [MR, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMRsupp : MR.support = {starTet sigma v} := by
++      exact star_filter_support_singleton MR (cappedCutRight sigma W X γ c)
++        (starTet sigma v) hT4 hURtet (by simpa only [MR, A, γ] using hMR)
++        (by simpa only [MR, A, γ] using hTR) hSuppRT
++    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
++      dsimp [ML]
++      ext t
++      rw [Finsupp.filter_apply, Finsupp.filter_apply]
++      by_cases ht : t ⊆ A
++      · rw [if_pos ht, if_pos]
++        intro hneg
++        exact hneg ht
++      · rw [if_neg ht, if_neg]
++        intro hnn
++        exact hnn ht
++    have hlt : nrm ML < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hlt'
++    have hSimpL : SimplicialChain ML := by
++      intro t
++      dsimp [ML, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeL : FreelyShellable ML.support (insert γ (cutSet sigma W)) :=
++      IH (insert γ (cutSet sigma W)) (cappedCutLeft sigma W X γ c) ML hlt
++        (by dsimp [γ]; exact hσL) (by dsimp [γ]; exact hUL)
++        (by dsimp [γ]; exact hXLc) (by dsimp [ML, A, γ]; exact hML)
++        (by dsimp [ML, A, γ]; exact hTL) hSimpL
++    have hPstar : ¬ (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ MR.support := by
++        rw [hMRsupp]
++        simp
++      have hTin' : ¬ M (starTet sigma v) = 0 ∧ ¬ (starTet sigma v) ⊆ A := by
++        simpa [MR] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ ML.support := by
++      intro hmem
++      have hne : ML (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : ML (starTet sigma v) = 0 := by
++        simp [ML, hPstar]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) ML.support := by
++      have hsupport' :
++          M.support = insert (starTet sigma v)
++            (M.filter (fun t => ¬ (¬ t ⊆ A))).support := by
++        exact support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hsupport'
++    have hstart : ∃ l : List (Finset V), l.toFinset = ML.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma W)) ML.support hfreeL hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) ML.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeL hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeL hglue hTnot hsold
++
+ end Taut
+
+diff --git a/lean/Taut/Theorem3.lean b/lean/Taut/Theorem3.lean
+index 53cf2f9c33fba0c73bcc3931f42758a6086c5b19..1f28877e7c4918b35b98bb39066391612d17a5b8
+--- a/lean/Taut/Theorem3.lean
++++ b/lean/Taut/Theorem3.lean
+@@ -100,4 +100,186 @@
+   rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+   exact freelyShellable_singleton hcard
+ 
++/-- Degree-3 bridge-start shelling for the star target.  In the degree-3 cut,
++after the star tetrahedron `starTet σ v` is glued onto the smaller side `τ` with
++boundary `B`, the smaller side admits a relative shelling from the star boundary
++all the way to the original boundary `σ`. -/
++lemma degree3_star_start_shellFrom (σ B τ : Finset (Finset V)) {v : V}
++    (hfree : FreelyShellable τ B) (hg : GlueStep (starTet σ v) B σ) :
++    ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
++      ShellFrom (tetFaces (starTet σ v)) l σ := by
++  sorry
++
++/-- Degree-3 step for the free-shelling induction: cut off the degree-3 star,
++apply the induction hypothesis to the non-star side, then glue the star tetrahedron
++back onto that freely shellable remainder. -/
++theorem deg3_step_free (sigma : Finset (Finset V)) (X M : Chain V)
++    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
++    (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X)
++    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
++    (IH : ∀ (sigma' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M →
++      IsSphere2 sigma' → UnitOn X' sigma' → bdry X' = 0 → bdry M' = X' →
++      IsTaut M' → SimplicialChain M' → FreelyShellable M'.support sigma') :
++    FreelyShellable M.support sigma := by
++  classical
++  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ :=
++    degree3_cut_setup sigma hsigma hbig hd3
++  let γ : Finset V := linkVerts sigma v
++  let A : Finset V := vertsOf (insert γ (cutSet sigma W))
++  let ML : Chain V := M.filter (fun t => t ⊆ A)
++  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
++  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
++    capped_cut_splits_unit sigma X hsigma hγ3 hγe hγσ hW hU hXc
++  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
++    taut_splits_for_capped_cut sigma X M hsigma hσL hσR hγ3 hγe hW
++      hUL hXLc hUR hXRc hXsum hMX hT
++  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
++  rcases hsplit with hcase | hcase
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hULtet : UnitOn (cappedCutLeft sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUL
++    have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
++        hSuppL t (by simpa only [ML, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMLsupp : ML.support = {starTet sigma v} := by
++      exact star_filter_support_singleton ML (cappedCutLeft sigma W X γ c)
++        (starTet sigma v) hT4 hULtet (by simpa only [ML, A, γ] using hML)
++        (by simpa only [ML, A, γ] using hTL) hSuppLT
++    have hlt : nrm MR < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++      simpa only [MR] using hlt'
++    have hSimpR : SimplicialChain MR := by
++      intro t
++      dsimp [MR, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeR : FreelyShellable MR.support (insert γ (cutSet sigma (W + fun _ => 1))) :=
++      IH (insert γ (cutSet sigma (W + fun _ => 1)))
++        (cappedCutRight sigma W X γ c) MR hlt
++        (by dsimp [γ]; exact hσR) (by dsimp [γ]; exact hUR)
++        (by dsimp [γ]; exact hXRc) (by dsimp [MR, A, γ]; exact hMR)
++        (by dsimp [MR, A, γ]; exact hTR) hSimpR
++    have hPT : (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ ML.support := by
++        rw [hMLsupp]
++        simp
++      have hTin' : ¬ M (starTet sigma v) = 0 ∧ (starTet sigma v) ⊆ A := by
++        simpa [ML] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ MR.support := by
++      intro hmem
++      have hne : MR (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : MR (starTet sigma v) = 0 := by
++        simp [MR, hPT]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) MR.support := by
++      simpa only [MR] using
++        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++    have hstart : ∃ l : List (Finset V), l.toFinset = MR.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma (W + fun _ => 1)))
++        MR.support hfreeR hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) MR.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeR hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeR hglue hTnot hsold
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hURtet : UnitOn (cappedCutRight sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUR
++    have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma (W + fun _ => 1))) :=
++        hSuppR t (by simpa only [MR, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMRsupp : MR.support = {starTet sigma v} := by
++      exact star_filter_support_singleton MR (cappedCutRight sigma W X γ c)
++        (starTet sigma v) hT4 hURtet (by simpa only [MR, A, γ] using hMR)
++        (by simpa only [MR, A, γ] using hTR) hSuppRT
++    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
++      dsimp [ML]
++      ext t
++      rw [Finsupp.filter_apply, Finsupp.filter_apply]
++      by_cases ht : t ⊆ A
++      · rw [if_pos ht, if_pos]
++        intro hneg
++        exact hneg ht
++      · rw [if_neg ht, if_neg]
++        intro hnn
++        exact hnn ht
++    have hlt : nrm ML < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hlt'
++    have hSimpL : SimplicialChain ML := by
++      intro t
++      dsimp [ML, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeL : FreelyShellable ML.support (insert γ (cutSet sigma W)) :=
++      IH (insert γ (cutSet sigma W)) (cappedCutLeft sigma W X γ c) ML hlt
++        (by dsimp [γ]; exact hσL) (by dsimp [γ]; exact hUL)
++        (by dsimp [γ]; exact hXLc) (by dsimp [ML, A, γ]; exact hML)
++        (by dsimp [ML, A, γ]; exact hTL) hSimpL
++    have hPstar : ¬ (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ MR.support := by
++        rw [hMRsupp]
++        simp
++      have hTin' : ¬ M (starTet sigma v) = 0 ∧ ¬ (starTet sigma v) ⊆ A := by
++        simpa [MR] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ ML.support := by
++      intro hmem
++      have hne : ML (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : ML (starTet sigma v) = 0 := by
++        simp [ML, hPstar]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) ML.support := by
++      have hsupport' :
++          M.support = insert (starTet sigma v)
++            (M.filter (fun t => ¬ (¬ t ⊆ A))).support := by
++        exact support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hsupport'
++    have hstart : ∃ l : List (Finset V), l.toFinset = ML.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma W)) ML.support hfreeL hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) ML.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeL hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeL hglue hTnot hsold
++
+ end Taut
+
+codex
+That fixed the filter-support mismatch. I’m rerunning the file check to catch any remaining type issues.
+exec
+/bin/zsh -lc 'lake env lean Taut/Theorem3.lean' in /Users/doyle/Dropbox/taut/lean
+diff --git a/lean/Taut/Theorem3.lean b/lean/Taut/Theorem3.lean
+index 53cf2f9c33fba0c73bcc3931f42758a6086c5b19..1f28877e7c4918b35b98bb39066391612d17a5b8
+--- a/lean/Taut/Theorem3.lean
++++ b/lean/Taut/Theorem3.lean
+@@ -100,4 +100,186 @@
+   rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+   exact freelyShellable_singleton hcard
+ 
++/-- Degree-3 bridge-start shelling for the star target.  In the degree-3 cut,
++after the star tetrahedron `starTet σ v` is glued onto the smaller side `τ` with
++boundary `B`, the smaller side admits a relative shelling from the star boundary
++all the way to the original boundary `σ`. -/
++lemma degree3_star_start_shellFrom (σ B τ : Finset (Finset V)) {v : V}
++    (hfree : FreelyShellable τ B) (hg : GlueStep (starTet σ v) B σ) :
++    ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
++      ShellFrom (tetFaces (starTet σ v)) l σ := by
++  sorry
++
++/-- Degree-3 step for the free-shelling induction: cut off the degree-3 star,
++apply the induction hypothesis to the non-star side, then glue the star tetrahedron
++back onto that freely shellable remainder. -/
++theorem deg3_step_free (sigma : Finset (Finset V)) (X M : Chain V)
++    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
++    (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X)
++    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
++    (IH : ∀ (sigma' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M →
++      IsSphere2 sigma' → UnitOn X' sigma' → bdry X' = 0 → bdry M' = X' →
++      IsTaut M' → SimplicialChain M' → FreelyShellable M'.support sigma') :
++    FreelyShellable M.support sigma := by
++  classical
++  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ :=
++    degree3_cut_setup sigma hsigma hbig hd3
++  let γ : Finset V := linkVerts sigma v
++  let A : Finset V := vertsOf (insert γ (cutSet sigma W))
++  let ML : Chain V := M.filter (fun t => t ⊆ A)
++  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
++  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
++    capped_cut_splits_unit sigma X hsigma hγ3 hγe hγσ hW hU hXc
++  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
++    taut_splits_for_capped_cut sigma X M hsigma hσL hσR hγ3 hγe hW
++      hUL hXLc hUR hXRc hXsum hMX hT
++  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
++  rcases hsplit with hcase | hcase
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hULtet : UnitOn (cappedCutLeft sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUL
++    have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
++        hSuppL t (by simpa only [ML, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMLsupp : ML.support = {starTet sigma v} := by
++      exact star_filter_support_singleton ML (cappedCutLeft sigma W X γ c)
++        (starTet sigma v) hT4 hULtet (by simpa only [ML, A, γ] using hML)
++        (by simpa only [ML, A, γ] using hTL) hSuppLT
++    have hlt : nrm MR < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++      simpa only [MR] using hlt'
++    have hSimpR : SimplicialChain MR := by
++      intro t
++      dsimp [MR, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeR : FreelyShellable MR.support (insert γ (cutSet sigma (W + fun _ => 1))) :=
++      IH (insert γ (cutSet sigma (W + fun _ => 1)))
++        (cappedCutRight sigma W X γ c) MR hlt
++        (by dsimp [γ]; exact hσR) (by dsimp [γ]; exact hUR)
++        (by dsimp [γ]; exact hXRc) (by dsimp [MR, A, γ]; exact hMR)
++        (by dsimp [MR, A, γ]; exact hTR) hSimpR
++    have hPT : (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ ML.support := by
++        rw [hMLsupp]
++        simp
++      have hTin' : ¬ M (starTet sigma v) = 0 ∧ (starTet sigma v) ⊆ A := by
++        simpa [ML] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ MR.support := by
++      intro hmem
++      have hne : MR (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : MR (starTet sigma v) = 0 := by
++        simp [MR, hPT]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) MR.support := by
++      simpa only [MR] using
++        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++    have hstart : ∃ l : List (Finset V), l.toFinset = MR.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma (W + fun _ => 1)))
++        MR.support hfreeR hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) MR.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeR hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeR hglue hTnot hsold
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hURtet : UnitOn (cappedCutRight sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUR
++    have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma (W + fun _ => 1))) :=
++        hSuppR t (by simpa only [MR, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMRsupp : MR.support = {starTet sigma v} := by
++      exact star_filter_support_singleton MR (cappedCutRight sigma W X γ c)
++        (starTet sigma v) hT4 hURtet (by simpa only [MR, A, γ] using hMR)
++        (by simpa only [MR, A, γ] using hTR) hSuppRT
++    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
++      dsimp [ML]
++      ext t
++      rw [Finsupp.filter_apply, Finsupp.filter_apply]
++      by_cases ht : t ⊆ A
++      · rw [if_pos ht, if_pos]
++        intro hneg
++        exact hneg ht
++      · rw [if_neg ht, if_neg]
++        intro hnn
++        exact hnn ht
++    have hlt : nrm ML < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hlt'
++    have hSimpL : SimplicialChain ML := by
++      intro t
++      dsimp [ML, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeL : FreelyShellable ML.support (insert γ (cutSet sigma W)) :=
++      IH (insert γ (cutSet sigma W)) (cappedCutLeft sigma W X γ c) ML hlt
++        (by dsimp [γ]; exact hσL) (by dsimp [γ]; exact hUL)
++        (by dsimp [γ]; exact hXLc) (by dsimp [ML, A, γ]; exact hML)
++        (by dsimp [ML, A, γ]; exact hTL) hSimpL
++    have hPstar : ¬ (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ MR.support := by
++        rw [hMRsupp]
++        simp
++      have hTin' : ¬ M (starTet sigma v) = 0 ∧ ¬ (starTet sigma v) ⊆ A := by
++        simpa [MR] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ ML.support := by
++      intro hmem
++      have hne : ML (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : ML (starTet sigma v) = 0 := by
++        simp [ML, hPstar]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) ML.support := by
++      have hsupport' :
++          M.support = insert (starTet sigma v)
++            (M.filter (fun t => ¬ (¬ t ⊆ A))).support := by
++        exact support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hsupport'
++    have hstart : ∃ l : List (Finset V), l.toFinset = ML.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma W)) ML.support hfreeL hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) ML.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeL hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeL hglue hTnot hsold
++
+ end Taut
+
+ succeeded in 3458ms:
+Taut/Theorem3.lean:92:58: warning: unused variable `hS`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+Taut/Theorem3.lean:107:6: warning: declaration uses `sorry`
+
+codex
+`Taut/Theorem3.lean` typechecks with the single intended `sorry` on the new bridge-start lemma. I’m running the project target once to verify imports still compose cleanly.
+exec
+/bin/zsh -lc 'lake build Taut.Theorem3' in /Users/doyle/Dropbox/taut/lean
+diff --git a/lean/Taut/Theorem3.lean b/lean/Taut/Theorem3.lean
+index 53cf2f9c33fba0c73bcc3931f42758a6086c5b19..1f28877e7c4918b35b98bb39066391612d17a5b8
+--- a/lean/Taut/Theorem3.lean
++++ b/lean/Taut/Theorem3.lean
+@@ -100,4 +100,186 @@
+   rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+   exact freelyShellable_singleton hcard
+ 
++/-- Degree-3 bridge-start shelling for the star target.  In the degree-3 cut,
++after the star tetrahedron `starTet σ v` is glued onto the smaller side `τ` with
++boundary `B`, the smaller side admits a relative shelling from the star boundary
++all the way to the original boundary `σ`. -/
++lemma degree3_star_start_shellFrom (σ B τ : Finset (Finset V)) {v : V}
++    (hfree : FreelyShellable τ B) (hg : GlueStep (starTet σ v) B σ) :
++    ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
++      ShellFrom (tetFaces (starTet σ v)) l σ := by
++  sorry
++
++/-- Degree-3 step for the free-shelling induction: cut off the degree-3 star,
++apply the induction hypothesis to the non-star side, then glue the star tetrahedron
++back onto that freely shellable remainder. -/
++theorem deg3_step_free (sigma : Finset (Finset V)) (X M : Chain V)
++    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
++    (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X)
++    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
++    (IH : ∀ (sigma' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M →
++      IsSphere2 sigma' → UnitOn X' sigma' → bdry X' = 0 → bdry M' = X' →
++      IsTaut M' → SimplicialChain M' → FreelyShellable M'.support sigma') :
++    FreelyShellable M.support sigma := by
++  classical
++  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ :=
++    degree3_cut_setup sigma hsigma hbig hd3
++  let γ : Finset V := linkVerts sigma v
++  let A : Finset V := vertsOf (insert γ (cutSet sigma W))
++  let ML : Chain V := M.filter (fun t => t ⊆ A)
++  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
++  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
++    capped_cut_splits_unit sigma X hsigma hγ3 hγe hγσ hW hU hXc
++  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
++    taut_splits_for_capped_cut sigma X M hsigma hσL hσR hγ3 hγe hW
++      hUL hXLc hUR hXRc hXsum hMX hT
++  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
++  rcases hsplit with hcase | hcase
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hULtet : UnitOn (cappedCutLeft sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUL
++    have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
++        hSuppL t (by simpa only [ML, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMLsupp : ML.support = {starTet sigma v} := by
++      exact star_filter_support_singleton ML (cappedCutLeft sigma W X γ c)
++        (starTet sigma v) hT4 hULtet (by simpa only [ML, A, γ] using hML)
++        (by simpa only [ML, A, γ] using hTL) hSuppLT
++    have hlt : nrm MR < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++      simpa only [MR] using hlt'
++    have hSimpR : SimplicialChain MR := by
++      intro t
++      dsimp [MR, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeR : FreelyShellable MR.support (insert γ (cutSet sigma (W + fun _ => 1))) :=
++      IH (insert γ (cutSet sigma (W + fun _ => 1)))
++        (cappedCutRight sigma W X γ c) MR hlt
++        (by dsimp [γ]; exact hσR) (by dsimp [γ]; exact hUR)
++        (by dsimp [γ]; exact hXRc) (by dsimp [MR, A, γ]; exact hMR)
++        (by dsimp [MR, A, γ]; exact hTR) hSimpR
++    have hPT : (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ ML.support := by
++        rw [hMLsupp]
++        simp
++      have hTin' : ¬ M (starTet sigma v) = 0 ∧ (starTet sigma v) ⊆ A := by
++        simpa [ML] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ MR.support := by
++      intro hmem
++      have hne : MR (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : MR (starTet sigma v) = 0 := by
++        simp [MR, hPT]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) MR.support := by
++      simpa only [MR] using
++        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++    have hstart : ∃ l : List (Finset V), l.toFinset = MR.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma (W + fun _ => 1)))
++        MR.support hfreeR hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) MR.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeR hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeR hglue hTnot hsold
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hURtet : UnitOn (cappedCutRight sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUR
++    have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma (W + fun _ => 1))) :=
++        hSuppR t (by simpa only [MR, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMRsupp : MR.support = {starTet sigma v} := by
++      exact star_filter_support_singleton MR (cappedCutRight sigma W X γ c)
++        (starTet sigma v) hT4 hURtet (by simpa only [MR, A, γ] using hMR)
++        (by simpa only [MR, A, γ] using hTR) hSuppRT
++    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
++      dsimp [ML]
++      ext t
++      rw [Finsupp.filter_apply, Finsupp.filter_apply]
++      by_cases ht : t ⊆ A
++      · rw [if_pos ht, if_pos]
++        intro hneg
++        exact hneg ht
++      · rw [if_neg ht, if_neg]
++        intro hnn
++        exact hnn ht
++    have hlt : nrm ML < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hlt'
++    have hSimpL : SimplicialChain ML := by
++      intro t
++      dsimp [ML, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeL : FreelyShellable ML.support (insert γ (cutSet sigma W)) :=
++      IH (insert γ (cutSet sigma W)) (cappedCutLeft sigma W X γ c) ML hlt
++        (by dsimp [γ]; exact hσL) (by dsimp [γ]; exact hUL)
++        (by dsimp [γ]; exact hXLc) (by dsimp [ML, A, γ]; exact hML)
++        (by dsimp [ML, A, γ]; exact hTL) hSimpL
++    have hPstar : ¬ (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ MR.support := by
++        rw [hMRsupp]
++        simp
++      have hTin' : ¬ M (starTet sigma v) = 0 ∧ ¬ (starTet sigma v) ⊆ A := by
++        simpa [MR] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ ML.support := by
++      intro hmem
++      have hne : ML (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : ML (starTet sigma v) = 0 := by
++        simp [ML, hPstar]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) ML.support := by
++      have hsupport' :
++          M.support = insert (starTet sigma v)
++            (M.filter (fun t => ¬ (¬ t ⊆ A))).support := by
++        exact support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hsupport'
++    have hstart : ∃ l : List (Finset V), l.toFinset = ML.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma W)) ML.support hfreeL hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) ML.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeL hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeL hglue hTnot hsold
++
+ end Taut
+
+ succeeded in 5763ms:
+⚠ [8248/8263] Replayed Taut.Chains
+warning: Taut/Chains.lean:432:0: automatically included section variable(s) unused in theorem `Taut.nrm_eq_sum_subset`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Chains.lean:437:8: automatically included section variable(s) unused in theorem `Taut.nrm_zero`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Chains.lean:456:8: automatically included section variable(s) unused in theorem `Taut.nrm_neg`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+⚠ [8249/8263] Replayed Taut.Zvol
+warning: Taut/Zvol.lean:30:0: automatically included section variable(s) unused in theorem `Taut.SubChain.support_subset`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Zvol.lean:40:0: automatically included section variable(s) unused in theorem `Taut.SubChain.sub_support_subset`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Zvol.lean:62:0: automatically included section variable(s) unused in theorem `Taut.subChain_filter`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+⚠ [8250/8263] Replayed Taut.Projection
+warning: Taut/Projection.lean:239:51: unused variable `hp`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [8251/8263] Replayed Taut.Theorem1
+warning: Taut/Theorem1.lean:55:22: unused variable `x`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: Taut/Theorem1.lean:63:0: automatically included section variable(s) unused in theorem `Taut.dimPart_apply`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Theorem1.lean:73:8: automatically included section variable(s) unused in theorem `Taut.dimPart_zero`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Theorem1.lean:76:0: automatically included section variable(s) unused in theorem `Taut.dimPart_single_of_eq`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Theorem1.lean:80:0: automatically included section variable(s) unused in theorem `Taut.dimPart_single_of_ne`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+⚠ [8252/8263] Replayed Taut.Splitting
+warning: Taut/Splitting.lean:57:2: `push_neg` has been deprecated. Prefer using `push Not` instead.
+If you'd rather continue using `push_neg` in your project, you can implement it as follows:
+```
+open Lean.Parser.Tactic in
+macro "push_neg" cfg:optConfig loc:(location)? : tactic =>
+  `(tactic| push $cfg:optConfig Not $[$loc]?)
+```
+warning: Taut/Splitting.lean:101:0: automatically included section variable(s) unused in theorem `Taut.exists_pair_of_one_lt_card`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+⚠ [8253/8263] Replayed Taut.Complex2
+warning: Taut/Complex2.lean:235:54: unused variable `h`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [8257/8263] Replayed Taut.Theorem2
+warning: Taut/Theorem2.lean:41:0: automatically included section variable(s) unused in theorem `Taut.SimplicialChain.natAbs_eq_one`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Theorem2.lean:109:0: automatically included section variable(s) unused in theorem `Taut.card_tetFaces`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Theorem2.lean:141:8: automatically included section variable(s) unused in theorem `Taut.removeTet_apply_self`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Theorem2.lean:144:0: automatically included section variable(s) unused in theorem `Taut.removeTet_apply_ne`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+⚠ [8258/8263] Replayed Taut.Eligible
+warning: Taut/Eligible.lean:41:4: `push_neg` has been deprecated. Prefer using `push Not` instead.
+If you'd rather continue using `push_neg` in your project, you can implement it as follows:
+```
+open Lean.Parser.Tactic in
+macro "push_neg" cfg:optConfig loc:(location)? : tactic =>
+  `(tactic| push $cfg:optConfig Not $[$loc]?)
+```
+warning: Taut/Eligible.lean:66:4: `push_neg` has been deprecated. Prefer using `push Not` instead.
+If you'd rather continue using `push_neg` in your project, you can implement it as follows:
+```
+open Lean.Parser.Tactic in
+macro "push_neg" cfg:optConfig loc:(location)? : tactic =>
+  `(tactic| push $cfg:optConfig Not $[$loc]?)
+```
+warning: Taut/Eligible.lean:164:0: automatically included section variable(s) unused in theorem `Taut.walk_mem_of_adj_closed`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+⚠ [8259/8263] Replayed Taut.Theorem23
+warning: Taut/Theorem23.lean:71:6: `push_neg` has been deprecated. Prefer using `push Not` instead.
+If you'd rather continue using `push_neg` in your project, you can implement it as follows:
+```
+open Lean.Parser.Tactic in
+macro "push_neg" cfg:optConfig loc:(location)? : tactic =>
+  `(tactic| push $cfg:optConfig Not $[$loc]?)
+```
+warning: Taut/Theorem23.lean:131:6: `push_neg` has been deprecated. Prefer using `push Not` instead.
+If you'd rather continue using `push_neg` in your project, you can implement it as follows:
+```
+open Lean.Parser.Tactic in
+macro "push_neg" cfg:optConfig loc:(location)? : tactic =>
+  `(tactic| push $cfg:optConfig Not $[$loc]?)
+```
+⚠ [8262/8263] Replayed Taut.Theorem2Aleph
+warning: Taut/Theorem2Aleph.lean:68:4: try 'simp' instead of 'simpa'
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+warning: Taut/Theorem2Aleph.lean:50:0: automatically included section variable(s) unused in theorem `Taut.aleph_base_support_eq_singleton_of_four_vertices`:
+  [LinearOrder V]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [LinearOrder V] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Taut/Theorem2Aleph.lean:152:58: unused variable `hS`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: Taut/Theorem2Aleph.lean:190:6: `push_neg` has been deprecated. Prefer using `push Not` instead.
+If you'd rather continue using `push_neg` in your project, you can implement it as follows:
+```
+open Lean.Parser.Tactic in
+macro "push_neg" cfg:optConfig loc:(location)? : tactic =>
+  `(tactic| push $cfg:optConfig Not $[$loc]?)
+```
+warning: Taut/Theorem2Aleph.lean:697:6: Try `simp at hYs` instead of `simpa using hYs`
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+warning: Taut/Theorem2Aleph.lean:779:24: unused variable `hγe`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: Taut/Theorem2Aleph.lean:929:5: unused variable `hMsum`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: Taut/Theorem2Aleph.lean:1347:6: try 'simp' instead of 'simpa'
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+⚠ [8263/8263] Built Taut.Theorem3 (3.2s)
+warning: Taut/Theorem3.lean:92:58: unused variable `hS`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: Taut/Theorem3.lean:107:6: declaration uses `sorry`
+Build completed successfully (8263 jobs).
+
+codex
+Implemented and typechecked `deg3_step_free` in [Theorem3.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3.lean:111), plus the requested precise bridge-start lemma statement [degree3_star_start_shellFrom](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3.lean:102) as the only new `sorry`.
+
+I placed it in `Theorem3.lean` because `Theorem2Aleph.lean` imports `Theorem23.lean`, so putting this proof directly in `Theorem23.lean` would create an import cycle with the degree-3 Aleph lemmas it must reuse.
+
+Verification:
+`lake build Taut.Theorem3` succeeds. The only new warning is the intended `declaration uses sorry` for `degree3_star_start_shellFrom`.
+
+APPROVED
+diff --git a/lean/Taut/Theorem3.lean b/lean/Taut/Theorem3.lean
+index 53cf2f9c33fba0c73bcc3931f42758a6086c5b19..1f28877e7c4918b35b98bb39066391612d17a5b8
+--- a/lean/Taut/Theorem3.lean
++++ b/lean/Taut/Theorem3.lean
+@@ -100,4 +100,186 @@
+   rw [hσeq, hsupp]   -- hσeq first: σ occurs only as the 2nd arg, so no over-rewrite of `vertsOf σ`
+   exact freelyShellable_singleton hcard
+ 
++/-- Degree-3 bridge-start shelling for the star target.  In the degree-3 cut,
++after the star tetrahedron `starTet σ v` is glued onto the smaller side `τ` with
++boundary `B`, the smaller side admits a relative shelling from the star boundary
++all the way to the original boundary `σ`. -/
++lemma degree3_star_start_shellFrom (σ B τ : Finset (Finset V)) {v : V}
++    (hfree : FreelyShellable τ B) (hg : GlueStep (starTet σ v) B σ) :
++    ∃ l : List (Finset V), l.toFinset = τ ∧ l.Nodup ∧
++      ShellFrom (tetFaces (starTet σ v)) l σ := by
++  sorry
++
++/-- Degree-3 step for the free-shelling induction: cut off the degree-3 star,
++apply the induction hypothesis to the non-star side, then glue the star tetrahedron
++back onto that freely shellable remainder. -/
++theorem deg3_step_free (sigma : Finset (Finset V)) (X M : Chain V)
++    (hsigma : IsSphere2 sigma) (hbig : 4 < (vertsOf sigma).card)
++    (hU : UnitOn X sigma) (hXc : bdry X = 0) (hMX : bdry M = X)
++    (hT : IsTaut M) (hS : SimplicialChain M) (hd3 : HasDegree3Vertex sigma)
++    (IH : ∀ (sigma' : Finset (Finset V)) (X' M' : Chain V), nrm M' < nrm M →
++      IsSphere2 sigma' → UnitOn X' sigma' → bdry X' = 0 → bdry M' = X' →
++      IsTaut M' → SimplicialChain M' → FreelyShellable M'.support sigma') :
++    FreelyShellable M.support sigma := by
++  classical
++  obtain ⟨v, W, hv, hγ3, hγe, hγσ, hW, hσL, hσR⟩ :=
++    degree3_cut_setup sigma hsigma hbig hd3
++  let γ : Finset V := linkVerts sigma v
++  let A : Finset V := vertsOf (insert γ (cutSet sigma W))
++  let ML : Chain V := M.filter (fun t => t ⊆ A)
++  let MR : Chain V := M.filter (fun t => ¬ t ⊆ A)
++  obtain ⟨c, hUL, hXLc, hUR, hXRc, hXsum⟩ :=
++    capped_cut_splits_unit sigma X hsigma hγ3 hγe hγσ hW hU hXc
++  obtain ⟨hML, hMR, hTL, hTR, hSuppL, hSuppR, hMsum⟩ :=
++    taut_splits_for_capped_cut sigma X M hsigma hσL hσR hγ3 hγe hW
++      hUL hXLc hUR hXRc hXsum hMX hT
++  have hsplit := degree3_cut_star_side_glue sigma hsigma hbig hv hγ3 hW
++  rcases hsplit with hcase | hcase
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hULtet : UnitOn (cappedCutLeft sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUL
++    have hSuppLT : ∀ t ∈ ML.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma W)) :=
++        hSuppL t (by simpa only [ML, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMLsupp : ML.support = {starTet sigma v} := by
++      exact star_filter_support_singleton ML (cappedCutLeft sigma W X γ c)
++        (starTet sigma v) hT4 hULtet (by simpa only [ML, A, γ] using hML)
++        (by simpa only [ML, A, γ] using hTL) hSuppLT
++    have hlt : nrm MR < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ t ⊆ A)) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++      simpa only [MR] using hlt'
++    have hSimpR : SimplicialChain MR := by
++      intro t
++      dsimp [MR, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : ¬ t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeR : FreelyShellable MR.support (insert γ (cutSet sigma (W + fun _ => 1))) :=
++      IH (insert γ (cutSet sigma (W + fun _ => 1)))
++        (cappedCutRight sigma W X γ c) MR hlt
++        (by dsimp [γ]; exact hσR) (by dsimp [γ]; exact hUR)
++        (by dsimp [γ]; exact hXRc) (by dsimp [MR, A, γ]; exact hMR)
++        (by dsimp [MR, A, γ]; exact hTR) hSimpR
++    have hPT : (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ ML.support := by
++        rw [hMLsupp]
++        simp
++      have hTin' : ¬ M (starTet sigma v) = 0 ∧ (starTet sigma v) ⊆ A := by
++        simpa [ML] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ MR.support := by
++      intro hmem
++      have hne : MR (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : MR (starTet sigma v) = 0 := by
++        simp [MR, hPT]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) MR.support := by
++      simpa only [MR] using
++        support_eq_insert_of_filter_support_singleton M (fun t => t ⊆ A) hMLsupp
++    have hstart : ∃ l : List (Finset V), l.toFinset = MR.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma (W + fun _ => 1)))
++        MR.support hfreeR hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) MR.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeR hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeR hglue hTnot hsold
++  · rcases hcase with ⟨hstar, hglue⟩
++    have hT4 : (starTet sigma v).card = 4 := starTet_card_of_degree3 sigma hγ3
++    have hURtet : UnitOn (cappedCutRight sigma W X γ c) (tetFaces (starTet sigma v)) := by
++      dsimp [γ]
++      rw [← hstar]
++      exact hUR
++    have hSuppRT : ∀ t ∈ MR.support, t ⊆ starTet sigma v := by
++      intro t ht
++      have htA : t ⊆ vertsOf (insert γ (cutSet sigma (W + fun _ => 1))) :=
++        hSuppR t (by simpa only [MR, A] using ht)
++      dsimp [γ] at htA
++      rw [hstar, vertsOf_tetFaces_eq (starTet sigma v) hT4] at htA
++      exact htA
++    have hMRsupp : MR.support = {starTet sigma v} := by
++      exact star_filter_support_singleton MR (cappedCutRight sigma W X γ c)
++        (starTet sigma v) hT4 hURtet (by simpa only [MR, A, γ] using hMR)
++        (by simpa only [MR, A, γ] using hTR) hSuppRT
++    have hML_eq : ML = M.filter (fun t => ¬ (¬ t ⊆ A)) := by
++      dsimp [ML]
++      ext t
++      rw [Finsupp.filter_apply, Finsupp.filter_apply]
++      by_cases ht : t ⊆ A
++      · rw [if_pos ht, if_pos]
++        intro hneg
++        exact hneg ht
++      · rw [if_neg ht, if_neg]
++        intro hnn
++        exact hnn ht
++    have hlt : nrm ML < nrm M := by
++      have hlt' : nrm (M.filter (fun t => ¬ (¬ t ⊆ A))) < nrm M :=
++        norm_lt_filter_neg_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hlt'
++    have hSimpL : SimplicialChain ML := by
++      intro t
++      dsimp [ML, A, γ]
++      rw [Finsupp.filter_apply]
++      by_cases ht : t ⊆ vertsOf (insert (linkVerts sigma v) (cutSet sigma W))
++      · rw [if_pos ht]
++        exact hS t
++      · rw [if_neg ht]
++        exact Or.inr (Or.inl rfl)
++    have hfreeL : FreelyShellable ML.support (insert γ (cutSet sigma W)) :=
++      IH (insert γ (cutSet sigma W)) (cappedCutLeft sigma W X γ c) ML hlt
++        (by dsimp [γ]; exact hσL) (by dsimp [γ]; exact hUL)
++        (by dsimp [γ]; exact hXLc) (by dsimp [ML, A, γ]; exact hML)
++        (by dsimp [ML, A, γ]; exact hTL) hSimpL
++    have hPstar : ¬ (starTet sigma v) ⊆ A := by
++      have hTin : starTet sigma v ∈ MR.support := by
++        rw [hMRsupp]
++        simp
++      have hTin' : ¬ M (starTet sigma v) = 0 ∧ ¬ (starTet sigma v) ⊆ A := by
++        simpa [MR] using hTin
++      exact hTin'.2
++    have hTnot : starTet sigma v ∉ ML.support := by
++      intro hmem
++      have hne : ML (starTet sigma v) ≠ 0 := Finsupp.mem_support_iff.mp hmem
++      have hzero : ML (starTet sigma v) = 0 := by
++        simp [ML, hPstar]
++      exact hne hzero
++    have hsupport : M.support = insert (starTet sigma v) ML.support := by
++      have hsupport' :
++          M.support = insert (starTet sigma v)
++            (M.filter (fun t => ¬ (¬ t ⊆ A))).support := by
++        exact support_eq_insert_of_filter_support_singleton M (fun t => ¬ t ⊆ A) hMRsupp
++      rwa [← hML_eq] at hsupport'
++    have hstart : ∃ l : List (Finset V), l.toFinset = ML.support ∧ l.Nodup ∧
++        ShellFrom (tetFaces (starTet sigma v)) l sigma :=
++      degree3_star_start_shellFrom sigma (insert γ (cutSet sigma W)) ML.support hfreeL hglue
++    rw [hsupport]
++    intro s hs
++    by_cases hsstar : s = starTet sigma v
++    · subst s
++      have hfreeInsert : FreelyShellable (insert (starTet sigma v) ML.support) sigma :=
++        FreelyShellable.insert_of_glueStep hfreeL hglue hTnot hstart
++      exact hfreeInsert (starTet sigma v) (Finset.mem_insert_self _ _)
++    · rw [Finset.mem_insert] at hs
++      rcases hs with hsnew | hsold
++      · exact False.elim (hsstar hsnew)
++      · exact FreelyShellable.exists_shelling_insert_of_glueStep_old hfreeL hglue hTnot hsold
++
+ end Taut
+
+tokens used
+65,720
+Implemented and typechecked `deg3_step_free` in [Theorem3.lean](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3.lean:111), plus the requested precise bridge-start lemma statement [degree3_star_start_shellFrom](/Users/doyle/Dropbox/taut/lean/Taut/Theorem3.lean:102) as the only new `sorry`.
+
+I placed it in `Theorem3.lean` because `Theorem2Aleph.lean` imports `Theorem23.lean`, so putting this proof directly in `Theorem23.lean` would create an import cycle with the degree-3 Aleph lemmas it must reuse.
+
+Verification:
+`lake build Taut.Theorem3` succeeds. The only new warning is the intended `declaration uses sorry` for `degree3_star_start_shellFrom`.
+
+APPROVED

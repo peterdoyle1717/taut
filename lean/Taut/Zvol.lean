@@ -58,7 +58,6 @@ lemma SubChain.nrm_add_nrm_sub {U M : Chain V} (h : SubChain U M) :
   rw [Finsupp.sub_apply]
   exact h s
 
-/-- Restrictions are sub-chains. -/
 lemma subChain_filter (p : Finset V → Prop) [DecidablePred p] (M : Chain V) :
     SubChain (M.filter p) M := by
   intro s
@@ -82,15 +81,12 @@ def IsTaut (M : Chain V) : Prop := nrm M = Zvol (bdry M)
 lemma Zvol_le {X M : Chain V} (h : bdry M = X) : Zvol X ≤ nrm M :=
   Nat.sInf_le ⟨M, h, rfl⟩
 
-/-- Coning fills a closed chain. -/
 lemma bdry_cone_of_closed {x : V} {X : Chain V} (hX : bdry X = 0) :
     bdry (cone x X) = X := by
   have h := bdry_cone_add_cone_bdry x X
   rw [hX, map_zero, add_zero] at h
   exact h
 
-/-- An optimal filling of the boundary of `W` exists (witnessed by `W`
-itself being a filling). -/
 lemma exists_optimal_fill (W : Chain V) :
     ∃ M : Chain V, bdry M = bdry W ∧ nrm M = Zvol (bdry W) := by
   have hne : {n | ∃ M : Chain V, bdry M = bdry W ∧ nrm M = n}.Nonempty :=
@@ -102,7 +98,6 @@ lemma exists_optimal_fill (W : Chain V) :
 theorem IsTaut.subChain {M U : Chain V} (hM : IsTaut M) (hU : SubChain U M) :
     IsTaut U := by
   obtain ⟨W, hW, hWn⟩ := exists_optimal_fill U
-  -- replace U by W inside M
   have hbd : bdry (M - U + W) = bdry M := by
     rw [map_add, map_sub, hW]
     abel
@@ -141,14 +136,11 @@ theorem IsTaut.no_internal_vertex {M : Chain V} (hM : IsTaut M) {x : V}
     (hxM : x ∈ vert M) (hxB : x ∉ vert (bdry M)) : False := by
   set W := lk x M with hWdef
   have hUc : cone x W = nbhd x M := cone_lk x M
-  -- the apex is not a vertex of the link
   have hx : deg x W = 0 := by rw [deg, hWdef, nbhd_lk, nrm_zero]
-  -- ∂W = 0, by localizing at x
   have hWfree : nbhd x W = 0 := nbhd_lk x M
   have hWb : nbhd x (bdry W) = 0 := nbhd_bdry_eq_zero hWfree
   have hcb : cone x (bdry W) = 0 := by
     have hhom := bdry_cone_add_cone_bdry x W
-    -- nbhd x of both sides; nbhd x (bdry (cone x W)) = nbhd x (bdry (nbhd x M)) = nbhd x (bdry M) = 0
     have h0 : nbhd x (bdry (cone x W)) = 0 := by
       rw [hUc, nbhd_bdry_nbhd, nbhd_eq_zero_iff.mpr hxB]
     have happ := congrArg (nbhd x) hhom
@@ -158,7 +150,6 @@ theorem IsTaut.no_internal_vertex {M : Chain V} (hM : IsTaut M) {x : V}
     have h := eq_nbhd_of_cone_eq_zero hcb
     rw [hWb] at h
     exact h
-  -- a vertex of W, witnessing nontriviality
   obtain ⟨s, hs, hxs⟩ := mem_vert.mp hxM
   have hcard := hdim s hs
   have hne : (s.erase x).Nonempty := by
@@ -166,7 +157,6 @@ theorem IsTaut.no_internal_vertex {M : Chain V} (hM : IsTaut M) {x : V}
     omega
   obtain ⟨y, hy⟩ := hne
   have hyW : y ∈ vert W := by
-    -- (cone x W) s = M s ≠ 0 forces W (s.erase x) ≠ 0
     have happ : cone x W s = M s := by rw [hUc, nbhd_apply, if_pos hxs]
     rw [cone_apply, if_pos hxs] at happ
     have hMs : M s ≠ 0 := Finsupp.mem_support_iff.mp hs
